@@ -1,0 +1,1 @@
+dotnet ef migrations add "$(date +%s)" -o Data/Migrations --context GsbcDbContext

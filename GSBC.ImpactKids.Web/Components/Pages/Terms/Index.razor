@@ -1,0 +1,99 @@
+@inherits EventListeningComponent
+@page "/Terms"
+@attribute [Authorize]
+@inject ISchoolTermsService SchoolTermsService
+@inject IServicesService    ServicesService
+@inject ISnackbar           Snackbar
+@inject NavigationManager   Navigation
+@inject IDialogService      DialogService
+
+
+@if (_terms != null)
+{
+    <MudPaper Elevation="6" Class="mt-4">
+        <MudToolBar Style="position: relative; justify-content: center; align-items: center;">
+            <div class="side-left pt-2">
+                <MudDatePicker OpenTo="OpenTo.Year" Date="_date" DateChanged="OnDateChanged" FixMonth="1" FixDay="1"
+                               DateFormat="yyyy"/>
+            </div>
+            <div class="center">
+                <MudText Typo="Typo.h5">Impact Kids Terms</MudText>
+            </div>
+            <div class="side-right">
+                <MudIconButton OnClick="@CreateSchoolTerm" Icon="@Icons.Material.Filled.Create"/>
+            </div>
+        </MudToolBar>
+        <MudGrid Spacing="6" Justify="Justify.Center" Class="pt-3 pb-6 px-3">
+            @foreach (SchoolTerm schoolTerm in _terms)
+            {
+                <MudItem xs="3">
+                    <MudCard Elevation="6">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">@schoolTerm.Name</MudText>
+                                <MudText
+                                    Typo="Typo.body2">@schoolTerm.StartDate.ToString("dd/MM") -> @schoolTerm.EndDate.ToString("dd/MM")</MudText>
+                            </CardHeaderContent>
+                            <CardHeaderActions>
+                                <MudIconButton OnClick="@(_ => DeleteSchoolTerm(schoolTerm))"
+                                               Icon="@Icons.Material.Filled.Delete"/>
+                                <MudIconButton OnClick="@(_ => UpdateSchoolTerm(schoolTerm))"
+                                               Icon="@Icons.Material.Filled.Edit"/>
+                            </CardHeaderActions>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudList T="string">
+                                <MudDivider/>
+                                <MudListItem>
+                                    <MudButton FullWidth
+                                               OnClick="@(_ => CreateService(schoolTerm))"
+                                               StartIcon="@Icons.Material.Filled.Create">
+                                        Create Service
+                                    </MudButton>
+                                </MudListItem>
+                                <MudDivider/>
+                                @foreach (Service service in schoolTerm.Services)
+                                {
+                                    <div>
+                                        @if (service.Name == null)
+                                        {
+                                            <MudListItem
+                                                OnClick="@(() => _selectedService = _selectedService == service.Id ? null : service.Id)"
+                                                Text="@(service.Date.ToString("dddd dd/MM"))"/>
+                                        }
+                                        else
+                                        {
+                                            <MudListItem
+                                                OnClick="@(() => _selectedService = _selectedService == service.Id ? null : service.Id)"
+                                                Icon="@Icons.Material.Filled.Celebration"
+                                                Text="@service.Name"
+                                                SecondaryText="@(service.Date.ToString("dddd dd/MM"))"/>
+                                        }
+                                        <MudPopover Open="@(_selectedService == service.Id)"
+                                                    OverflowBehavior="OverflowBehavior.FlipAlways"
+                                                    AnchorOrigin="Origin.BottomCenter"
+                                                    TransformOrigin="Origin.TopCenter" Paper="false">
+                                            <MudPaper Outlined="true" Class="px-4 py-4">
+                                                <MudIconButton OnClick="@(_ => DeleteService(service))"
+                                                               Icon="@Icons.Material.Filled.Delete"/>
+                                                <MudIconButton OnClick="@(_ => UpdateService(service))"
+                                                               Icon="@Icons.Material.Filled.Edit"/>
+                                            </MudPaper>
+                                        </MudPopover>
+                                    </div>
+                                }
+                                @if (schoolTerm.Services.Any())
+                                {
+                                    <MudDivider/>
+                                }
+                            </MudList>
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudButton Variant="Variant.Text" Color="Color.Primary">Learn more</MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    </MudPaper>
+}

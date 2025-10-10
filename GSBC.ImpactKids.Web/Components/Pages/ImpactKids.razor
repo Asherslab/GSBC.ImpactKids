@@ -1,0 +1,47 @@
+@page "/roster"
+@using RabbitMQ.Client
+@inject IElvantoService ElvantoService
+@attribute [Authorize]
+
+<PageTitle>Impact Kids Roster</PageTitle>
+
+@if (_elvantoResponse != null)
+{
+    <MudDataGrid Items="@_elvantoResponse.Positions"
+                 Dense
+                 Bordered
+                 FixedHeader>
+        <Columns>
+            <PropertyColumn StickyLeft Sortable="false" Property="x => x.Name" Title="Position"/>
+            @foreach (string service in _elvantoResponse.Services)
+            {
+                <PropertyColumn Sortable="false" Property="@(x => PositionForService(x, service))"
+                                Title="@(TitleForService(service))"/>
+            }
+        </Columns>
+    </MudDataGrid>
+}
+
+@code {
+
+    private static string TitleForService(string service)
+    {
+        DateTime date = DateTime.Parse(service).ToLocalTime();
+
+        return $"{DateTime.Parse(service):dd/MM} {date.DayOfWeek.ToString()[..3]} {date.ToString("tt").ToUpper()}";
+    }
+
+    private static string PositionForService(ElvantoServicePosition position, string service)
+    {
+        return position.PositionsForService.GetValueOrDefault(service, "");
+    }
+
+    ElvantoServicePositionsResponse? _elvantoResponse;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        _elvantoResponse = await ElvantoService.GetServicePositions();
+    }
+
+}

@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Sdk Name="Aspire.AppHost.Sdk" Version="9.5.1"/>
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <UserSecretsId>88705c3c-8603-4e41-afd3-b947d2a3ac4e</UserSecretsId>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\GSBC.ImpactKids.Grpc\GSBC.ImpactKids.Grpc.csproj" />
+        <ProjectReference Include="..\GSBC.ImpactKids.Web\GSBC.ImpactKids.Web.csproj"/>
+        <ProjectReference Include="..\GSBC.ImpactKids.Workers.DbMigrations\GSBC.ImpactKids.Workers.DbMigrations.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Aspire.Hosting.AppHost" Version="9.5.1"/>
+        <PackageReference Include="Aspire.Hosting.RabbitMQ" Version="9.5.1" />
+        <PackageReference Include="Aspire.Hosting.Redis" Version="9.5.1"/>
+        <PackageReference Include="Aspire.Hosting.SqlServer" Version="9.5.1" />
+    </ItemGroup>
+
+</Project>
