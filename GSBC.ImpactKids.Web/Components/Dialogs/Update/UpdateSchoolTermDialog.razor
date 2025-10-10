@@ -1,0 +1,20 @@
+@inject ISchoolTermsService SchoolTermsService
+
+<BaseChangeDialog
+    T="BasicResponse"
+    Response="_response"
+    OnSubmit="@Submit">
+    <MudForm>
+        <MudTextField Required 
+                      @bind-Value="_request.Name.Value"
+                      Label="Name"
+                      Class="mb-3"/>
+        <RequiredMudDatePicker 
+            @bind-Date="@_request.StartDate.Value" 
+            Label="Start Date"
+            Class="mb-3"/>
+        <RequiredMudDatePicker 
+            @bind-Date="@_request.EndDate.Value" 
+            Label="End Date"/>
+    </MudForm>
+</BaseChangeDialog>

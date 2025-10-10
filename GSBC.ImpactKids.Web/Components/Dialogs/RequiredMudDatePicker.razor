@@ -1,0 +1,32 @@
+<MudDatePicker Required 
+               Date="@Date"
+               DateChanged="OnDateChanged" 
+               Label="@Label"
+               Class="@Class"/>
+
+@code {
+
+    [Parameter]
+    [Category(CategoryTypes.FormComponent.Data)]
+    public DateTime Date { get; set; }
+    
+    [Parameter]
+    public EventCallback<DateTime> DateChanged { get; set; }
+    
+    [Parameter]
+    [Category(CategoryTypes.FormComponent.Behavior)]
+    public string? Label { get; set; }
+    
+    [Parameter]
+    [Category(CategoryTypes.ComponentBase.Common)]
+    public string? Class { get; set; }
+
+    private async Task OnDateChanged(DateTime? date)
+    {
+        if (date != null)
+        {
+            Date = date.Value;
+            await DateChanged.InvokeAsync(date.Value);
+        }
+    }
+}
