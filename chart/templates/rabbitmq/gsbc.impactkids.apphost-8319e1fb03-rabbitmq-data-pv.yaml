@@ -1,0 +1,19 @@
+---
+apiVersion: "v1"
+kind: "PersistentVolume"
+metadata:
+  name: "rabbitmq-gsbc.impactkids.apphost-8319e1fb03-rabbitmq-data-pv"
+  labels:
+    app.kubernetes.io/name: "impact-kids-app"
+    app.kubernetes.io/component: "rabbitmq"
+    app.kubernetes.io/instance: "{{.Release.Name}}"
+spec:
+  claimRef: {}
+  hostPath: {}
+  local: {}
+  accessModes:
+    - "ReadWriteOnce"
+  capacity:
+    storage: "1Gi"
+  nodeAffinity:
+    required: {}

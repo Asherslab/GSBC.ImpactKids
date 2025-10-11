@@ -1,0 +1,32 @@
+parameters:
+  migrations:
+    migrations_image: "migrations:latest"
+  grpc:
+    port_http: "8080"
+    port_https: "8080"
+    grpc_image: "grpc:latest"
+  webfrontend:
+    port_http: "8080"
+    port_https: "8080"
+    webfrontend_image: "webfrontend:latest"
+config:
+  rabbitmq:
+    RABBITMQ_DEFAULT_USER: "guest"
+  sql:
+    ACCEPT_EULA: "Y"
+  migrations:
+    OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "true"
+    OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
+    OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
+  grpc:
+    ASPNETCORE_URLS: "http://+:$8080"
+    OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "true"
+    OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
+    OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
+    ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+  webfrontend:
+    ASPNETCORE_URLS: "http://+:$8080"
+    OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "true"
+    OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
+    OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
+    ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
