@@ -1,0 +1,11 @@
+---
+apiVersion: "v1"
+kind: "ConfigMap"
+metadata:
+  name: "rabbitmq-config"
+  labels:
+    app.kubernetes.io/name: "impact-kids-app"
+    app.kubernetes.io/component: "rabbitmq"
+    app.kubernetes.io/instance: "{{.Release.Name}}"
+data:
+  RABBITMQ_DEFAULT_USER: "{{ .Values.config.rabbitmq.RABBITMQ_DEFAULT_USER }}"

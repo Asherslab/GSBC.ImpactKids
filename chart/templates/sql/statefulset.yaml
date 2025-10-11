@@ -1,0 +1,48 @@
+---
+apiVersion: "apps/v1"
+kind: "StatefulSet"
+metadata:
+  name: "sql-statefulset"
+  labels:
+    app.kubernetes.io/name: "impact-kids-app"
+    app.kubernetes.io/component: "sql"
+    app.kubernetes.io/instance: "{{.Release.Name}}"
+spec:
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: "impact-kids-app"
+        app.kubernetes.io/component: "sql"
+        app.kubernetes.io/instance: "{{.Release.Name}}"
+    spec:
+      containers:
+        - image: "mcr.microsoft.com/mssql/server:2025-latest"
+          name: "sql"
+          envFrom:
+            - configMapRef:
+                name: "sql-config"
+            - secretRef:
+                name: "sql-secrets"
+          ports:
+            - name: "tcp"
+              protocol: "TCP"
+              containerPort: 1433
+          volumeMounts:
+            - name: "gsbc.impactkids.apphost-8319e1fb03-sql-data"
+              mountPath: "/var/opt/mssql"
+          imagePullPolicy: "IfNotPresent"
+      volumes:
+        - name: "gsbc.impactkids.apphost-8319e1fb03-sql-data"
+          persistentVolumeClaim:
+            claimName: "sql-gsbc.impactkids.apphost-8319e1fb03-sql-data-pvc"
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: "impact-kids-app"
+      app.kubernetes.io/component: "sql"
+      app.kubernetes.io/instance: "{{.Release.Name}}"
+  replicas: 1
+  persistentVolumeClaimRetentionPolicy: {}
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 0
+    type: "RollingUpdate"

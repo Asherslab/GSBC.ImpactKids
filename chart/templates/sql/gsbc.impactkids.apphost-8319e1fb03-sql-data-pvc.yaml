@@ -1,0 +1,18 @@
+---
+apiVersion: "v1"
+kind: "PersistentVolumeClaim"
+metadata:
+  name: "sql-gsbc.impactkids.apphost-8319e1fb03-sql-data-pvc"
+  labels:
+    app.kubernetes.io/name: "impact-kids-app"
+    app.kubernetes.io/component: "sql"
+    app.kubernetes.io/instance: "{{.Release.Name}}"
+spec:
+  dataSource: {}
+  dataSourceRef: {}
+  selector: {}
+  accessModes:
+    - "ReadWriteOnce"
+  resources:
+    requests:
+      storage: "1Gi"

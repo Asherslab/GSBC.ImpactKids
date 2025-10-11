@@ -1,5 +1,12 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
+builder.AddKubernetesEnvironment("k8s")
+    .WithProperties(x =>
+    {
+        x.HelmChartName = "impact-kids-app";
+        x.DefaultStorageType = "pvc";
+    });
+
 IResourceBuilder<RedisResource> cache = builder.AddRedis("cache")
     .WithLifetime(ContainerLifetime.Persistent);
 
