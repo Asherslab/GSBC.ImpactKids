@@ -1,14 +1,14 @@
 parameters:
   migrations:
-    migrations_image: "migrations:latest"
+    migrations_image: "asherslab/gsbc-kids-migrations"
   grpc:
     port_http: "8080"
     port_https: "8080"
-    grpc_image: "grpc:latest"
+    grpc_image: "asherslab/gsbc-kids-grpc"
   webfrontend:
     port_http: "8080"
     port_https: "8080"
-    webfrontend_image: "webfrontend:latest"
+    webfrontend_image: "asherslab/gsbc-kids-web"
 config:
   rabbitmq:
     RABBITMQ_DEFAULT_USER: "guest"
