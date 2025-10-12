@@ -1,0 +1,53 @@
+name: Release Charts
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: 'The version to release'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  statuses: write
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Update Helm Chart Version
+        working-directory: Charts/impact-kids
+        run: |
+          # The current version is stored in inputs.version, we need to rewrite the charts.yaml file with the new version
+          # However we can only replace the version: property if it is at the start of a line
+          echo "Updating Chart.yaml version to ${{ inputs.version }}"
+          sed -i "s/^version: \(.*\)/version: ${{ inputs.version }}/g" Chart.yaml
+          sed -i "s/^versionTag: \(.*\)/versionTag: ${{ inputs.version }}/g" templates/_helpers.tpl
+          
+          # Now this inserted a version with a v prefix, we need to remove only that initial v
+          sed -i "1s/version: v\(.*\)/version: \1/g" Chart.yaml
+
+      - name: Run chart-releaser
+        uses: helm/chart-releaser-action@v1.7.0
+        with:
+          charts_dir: 'Charts'
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
