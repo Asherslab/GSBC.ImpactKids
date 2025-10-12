@@ -33,6 +33,7 @@ jobs:
         run: |
           echo "version: ${{ steps.version.outputs.version }}" > charts/impact-kids/Chart.yaml
           echo "appVersion: ${{ steps.version.outputs.version }}" > charts/impact-kids/Chart.yaml
+          echo "versionTag: ${{ steps.version.outputs.version }}" > charts/impact-kids/templates/_helpers.tpl
 
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.7.0
