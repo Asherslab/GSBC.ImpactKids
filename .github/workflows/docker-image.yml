@@ -3,12 +3,12 @@ name: Docker Image CI
 on:
   push:
     branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
 
 jobs:
-
   version:
+    permissions:
+      contents: write
+      
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
