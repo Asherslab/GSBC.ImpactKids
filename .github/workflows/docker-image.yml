@@ -26,11 +26,6 @@ jobs:
         id: version
         uses: paulhatch/semantic-version@v5.4.0
 
-      - name: Push Release Tag
-        run: |
-          git tag v${{ steps.version.outputs.version }}
-          git push origin v${{ steps.version.outputs.version }}
-
       - name: Set Chart Version
         run: |
           echo "version: ${{ steps.version.outputs.version }}" > charts/impact-kids/Chart.yaml
@@ -43,6 +38,11 @@ jobs:
           charts_dir: charts/impact-kids
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Push Release Tag
+        run: |
+          git tag v${{ steps.version.outputs.version }}
+          git push origin v${{ steps.version.outputs.version }}
 
   build-migrations:
     runs-on: ubuntu-latest
