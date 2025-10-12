@@ -7,3 +7,4 @@ sqlPass: {{ index (lookup "v1" "Secret" .Release.Namespace "sql-secrets").data "
 rabbitmqPass: {{ index (lookup "v1" "Secret" .Release.Namespace "rabbitmq-secrets").data "RABBITMQ_DEFAULT_PASS" }}
 cachePass: {{ index (lookup "v1" "Secret" .Release.Namespace "cache-secrets").data "REDIS_PASSWORD" }}
 {{ end }}
+versionTag: 0.0.1
