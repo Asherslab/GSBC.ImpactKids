@@ -22,7 +22,7 @@ jobs:
       
       - name: Generate Semantic Version
         id: version
-        uses: paulhatch/semantic-version@latest
+        uses: paulhatch/semantic-version@v5.4.0
 
       - name: Push Release Tag
         run: |
