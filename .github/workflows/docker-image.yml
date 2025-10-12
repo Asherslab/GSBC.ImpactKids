@@ -19,7 +19,7 @@ jobs:
         id: version
         uses: paulhatch/semantic-version@v5.4.0
         with:
-          tag_prefix: ""
+          tag_prefix: "v"
           major_pattern: "MAJOR"
           minor_pattern: "MINOR"
           patch_pattern: "PATCH"
@@ -29,8 +29,8 @@ jobs:
 
       - name: Push Release Tag
         run: |
-          git tag ${{ steps.version.outputs.version }}
-          git push origin ${{ steps.version.outputs.version }}
+          git tag v${{ steps.version.outputs.version }}
+          git push origin v${{ steps.version.outputs.version }}
 
       - name: Set Chart Version
         run: |
