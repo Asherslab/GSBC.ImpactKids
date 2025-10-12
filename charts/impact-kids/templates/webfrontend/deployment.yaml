@@ -16,7 +16,7 @@ spec:
         app.kubernetes.io/instance: "{{.Release.Name}}"
     spec:
       containers:
-        - image: "{{ .Values.parameters.webfrontend.webfrontend_image }}"
+        - image: "{{ .Values.parameters.webfrontend.webfrontend_image }}:{{ .Values.parameters.webfrontend.webfrontend_tag | default versionTag | quote }}"
           name: "webfrontend"
           envFrom:
             - configMapRef:
