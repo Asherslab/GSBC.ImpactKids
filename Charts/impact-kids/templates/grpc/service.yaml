@@ -2,19 +2,19 @@
 apiVersion: "v1"
 kind: "Service"
 metadata:
-  name: "webfrontend-service"
+  name: "grpc-service"
   labels:
     app.kubernetes.io/name: "impact-kids-app"
-    app.kubernetes.io/component: "webfrontend"
+    app.kubernetes.io/component: "grpc"
     app.kubernetes.io/instance: "{{.Release.Name}}"
 spec:
   type: "ClusterIP"
   selector:
     app.kubernetes.io/name: "impact-kids-app"
-    app.kubernetes.io/component: "webfrontend"
+    app.kubernetes.io/component: "grpc"
     app.kubernetes.io/instance: "{{.Release.Name}}"
   ports:
     - name: "http"
       protocol: "TCP"
-      port: {{ .Values.parameters.webfrontend.port_http }}
-      targetPort: {{ .Values.parameters.webfrontend.port_http }}
+      port: {{ .Values.parameters.grpc.port_http }}
+      targetPort: {{ .Values.parameters.grpc.port_http }}
