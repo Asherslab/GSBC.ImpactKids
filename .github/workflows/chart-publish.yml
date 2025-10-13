@@ -40,7 +40,7 @@ jobs:
           # However we can only replace the version: property if it is at the start of a line
           echo "Updating Chart.yaml version to ${{ inputs.version }}"
           sed -i "s/^version: \(.*\)/version: ${{ inputs.version }}/g" Chart.yaml
-          sed -i "s/^image_tag: \(.*\)/image_tag: ${{ inputs.version }}/g" templates/values.yaml
+          sed -i "s/^image_tag: \(.*\)/image_tag: ${{ inputs.version }}/g" values.yaml
           
           # Now this inserted a version with a v prefix, we need to remove only that initial v
           sed -i "1s/version: v\(.*\)/version: \1/g" Chart.yaml
