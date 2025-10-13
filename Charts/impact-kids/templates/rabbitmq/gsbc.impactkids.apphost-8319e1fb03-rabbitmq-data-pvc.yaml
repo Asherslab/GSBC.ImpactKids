@@ -8,9 +8,6 @@ metadata:
     app.kubernetes.io/component: "rabbitmq"
     app.kubernetes.io/instance: "{{.Release.Name}}"
 spec:
-  dataSource: {}
-  dataSourceRef: {}
-  selector: {}
   accessModes:
     - "ReadWriteOnce"
   resources:
