@@ -28,13 +28,13 @@ spec:
               protocol: "TCP"
               containerPort: 1433
           volumeMounts:
-            - name: "gsbc.impactkids.apphost-8319e1fb03-sql-data"
+            - name: "sql-data"
               mountPath: "/var/opt/mssql"
           imagePullPolicy: "IfNotPresent"
       volumes:
-        - name: "gsbc.impactkids.apphost-8319e1fb03-sql-data"
+        - name: "sql-data"
           persistentVolumeClaim:
-            claimName: "sql-gsbc.impactkids.apphost-8319e1fb03-sql-data-pvc"
+            claimName: "sql-data-pvc"
   selector:
     matchLabels:
       app.kubernetes.io/name: "impact-kids-app"

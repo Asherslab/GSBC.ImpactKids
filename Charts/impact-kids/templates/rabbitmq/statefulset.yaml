@@ -31,13 +31,13 @@ spec:
               protocol: "TCP"
               containerPort: 15672
           volumeMounts:
-            - name: "gsbc.impactkids.apphost-8319e1fb03-rabbitmq-data"
+            - name: "rabbitmq-data"
               mountPath: "/var/lib/rabbitmq"
           imagePullPolicy: "IfNotPresent"
       volumes:
-        - name: "gsbc.impactkids.apphost-8319e1fb03-rabbitmq-data"
+        - name: "rabbitmq-data"
           persistentVolumeClaim:
-            claimName: "rabbitmq-gsbc.impactkids.apphost-8319e1fb03-rabbitmq-data-pvc"
+            claimName: "rabbitmq-data-pvc"
   selector:
     matchLabels:
       app.kubernetes.io/name: "impact-kids-app"
