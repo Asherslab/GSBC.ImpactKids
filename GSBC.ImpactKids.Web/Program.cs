@@ -2,9 +2,16 @@ using GSBC.ImpactKids.ServiceDefaults;
 using GSBC.ImpactKids.Shared.Contracts.Services;
 using GSBC.ImpactKids.Web.Components;
 using GSBC.ImpactKids.Web.Extensions;
+using Microsoft.AspNetCore.HttpOverrides;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+});
 
 // Add service defaults & Aspire client integrations.
 builder.AddServiceDefaults();
@@ -35,6 +42,8 @@ if (!app.Environment.IsDevelopment())
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+
+app.UseForwardedHeaders();
 
 app.UseHttpsRedirection();
 
