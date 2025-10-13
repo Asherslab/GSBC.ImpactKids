@@ -26,7 +26,7 @@ spec:
           ports:
             - name: "http"
               protocol: "TCP"
-              containerPort: "{{ .Values.parameters.grpc.port_http }}"
+              containerPort: {{ .Values.parameters.grpc.port_http }}
           imagePullPolicy: "IfNotPresent"
   selector:
     matchLabels:
