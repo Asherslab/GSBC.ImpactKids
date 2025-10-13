@@ -6,7 +6,7 @@ parameters:
     port_http: 8080
     grpc_image: "asherslab/gsbc-kids-grpc"
   webfrontend:
-    port_http: 8080
+    port_http: 80
     webfrontend_image: "asherslab/gsbc-kids-web"
 config:
   rabbitmq:
@@ -26,9 +26,9 @@ config:
     OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
     ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
   webfrontend:
-    ASPNETCORE_URLS: "http://+:$8080"
+    ASPNETCORE_URLS: "http://+:$80"
     OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "true"
     OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
     OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
     ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
-    services__grpc__http__0: "http://grpc-service:8080"
+    services__grpc__http__0: "http://grpc-service:80"
