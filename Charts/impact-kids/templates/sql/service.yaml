@@ -16,5 +16,5 @@ spec:
   ports:
     - name: "tcp"
       protocol: "TCP"
-      port: 1433
-      targetPort: 1433
+      port: 5432
+      targetPort: 5432
