@@ -11,22 +11,39 @@
 @if (_terms != null)
 {
     <MudPaper Elevation="6" Class="mt-4">
-        <MudToolBar Style="position: relative; justify-content: center; align-items: center;">
-            <div class="side-left pt-2">
-                <MudDatePicker OpenTo="OpenTo.Year" Date="_date" DateChanged="OnDateChanged" FixMonth="1" FixDay="1"
-                               DateFormat="yyyy"/>
-            </div>
+        <MudHidden Breakpoint="Breakpoint.Xs">
+            <MudToolBar Style="position: relative; justify-content: center; align-items: center;">
+                <div class="side-left pt-2">
+                    <MudDatePicker OpenTo="OpenTo.Year" Date="_date" DateChanged="OnDateChanged" FixMonth="1" FixDay="1"
+                                   DateFormat="yyyy"/>
+                </div>
+                <div class="center">
+                    <MudText Typo="Typo.h5">Impact Kids Terms</MudText>
+                </div>
+                <div class="side-right">
+                    <MudIconButton OnClick="@CreateSchoolTerm" Icon="@Icons.Material.Filled.Create"/>
+                </div>
+            </MudToolBar>
+        </MudHidden>
+        <MudHidden Breakpoint="Breakpoint.Xs" Invert>
+            <MudToolBar Style="position: relative; justify-content: center; align-items: center;">
+                <div class="side-left pt-2">
+                    <MudDatePicker OpenTo="OpenTo.Year" Date="_date" DateChanged="OnDateChanged" FixMonth="1" FixDay="1"
+                                   DateFormat="yyyy"/>
+                </div>
+                <div class="side-right">
+                    <MudIconButton OnClick="@CreateSchoolTerm" Icon="@Icons.Material.Filled.Create"/>
+                </div>
+            </MudToolBar>
+            
             <div class="center">
-                <MudText Typo="Typo.h5">Impact Kids Terms</MudText>
+                <MudText Align="Align.Center" Typo="Typo.h5">Impact Kids Terms</MudText>
             </div>
-            <div class="side-right">
-                <MudIconButton OnClick="@CreateSchoolTerm" Icon="@Icons.Material.Filled.Create"/>
-            </div>
-        </MudToolBar>
+        </MudHidden>
         <MudGrid Spacing="6" Justify="Justify.Center" Class="pt-3 pb-6 px-3">
             @foreach (SchoolTerm schoolTerm in _terms)
             {
-                <MudItem xs="3">
+                <MudItem xs="12" md="3">
                     <MudCard Elevation="6">
                         <MudCardHeader>
                             <CardHeaderContent>
@@ -88,9 +105,9 @@
                                 }
                             </MudList>
                         </MudCardContent>
-                        <MudCardActions>
+                        @*<MudCardActions>
                             <MudButton Variant="Variant.Text" Color="Color.Primary">Learn more</MudButton>
-                        </MudCardActions>
+                        </MudCardActions>*@
                     </MudCard>
                 </MudItem>
             }

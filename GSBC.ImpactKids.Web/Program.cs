@@ -1,3 +1,4 @@
+using BitzArt.Blazor.Cookies;
 using GSBC.ImpactKids.ServiceDefaults;
 using GSBC.ImpactKids.Shared.Contracts.Services;
 using GSBC.ImpactKids.Web.Components;
@@ -19,6 +20,7 @@ builder.AddRabbitMQClient("rabbitmq");
 builder.AddRedisOutputCache("cache");
 
 builder.Services.AddMudServices();
+builder.AddBlazorCookies();
 
 builder.AddAuthenticationServices();
 

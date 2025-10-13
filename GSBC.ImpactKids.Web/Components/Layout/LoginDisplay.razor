@@ -1,0 +1,26 @@
+﻿@inject NavigationManager NavigationManager
+
+<AuthorizeView>
+    <Authorized>
+        <MudText>Hello, @context.User.Identity?.Name!</MudText>
+        <MudButton Href="@GetLogoutUrl()">
+            <MudText Color="Color.Primary">Log out</MudText>
+        </MudButton>
+    </Authorized>
+    <NotAuthorized>
+        <MudLink href="@GetLoginUrl()">Log in</MudLink>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code
+{
+    private string? _currentUrl;
+
+    private string GetLoginUrl()  => $"authentication/Login?ReturnUrl={_currentUrl}";
+    private string GetLogoutUrl() => $"authentication/Logout?ReturnUrl={_currentUrl}";
+
+    protected override void OnInitialized()
+    {
+        _currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+    }
+}
