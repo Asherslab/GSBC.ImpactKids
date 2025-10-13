@@ -18,7 +18,3 @@ spec:
       protocol: "TCP"
       port: "{{ .Values.parameters.grpc.port_http }}"
       targetPort: "{{ .Values.parameters.grpc.port_http }}"
-    - name: "https"
-      protocol: "TCP"
-      port: "{{ .Values.parameters.grpc.port_https }}"
-      targetPort: "{{ .Values.parameters.grpc.port_https }}"

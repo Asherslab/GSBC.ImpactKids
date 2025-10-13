@@ -11,7 +11,7 @@ public static class GrpcServiceExtensions
     ) where T : class
     {
         return services.AddAuthenticatedGrpcClient<T>(
-            new Uri("https://grpc")
+            new Uri("http://grpc")
         );
     }
 
@@ -24,8 +24,8 @@ public static class GrpcServiceExtensions
         services
             .AddCodeFirstGrpcClient<T>(typeof(T).FullName!, x => { x.Address = serviceUri; })
             .ConfigureChannel(x => { x.UnsafeUseInsecureChannelCallCredentials = true; })
-            .AddCallCredentials()
-            .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(new HttpClientHandler()));
+            .AddCallCredentials();
+            // .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(new HttpClientHandler()));
 
         return services;
     }
