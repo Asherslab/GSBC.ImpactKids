@@ -20,8 +20,8 @@ spec:
     spec:
       restartPolicy: Never
       containers:
-        - image: "{{ .Values.parameters.migrations.migrations_image }}:{{ .Values.parameters.image_tag }}"
-          name: "migrations"
+        - image: "{{ .Values.parameters.migrations.migrations_image }}:{{ .Values.image_tag }}"
+          name: "migrations" 
           envFrom:
             - configMapRef:
                 name: "migrations-config"
