@@ -1,3 +1,4 @@
+image_tag: 0.0.1
 parameters:
   migrations:
     migrations_image: "asherslab/gsbc-kids-migrations"
