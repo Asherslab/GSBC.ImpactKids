@@ -23,7 +23,7 @@ public class Worker(
             var dbContext = scope.ServiceProvider.GetRequiredService<GsbcDbContext>();
 
             await RunMigrationAsync(dbContext, cancellationToken);
-            await SeedDataAsync(dbContext, cancellationToken);
+            // await SeedDataAsync(dbContext, cancellationToken);
         }
         catch (Exception ex)
         {
