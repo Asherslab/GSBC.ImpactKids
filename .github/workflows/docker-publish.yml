@@ -112,3 +112,13 @@ jobs:
     uses: ./.github/workflows/chart-publish.yml
     with:
       version: ${{needs.version.outputs.version}}
+  
+  argo-update:
+    needs:
+      - version
+      - build-web
+      - build-migrations
+      - build-grpc
+    uses: ./.github/workflows/argo-repo-update.yml
+    with:
+      version: ${{needs.version.outputs.version}}
