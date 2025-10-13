@@ -18,7 +18,3 @@ spec:
       protocol: "TCP"
       port: "{{ .Values.parameters.webfrontend.port_http }}"
       targetPort: "{{ .Values.parameters.webfrontend.port_http }}"
-    - name: "https"
-      protocol: "TCP"
-      port: "{{ .Values.parameters.webfrontend.port_https }}"
-      targetPort: "{{ .Values.parameters.webfrontend.port_https }}"
