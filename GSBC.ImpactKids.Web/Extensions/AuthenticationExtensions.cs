@@ -16,6 +16,7 @@ public static class AuthenticationExtensions
                 oidcOptions.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
                 oidcOptions.Authority = "https://accounts.google.com";
                 oidcOptions.ClientId = googleConfig?.ClientId;
+                oidcOptions.ClientSecret = googleConfig?.ClientSecret;
                 oidcOptions.ResponseType = OpenIdConnectResponseType.Code;
                 oidcOptions.MapInboundClaims = false;
                 oidcOptions.TokenValidationParameters.NameClaimType = "name";
@@ -35,4 +36,5 @@ public static class AuthenticationExtensions
 public class GoogleConfig
 {
     public required string ClientId { get; set; }
+    public required string ClientSecret { get; set; }
 }
