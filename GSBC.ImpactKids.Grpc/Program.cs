@@ -1,3 +1,4 @@
+using GSBC.ImpactKids.Grpc;
 using GSBC.ImpactKids.Grpc.Data;
 using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Grpc.Services;
@@ -16,11 +17,12 @@ builder.AddRabbitMQClient("rabbitmq");
 
 builder.Services.AddTransient(typeof(IEventService<>), typeof(EventService<>));
 
+AuthConfig? config = builder.Configuration.GetSection("Google").Get<AuthConfig>();
 builder.Services.AddAuthentication()
     .AddJwtBearer("Bearer", jwtOptions =>
     {
         jwtOptions.Authority = "https://accounts.google.com";
-        jwtOptions.Audience = "717265682953-6k4ad6oaj424lntrvsjq35ijlm846s37.apps.googleusercontent.com";
+        jwtOptions.Audience = config?.ClientId;
     });
 
 builder.Services.AddAuthorization();
