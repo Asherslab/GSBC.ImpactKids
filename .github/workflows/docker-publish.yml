@@ -114,6 +114,7 @@ jobs:
       version: ${{needs.version.outputs.version}}
   
   argo-update:
+    secrets: inherit
     needs:
       - version
       - build-web
