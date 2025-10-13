@@ -28,11 +28,6 @@ spec:
             - secretRef:
                 name: "migrations-secrets"
           imagePullPolicy: "IfNotPresent"
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: "impact-kids-app"
-      app.kubernetes.io/component: "migrations"
-      app.kubernetes.io/instance: "{{.Release.Name}}"
   replicas: 1
   revisionHistoryLimit: 3
   strategy:
