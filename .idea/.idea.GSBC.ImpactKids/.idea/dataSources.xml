@@ -55,5 +55,12 @@
       <jdbc-url>Server=127.0.0.1,59440;User ID=sa;Password=6R0FCuRT-ca.*uk{Pb7KM3;TrustServerCertificate=true</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
+    <data-source source="LOCAL" name="sql" uuid="43993546-0981-4bed-93c9-6f866ced2647">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://localhost:51722/?password=6R0FCuRT-ca.*uk%7BPb7KM3&amp;user=postgres</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
   </component>
 </project>

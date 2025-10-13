@@ -10,7 +10,7 @@ builder.Services.AddHostedService<Worker>();
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing.AddSource(Worker.ActivitySourceName));
 
-builder.AddSqlServerDbContext<GsbcDbContext>("impact-kids");
+builder.AddNpgsqlDbContext<GsbcDbContext>("impact-kids");
 
 var host = builder.Build();
 host.Run();

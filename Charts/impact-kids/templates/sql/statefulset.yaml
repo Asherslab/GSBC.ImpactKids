@@ -16,7 +16,7 @@ spec:
         app.kubernetes.io/instance: "{{.Release.Name}}"
     spec:
       containers:
-        - image: "mcr.microsoft.com/mssql/server:2025-latest"
+        - image: "docker.io/library/postgres:17.6"
           name: "sql"
           envFrom:
             - configMapRef:
@@ -26,10 +26,10 @@ spec:
           ports:
             - name: "tcp"
               protocol: "TCP"
-              containerPort: 1433
+              containerPort: 5432
           volumeMounts:
             - name: "sql-data"
-              mountPath: "/var/opt/mssql"
+              mountPath: "/var/lib/postgresql/data"
           imagePullPolicy: "IfNotPresent"
       volumes:
         - name: "sql-data"

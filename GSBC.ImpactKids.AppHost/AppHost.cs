@@ -15,11 +15,12 @@ IResourceBuilder<RabbitMQServerResource> rabbitmq = builder.AddRabbitMQ("rabbitm
     .WithManagementPlugin()
     .WithLifetime(ContainerLifetime.Persistent);
 
-IResourceBuilder<SqlServerServerResource> sql = builder.AddSqlServer("sql")
+IResourceBuilder<PostgresServerResource> sql = builder.AddPostgres("sql")
+    .WithPgAdmin()
     .WithDataVolume()
     .WithLifetime(ContainerLifetime.Persistent);
 
-IResourceBuilder<SqlServerDatabaseResource> db = sql.AddDatabase("impact-kids");
+IResourceBuilder<PostgresDatabaseResource> db = sql.AddDatabase("impact-kids");
 
 IResourceBuilder<ProjectResource> migrations =
     builder.AddProject<Projects.GSBC_ImpactKids_Workers_DbMigrations>("migrations")
