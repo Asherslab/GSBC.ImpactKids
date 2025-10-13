@@ -27,9 +27,6 @@ spec:
             - name: "http"
               protocol: "TCP"
               containerPort: "{{ .Values.parameters.webfrontend.port_http }}"
-            - name: "https"
-              protocol: "TCP"
-              containerPort: "{{ .Values.parameters.webfrontend.port_https }}"
           imagePullPolicy: "IfNotPresent"
   selector:
     matchLabels:

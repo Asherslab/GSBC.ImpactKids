@@ -3,11 +3,10 @@ parameters:
   migrations:
     migrations_image: "asherslab/gsbc-kids-migrations"
   grpc:
-    port_http: "8080"
+    port_http: 8080
     grpc_image: "asherslab/gsbc-kids-grpc"
   webfrontend:
-    port_http: "8080"
-    port_https: "8080"
+    port_http: 8080
     webfrontend_image: "asherslab/gsbc-kids-web"
 config:
   rabbitmq:
