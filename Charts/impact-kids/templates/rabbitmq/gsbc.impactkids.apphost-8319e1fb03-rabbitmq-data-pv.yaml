@@ -8,12 +8,7 @@ metadata:
     app.kubernetes.io/component: "rabbitmq"
     app.kubernetes.io/instance: "{{.Release.Name}}"
 spec:
-  claimRef: {}
-  hostPath: {}
-  local: {}
   accessModes:
     - "ReadWriteOnce"
   capacity:
     storage: "1Gi"
-  nodeAffinity:
-    required: {}
