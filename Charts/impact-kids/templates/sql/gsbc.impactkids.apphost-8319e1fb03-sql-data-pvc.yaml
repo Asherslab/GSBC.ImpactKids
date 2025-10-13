@@ -8,9 +8,6 @@ metadata:
     app.kubernetes.io/component: "sql"
     app.kubernetes.io/instance: "{{.Release.Name}}"
 spec:
-  dataSource: {}
-  dataSourceRef: {}
-  selector: {}
   accessModes:
     - "ReadWriteOnce"
   resources:
