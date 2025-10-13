@@ -49,6 +49,8 @@ jobs:
         with:
           file: GSBC.ImpactKids.Workers.DbMigrations/Dockerfile
           platforms: linux/amd64,linux/arm64
+          cache-from: type=registry,ref=asherslab/gsbc-kids-migrations:latest
+          cache-to: type=inline
           push: true
           tags: asherslab/gsbc-kids-migrations:latest,asherslab/gsbc-kids-migrations:${{needs.version.outputs.version}}
 
@@ -74,6 +76,8 @@ jobs:
         with:
           file: GSBC.ImpactKids.Grpc/Dockerfile
           platforms: linux/amd64,linux/arm64
+          cache-from: type=registry,ref=asherslab/gsbc-kids-grpc:latest
+          cache-to: type=inline
           push: true
           tags: asherslab/gsbc-kids-grpc:latest,asherslab/gsbc-kids-grpc:${{needs.version.outputs.version}}
 
@@ -99,6 +103,8 @@ jobs:
         with:
           file: GSBC.ImpactKids.Web/Dockerfile
           platforms: linux/amd64,linux/arm64
+          cache-from: type=registry,ref=asherslab/gsbc-kids-web:latest
+          cache-to: type=inline
           push: true
           tags: asherslab/gsbc-kids-web:latest,asherslab/gsbc-kids-web:${{needs.version.outputs.version}}
   
