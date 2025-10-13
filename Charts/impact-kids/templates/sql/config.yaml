@@ -8,4 +8,6 @@ metadata:
     app.kubernetes.io/component: "sql"
     app.kubernetes.io/instance: "{{.Release.Name}}"
 data:
-  ACCEPT_EULA: "{{ .Values.config.sql.ACCEPT_EULA }}"
+  POSTGRES_HOST_AUTH_METHOD: "{{ .Values.config.sql.POSTGRES_HOST_AUTH_METHOD }}"
+  POSTGRES_INITDB_ARGS: "{{ .Values.config.sql.POSTGRES_INITDB_ARGS }}"
+  POSTGRES_USER: "{{ .Values.config.sql.POSTGRES_USER }}"

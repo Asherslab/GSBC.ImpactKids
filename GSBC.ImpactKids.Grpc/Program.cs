@@ -28,7 +28,7 @@ builder.Services.AddCodeFirstGrpc();
 builder.Services.AddGrpc();
 builder.Services.AddConverters();
 
-builder.AddSqlServerDbContext<GsbcDbContext>("impact-kids");
+builder.AddNpgsqlDbContext<GsbcDbContext>("impact-kids");
 
 ElvantoConfig? elvantoConfig = builder.Configuration.GetSection("Elvanto").Get<ElvantoConfig>();
 if (elvantoConfig != null)

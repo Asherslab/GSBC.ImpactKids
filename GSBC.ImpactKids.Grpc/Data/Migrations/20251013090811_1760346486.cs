@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace GSBC.ImpactKids.Grpc.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class _1759971576 : Migration
+    public partial class _1760346486 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -15,10 +15,10 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                 name: "Terms",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    StartDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    EndDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    StartDate = table.Column<DateTime>(type: "date", nullable: false),
+                    EndDate = table.Column<DateTime>(type: "date", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -29,10 +29,10 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                 name: "Services",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Date = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    SchoolTermId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: true),
+                    Date = table.Column<DateTime>(type: "date", nullable: false),
+                    SchoolTermId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {

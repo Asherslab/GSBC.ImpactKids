@@ -8,7 +8,7 @@ public class GsbcDbContextFactory : IDesignTimeDbContextFactory<GsbcDbContext>
     public GsbcDbContext CreateDbContext(string[] args)
     {
         DbContextOptionsBuilder<GsbcDbContext> optionsBuilder = new();
-        optionsBuilder.UseSqlServer("Host=localhost;Database=impact-kids;Username=postgres;Password=Password123");
+        optionsBuilder.UseNpgsql("Host=localhost;Database=impact-kids;Username=postgres;Password=Password123");
 
         return new GsbcDbContext(optionsBuilder.Options)
         {
