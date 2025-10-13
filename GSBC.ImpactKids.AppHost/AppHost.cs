@@ -27,7 +27,6 @@ IResourceBuilder<ProjectResource> migrations =
         .WaitFor(db);
 
 IResourceBuilder<ProjectResource> grpcService = builder.AddProject<Projects.GSBC_ImpactKids_Grpc>("grpc")
-    .WithHttpHealthCheck("/health")
     .WithReference(rabbitmq)
     .WaitFor(rabbitmq)
     .WithReference(db)

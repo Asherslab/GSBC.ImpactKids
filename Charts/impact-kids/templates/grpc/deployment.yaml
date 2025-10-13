@@ -27,9 +27,6 @@ spec:
             - name: "http"
               protocol: "TCP"
               containerPort: "{{ .Values.parameters.grpc.port_http }}"
-            - name: "https"
-              protocol: "TCP"
-              containerPort: "{{ .Values.parameters.grpc.port_https }}"
           imagePullPolicy: "IfNotPresent"
   selector:
     matchLabels:
