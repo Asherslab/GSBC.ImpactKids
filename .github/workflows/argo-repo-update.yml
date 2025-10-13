@@ -20,7 +20,7 @@ jobs:
           token: ${{ secrets.ARGO_REPO_TOKEN }}
 
       - name: Update Helm Chart Version
-        working-directory: app-definitions
+        working-directory: argo/app-definitions
         run: |
           # The current version is stored in inputs.version, we need to rewrite the charts.yaml file with the new version
           # However we can only replace the version: property if it is at the start of a line
