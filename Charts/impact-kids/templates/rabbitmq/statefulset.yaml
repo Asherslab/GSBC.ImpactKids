@@ -46,6 +46,4 @@ spec:
   replicas: 1
   persistentVolumeClaimRetentionPolicy: {}
   updateStrategy:
-    rollingUpdate:
-      maxUnavailable: 0
     type: "RollingUpdate"
