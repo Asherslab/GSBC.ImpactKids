@@ -1,4 +1,7 @@
-﻿@inherits LayoutComponentBase
+﻿@using System.Text.Json
+@using BitzArt.Blazor.Cookies
+@inherits LayoutComponentBase
+@inject ICookieService CookieService
 
 <MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode" />
 <MudPopoverProvider />
@@ -9,8 +12,8 @@
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
         <MudText Typo="Typo.h5" Class="ml-3">Impact Kids</MudText>
         <MudSpacer />
+        <LoginDisplay/>
         <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
-        <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End" />
     </MudAppBar>
     <MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
         <NavMenu />
@@ -32,26 +35,32 @@
     private bool _isDarkMode = true;
     private MudTheme? _theme = null;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        base.OnInitialized();
+        await base.OnInitializedAsync();
 
-        _theme = new()
+        _theme = new MudTheme
         {
             PaletteLight = _lightPalette,
             PaletteDark = _darkPalette,
             LayoutProperties = new LayoutProperties()
         };
+
+        _isDarkMode = await CookieService.GetValueAsync("dark-mode", () => true);
+        _drawerOpen = await CookieService.GetValueAsync("drawer-toggle", () => true);
+        StateHasChanged();
     }
 
-    private void DrawerToggle()
+    private async Task DrawerToggle()
     {
         _drawerOpen = !_drawerOpen;
+        await CookieService.SetAsync("drawer-toggle", _drawerOpen.ToString());
     }
 
-    private void DarkModeToggle()
-    {
+    private async Task DarkModeToggle()
+    { 
         _isDarkMode = !_isDarkMode;
+        await CookieService.SetAsync("dark-mode", JsonSerializer.Serialize(_isDarkMode));
     }
 
     private readonly PaletteLight _lightPalette = new()
