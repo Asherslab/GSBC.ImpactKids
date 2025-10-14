@@ -14,7 +14,7 @@ public interface ISchoolTermsService
     );
 
     Task<BasicReadResponse<SchoolTerm>?> Read(
-        BasicReadRequest request,
+        SchoolTermRequest request,
         CallContext      context = default
     );
 

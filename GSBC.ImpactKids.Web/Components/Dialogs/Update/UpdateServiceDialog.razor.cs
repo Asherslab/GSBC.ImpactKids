@@ -1,6 +1,5 @@
 using Grpc.Core;
 using GSBC.ImpactKids.Shared.Contracts.Entities;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.SchoolTerms;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Services;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
@@ -25,7 +24,7 @@ public partial class UpdateServiceDialog
 
         if (SchoolTerm == null)
         {
-            BasicReadResponse<SchoolTerm>? resp = await SchoolTermsService.Read(new BasicReadRequest
+            BasicReadResponse<SchoolTerm>? resp = await SchoolTermsService.Read(new SchoolTermRequest
             {
                 Guid = Service.SchoolTermId
             });
