@@ -1,25 +1,25 @@
 using Grpc.Core;
 using GSBC.ImpactKids.Shared.Contracts.Entities;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.MemoryVerseLists;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.SchoolTerms;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Services;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using GSBC.ImpactKids.Web.Extensions;
 using Microsoft.AspNetCore.Components;
 
 namespace GSBC.ImpactKids.Web.Components.Dialogs.Create;
 
-public partial class CreateServiceDialog
+public partial class CreateMemoryVerseListDialog
 {
     [Parameter]
     public SchoolTerm? SchoolTerm { get; set; }
 
-    private readonly CreateServiceRequest _request = new();
-    private          BasicResponse?       _response;
+    private readonly CreateMemoryVerseListRequest _request = new();
+    private          BasicResponse?               _response;
 
     private async Task Submit()
     {
         _request.SchoolTermId = SchoolTerm?.Id ?? Guid.Empty; // backend will validate
-        _response = await ServicesService.Create(_request);
+        _response = await MemoryVerseListsService.Create(_request);
     }
 
     private async Task<IEnumerable<SchoolTerm>> SearchFunc(

@@ -83,6 +83,8 @@ public class Worker(
             {
                 DbBibleVerse verse = new()
                 {
+                    Id = Guid.Empty,
+                    
                     VerseNumber = csvVerse.Versecount,
                     Verse = csvVerse.Verse,
 

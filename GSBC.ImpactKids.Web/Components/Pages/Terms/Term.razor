@@ -1,7 +1,11 @@
+@using GSBC.ImpactKids.Shared.Contracts.Entities.MemoryVerses
 @inherits EventListeningComponent
 @page "/Term/{Id:guid?}"
-@inject ISchoolTermsService SchoolTermsService
-@inject ISnackbar           Snackbar
+@attribute [Authorize]
+@inject ISchoolTermsService      SchoolTermsService
+@inject IMemoryVerseListsService MemoryVerseListsService
+@inject ISnackbar                Snackbar
+@inject IDialogService           DialogService
 
 @if (_term != null)
 {
@@ -17,7 +21,42 @@
             </MudItem>
             <MudItem xs="12" md="6">
                 <MudPaper Elevation="6">
-                    Memory Verse Lists
+                    <MudList T="string">
+                        <MudListItem>
+                            <MudButton FullWidth
+                                       OnClick="@(_ => CreateMemoryVerseList())"
+                                       StartIcon="@Icons.Material.Filled.PostAdd">
+                                Create Memory Verse List
+                            </MudButton>
+                        </MudListItem>
+                        @if (_lists != null)
+                        {
+                            if (_lists.Count != 0)
+                            {
+                                <MudDivider/>
+                            }
+
+                            foreach (MemoryVerseList list in _lists)
+                            {
+                                <div>
+                                    <MudListItem
+                                        OnClick="@(() => _selectedMemoryVerseList = _selectedMemoryVerseList == list.Id ? null : list.Id)"
+                                        Text="@(list.Name)"/>
+                                    <MudPopover Open="@(_selectedMemoryVerseList == list.Id)"
+                                                OverflowBehavior="OverflowBehavior.FlipAlways"
+                                                AnchorOrigin="Origin.BottomCenter"
+                                                TransformOrigin="Origin.TopCenter" Paper="false">
+                                        <MudPaper Outlined="true" Class="px-4 py-4">
+                                            <MudIconButton OnClick="@(_ => DeleteMemoryVerseList(list))"
+                                                           Icon="@Icons.Material.Filled.Delete"/>
+                                            <MudIconButton OnClick="@(_ => UpdateMemoryVerseList(list))"
+                                                           Icon="@Icons.Material.Filled.Edit"/>
+                                        </MudPaper>
+                                    </MudPopover>
+                                </div>
+                            }
+                        }
+                    </MudList>
                 </MudPaper>
             </MudItem>
         </MudGrid>

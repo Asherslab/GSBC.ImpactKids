@@ -9,4 +9,7 @@ public class Service
     public required DateTime Date { get; set; }
 
     public required Guid SchoolTermId { get; set; }
+    
+    public static string BuildSubscription(Guid? schoolTermId = null, Guid? serviceId = null) => 
+        $"{nameof(Service)}.{schoolTermId?.ToString() ?? "*"}.{serviceId?.ToString() ?? "*"}";
 }
