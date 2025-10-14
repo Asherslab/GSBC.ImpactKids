@@ -27,5 +27,12 @@
       <jdbc-url>jdbc:redis://PgXtXbEZp3a83agg6gEUzk@localhost:59439</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
+    <data-source source="LOCAL" name="sql" uuid="dd5558cb-79c3-4649-b2ba-fd7870e8c1fe">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://localhost:51722/?password=6R0FCuRT-ca.*uk%7BPb7KM3&amp;user=postgres</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
   </component>
 </project>

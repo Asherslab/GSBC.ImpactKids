@@ -1,6 +1,8 @@
 using GSBC.ImpactKids.Grpc.Data.Models;
+using GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses;
 using GSBC.ImpactKids.Shared.Contracts.Entities;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Bible;
+using GSBC.ImpactKids.Shared.Contracts.Entities.MemoryVerses;
 using Riok.Mapperly.Abstractions;
 
 namespace GSBC.ImpactKids.Grpc.Conversion;
@@ -43,4 +45,16 @@ public partial class DateTimeMapper : IConverter<DateTimeOffset, DateTime>
 public partial class BibleVerseConverter : IConverter<DbBibleVerse, BibleVerse>
 {
     public partial BibleVerse Convert(DbBibleVerse input);
+}
+
+[Mapper]
+public partial class MemoryVerseListConverter : IConverter<DbMemoryVerseList, MemoryVerseList>
+{
+    public partial MemoryVerseList Convert(DbMemoryVerseList input);
+}
+
+[Mapper]
+public partial class MemoryVerseConverter : IConverter<DbMemoryVerse, MemoryVerse>
+{
+    public partial MemoryVerse Convert(DbMemoryVerse input);
 }

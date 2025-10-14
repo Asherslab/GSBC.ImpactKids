@@ -31,7 +31,7 @@ public partial class Index : EventListeningComponent
         _date = new DateTime(Year.Value, 1, 1);
 
         await RefreshTerms();
-        await SubscribeToEvent($"{nameof(SchoolTerm)}.#", RefreshTerms);
+        await SubscribeToEvent(SchoolTerm.BuildSubscription(), RefreshTerms);
     }
 
     private async Task RefreshTerms()

@@ -14,8 +14,11 @@ public class GsbcDbContextFactory : IDesignTimeDbContextFactory<GsbcDbContext>
         {
             Terms = null!,
             Services = null!,
-            
+
             BibleVerses = null!,
+            
+            MemoryVerseLists = null!,
+            MemoryVerses = null!,
         };
     }
 }

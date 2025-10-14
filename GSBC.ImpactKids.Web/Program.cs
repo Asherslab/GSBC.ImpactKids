@@ -36,6 +36,8 @@ builder.Services.AddAuthenticatedGrpcClient<IElvantoService>();
 builder.Services.AddAuthenticatedGrpcClient<ISchoolTermsService>();
 builder.Services.AddAuthenticatedGrpcClient<IServicesService>();
 builder.Services.AddAuthenticatedGrpcClient<IBibleService>();
+builder.Services.AddAuthenticatedGrpcClient<IMemoryVersesService>();
+builder.Services.AddAuthenticatedGrpcClient<IMemoryVerseListsService>();
 
 var app = builder.Build();
 

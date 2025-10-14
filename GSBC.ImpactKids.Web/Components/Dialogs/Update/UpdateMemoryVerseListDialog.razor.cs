@@ -1,52 +1,50 @@
 using Grpc.Core;
 using GSBC.ImpactKids.Shared.Contracts.Entities;
+using GSBC.ImpactKids.Shared.Contracts.Entities.MemoryVerses;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.MemoryVerseLists;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.SchoolTerms;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Services;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using GSBC.ImpactKids.Web.Extensions;
 using Microsoft.AspNetCore.Components;
 
 namespace GSBC.ImpactKids.Web.Components.Dialogs.Update;
 
-public partial class UpdateServiceDialog
+public partial class UpdateMemoryVerseListDialog
 {
     [Parameter]
-    public required Service Service { get; set; }
+    public required MemoryVerseList List { get; set; }
 
     [Parameter]
     public SchoolTerm? SchoolTerm { get; set; }
 
-    private readonly UpdateServiceRequest _request = new();
+    private readonly UpdateMemoryVerseListRequest _request = new();
     private          BasicResponse?       _response;
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
 
-        if (SchoolTerm == null)
+        if (SchoolTerm == null && List.SchoolTermId != null)
         {
             BasicReadResponse<SchoolTerm>? resp = await SchoolTermsService.Read(new SchoolTermRequest
             {
-                Guid = Service.SchoolTermId
+                Guid = List.SchoolTermId.Value
             });
-
+        
             if (resp.HasErrorOrNull())
                 Snackbar.AddErrorResponse(resp);
-
+        
             SchoolTerm = resp?.Entity;
         }
 
-        _request.Guid = Service.Id;
-        _request.Name.SetInitialValue(Service.Name);
-        _request.Date.SetInitialValue(Service.Date);
-        _request.SchoolTermId.SetInitialValue(Service.SchoolTermId);
+        _request.Guid = List.Id;
+        _request.Name.SetInitialValue(List.Name);
+        _request.SchoolTermId.SetInitialValue(List.SchoolTermId);
     }
 
     private async Task Submit()
     {
-        if (_request.SchoolTermId.Value != SchoolTerm?.Id)
-            _request.SchoolTermId.Value = SchoolTerm?.Id ?? Guid.Empty; // backend will validate
-        _response = await ServicesService.Update(_request);
+        _response = await MemoryVerseListsService.Update(_request);
     }
 
     private async Task<IEnumerable<SchoolTerm>> SearchFunc(

@@ -24,7 +24,7 @@ public partial class ServicesList : EventListeningComponent
         await base.OnInitializedAsync();
 
         await RefreshServices();
-        await SubscribeToEvent($"{nameof(Service)}.{SchoolTerm.Id}.#", RefreshServices);
+        await SubscribeToEvent(Service.BuildSubscription(SchoolTerm.Id), RefreshServices);
     }
 
     private async Task RefreshServices()
@@ -65,7 +65,8 @@ public partial class ServicesList : EventListeningComponent
     {
         DialogParameters<UpdateServiceDialog> parameters = new()
         {
-            { x => x.Service, service }
+            { x => x.Service, service },
+            { x => x.SchoolTerm, SchoolTerm }
         };
 
         await DialogService.ShowAsync<UpdateServiceDialog>("Update Service", parameters);
