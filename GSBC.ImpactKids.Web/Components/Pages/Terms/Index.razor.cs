@@ -2,7 +2,6 @@ using GSBC.ImpactKids.Shared.Contracts.Entities;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.SchoolTerms;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
-using GSBC.ImpactKids.Shared.Contracts.Services;
 using GSBC.ImpactKids.Web.Components.Base;
 using GSBC.ImpactKids.Web.Components.Dialogs.Create;
 using GSBC.ImpactKids.Web.Components.Dialogs.Update;
@@ -54,11 +53,6 @@ public partial class Index : EventListeningComponent
 
         _terms = response.Entities;
         StateHasChanged();
-    }
-
-    private async Task CreateSchoolTerm()
-    {
-        await DialogService.ShowAsync<CreateSchoolTermDialog>("Create School Term");
     }
     
     private async Task CreateService(SchoolTerm term)

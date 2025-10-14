@@ -1,5 +1,6 @@
 using GSBC.ImpactKids.Grpc.Data.Models;
 using GSBC.ImpactKids.Shared.Contracts.Entities;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Bible;
 using Riok.Mapperly.Abstractions;
 
 namespace GSBC.ImpactKids.Grpc.Conversion;
@@ -36,4 +37,10 @@ public partial class ServiceConverter(
 public partial class DateTimeMapper : IConverter<DateTimeOffset, DateTime>
 {
     public DateTime Convert(DateTimeOffset offset) => offset.DateTime;
+}
+
+[Mapper]
+public partial class BibleVerseConverter : IConverter<DbBibleVerse, BibleVerse>
+{
+    public partial BibleVerse Convert(DbBibleVerse input);
 }
