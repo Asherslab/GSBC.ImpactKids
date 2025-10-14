@@ -1,0 +1,31 @@
+@inject IDialogService DialogService
+
+<MudHidden Breakpoint="Breakpoint.Xs">
+    <MudToolBar Style="position: relative; justify-content: center; align-items: center;">
+        <div class="side-left pt-2">
+            <MudDatePicker OpenTo="OpenTo.Year" Date="Date" DateChanged="OnDateChanged" FixMonth="1" FixDay="1"
+                           DateFormat="yyyy"/>
+        </div>
+        <div class="center">
+            <MudText Typo="Typo.h5">Impact Kids Terms</MudText>
+        </div>
+        <div class="side-right">
+            <MudIconButton OnClick="@CreateSchoolTerm" Icon="@Icons.Material.Filled.Create"/>
+        </div>
+    </MudToolBar>
+</MudHidden>
+<MudHidden Breakpoint="Breakpoint.Xs" Invert>
+    <MudToolBar Style="position: relative; justify-content: center; align-items: center;">
+        <div class="side-left pt-2">
+            <MudDatePicker OpenTo="OpenTo.Year" Date="Date" DateChanged="OnDateChanged" FixMonth="1" FixDay="1"
+                           DateFormat="yyyy"/>
+        </div>
+        <div class="side-right">
+            <MudIconButton OnClick="@CreateSchoolTerm" Icon="@Icons.Material.Filled.Create"/>
+        </div>
+    </MudToolBar>
+            
+    <div class="center">
+        <MudText Align="Align.Center" Typo="Typo.h5">Impact Kids Terms</MudText>
+    </div>
+</MudHidden>

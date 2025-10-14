@@ -2,6 +2,7 @@ using GSBC.ImpactKids.Grpc;
 using GSBC.ImpactKids.Grpc.Data;
 using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Grpc.Services;
+using GSBC.ImpactKids.Grpc.Services.BibleServices;
 using GSBC.ImpactKids.Grpc.Services.ElvantoServices;
 using GSBC.ImpactKids.Grpc.Services.ElvantoServices.Models;
 using GSBC.ImpactKids.Grpc.Services.SchoolTermServices;
@@ -49,6 +50,7 @@ app.UseAuthorization();
 app.MapGrpcService<ElvantoService>();
 app.MapGrpcService<SchoolTermService>();
 app.MapGrpcService<ServicesService>();
+app.MapGrpcService<BibleService>();
 app.MapGet("/",
     () =>
         "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");

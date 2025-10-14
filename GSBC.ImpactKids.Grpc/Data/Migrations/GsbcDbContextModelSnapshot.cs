@@ -22,6 +22,30 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.DbBibleVerse", b =>
+                {
+                    b.Property<int>("BookNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ChapterNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("VerseNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("BookName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Verse")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("BookNumber", "ChapterNumber", "VerseNumber");
+
+                    b.ToTable("BibleVerses");
+                });
+
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.DbSchoolTerm", b =>
                 {
                     b.Property<Guid>("Id")
