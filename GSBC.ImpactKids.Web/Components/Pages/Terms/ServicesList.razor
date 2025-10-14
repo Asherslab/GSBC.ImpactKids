@@ -1,0 +1,52 @@
+@inherits EventListeningComponent
+@inject IDialogService   DialogService
+@inject ISnackbar        Snackbar
+@inject IServicesService ServicesService
+
+<MudList T="string">
+    <MudListItem>
+        <MudButton FullWidth
+                   OnClick="@CreateService"
+                   StartIcon="@Icons.Material.Filled.Create">
+            Create Service
+        </MudButton>
+    </MudListItem>
+    @if (_services != null)
+    {
+        if (_services.Count != 0)
+        {
+            <MudDivider/>
+        }
+
+        foreach (Service service in _services)
+        {
+            <div>
+                @if (service.Name == null)
+                {
+                    <MudListItem
+                        OnClick="@(() => _selectedService = _selectedService == service.Id ? null : service.Id)"
+                        Text="@(service.Date.ToString("dddd dd/MM"))"/>
+                }
+                else
+                {
+                    <MudListItem
+                        OnClick="@(() => _selectedService = _selectedService == service.Id ? null : service.Id)"
+                        Icon="@Icons.Material.Filled.Celebration"
+                        Text="@service.Name"
+                        SecondaryText="@(service.Date.ToString("dddd dd/MM"))"/>
+                }
+                <MudPopover Open="@(_selectedService == service.Id)"
+                            OverflowBehavior="OverflowBehavior.FlipAlways"
+                            AnchorOrigin="Origin.BottomCenter"
+                            TransformOrigin="Origin.TopCenter" Paper="false">
+                    <MudPaper Outlined="true" Class="px-4 py-4">
+                        <MudIconButton OnClick="@(_ => DeleteService(service))"
+                                       Icon="@Icons.Material.Filled.Delete"/>
+                        <MudIconButton OnClick="@(_ => UpdateService(service))"
+                                       Icon="@Icons.Material.Filled.Edit"/>
+                    </MudPaper>
+                </MudPopover>
+            </div>
+        }
+    }
+</MudList>

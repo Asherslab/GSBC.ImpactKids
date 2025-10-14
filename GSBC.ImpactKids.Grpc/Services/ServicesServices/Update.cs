@@ -1,5 +1,4 @@
 using GSBC.ImpactKids.Grpc.Data.Models;
-using GSBC.ImpactKids.Shared.Contracts.Entities;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Services;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using Microsoft.EntityFrameworkCore;
@@ -41,7 +40,7 @@ public partial class ServicesService
 
         db.Services.Update(service);
         await db.SaveChangesAsync(token);
-        await eventService.SendUpdatedEvent(service.Id, [$"{nameof(SchoolTerm)}.{service.SchoolTermId}"], token: token);
+        await eventService.SendUpdatedEvent(service.Id, token: token, service.SchoolTermId);
 
         return new BasicResponse
         {

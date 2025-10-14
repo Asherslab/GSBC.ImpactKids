@@ -1,0 +1,25 @@
+@inherits EventListeningComponent
+@page "/Term/{Id:guid?}"
+@inject ISchoolTermsService SchoolTermsService
+@inject ISnackbar           Snackbar
+
+@if (_term != null)
+{
+    <PageTitle>@_term.Name</PageTitle>
+
+    <MudPaper Elevation="6" Class="mt-4">
+        <TermHeader SchoolTerm="_term"/>
+        <MudGrid Spacing="6" Justify="Justify.Center" Class="pt-3 pb-6 px-3">
+            <MudItem xs="12" md="6">
+                <MudPaper Elevation="6">
+                    <ServicesList SchoolTerm="_term"/>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudPaper Elevation="6">
+                    Memory Verse Lists
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+}

@@ -1,4 +1,3 @@
-using Grpc.Net.Client.Web;
 using Microsoft.AspNetCore.Authentication;
 using ProtoBuf.Grpc.ClientFactory;
 

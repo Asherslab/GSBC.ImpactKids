@@ -1,0 +1,30 @@
+@inject IDialogService      DialogService
+@inject ISchoolTermsService SchoolTermsService
+@inject NavigationManager   Navigation
+
+<MudHidden Breakpoint="Breakpoint.Xs">
+    <MudToolBar Style="position: relative; justify-content: center; align-items: center;">
+        <div class="side-left">
+            <MudIconButton OnClick="@DeleteSchoolTerm" Icon="@Icons.Material.Filled.Delete"/>
+        </div>
+        <div class="center">
+            <MudText Typo="Typo.h5">@SchoolTerm.Name</MudText>
+        </div>
+        <div class="side-right">
+            <MudIconButton OnClick="@UpdateSchoolTerm" Icon="@Icons.Material.Filled.Edit"/>
+        </div>
+    </MudToolBar>
+</MudHidden>
+<MudHidden Breakpoint="Breakpoint.Xs" Invert>
+    <MudToolBar Style="position: relative; justify-content: center; align-items: center;">
+        <div class="side-left">
+            <MudIconButton OnClick="@DeleteSchoolTerm" Icon="@Icons.Material.Filled.Delete"/>
+        </div>
+        <div class="side-right">
+            <MudIconButton OnClick="@UpdateSchoolTerm" Icon="@Icons.Material.Filled.Edit"/>
+        </div>
+    </MudToolBar>
+    <div class="center">
+        <MudText Align="Align.Center" Typo="Typo.h5">@SchoolTerm.Name</MudText>
+    </div>
+</MudHidden>
