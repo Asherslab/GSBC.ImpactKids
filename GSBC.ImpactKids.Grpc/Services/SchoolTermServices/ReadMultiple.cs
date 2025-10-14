@@ -17,8 +17,7 @@ public partial class SchoolTermService
     {
         CancellationToken token = context.CancellationToken;
 
-        IQueryable<DbSchoolTerm> query = db.Terms
-            .Include(x => x.Services);
+        IQueryable<DbSchoolTerm> query = db.Terms;
 
         if (request.SearchString != null)
         {

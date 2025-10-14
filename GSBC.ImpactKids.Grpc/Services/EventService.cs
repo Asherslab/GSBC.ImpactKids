@@ -1,27 +1,34 @@
+using System.Text;
 using RabbitMQ.Client;
 
 namespace GSBC.ImpactKids.Grpc.Services;
 
+// ReSharper disable once UnusedTypeParameter
 public interface IEventService<T>
 {
-    Task SendUpdatedEvent(Guid id, string[]? additionalTopics = null, CancellationToken token = default);
+    Task SendUpdatedEvent(Guid id, CancellationToken token = default, params Guid[] topicParentIds);
 }
 
 public class EventService<T>(
     IConnection connection
 ) : IEventService<T>
 {
-    public async Task SendUpdatedEvent(Guid id, string[]? additionalTopics = null, CancellationToken token = default)
+    public async Task SendUpdatedEvent(Guid id, CancellationToken token = default, params Guid[] topicParentIds)
     {
         await using IChannel channel = await connection.CreateChannelAsync(cancellationToken: token);
         await channel.ExchangeDeclareAsync("data-events", ExchangeType.Topic, cancellationToken: token);
-        await channel.BasicPublishAsync(exchange: "data-events", $"{typeof(T).Name}.{id}", "event"u8.ToArray(), cancellationToken: token);
-        if (additionalTopics != null)
+        
+        StringBuilder topic = new();
+        topic.Append(typeof(T).Name);
+        if (topicParentIds.Length != 0)
         {
-            foreach (string additionalTopic in additionalTopics)
+            foreach (Guid topicParentId in topicParentIds)
             {
-                await channel.BasicPublishAsync(exchange: "data-events", additionalTopic, "event"u8.ToArray(), cancellationToken: token);
+                topic.Append($".{topicParentId}");
             }
         }
+        topic.Append($".{id}");
+        
+        await channel.BasicPublishAsync(exchange: "data-events", topic.ToString(), "event"u8.ToArray(), cancellationToken: token);
     }
 }
