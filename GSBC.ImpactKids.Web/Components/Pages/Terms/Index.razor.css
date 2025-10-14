@@ -5,16 +5,6 @@
     position: relative;      /* Allows absolute positioning */
 }
 
-.side-left {
-    position: absolute;
-    left: 20px; /* or right: 0; for right alignment */
-}
-
-.side-right {
-    position: absolute;
-    right: 8px; /* or right: 0; for right alignment */
-}
-
 .side-right-card {
     position: absolute;
     right: 2px; /* or right: 0; for right alignment */
@@ -23,8 +13,4 @@
 .side-left-card {
     position: absolute;
     left: 2px; /* or right: 0; for right alignment */
-}
-
-.center {
-    margin: 0 auto; /* Ensures it's centered */
 }

@@ -1,0 +1,41 @@
+@page "/Bible"
+@using GSBC.ImpactKids.Shared.Contracts.Entities.Bible
+@attribute [Authorize]
+@inject IBibleService     BibleService
+@inject ISnackbar         Snackbar
+@inject NavigationManager Navigation
+
+<MudPaper Elevation="6" Class="mt-4">
+    <MudTextField
+        T="string"
+        Value="Search"
+        ValueChanged="@(OnSearch)"
+        Placeholder="Search"
+        Adornment="Adornment.Start"
+        AdornmentIcon="@Icons.Material.Filled.Search"
+        DebounceInterval="100"
+        IconSize="Size.Medium"
+        Clearable="true"
+        Class="py-6 px-6"/>
+    <MudGrid Spacing="3" Justify="Justify.Center" Class="pt-3 pb-6 px-3">
+    @if (_verses != null)
+    {
+        foreach (BibleVerse verse in _verses)
+        {
+            
+            <MudItem xs="12" md="2">
+                <MudCard Elevation="6">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">@verse.BookName @verse.ChapterNumber : @verse.VerseNumber</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudText>@verse.Verse</MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        }
+    }
+    </MudGrid>
+</MudPaper>

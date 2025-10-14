@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Globalization;
+using CsvHelper;
 using GSBC.ImpactKids.Grpc.Data;
 using GSBC.ImpactKids.Grpc.Data.Models;
 using Microsoft.EntityFrameworkCore;
@@ -6,11 +8,12 @@ using Microsoft.EntityFrameworkCore;
 namespace GSBC.ImpactKids.Workers.DbMigrations;
 
 public class Worker(
-    IServiceProvider serviceProvider,
-    IHostApplicationLifetime hostApplicationLifetime) : BackgroundService
+    IServiceProvider         serviceProvider,
+    IHostApplicationLifetime hostApplicationLifetime
+) : BackgroundService
 {
-    public const string ActivitySourceName = "Migrations";
-    private static readonly ActivitySource SActivitySource = new(ActivitySourceName);
+    public const            string         ActivitySourceName = "Migrations";
+    private static readonly ActivitySource SActivitySource    = new(ActivitySourceName);
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
@@ -19,11 +22,11 @@ public class Worker(
 
         try
         {
-            using var scope = serviceProvider.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<GsbcDbContext>();
+            using var scope     = serviceProvider.CreateScope();
+            var       dbContext = scope.ServiceProvider.GetRequiredService<GsbcDbContext>();
 
             await RunMigrationAsync(dbContext, cancellationToken);
-            // await SeedDataAsync(dbContext, cancellationToken);
+            await SeedBibleAsync(dbContext, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -44,27 +47,53 @@ public class Worker(
         });
     }
 
-    private static async Task SeedDataAsync(GsbcDbContext dbContext, CancellationToken cancellationToken)
-    {
-        DbSchoolTerm schoolTerm = new()
-        {
-            Id = Guid.Empty,
-            Name = "2025 Term 4",
+    private record CsvVerse(
+        int    Book,
+        int    Chapter,
+        int    Versecount,
+        string Verse
+    );
 
-            StartDate = DateTime.Parse("08/10/2025"),
-            EndDate = DateTime.Parse("28/11/2025")
-        };
-        
+    private record CsvBook(
+        int    Id,
+        string Book
+    );
+
+    private static async Task SeedBibleAsync(GsbcDbContext dbContext, CancellationToken cancellationToken)
+    {
+        using StreamReader booksReader = new("Data/bible-books.csv");
+        using CsvReader    booksCsv    = new(booksReader, CultureInfo.InvariantCulture);
+
+        using StreamReader versesReader = new("Data/bible-verses.csv");
+        using CsvReader    versesCsv    = new(versesReader, CultureInfo.InvariantCulture);
+
         var strategy = dbContext.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
         {
             // Seed the database
             await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-            if (!await dbContext.Terms.AnyAsync(cancellationToken))
+
+            dbContext.BibleVerses.RemoveRange(await dbContext.BibleVerses.ToListAsync(cancellationToken));
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            List<CsvBook> csvBooks = booksCsv.GetRecords<CsvBook>().ToList();
+            
+            List<DbBibleVerse>   verses   = [];
+            await foreach (var csvVerse in versesCsv.GetRecordsAsync<CsvVerse>(cancellationToken))
             {
-                await dbContext.Terms.AddAsync(schoolTerm, cancellationToken);
+                DbBibleVerse verse = new()
+                {
+                    VerseNumber = csvVerse.Versecount,
+                    Verse = csvVerse.Verse,
+
+                    ChapterNumber = csvVerse.Chapter,
+                    BookNumber = csvVerse.Book,
+                    BookName = csvBooks.First(x => x.Id == csvVerse.Book).Book
+                };
+                verses.Add(verse);
             }
 
+            await dbContext.BibleVerses.AddRangeAsync(verses, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
         });

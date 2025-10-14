@@ -35,6 +35,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddAuthenticatedGrpcClient<IElvantoService>();
 builder.Services.AddAuthenticatedGrpcClient<ISchoolTermsService>();
 builder.Services.AddAuthenticatedGrpcClient<IServicesService>();
+builder.Services.AddAuthenticatedGrpcClient<IBibleService>();
 
 var app = builder.Build();
 

@@ -13,7 +13,9 @@ public class GsbcDbContextFactory : IDesignTimeDbContextFactory<GsbcDbContext>
         return new GsbcDbContext(optionsBuilder.Options)
         {
             Terms = null!,
-            Services = null!
+            Services = null!,
+            
+            BibleVerses = null!,
         };
     }
 }

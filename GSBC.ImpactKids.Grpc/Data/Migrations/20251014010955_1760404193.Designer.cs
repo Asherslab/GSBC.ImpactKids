@@ -3,6 +3,7 @@ using System;
 using GSBC.ImpactKids.Grpc.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GSBC.ImpactKids.Grpc.Data.Migrations
 {
     [DbContext(typeof(GsbcDbContext))]
-    partial class GsbcDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251014010955_1760404193")]
+    partial class _1760404193
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -22,26 +25,60 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.DbBibleVerse", b =>
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Bible.DbBibleBook", b =>
                 {
-                    b.Property<int>("BookNumber")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
-                    b.Property<int>("ChapterNumber")
-                        .HasColumnType("integer");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("VerseNumber")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("BookName")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("BibleBooks");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Bible.DbBibleChapter", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.HasKey("Id");
+
+                    b.ToTable("BibleChapters");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Bible.DbBibleVerse", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BookId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ChapterId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Verse")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.HasKey("BookNumber", "ChapterNumber", "VerseNumber");
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChapterId");
+
+                    b.HasIndex("BookId", "ChapterId", "Id")
+                        .IsUnique();
 
                     b.ToTable("BibleVerses");
                 });
@@ -89,6 +126,25 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.ToTable("Services");
                 });
 
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Bible.DbBibleVerse", b =>
+                {
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.Bible.DbBibleBook", "Book")
+                        .WithMany("Verses")
+                        .HasForeignKey("BookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.Bible.DbBibleChapter", "Chapter")
+                        .WithMany("Verses")
+                        .HasForeignKey("ChapterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Book");
+
+                    b.Navigation("Chapter");
+                });
+
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.DbService", b =>
                 {
                     b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.DbSchoolTerm", "SchoolTerm")
@@ -98,6 +154,16 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("SchoolTerm");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Bible.DbBibleBook", b =>
+                {
+                    b.Navigation("Verses");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Bible.DbBibleChapter", b =>
+                {
+                    b.Navigation("Verses");
                 });
 
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.DbSchoolTerm", b =>
