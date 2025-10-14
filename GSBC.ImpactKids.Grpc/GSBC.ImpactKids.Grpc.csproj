@@ -27,4 +27,8 @@
       <ProjectReference Include="..\GSBC.ImpactKids.Shared.Contracts\GSBC.ImpactKids.Shared.Contracts.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Data\Migrations\" />
+    </ItemGroup>
+
 </Project>

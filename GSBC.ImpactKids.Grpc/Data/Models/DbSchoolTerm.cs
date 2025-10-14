@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations.Schema;
+using Riok.Mapperly.Abstractions;
 
 namespace GSBC.ImpactKids.Grpc.Data.Models;
 
@@ -12,5 +13,6 @@ public class DbSchoolTerm
     [Column(TypeName="date")]
     public required DateTime EndDate   { get; set; }
 
+    [MapperIgnore]
     public List<DbService> Services { get; set; } = [];
 }

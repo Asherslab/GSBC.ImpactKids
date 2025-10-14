@@ -4,6 +4,8 @@ namespace GSBC.ImpactKids.Grpc.Data.Models;
 
 public class DbBibleVerse
 {
+    public required Guid Id { get; set; }
+    
     public required string Verse         { get; set; }
     
     [DatabaseGenerated(DatabaseGeneratedOption.None)]

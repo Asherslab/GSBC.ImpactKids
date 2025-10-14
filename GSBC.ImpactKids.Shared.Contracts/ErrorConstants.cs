@@ -15,5 +15,6 @@ public static class ErrorConstants
     public const string ServiceNotFound = "Service Not Found";
     public const string ServiceSchoolTermNull = "Service School Term Must Be Set";
     public const string ServiceDateNull = "Service Date Must Be Set";
-
+    
+    public const string MemoryVerseListNotFound = "Memory Verse List Not Found";
 }
