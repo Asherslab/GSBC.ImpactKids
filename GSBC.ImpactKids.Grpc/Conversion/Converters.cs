@@ -8,37 +8,16 @@ using Riok.Mapperly.Abstractions;
 namespace GSBC.ImpactKids.Grpc.Conversion;
 
 // ReSharper disable UnusedType.Global
-
 [Mapper]
-public partial class SchoolTermConverter(
-    IConverter<DateTimeOffset, DateTime> dateTimeConverter,
-    IConverter<DbService, Service>       serviceConverter
-) : IConverter<DbSchoolTerm, SchoolTerm>
+public partial class SchoolTermConverter : IConverter<DbSchoolTerm, SchoolTerm>
 {
-    [UseMapper]
-    private readonly IConverter<DateTimeOffset, DateTime> _dateTimeConverter = dateTimeConverter;
-
-    [UseMapper]
-    private readonly IConverter<DbService, Service> _serviceConverter = serviceConverter;
-
     public partial SchoolTerm Convert(DbSchoolTerm input);
 }
 
 [Mapper]
-public partial class ServiceConverter(
-    IConverter<DateTimeOffset, DateTime> dateTimeConverter
-) : IConverter<DbService, Service>
+public partial class ServiceConverter : IConverter<DbService, Service>
 {
-    [UseMapper]
-    private readonly IConverter<DateTimeOffset, DateTime> _dateTimeConverter = dateTimeConverter;
-
     public partial Service Convert(DbService input);
-}
-
-[Mapper]
-public partial class DateTimeMapper : IConverter<DateTimeOffset, DateTime>
-{
-    public DateTime Convert(DateTimeOffset offset) => offset.DateTime;
 }
 
 [Mapper]
@@ -56,5 +35,13 @@ public partial class MemoryVerseListConverter : IConverter<DbMemoryVerseList, Me
 [Mapper]
 public partial class MemoryVerseConverter : IConverter<DbMemoryVerse, MemoryVerse>
 {
+    [MapProperty(nameof(DbMemoryVerse.BibleVerses), nameof(MemoryVerse.BibleVerseIds), Use = nameof(MapBibleVerseIds))]
+    [MapProperty(nameof(DbMemoryVerse.Services), nameof(MemoryVerse.ServiceIds), Use = nameof(MapServiceIds))]
     public partial MemoryVerse Convert(DbMemoryVerse input);
+
+    List<Guid> MapBibleVerseIds(List<DbBibleVerse> bibleVerses)
+        => bibleVerses.Select(x => x.Id).ToList();
+
+    List<Guid> MapServiceIds(List<DbService> services)
+        => services.Select(x => x.Id).ToList();
 }

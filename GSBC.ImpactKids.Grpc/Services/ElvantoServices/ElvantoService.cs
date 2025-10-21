@@ -3,9 +3,11 @@ using System.Text;
 using GSBC.ImpactKids.Grpc.Services.ElvantoServices.Interfaces;
 using GSBC.ImpactKids.Grpc.Services.ElvantoServices.Models;
 using GSBC.ImpactKids.Shared.Contracts.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace GSBC.ImpactKids.Grpc.Services.ElvantoServices;
 
+[Authorize]
 public partial class ElvantoService(
     HttpClient httpClient,
     ElvantoConfig config

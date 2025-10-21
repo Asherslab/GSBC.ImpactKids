@@ -8,7 +8,7 @@ namespace GSBC.ImpactKids.Grpc.Services.MemoryVersesServices;
 
 public partial class MemoryVersesService
 {
-    public async Task<BasicReadMultipleResponse<MemoryVerse>> ReadMultiple(
+    public async Task<BasicReadMultipleResponse<MemoryVerse>?> ReadMultiple(
         MemoryVersesRequest request,
         CallContext         context = default
     )
@@ -38,7 +38,7 @@ public partial class MemoryVersesService
             );
         }
 
-        query = query.OrderBy(x => x.Services.Count);
+        query = query.OrderByDescending(x => x.Services.Count);
 
         List<DbMemoryVerse> verses = await query.ToListAsync(token);
 

@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations.Schema;
+using GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses;
+using Riok.Mapperly.Abstractions;
 
 namespace GSBC.ImpactKids.Grpc.Data.Models;
 
@@ -14,4 +16,7 @@ public class DbBibleVerse
     public required int    ChapterNumber { get; set; }
     public required int    BookNumber    { get; set; }
     public required string BookName      { get; set; }
+
+    [MapperIgnore]
+    public List<DbMemoryVerse> MemoryVerses { get; set; } = [];
 }

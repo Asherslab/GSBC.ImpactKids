@@ -13,7 +13,7 @@ public partial class MemoryVerseListsService
         CancellationToken token = context.CancellationToken;
 
         if (string.IsNullOrWhiteSpace(request.Name))
-            return BasicResponse.WithError(MemoryVerseListNotFound);
+            return BasicResponse.WithError(MemoryVerseListNameNull);
 
         DbSchoolTerm? term = await db.Terms
             .FirstOrDefaultAsync(x => x.Id == request.SchoolTermId, token);

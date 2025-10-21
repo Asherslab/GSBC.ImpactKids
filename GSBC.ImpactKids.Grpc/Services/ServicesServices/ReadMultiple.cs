@@ -19,13 +19,17 @@ public partial class ServicesService
 
         if (request.SearchString != null)
         {
-            query = query.Where(x => x.Name!.ToLower().Contains(request.SearchString.ToLower()));
+            // ReSharper disable once SpecifyACultureInStringConversionExplicitly
+            query = query.Where(x =>
+                x.Name!.ToLower().Contains(request.SearchString.ToLower()) ||
+                x.Date.ToString().ToLower().Contains(request.SearchString.ToLower())
+            );
         }
 
         if (request.SchoolTermId != null)
         {
             query = query.Where(x =>
-                x.SchoolTermId == request.SchoolTermId 
+                x.SchoolTermId == request.SchoolTermId
             );
         }
 

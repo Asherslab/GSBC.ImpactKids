@@ -40,19 +40,8 @@
                             {
                                 <div>
                                     <MudListItem
-                                        OnClick="@(() => _selectedMemoryVerseList = _selectedMemoryVerseList == list.Id ? null : list.Id)"
+                                        Href="@($"/MemoryVerseList/{list.Id}")"
                                         Text="@(list.Name)"/>
-                                    <MudPopover Open="@(_selectedMemoryVerseList == list.Id)"
-                                                OverflowBehavior="OverflowBehavior.FlipAlways"
-                                                AnchorOrigin="Origin.BottomCenter"
-                                                TransformOrigin="Origin.TopCenter" Paper="false">
-                                        <MudPaper Outlined="true" Class="px-4 py-4">
-                                            <MudIconButton OnClick="@(_ => DeleteMemoryVerseList(list))"
-                                                           Icon="@Icons.Material.Filled.Delete"/>
-                                            <MudIconButton OnClick="@(_ => UpdateMemoryVerseList(list))"
-                                                           Icon="@Icons.Material.Filled.Edit"/>
-                                        </MudPaper>
-                                    </MudPopover>
                                 </div>
                             }
                         }

@@ -1,7 +1,5 @@
 using GSBC.ImpactKids.Shared.Contracts.Entities;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Services;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Services;
 
