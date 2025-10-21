@@ -17,4 +17,11 @@ public static class ErrorConstants
     public const string ServiceDateNull = "Service Date Must Be Set";
     
     public const string MemoryVerseListNotFound = "Memory Verse List Not Found";
+    public const string MemoryVerseListNameNull = "Memory Verse List Name Must Be Set";
+    
+    public const string MemoryVerseNotFound          = "Memory Verse Not Found";
+    public const string MemoryVerseReferenceNameNull = "Memory Verse Reference Name Must Be Set";
+    public const string MemoryVerseVerseNull = "Memory Verse Text Must Be Set";
+    
+    public const string BibleVerseNotFound = "Bible Verse Not Found";
 }

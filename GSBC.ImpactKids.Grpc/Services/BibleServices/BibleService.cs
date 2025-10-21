@@ -1,7 +1,7 @@
 using GSBC.ImpactKids.Shared.Contracts.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace GSBC.ImpactKids.Grpc.Services.BibleServices;
 
-public partial class BibleService : IBibleService
-{
-}
+[Authorize]
+public partial class BibleService : IBibleService;

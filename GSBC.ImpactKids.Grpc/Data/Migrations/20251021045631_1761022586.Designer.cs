@@ -3,6 +3,7 @@ using System;
 using GSBC.ImpactKids.Grpc.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GSBC.ImpactKids.Grpc.Data.Migrations
 {
     [DbContext(typeof(GsbcDbContext))]
-    partial class GsbcDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251021045631_1761022586")]
+    partial class _1761022586
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -125,9 +128,14 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.Property<Guid>("BibleVersesId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("DbMemoryVerseId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("MemoryVersesId", "BibleVersesId");
 
                     b.HasIndex("BibleVersesId");
+
+                    b.HasIndex("DbMemoryVerseId");
 
                     b.ToTable("DbMemoryVerseBibleVerseRelationship");
                 });
@@ -199,7 +207,7 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
 
                     b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses.DbMemoryVerse", null)
                         .WithMany()
-                        .HasForeignKey("MemoryVersesId")
+                        .HasForeignKey("DbMemoryVerseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

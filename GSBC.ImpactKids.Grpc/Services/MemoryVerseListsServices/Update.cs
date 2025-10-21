@@ -21,7 +21,7 @@ public partial class MemoryVerseListsService
         if (request.Name.IsUpdated)
         {
             if (string.IsNullOrWhiteSpace(request.Name.Value))
-                return BasicResponse.WithError(MemoryVerseListNotFound);
+                return BasicResponse.WithError(MemoryVerseListNameNull);
             list.Name = request.Name.Value;
         }
 

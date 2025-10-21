@@ -8,7 +8,7 @@ namespace GSBC.ImpactKids.Grpc.Services.MemoryVerseListsServices;
 
 public partial class MemoryVerseListsService
 {
-    public async Task<BasicReadMultipleResponse<MemoryVerseList>> ReadMultiple(
+    public async Task<BasicReadMultipleResponse<MemoryVerseList>?> ReadMultiple(
         MemoryVerseListsRequest request,
         CallContext             context = default
     )

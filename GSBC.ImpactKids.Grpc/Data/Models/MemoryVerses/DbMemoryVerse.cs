@@ -14,9 +14,6 @@ public class DbMemoryVerse
     [MapperIgnore]
     public DbMemoryVerseList? MemoryVerseList { get; set; }
 
-    [MapperIgnore]
     public List<DbBibleVerse> BibleVerses { get; set; } = [];
-
-    [MapperIgnore]
     public List<DbService> Services { get; set; } = [];
 }

@@ -73,8 +73,8 @@ public class Worker(
             // Seed the database
             await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-            dbContext.BibleVerses.RemoveRange(await dbContext.BibleVerses.ToListAsync(cancellationToken));
-            await dbContext.SaveChangesAsync(cancellationToken);
+            if (await dbContext.BibleVerses.AnyAsync(cancellationToken))
+                return;
 
             List<CsvBook> csvBooks = booksCsv.GetRecords<CsvBook>().ToList();
             

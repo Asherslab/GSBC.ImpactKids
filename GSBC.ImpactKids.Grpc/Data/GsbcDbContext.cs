@@ -26,13 +26,13 @@ public class GsbcDbContext(
             .HasForeignKey(x => x.SchoolTermId);
 
         modelBuilder.Entity<DbMemoryVerseBibleVerseRelationship>()
-            .HasKey(x => new { x.MemoryVerseId, x.BibleVerseId });
+            .HasKey(x => new { x.MemoryVersesId, x.BibleVersesId });
 
         modelBuilder.Entity<DbMemoryVerseServiceRelationship>()
-            .HasKey(x => new { x.MemoryVerseId, x.ServiceId });
+            .HasKey(x => new { x.MemoryVersesId, x.ServicesId });
 
         modelBuilder.Entity<DbBibleVerse>()
-            .HasMany<DbMemoryVerse>()
+            .HasMany(x => x.MemoryVerses)
             .WithMany(x => x.BibleVerses)
             .UsingEntity<DbMemoryVerseBibleVerseRelationship>();
 
@@ -40,7 +40,7 @@ public class GsbcDbContext(
             .HasMany(x => x.MemoryVerses)
             .WithOne(x => x.MemoryVerseList)
             .HasForeignKey(x => x.MemoryVerseListId);
-        
+
         modelBuilder.Entity<DbMemoryVerse>()
             .HasMany(x => x.Services)
             .WithMany(x => x.MemoryVerses)
