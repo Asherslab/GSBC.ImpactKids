@@ -6,13 +6,16 @@
 @inject IMemoryVersesService     MemoryVersesService
 @inject ISnackbar                Snackbar
 @inject IDialogService           DialogService
+@inject NavigationManager        Navigation
 
 @if (_list != null)
 {
     <PageTitle>@_list.Name</PageTitle>
 
     <MudPaper Elevation="6" Class="mt-4">
-        <ListHeader List="_list"/>
+        <EntityHeader Name="@_list.Name"
+                      OnUpdate="@UpdateList"
+                      OnDelete="@DeleteList"/>
         <MudButton FullWidth
                    Class="py-5"
                    OnClick="@CreateMemoryVerse"
@@ -39,7 +42,7 @@
                             <MudText Typo="Typo.body1">@verse.Verse</MudText>
                         </MudCardContent>
                     </MudCard>
-                    
+
                 </MudItem>
             }
         </MudGrid>

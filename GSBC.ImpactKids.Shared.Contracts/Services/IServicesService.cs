@@ -12,8 +12,8 @@ public interface IServicesService
     );
 
     Task<BasicReadResponse<Service>?> Read(
-        BasicReadRequest request,
-        CallContext      context = default
+        ServiceRequest request,
+        CallContext    context = default
     );
 
     Task<BasicReadResponse<Service>?> ReadByDate(

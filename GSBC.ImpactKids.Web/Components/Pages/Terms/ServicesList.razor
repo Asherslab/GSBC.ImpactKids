@@ -24,28 +24,17 @@
                 @if (service.Name == null)
                 {
                     <MudListItem
-                        OnClick="@(() => _selectedService = _selectedService == service.Id ? null : service.Id)"
+                        Href="@($"/Service?Id={service.Id}")"
                         Text="@(service.Date.ToString("dddd dd/MM"))"/>
                 }
                 else
                 {
                     <MudListItem
-                        OnClick="@(() => _selectedService = _selectedService == service.Id ? null : service.Id)"
+                        Href="@($"/Service?Id={service.Id}")"
                         Icon="@Icons.Material.Filled.Celebration"
                         Text="@service.Name"
                         SecondaryText="@(service.Date.ToString("dddd dd/MM"))"/>
                 }
-                <MudPopover Open="@(_selectedService == service.Id)"
-                            OverflowBehavior="OverflowBehavior.FlipAlways"
-                            AnchorOrigin="Origin.BottomCenter"
-                            TransformOrigin="Origin.TopCenter" Paper="false">
-                    <MudPaper Outlined="true" Class="px-4 py-4">
-                        <MudIconButton OnClick="@(_ => DeleteService(service))"
-                                       Icon="@Icons.Material.Filled.Delete"/>
-                        <MudIconButton OnClick="@(_ => UpdateService(service))"
-                                       Icon="@Icons.Material.Filled.Edit"/>
-                    </MudPaper>
-                </MudPopover>
             </div>
         }
     }

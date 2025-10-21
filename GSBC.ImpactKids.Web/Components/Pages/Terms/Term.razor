@@ -6,13 +6,16 @@
 @inject IMemoryVerseListsService MemoryVerseListsService
 @inject ISnackbar                Snackbar
 @inject IDialogService           DialogService
+@inject NavigationManager        Navigation
 
 @if (_term != null)
 {
     <PageTitle>@_term.Name</PageTitle>
 
     <MudPaper Elevation="6" Class="mt-4">
-        <TermHeader SchoolTerm="_term"/>
+        <EntityHeader Name="@_term.Name"
+                      OnUpdate="UpdateSchoolTerm"
+                      OnDelete="DeleteSchoolTerm"/>
         <MudGrid Spacing="6" Justify="Justify.Center" Class="pt-3 pb-6 px-3">
             <MudItem xs="12" md="6">
                 <MudPaper Elevation="6">

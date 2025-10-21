@@ -1,0 +1,57 @@
+@using GSBC.ImpactKids.Shared.Contracts.Entities.MemoryVerses
+@inherits EventListeningComponent
+@page "/VerseMemorisation/{ServiceId:guid}"
+@attribute [Authorize]
+@inject IMemoryVersesService MemoryVersesService
+@inject ISnackbar            Snackbar
+@inject IDialogService       DialogService
+@inject NavigationManager    Navigation
+
+<PageTitle>Verse Memorisation Recording Tool</PageTitle>
+
+<MudPaper Elevation="6" Class="mt-4">
+    <MudCard>
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h6" Align="Align.Center">Verse Memorisation Recording Tool</MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudDivider/>
+            @if (_memoryVerses != null)
+            {
+                <MudSelect T="Guid"
+                           Value="@SelectedMemoryVerse"
+                           ValueChanged="SelectedMemoryVerseChanged"
+                           Clearable="false"
+                           Required
+                           Class="pa-3">
+                    @foreach (MemoryVerse verse in _memoryVerses)
+                    {
+                        <MudSelectItem Value="@verse.Id">@verse.ReferenceName</MudSelectItem>
+                    }
+                </MudSelect>
+            }
+            @if (_selectedVerse != null)
+            {
+                <MudCard Elevation="3">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Align="Align.Center">@_selectedVerse.ReferenceName</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudText>@_selectedVerse.Verse</MudText>
+                    </MudCardContent>
+                    <MudCardActions Class="justify-end">
+                        <MudButton Variant="Variant.Text" 
+                                   Color="Color.Primary"
+                                   OnClick="@ShowOriginalText">
+                            Show Original Text
+                        </MudButton>
+                    </MudCardActions>
+                </MudCard>
+            }
+        </MudCardContent>
+    </MudCard>
+</MudPaper>

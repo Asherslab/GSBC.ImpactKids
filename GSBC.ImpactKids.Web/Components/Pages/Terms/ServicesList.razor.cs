@@ -17,7 +17,6 @@ public partial class ServicesList : EventListeningComponent
     public required SchoolTerm SchoolTerm { get; set; }
 
     private ICollection<Service>? _services;
-    private Guid?                 _selectedService;
 
     protected override async Task OnInitializedAsync()
     {
@@ -59,34 +58,5 @@ public partial class ServicesList : EventListeningComponent
         };
         
         await DialogService.ShowAsync<CreateServiceDialog>("Create Service", parameters, opts);
-    }
-    
-    private async Task UpdateService(Service service)
-    {
-        DialogParameters<UpdateServiceDialog> parameters = new()
-        {
-            { x => x.Service, service },
-            { x => x.SchoolTerm, SchoolTerm }
-        };
-
-        await DialogService.ShowAsync<UpdateServiceDialog>("Update Service", parameters);
-    }
-    
-    private async Task DeleteService(Service service)
-    {
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning", 
-            "Deleting can not be undone!", 
-            yesText:"Delete!", cancelText:"Cancel");
-        
-        if (result == null)
-            return;
-        
-        BasicReadRequest request = new()
-        {
-            Guid = service.Id
-        };
-
-        await ServicesService.Delete(request);
     }
 }
