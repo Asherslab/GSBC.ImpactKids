@@ -29,6 +29,35 @@ public partial class List : EventListeningComponent
         await RefreshMemoryVerses();
         await SubscribeToEvent(MemoryVerse.BuildSubscription(_list?.Id), RefreshMemoryVerses);
     }
+    
+    private async Task UpdateList()
+    {
+        DialogParameters<UpdateMemoryVerseListDialog> parameters = new()
+        {
+            { x => x.List, _list },
+        };
+
+        await DialogService.ShowAsync<UpdateMemoryVerseListDialog>("Update Memory Verse List", parameters);
+    }
+    
+    private async Task DeleteList()
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Warning", 
+            "Deleting can not be undone!", 
+            yesText:"Delete!", cancelText:"Cancel");
+        
+        if (result == null)
+            return;
+        
+        BasicReadRequest request = new()
+        {
+            Guid = Id
+        };
+
+        await MemoryVerseListsService.Delete(request);
+        Navigation.NavigateTo("/terms");
+    }
 
     private async Task RefreshList()
     {

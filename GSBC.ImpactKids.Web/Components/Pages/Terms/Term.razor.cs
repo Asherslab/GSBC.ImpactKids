@@ -88,32 +88,32 @@ public partial class Term : EventListeningComponent
         await DialogService.ShowAsync<CreateMemoryVerseListDialog>("Create Memory Verse List", parameters, opts);
     }
     
-    private async Task UpdateMemoryVerseList(MemoryVerseList list)
+    private async Task UpdateSchoolTerm()
     {
-        DialogParameters<UpdateMemoryVerseListDialog> parameters = new()
+        DialogParameters<UpdateSchoolTermDialog> parameters = new()
         {
-            { x => x.List, list },
-            { x => x.SchoolTerm, _term }
+            { x => x.Term, _term }
         };
 
-        await DialogService.ShowAsync<UpdateMemoryVerseListDialog>("Update Memory Verse List", parameters);
+        await DialogService.ShowAsync<UpdateSchoolTermDialog>("Update School Term", parameters);
     }
     
-    private async Task DeleteMemoryVerseList(MemoryVerseList list)
+    private async Task DeleteSchoolTerm()
     {
         bool? result = await DialogService.ShowMessageBox(
             "Warning", 
             "Deleting can not be undone!", 
             yesText:"Delete!", cancelText:"Cancel");
         
-        if (result == null)
+        if (result == null || _term == null)
             return;
         
         BasicReadRequest request = new()
         {
-            Guid = list.Id
+            Guid = _term.Id
         };
 
-        await MemoryVerseListsService.Delete(request);
+        await SchoolTermsService.Delete(request);
+        Navigation.NavigateTo("/terms");
     }
 }

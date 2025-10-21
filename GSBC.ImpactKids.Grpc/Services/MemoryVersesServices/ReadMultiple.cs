@@ -17,6 +17,9 @@ public partial class MemoryVersesService
 
         IQueryable<DbMemoryVerse> query = db.MemoryVerses;
 
+        if (request.IncludeBibleVerses)
+            query = query.Include(x => x.BibleVerses);
+        
         if (request.SearchString != null)
         {
             query = query.Where(x =>

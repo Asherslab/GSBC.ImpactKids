@@ -17,6 +17,11 @@ public class MemoryVerse
     public required List<Service>?    Services    { get; set; }
     public required List<BibleVerse>? BibleVerses { get; set; }
 
-    public static string BuildSubscription(Guid? memoryVerseListId = null, Guid? memoryVerseId = null) =>
-        $"{nameof(MemoryVerse)}.{memoryVerseListId?.ToString() ?? "*"}.{memoryVerseId?.ToString() ?? "*"}";
+    public static string BuildSubscription(
+        Guid? memoryVerseListId = null,
+        Guid? memoryVerseId     = null
+    ) =>
+        $"{nameof(MemoryVerse)}." +
+        $"{memoryVerseListId?.ToString() ?? "*"}." +
+        $"{memoryVerseId?.ToString() ?? "*"}";
 }

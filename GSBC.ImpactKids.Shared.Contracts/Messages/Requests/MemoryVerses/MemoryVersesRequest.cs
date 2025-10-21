@@ -11,4 +11,6 @@ public class MemoryVersesRequest : IReadMultipleRequest
 
     public Guid? MemoryVerseListId { get; set; }
     public Guid? ServiceId { get; set; }
+    
+    public bool IncludeBibleVerses { get; set; }
 }
