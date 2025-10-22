@@ -1,4 +1,5 @@
 using GSBC.ImpactKids.Grpc.Data.Models;
+using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Shared.Contracts.Entities;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.SchoolTerms;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
@@ -31,6 +32,8 @@ public partial class SchoolTermService
         }
 
         query = query.OrderBy(x => x.StartDate);
+        
+        query = query.Paginate(request);
 
         List<DbSchoolTerm> terms = await query.ToListAsync(token);
 

@@ -1,4 +1,5 @@
 using GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses;
+using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.MemoryVerses;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.MemoryVerses;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
@@ -42,6 +43,8 @@ public partial class MemoryVersesService
         }
 
         query = query.OrderByDescending(x => x.Services.Count);
+        
+        query = query.Paginate(request);
 
         List<DbMemoryVerse> verses = await query.ToListAsync(token);
 

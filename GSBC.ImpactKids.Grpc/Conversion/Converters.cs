@@ -45,8 +45,16 @@ public partial class MemoryVerseListConverter : IConverter<DbMemoryVerseList, Me
 }
 
 [Mapper]
-public partial class MemoryVerseConverter : IConverter<DbMemoryVerse, MemoryVerse>
+public partial class MemoryVerseConverter(
+    IConverter<DbBibleVerse, BibleVerse> bibleVerseConverter,
+    IConverter<DbService, Service>       serviceConverter
+) : IConverter<DbMemoryVerse, MemoryVerse>
 {
+    [UseMapper]
+    private readonly IConverter<DbBibleVerse, BibleVerse> _bibleVerseConverter = bibleVerseConverter;
+    [UseMapper]
+    private readonly IConverter<DbService, Service>       _serviceConverter    = serviceConverter;
+
     [MapProperty(nameof(DbMemoryVerse.BibleVerses), nameof(MemoryVerse.BibleVerseIds), Use = nameof(MapBibleVerseIds))]
     [MapProperty(nameof(DbMemoryVerse.Services), nameof(MemoryVerse.ServiceIds), Use = nameof(MapServiceIds))]
     public partial MemoryVerse Convert(DbMemoryVerse input);
@@ -56,4 +64,23 @@ public partial class MemoryVerseConverter : IConverter<DbMemoryVerse, MemoryVers
 
     List<Guid> MapServiceIds(List<DbService> services)
         => services.Select(x => x.Id).ToList();
+}
+
+[Mapper]
+public partial class MemorisationEntryConverter(
+    IConverter<DbPerson, Person>           personConverter,
+    IConverter<DbMemoryVerse, MemoryVerse> memoryVerseConverter,
+    IConverter<DbService, Service>         serviceConverter
+) : IConverter<DbMemorisationEntry, MemorisationEntry>
+{
+    [UseMapper]
+    private readonly IConverter<DbPerson, Person> _personConverter = personConverter;
+
+    [UseMapper]
+    private readonly IConverter<DbMemoryVerse, MemoryVerse> _memoryVerseConverter = memoryVerseConverter;
+
+    [UseMapper]
+    private readonly IConverter<DbService, Service> _serviceConverter = serviceConverter;
+
+    public partial MemorisationEntry Convert(DbMemorisationEntry input);
 }

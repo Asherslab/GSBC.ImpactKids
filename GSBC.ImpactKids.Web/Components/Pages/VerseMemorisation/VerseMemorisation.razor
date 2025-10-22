@@ -2,10 +2,12 @@
 @inherits EventListeningComponent
 @page "/VerseMemorisation/{ServiceId:guid}"
 @attribute [Authorize(Policy = Policies.EnabledOnly)]
-@inject IMemoryVersesService MemoryVersesService
-@inject ISnackbar            Snackbar
-@inject IDialogService       DialogService
-@inject NavigationManager    Navigation
+@inject IServicesService            ServicesService
+@inject IMemoryVersesService        MemoryVersesService
+@inject IMemorisationEntriesService MemorisationEntriesService
+@inject ISnackbar                   Snackbar
+@inject IDialogService              DialogService
+@inject NavigationManager           Navigation
 
 <PageTitle>Verse Memorisation Recording Tool</PageTitle>
 
@@ -14,6 +16,11 @@
         <MudCardHeader>
             <CardHeaderContent>
                 <MudText Typo="Typo.h6" Align="Align.Center">Verse Memorisation Recording Tool</MudText>
+                @if (_service != null)
+                {
+                    <MudText Typo="Typo.subtitle1" Align="Align.Center">Recording for
+                        Service: @_service?.GetDisplayName()</MudText>
+                }
             </CardHeaderContent>
         </MudCardHeader>
         <MudCardContent>
@@ -44,7 +51,7 @@
                         <MudText>@_selectedVerse.Verse</MudText>
                     </MudCardContent>
                     <MudCardActions Class="justify-end">
-                        <MudButton Variant="Variant.Text" 
+                        <MudButton Variant="Variant.Text"
                                    Color="Color.Primary"
                                    OnClick="@ShowOriginalText">
                             Show Original Text
@@ -52,6 +59,43 @@
                     </MudCardActions>
                 </MudCard>
             }
+            <MudTextField
+                T="string"
+                Value="Search"
+                ValueChanged="@(OnSearch)"
+                Placeholder="Search for People"
+                Adornment="Adornment.Start"
+                AdornmentIcon="@Icons.Material.Filled.Search"
+                DebounceInterval="100"
+                IconSize="Size.Medium"
+                Clearable="true"
+                Class="py-6 px-6"/>
+            <MudTable Elevation="6" Items="_memorisationEntries" Hover="true" Breakpoint="Breakpoint.None">
+                <HeaderContent>
+                    <MudTh>Name</MudTh>
+                    <MudTh>Recited</MudTh>
+                    <MudTh>$5</MudTh>
+                    <MudTh>$1</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Name">@context.Person?.GetDisplayName()</MudTd>
+                    <MudTd DataLabel="Recited">
+                        <MudCheckBox T="bool"
+                                     Value="@context.VerseRecited"
+                                     ValueChanged="@(() => UpdateMemorisationEntry(context, recited: !context.VerseRecited))"/>
+                    </MudTd>
+                    <MudTd DataLabel="$5">
+                        <MudCheckBox T="bool"
+                                     Value="@context.FiveDollaryDoosGiven"
+                                     ValueChanged="@(() => UpdateMemorisationEntry(context, fiveDollaryDoos: !context.FiveDollaryDoosGiven))"/>
+                    </MudTd>
+                    <MudTd DataLabel="$1">
+                        <MudCheckBox T="bool"
+                                     Value="@context.OneDollaryDooGiven"
+                                     ValueChanged="@(() => UpdateMemorisationEntry(context, oneDollaryDoo: !context.OneDollaryDooGiven))"/>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
         </MudCardContent>
     </MudCard>
 </MudPaper>

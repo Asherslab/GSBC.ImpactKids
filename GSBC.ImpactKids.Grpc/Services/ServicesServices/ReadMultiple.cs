@@ -1,4 +1,5 @@
 using GSBC.ImpactKids.Grpc.Data.Models;
+using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Shared.Contracts.Entities;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Services;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
@@ -34,6 +35,8 @@ public partial class ServicesService
         }
 
         query = query.OrderBy(x => x.Date);
+        
+        query = query.Paginate(request);
 
         List<DbService> terms = await query.ToListAsync(token);
 

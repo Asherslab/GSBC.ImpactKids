@@ -5,6 +5,7 @@ using GSBC.ImpactKids.Grpc.Services;
 using GSBC.ImpactKids.Grpc.Services.BibleServices;
 using GSBC.ImpactKids.Grpc.Services.ElvantoServices;
 using GSBC.ImpactKids.Grpc.Services.ElvantoServices.Models;
+using GSBC.ImpactKids.Grpc.Services.MemorisationEntriesServices;
 using GSBC.ImpactKids.Grpc.Services.MemoryVerseListsServices;
 using GSBC.ImpactKids.Grpc.Services.MemoryVersesServices;
 using GSBC.ImpactKids.Grpc.Services.PeopleServices;
@@ -66,6 +67,7 @@ app.MapGrpcService<ServicesService>();
 app.MapGrpcService<BibleService>();
 app.MapGrpcService<MemoryVersesService>();
 app.MapGrpcService<MemoryVerseListsService>();
+app.MapGrpcService<MemorisationEntriesService>();
 app.MapGet("/",
     () =>
         "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");

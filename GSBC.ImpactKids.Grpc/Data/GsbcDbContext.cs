@@ -17,8 +17,9 @@ public class GsbcDbContext(
 
     public required DbSet<DbBibleVerse> BibleVerses { get; set; }
 
-    public required DbSet<DbMemoryVerseList> MemoryVerseLists { get; set; }
-    public required DbSet<DbMemoryVerse>     MemoryVerses     { get; set; }
+    public required DbSet<DbMemoryVerseList>   MemoryVerseLists    { get; set; }
+    public required DbSet<DbMemoryVerse>       MemoryVerses        { get; set; }
+    public required DbSet<DbMemorisationEntry> MemorisationEntries { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -53,5 +54,24 @@ public class GsbcDbContext(
             .HasMany(x => x.Services)
             .WithMany(x => x.MemoryVerses)
             .UsingEntity<DbMemoryVerseServiceRelationship>();
+
+        modelBuilder.Entity<DbMemorisationEntry>()
+            .HasIndex(x => new { x.PersonId, x.ServiceId, x.MemoryVerseId })
+            .IsUnique();
+        
+        modelBuilder.Entity<DbMemorisationEntry>()
+            .HasOne(x => x.Person)
+            .WithMany()
+            .HasForeignKey(x => x.PersonId);
+
+        modelBuilder.Entity<DbMemorisationEntry>()
+            .HasOne(x => x.Service)
+            .WithMany()
+            .HasForeignKey(x => x.ServiceId);
+
+        modelBuilder.Entity<DbMemorisationEntry>()
+            .HasOne(x => x.MemoryVerse)
+            .WithMany()
+            .HasForeignKey(x => x.MemoryVerseId);
     }
 }
