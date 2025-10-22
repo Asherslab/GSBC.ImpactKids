@@ -14,6 +14,8 @@ public class GsbcDbContextFactory : IDesignTimeDbContextFactory<GsbcDbContext>
         {
             Users = null!,
             
+            People = null!,
+            
             Terms = null!,
             Services = null!,
 

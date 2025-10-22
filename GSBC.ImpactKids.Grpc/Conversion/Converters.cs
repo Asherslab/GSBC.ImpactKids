@@ -15,6 +15,12 @@ public partial class UserConverter : IConverter<DbUser, User>
 }
 
 [Mapper]
+public partial class PersonConverter : IConverter<DbPerson, Person>
+{
+    public partial Person Convert(DbPerson person);
+}
+
+[Mapper]
 public partial class SchoolTermConverter : IConverter<DbSchoolTerm, SchoolTerm>
 {
     public partial SchoolTerm Convert(DbSchoolTerm input);

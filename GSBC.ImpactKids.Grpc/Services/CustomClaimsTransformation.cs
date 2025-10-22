@@ -1,13 +1,15 @@
 using System.Security.Claims;
 using GSBC.ImpactKids.Grpc.Data;
 using GSBC.ImpactKids.Grpc.Data.Models;
+using GSBC.ImpactKids.Shared.Contracts.Entities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ImpactKids.Grpc.Services;
 
 public class CustomClaimsTransformation(
-    GsbcDbContext db
+    GsbcDbContext       db,
+    IEventService<User> eventService
 ) : IClaimsTransformation
 {
     public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
@@ -32,6 +34,7 @@ public class CustomClaimsTransformation(
             };
             await db.Users.AddAsync(user);
             await db.SaveChangesAsync();
+            await eventService.SendUpdatedEvent(user.Id);
         }
         
         const string claimType = "Enabled";
