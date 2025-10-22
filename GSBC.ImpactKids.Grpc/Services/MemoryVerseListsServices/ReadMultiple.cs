@@ -1,4 +1,5 @@
 using GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses;
+using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.MemoryVerses;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.MemoryVerseLists;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
@@ -32,6 +33,8 @@ public partial class MemoryVerseListsService
         }
 
         query = query.OrderBy(x => x.Name);
+        
+        query = query.Paginate(request);
 
         List<DbMemoryVerseList> lists = await query.ToListAsync(token);
 

@@ -44,6 +44,7 @@ builder.Services.AddAuthenticatedGrpcClient<IServicesService>();
 builder.Services.AddAuthenticatedGrpcClient<IBibleService>();
 builder.Services.AddAuthenticatedGrpcClient<IMemoryVersesService>();
 builder.Services.AddAuthenticatedGrpcClient<IMemoryVerseListsService>();
+builder.Services.AddAuthenticatedGrpcClient<IMemorisationEntriesService>();
 
 var app = builder.Build();
 

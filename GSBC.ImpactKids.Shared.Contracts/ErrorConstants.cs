@@ -7,13 +7,13 @@ public static class ErrorConstants
 
     public const string FailedToRetrieveServices = "Failed to retrieve elvanto services";
 
-    public const string UserNotFound = "User Not Found";
+    public const string UserNotFound         = "User Not Found";
     public const string UserCannotToggleSelf = "User Cannot Enable Their Own User";
     public const string UserCannotDeleteSelf = "User Cannot Delete Their Own User";
-    
-    public const string PersonNotFound = "Person Not Found";
+
+    public const string PersonNotFound      = "Person Not Found";
     public const string PersonFirstNameNull = "Person First Name Must Be Set";
-    public const string PersonLastNameNull = "Person Last Name Must Be Set";
+    public const string PersonLastNameNull  = "Person Last Name Must Be Set";
 
     public const string SchoolTermNotFound      = "School Term Not Found";
     public const string SchoolTermNameNull      = "School Term Name Must Be Set";
@@ -32,4 +32,6 @@ public static class ErrorConstants
     public const string MemoryVerseVerseNull         = "Memory Verse Text Must Be Set";
 
     public const string BibleVerseNotFound = "Bible Verse Not Found";
+
+    public const string MemorisationEntryNotFound = "Memorisation Entry Not Found";
 }

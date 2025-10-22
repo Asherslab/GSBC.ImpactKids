@@ -23,6 +23,7 @@ public class GsbcDbContextFactory : IDesignTimeDbContextFactory<GsbcDbContext>
             
             MemoryVerseLists = null!,
             MemoryVerses = null!,
+            MemorisationEntries = null!,
         };
     }
 }

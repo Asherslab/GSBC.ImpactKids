@@ -1,4 +1,5 @@
 using GSBC.ImpactKids.Grpc.Data.Models;
+using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Shared.Contracts.Entities;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
@@ -27,6 +28,8 @@ public partial class PeopleService
         }
 
         query = query.OrderBy(x => x.FirstName).ThenBy(x => x.LastName);
+        
+        query = query.Paginate(request);
 
         List<DbPerson> terms = await query.ToListAsync(token);
 

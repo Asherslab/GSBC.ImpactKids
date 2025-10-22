@@ -2,8 +2,8 @@ using System.Text.RegularExpressions;
 using GSBC.ImpactKids.Grpc.Conversion;
 using GSBC.ImpactKids.Grpc.Data;
 using GSBC.ImpactKids.Grpc.Data.Models;
+using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Bible;
-using GSBC.ImpactKids.Shared.Contracts.Entities.Pagination;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using Microsoft.EntityFrameworkCore;
@@ -78,13 +78,7 @@ public partial class BibleService(
             .ThenBy(x => x.ChapterNumber)
             .ThenBy(x => x.VerseNumber);
         
-        request.Pagination ??= new PaginationRequest();
-        if (!request.Pagination.Disabled)
-        {
-            query = query
-                .Skip(request.Pagination.Page * request.Pagination.PerPage)
-                .Take(request.Pagination.PerPage);
-        }
+        query = query.Paginate(request);
 
         List<DbBibleVerse> verses = await query.ToListAsync(token);
 

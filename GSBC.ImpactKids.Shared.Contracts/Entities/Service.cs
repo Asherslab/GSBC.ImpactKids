@@ -9,6 +9,8 @@ public class Service
     public required DateTime Date { get; set; }
 
     public required Guid SchoolTermId { get; set; }
+
+    public string GetDisplayName() => Name ?? Date.ToString("dd/MM/yyyy");
     
     public static string BuildSubscription(Guid? schoolTermId = null, Guid? serviceId = null) => 
         $"{nameof(Service)}.{schoolTermId?.ToString() ?? "*"}.{serviceId?.ToString() ?? "*"}";
