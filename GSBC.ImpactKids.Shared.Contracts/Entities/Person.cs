@@ -11,5 +11,5 @@ public class Person
     public string GetDisplayName() => PreferredName ?? $"{FirstName} {LastName}";
 
     public static string BuildSubscription(Guid? personId = null) =>
-        $"{nameof(Service)}.{personId?.ToString() ?? "*"}";
+        $"{nameof(Person)}.{personId?.ToString() ?? "*"}";
 }
