@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Login;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using GSBC.ImpactKids.Shared.Contracts.Services;
 using Microsoft.AspNetCore.Authentication;
@@ -20,6 +21,21 @@ public class CustomClaimsTransformation(
             }
         );
 
+        if (userEnabled?.Success != true)
+        {
+            await loginService.CreateSelf(new CreateSelfRequest
+            {
+                GoogleSub = principal.FindFirstValue("sub") ?? "",
+                Name = principal.FindFirstValue("name") ?? ""
+            });
+        }
+        
+        userEnabled = await loginService.IsUserEnabled(new BasicReadRequest
+            {
+                Id = principal.FindFirstValue("sub") ?? ""
+            }
+        );
+        
         if (userEnabled?.Success != true)
             return principal;
 
