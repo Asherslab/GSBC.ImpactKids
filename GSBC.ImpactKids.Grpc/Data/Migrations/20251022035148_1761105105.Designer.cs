@@ -3,6 +3,7 @@ using System;
 using GSBC.ImpactKids.Grpc.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GSBC.ImpactKids.Grpc.Data.Migrations
 {
     [DbContext(typeof(GsbcDbContext))]
-    partial class GsbcDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251022035148_1761105105")]
+    partial class _1761105105
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -111,9 +114,6 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("GoogleSub")
-                        .IsUnique();
 
                     b.ToTable("Users");
                 });

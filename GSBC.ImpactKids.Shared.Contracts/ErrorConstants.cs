@@ -7,21 +7,25 @@ public static class ErrorConstants
 
     public const string FailedToRetrieveServices = "Failed to retrieve elvanto services";
 
-    public const string SchoolTermNotFound = "School Term Not Found";
-    public const string SchoolTermNameNull = "School Term Name Must Be Set";
-    public const string SchoolTermStartDateNull = "School Term Start Date Must Be Set";
-    public const string SchoolTermEndDateNull = "School Term End Date Must Be Set";
+    public const string UserNotFound = "User Not Found";
+    public const string UserCannotToggleSelf = "User Cannot Enable Their Own User";
+    public const string UserCannotDeleteSelf = "User Cannot Delete Their Own User";
 
-    public const string ServiceNotFound = "Service Not Found";
+    public const string SchoolTermNotFound      = "School Term Not Found";
+    public const string SchoolTermNameNull      = "School Term Name Must Be Set";
+    public const string SchoolTermStartDateNull = "School Term Start Date Must Be Set";
+    public const string SchoolTermEndDateNull   = "School Term End Date Must Be Set";
+
+    public const string ServiceNotFound       = "Service Not Found";
     public const string ServiceSchoolTermNull = "Service School Term Must Be Set";
-    public const string ServiceDateNull = "Service Date Must Be Set";
-    
+    public const string ServiceDateNull       = "Service Date Must Be Set";
+
     public const string MemoryVerseListNotFound = "Memory Verse List Not Found";
     public const string MemoryVerseListNameNull = "Memory Verse List Name Must Be Set";
-    
+
     public const string MemoryVerseNotFound          = "Memory Verse Not Found";
     public const string MemoryVerseReferenceNameNull = "Memory Verse Reference Name Must Be Set";
-    public const string MemoryVerseVerseNull = "Memory Verse Text Must Be Set";
-    
+    public const string MemoryVerseVerseNull         = "Memory Verse Text Must Be Set";
+
     public const string BibleVerseNotFound = "Bible Verse Not Found";
 }

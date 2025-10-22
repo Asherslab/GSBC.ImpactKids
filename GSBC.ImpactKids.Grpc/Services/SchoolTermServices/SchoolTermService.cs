@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace GSBC.ImpactKids.Grpc.Services.SchoolTermServices;
 
-[Authorize]
+[Authorize(Policy = Policies.EnabledOnly)]
 public partial class SchoolTermService(
     GsbcDbContext                        db,
     IEventService<SchoolTerm>            eventService,

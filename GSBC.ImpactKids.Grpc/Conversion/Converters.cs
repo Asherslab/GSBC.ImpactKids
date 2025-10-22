@@ -9,6 +9,12 @@ namespace GSBC.ImpactKids.Grpc.Conversion;
 
 // ReSharper disable UnusedType.Global
 [Mapper]
+public partial class UserConverter : IConverter<DbUser, User>
+{
+    public partial User Convert(DbUser user);
+}
+
+[Mapper]
 public partial class SchoolTermConverter : IConverter<DbSchoolTerm, SchoolTerm>
 {
     public partial SchoolTerm Convert(DbSchoolTerm input);

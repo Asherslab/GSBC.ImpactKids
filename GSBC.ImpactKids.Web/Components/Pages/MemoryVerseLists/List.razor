@@ -1,6 +1,6 @@
 @inherits EventListeningComponent
 @page "/MemoryVerseList/{Id:guid}"
-@attribute [Authorize]
+@attribute [Authorize(Policy = Policies.EnabledOnly)]
 @using GSBC.ImpactKids.Shared.Contracts.Entities.MemoryVerses
 @inject IMemoryVerseListsService MemoryVerseListsService
 @inject IMemoryVersesService     MemoryVersesService

@@ -2,14 +2,12 @@ using GSBC.ImpactKids.Grpc.Conversion;
 using GSBC.ImpactKids.Grpc.Data;
 using GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses;
 using GSBC.ImpactKids.Shared.Contracts.Entities.MemoryVerses;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using GSBC.ImpactKids.Shared.Contracts.Services;
 using Microsoft.AspNetCore.Authorization;
 
 namespace GSBC.ImpactKids.Grpc.Services.MemoryVersesServices;
 
-[Authorize]
+[Authorize(Policy = Policies.EnabledOnly)]
 public partial class MemoryVersesService(
     GsbcDbContext              db,
     IEventService<MemoryVerse> eventService,

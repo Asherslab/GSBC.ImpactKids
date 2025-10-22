@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace GSBC.ImpactKids.Grpc.Services.ElvantoServices;
 
-[Authorize]
+[Authorize(Policy = Policies.EnabledOnly)]
 public partial class ElvantoService(
     HttpClient httpClient,
     ElvantoConfig config

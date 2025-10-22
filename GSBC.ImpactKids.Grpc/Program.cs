@@ -9,7 +9,9 @@ using GSBC.ImpactKids.Grpc.Services.MemoryVerseListsServices;
 using GSBC.ImpactKids.Grpc.Services.MemoryVersesServices;
 using GSBC.ImpactKids.Grpc.Services.SchoolTermServices;
 using GSBC.ImpactKids.Grpc.Services.ServicesServices;
+using GSBC.ImpactKids.Grpc.Services.UsersServices;
 using GSBC.ImpactKids.ServiceDefaults;
+using Microsoft.AspNetCore.Authentication;
 using ProtoBuf.Grpc.Server;
 using RabbitMQ.Client;
 
@@ -28,7 +30,12 @@ builder.Services.AddAuthentication()
         jwtOptions.Audience = config?.ClientId;
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(opts =>
+    {
+        opts.AddPolicy(Policies.EnabledOnly, policy => policy.RequireClaim("Enabled", true.ToString()));
+    }
+);
+builder.Services.AddTransient<IClaimsTransformation, CustomClaimsTransformation>();
 builder.Services.AddCodeFirstGrpc();
 builder.Services.AddGrpc();
 builder.Services.AddConverters();
@@ -49,6 +56,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // Configure the HTTP request pipeline.
+app.MapGrpcService<LoginService>();
+app.MapGrpcService<UsersService>();
 app.MapGrpcService<ElvantoService>();
 app.MapGrpcService<SchoolTermService>();
 app.MapGrpcService<ServicesService>();

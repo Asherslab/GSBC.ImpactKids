@@ -2,14 +2,12 @@ using GSBC.ImpactKids.Grpc.Data.Models;
 using GSBC.ImpactKids.Shared.Contracts.Entities;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.SchoolTerms;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ImpactKids.Grpc.Services.SchoolTermServices;
 
 public partial class SchoolTermService
 {
-    [Authorize]
     public async Task<BasicReadResponse<SchoolTerm>?> Read(SchoolTermRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
