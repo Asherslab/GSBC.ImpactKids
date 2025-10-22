@@ -9,5 +9,5 @@ public class User
     public required bool Enabled { get; set; }
     
     public static string BuildSubscription(Guid? userId = null) => 
-        $"{nameof(Service)}.{userId?.ToString() ?? "*"}";
+        $"{nameof(User)}.{userId?.ToString() ?? "*"}";
 }
