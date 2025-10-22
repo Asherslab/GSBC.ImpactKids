@@ -37,6 +37,7 @@ builder.Services
     .AddCodeFirstGrpcClient<ILoginService>(typeof(ILoginService).FullName!,
         x => { x.Address = new Uri("http://grpc"); }); // login service is unauthenticated
 builder.Services.AddAuthenticatedGrpcClient<IUsersService>();
+builder.Services.AddAuthenticatedGrpcClient<IPeopleService>();
 builder.Services.AddAuthenticatedGrpcClient<IElvantoService>();
 builder.Services.AddAuthenticatedGrpcClient<ISchoolTermsService>();
 builder.Services.AddAuthenticatedGrpcClient<IServicesService>();

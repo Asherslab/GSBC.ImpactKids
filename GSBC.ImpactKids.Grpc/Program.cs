@@ -7,6 +7,7 @@ using GSBC.ImpactKids.Grpc.Services.ElvantoServices;
 using GSBC.ImpactKids.Grpc.Services.ElvantoServices.Models;
 using GSBC.ImpactKids.Grpc.Services.MemoryVerseListsServices;
 using GSBC.ImpactKids.Grpc.Services.MemoryVersesServices;
+using GSBC.ImpactKids.Grpc.Services.PeopleServices;
 using GSBC.ImpactKids.Grpc.Services.SchoolTermServices;
 using GSBC.ImpactKids.Grpc.Services.ServicesServices;
 using GSBC.ImpactKids.Grpc.Services.UsersServices;
@@ -58,6 +59,7 @@ app.UseAuthorization();
 // Configure the HTTP request pipeline.
 app.MapGrpcService<LoginService>();
 app.MapGrpcService<UsersService>();
+app.MapGrpcService<PeopleService>();
 app.MapGrpcService<ElvantoService>();
 app.MapGrpcService<SchoolTermService>();
 app.MapGrpcService<ServicesService>();

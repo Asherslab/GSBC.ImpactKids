@@ -10,6 +10,8 @@ public class GsbcDbContext(
 {
     public required DbSet<DbUser> Users { get; set; }
     
+    public required DbSet<DbPerson> People { get; set; }
+    
     public required DbSet<DbSchoolTerm> Terms    { get; set; }
     public required DbSet<DbService>    Services { get; set; }
 

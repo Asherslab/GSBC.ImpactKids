@@ -55,6 +55,7 @@ public class LoginService(
         };
         await db.Users.AddAsync(user, token);
         await db.SaveChangesAsync(token);
+        await eventService.SendUpdatedEvent(user.Id, token: token);
 
         return new BasicResponse
         {
