@@ -5,6 +5,7 @@ using GSBC.ImpactKids.Web.Components;
 using GSBC.ImpactKids.Web.Extensions;
 using Microsoft.AspNetCore.HttpOverrides;
 using MudBlazor.Services;
+using ProtoBuf.Grpc.ClientFactory;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +33,10 @@ builder.Services.AddHttpForwarderWithServiceDiscovery();
 builder.Services.AddHttpContextAccessor();
 
 // AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+builder.Services
+    .AddCodeFirstGrpcClient<ILoginService>(typeof(ILoginService).FullName!,
+        x => { x.Address = new Uri("http://grpc"); }); // login service is unauthenticated
+builder.Services.AddAuthenticatedGrpcClient<IUsersService>();
 builder.Services.AddAuthenticatedGrpcClient<IElvantoService>();
 builder.Services.AddAuthenticatedGrpcClient<ISchoolTermsService>();
 builder.Services.AddAuthenticatedGrpcClient<IServicesService>();

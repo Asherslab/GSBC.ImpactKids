@@ -3,5 +3,5 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace GSBC.ImpactKids.Grpc.Services.BibleServices;
 
-[Authorize]
+[Authorize(Policy = Policies.EnabledOnly)]
 public partial class BibleService : IBibleService;

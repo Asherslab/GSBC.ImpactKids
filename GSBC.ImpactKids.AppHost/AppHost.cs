@@ -16,7 +16,7 @@ IResourceBuilder<RabbitMQServerResource> rabbitmq = builder.AddRabbitMQ("rabbitm
     .WithLifetime(ContainerLifetime.Persistent);
 
 IResourceBuilder<PostgresServerResource> sql = builder.AddPostgres("sql")
-    .WithPgAdmin()
+    .WithHostPort(60536)
     .WithDataVolume()
     .WithLifetime(ContainerLifetime.Persistent);
 

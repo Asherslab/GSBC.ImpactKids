@@ -1,6 +1,6 @@
 @page "/Bible"
 @using GSBC.ImpactKids.Shared.Contracts.Entities.Bible
-@attribute [Authorize]
+@attribute [Authorize(Policy = Policies.EnabledOnly)]
 @inject IBibleService     BibleService
 @inject ISnackbar         Snackbar
 @inject NavigationManager Navigation

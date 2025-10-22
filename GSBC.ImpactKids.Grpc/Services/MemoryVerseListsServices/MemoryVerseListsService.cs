@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace GSBC.ImpactKids.Grpc.Services.MemoryVerseListsServices;
 
-[Authorize]
+[Authorize(Policy = Policies.EnabledOnly)]
 public partial class MemoryVerseListsService(
     GsbcDbContext                                  db,
     IEventService<MemoryVerseList>                 eventService,

@@ -1,7 +1,7 @@
 @using GSBC.ImpactKids.Shared.Contracts.Entities.MemoryVerses
 @inherits EventListeningComponent
 @page "/VerseMemorisation/{ServiceId:guid}"
-@attribute [Authorize]
+@attribute [Authorize(Policy = Policies.EnabledOnly)]
 @inject IMemoryVersesService MemoryVersesService
 @inject ISnackbar            Snackbar
 @inject IDialogService       DialogService

@@ -1,12 +1,10 @@
 using GSBC.ImpactKids.Grpc.Services.ElvantoServices.Models;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Elvanto;
-using Microsoft.AspNetCore.Authorization;
 
 namespace GSBC.ImpactKids.Grpc.Services.ElvantoServices;
 
 public partial class ElvantoService
 {
-    [Authorize]
     public async Task<ElvantoServicePositionsResponse> GetServicePositions(CallContext context = default)
     {
         ServicesRequest request = new()

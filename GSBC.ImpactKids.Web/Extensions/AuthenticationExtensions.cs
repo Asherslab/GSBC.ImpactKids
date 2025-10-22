@@ -1,3 +1,5 @@
+using GSBC.ImpactKids.Web.Services;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 
@@ -6,7 +8,7 @@ namespace GSBC.ImpactKids.Web.Extensions;
 public static class AuthenticationExtensions
 {
     public const string OidcScheme = "Google";
-    
+
     public static void AddAuthenticationServices(this WebApplicationBuilder builder)
     {
         GoogleConfig? googleConfig = builder.Configuration.GetSection("Google").Get<GoogleConfig>();
@@ -23,18 +25,20 @@ public static class AuthenticationExtensions
                 oidcOptions.TokenValidationParameters.RoleClaimType = "roles";
             })
             .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme);
-        
-        
+
         builder.Services.ConfigureCookieOidc(CookieAuthenticationDefaults.AuthenticationScheme, OidcScheme);
-
-        builder.Services.AddAuthorization();
-
+        builder.Services.AddAuthorization(opts =>
+            {
+                opts.AddPolicy(Policies.EnabledOnly, policy => policy.RequireClaim("Enabled", true.ToString()));
+            }
+        );
         builder.Services.AddCascadingAuthenticationState();
+        builder.Services.AddTransient<IClaimsTransformation, CustomClaimsTransformation>();
     }
 }
 
 public class GoogleConfig
 {
-    public required string ClientId { get; set; }
+    public required string ClientId     { get; set; }
     public required string ClientSecret { get; set; }
 }

@@ -1,6 +1,6 @@
 @page "/roster"
 @inject IElvantoService ElvantoService
-@attribute [Authorize]
+@attribute [Authorize(Policy = Policies.EnabledOnly)]
 
 <PageTitle>Impact Kids Roster</PageTitle>
 

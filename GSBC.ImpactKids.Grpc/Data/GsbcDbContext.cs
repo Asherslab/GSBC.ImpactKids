@@ -8,6 +8,8 @@ public class GsbcDbContext(
     DbContextOptions options
 ) : DbContext(options)
 {
+    public required DbSet<DbUser> Users { get; set; }
+    
     public required DbSet<DbSchoolTerm> Terms    { get; set; }
     public required DbSet<DbService>    Services { get; set; }
 
@@ -20,6 +22,10 @@ public class GsbcDbContext(
     {
         base.OnModelCreating(modelBuilder);
 
+        modelBuilder.Entity<DbUser>()
+            .HasIndex(x => x.GoogleSub)
+            .IsUnique();
+        
         modelBuilder.Entity<DbSchoolTerm>()
             .HasMany(x => x.Services)
             .WithOne(x => x.SchoolTerm)

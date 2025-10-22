@@ -6,7 +6,6 @@ using GSBC.ImpactKids.Shared.Contracts.Entities.Bible;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Pagination;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ImpactKids.Grpc.Services.BibleServices;
@@ -16,9 +15,7 @@ public partial class BibleService(
     IConverter<DbBibleVerse, BibleVerse> converter
 )
 {
-    
-    [Authorize]
-    public async Task<BasicReadMultipleResponse<BibleVerse>> ReadMultiple(
+    public async Task<BasicReadMultipleResponse<BibleVerse>?> ReadMultiple(
         BasicReadMultipleRequest request,
         CallContext              context = default
     )

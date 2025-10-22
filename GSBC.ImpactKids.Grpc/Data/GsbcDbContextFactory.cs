@@ -12,6 +12,8 @@ public class GsbcDbContextFactory : IDesignTimeDbContextFactory<GsbcDbContext>
 
         return new GsbcDbContext(optionsBuilder.Options)
         {
+            Users = null!,
+            
             Terms = null!,
             Services = null!,
 

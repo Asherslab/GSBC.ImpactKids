@@ -1,0 +1,41 @@
+@inherits EventListeningComponent
+@page "/Users"
+@attribute [Authorize(Policy = Policies.EnabledOnly)]
+@inject IUsersService     UsersService
+@inject ISnackbar         Snackbar
+@inject NavigationManager Navigation
+@inject IDialogService    DialogService
+
+<PageTitle>Users</PageTitle>
+<MudPaper Elevation="6" Class="mt-4">
+    <MudTextField
+        T="string"
+        Value="Search"
+        ValueChanged="@(OnSearch)"
+        Placeholder="Search"
+        Adornment="Adornment.Start"
+        AdornmentIcon="@Icons.Material.Filled.Search"
+        DebounceInterval="100"
+        IconSize="Size.Medium"
+        Clearable="true"
+        Class="py-6 px-6"/>
+    <MudTable Items="_users" Hover="true" Breakpoint="Breakpoint.Sm">
+        <HeaderContent>
+            <MudTh></MudTh>
+            <MudTh>Name</MudTh>
+            <MudTh>Enabled</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>
+                <MudIconButton OnClick="@(_ => DeleteUser(context))"
+                               Icon="@Icons.Material.Filled.Delete"/>
+            </MudTd>
+            <MudTd DataLabel="Name">@context.Name</MudTd>
+            <MudTd DataLabel="Enabled">
+                <MudCheckBox T="bool"
+                             Value="@context.Enabled"
+                             ValueChanged="@(() => ToggleUser(context))"/>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+</MudPaper>

@@ -5,11 +5,11 @@ using GSBC.ImpactKids.Shared.Contracts.Entities;
 using GSBC.ImpactKids.Shared.Contracts.Services;
 using Microsoft.AspNetCore.Authorization;
 
-namespace GSBC.ImpactKids.Grpc.Services.ServicesServices;
+namespace GSBC.ImpactKids.Grpc.Services.UsersServices;
 
 [Authorize(Policy = Policies.EnabledOnly)]
-public partial class ServicesService(
-    GsbcDbContext                  db,
-    IEventService<Service>         eventService,
-    IConverter<DbService, Service> converter
-) : IServicesService;
+public partial class UsersService(
+    GsbcDbContext       db,
+    IEventService<User> eventService,
+    IConverter<DbUser, User> converter
+) : IUsersService;

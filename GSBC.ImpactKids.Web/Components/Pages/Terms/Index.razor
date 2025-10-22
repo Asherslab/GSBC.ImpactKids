@@ -1,6 +1,6 @@
 @inherits EventListeningComponent
 @page "/Terms"
-@attribute [Authorize]
+@attribute [Authorize(Policy = Policies.EnabledOnly)]
 @inject ISchoolTermsService SchoolTermsService
 @inject ISnackbar           Snackbar
 @inject NavigationManager   Navigation
