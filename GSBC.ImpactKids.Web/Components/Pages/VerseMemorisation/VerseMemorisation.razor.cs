@@ -41,7 +41,7 @@ public partial class VerseMemorisation : EventListeningComponent
         await SubscribeToEvent(MemoryVerse.BuildSubscription(),
             RefreshMemoryVerses); // We subscribe to all memory verse changes since filtering by service is complex
 
-        await RefreshMemorisationEntries();
+        // await RefreshMemorisationEntries(); // called by RefreshMemoryVerses() instead.
         await SubscribeToEvent(MemorisationEntry.BuildSubscription(), RefreshMemorisationEntries);
     }
 
@@ -81,7 +81,7 @@ public partial class VerseMemorisation : EventListeningComponent
         }
 
         _memoryVerses = response.Entities;
-        SetSelectedVerse();
+        await SetSelectedVerse();
         StateHasChanged();
     }
 
@@ -144,11 +144,11 @@ public partial class VerseMemorisation : EventListeningComponent
         );
     }
 
-    private void SelectedMemoryVerseChanged(Guid value)
+    private async Task SelectedMemoryVerseChanged(Guid value)
     {
         SelectedMemoryVerse = value;
         SetQueryParameters();
-        SetSelectedVerse();
+        await SetSelectedVerse();
         StateHasChanged();
     }
 
@@ -182,9 +182,10 @@ public partial class VerseMemorisation : EventListeningComponent
         }
     }
 
-    private void SetSelectedVerse()
+    private async Task SetSelectedVerse()
     {
         _selectedVerse = _memoryVerses?.FirstOrDefault(x => x.Id == SelectedMemoryVerse);
+        await RefreshMemorisationEntries();
     }
 
     private void SetQueryParameters()
