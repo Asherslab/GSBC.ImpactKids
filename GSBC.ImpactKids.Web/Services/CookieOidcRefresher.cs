@@ -40,7 +40,10 @@ internal sealed class CookieOidcRefresher(IOptionsMonitor<OpenIdConnectOptions> 
         string tokenEndpoint = oidcConfiguration.TokenEndpoint ?? throw new InvalidOperationException("Cannot refresh cookie. TokenEndpoint missing!");
 
         if (validateContext.Properties.GetTokenValue("refresh_token") == null)
+        {
+            validateContext.RejectPrincipal();
             return;
+        }
         
         using var refreshResponse = await oidcOptions.Backchannel.PostAsync(tokenEndpoint,
             new FormUrlEncodedContent(new Dictionary<string, string?>
