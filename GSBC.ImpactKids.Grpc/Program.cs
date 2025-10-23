@@ -41,6 +41,7 @@ builder.Services.AddTransient<IClaimsTransformation, CustomClaimsTransformation>
 builder.Services.AddCodeFirstGrpc();
 builder.Services.AddGrpc();
 builder.Services.AddConverters();
+builder.Services.AddTransient<ElvantoService>();
 
 builder.AddNpgsqlDbContext<GsbcDbContext>("impact-kids");
 

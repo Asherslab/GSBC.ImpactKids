@@ -9,6 +9,12 @@
 <PageTitle>People</PageTitle>
 
 <MudPaper Elevation="6" Class="mt-4">
+    <MudButton FullWidth
+               Class="py-5"
+               OnClick="@SyncElvantoPeople"
+               StartIcon="@Icons.Material.Filled.Sync">
+        Sync Elvanto Users
+    </MudButton>
     <MudTextField
         T="string"
         Value="Search"

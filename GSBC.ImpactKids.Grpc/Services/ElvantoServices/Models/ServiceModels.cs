@@ -1,5 +1,9 @@
 using System.Text.Json.Serialization;
 using GSBC.ImpactKids.Grpc.Serialization;
+// ReSharper disable ClassNeverInstantiated.Global
+// ReSharper disable UnusedAutoPropertyAccessor.Global
+// ReSharper disable CollectionNeverUpdated.Global
+// ReSharper disable UnusedMember.Global
 
 namespace GSBC.ImpactKids.Grpc.Services.ElvantoServices.Models;
 
@@ -18,7 +22,7 @@ public class ElvantoServices
 public class Service
 {
     [JsonPropertyName("date")]
-    public string Date { get; set; }
+    public string? Date { get; set; }
 
     [JsonPropertyName("service_type")]
     public ServiceType? ServiceType { get; set; }
@@ -48,7 +52,7 @@ public class Plan
 public class Positions
 {
     [JsonPropertyName("position")]
-    public List<Position> Position { get; set; }
+    public List<Position> Position { get; set; } = [];
 }
 
 public class Position
@@ -81,9 +85,24 @@ public class Volunteer
 
 public class Person
 {
+    [JsonPropertyName("id")]
+    public string? Id { get; set; }
+    
     [JsonPropertyName("firstname")]
-    public string FirstName { get; set; }
+    public string? FirstName { get; set; }
 
     [JsonPropertyName("lastname")]
-    public string LastName { get; set; }
+    public string? LastName { get; set; }
+    
+    [JsonPropertyName("preferred_name")]
+    public string? PreferredName { get; set; }
+    
+    [JsonPropertyName("school_grade")]
+    public SchoolGrade? SchoolGrade { get; set; }
+}
+
+public class SchoolGrade
+{
+    public string? Id   { get; set; }
+    public string? Name { get; set; }
 }
