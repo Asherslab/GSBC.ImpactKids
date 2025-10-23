@@ -48,7 +48,9 @@ public partial class ElvantoService
                         ElvantoId = person.Id,
                         FirstName = person.FirstName ?? "",
                         LastName = person.LastName ?? "",
-                        PreferredName = person.PreferredName ?? ""
+                        PreferredName = string.IsNullOrWhiteSpace(person.PreferredName) 
+                            ? null 
+                            : person.PreferredName
                     }
                 )
             );
