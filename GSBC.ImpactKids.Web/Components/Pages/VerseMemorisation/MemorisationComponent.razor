@@ -9,7 +9,7 @@
 @inject NavigationManager           Navigation
 
 <MudPaper Elevation="6" Class="mt-4">
-    <MudCard>
+    <MudCard Style="min-height: 900px">
         <MudCardHeader>
             <CardHeaderContent>
                 <MudText Typo="Typo.h6" Align="Align.Center">Verse Memorisation Recording Tool</MudText>
@@ -56,20 +56,17 @@
                     </MudCardActions>
                 </MudCard>
             }
-
-            <MudFocusTrap DefaultFocus="DefaultFocus.Element">
-                <MudTextField
-                    T="string"
-                    Value="Search"
-                    ValueChanged="@(OnSearch)"
-                    Placeholder="Search for People"
-                    Adornment="Adornment.Start"
-                    AdornmentIcon="@Icons.Material.Filled.Search"
-                    DebounceInterval="100"
-                    IconSize="Size.Medium"
-                    Clearable="true"
-                    Class="py-6 px-6"/>
-            </MudFocusTrap>
+            <MudTextField
+                T="string"
+                Value="Search"
+                ValueChanged="@(OnSearch)"
+                Placeholder="Search for People"
+                Adornment="Adornment.Start"
+                AdornmentIcon="@Icons.Material.Filled.Search"
+                DebounceInterval="100"
+                IconSize="Size.Medium"
+                Clearable="true"
+                Class="py-6 px-6"/>
             <MudTable Elevation="6"
                       Items="_memorisationEntries"
                       Hover="true"
