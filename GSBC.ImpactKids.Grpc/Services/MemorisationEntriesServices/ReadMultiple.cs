@@ -17,6 +17,16 @@ public partial class MemorisationEntriesService
     {
         CancellationToken token = context.CancellationToken;
 
+        DbService? service = await db.Services
+            .FirstOrDefaultAsync(x => x.Id == request.ServiceId, cancellationToken: token);
+
+        if (service == null)
+            return new BasicReadMultipleResponse<MemorisationEntry>
+            {
+                Success = false,
+                Error = ServiceNotFound
+            };
+
         IQueryable<DbPerson> personQuery = db.People;
 
         if (request.SearchString != null)
@@ -46,7 +56,8 @@ public partial class MemorisationEntriesService
         }
 
         IQueryable<DbMemorisationEntry> query = db.MemorisationEntries
-            .Include(x => x.Person);
+            .Include(x => x.Person)
+            .Include(x => x.Service);
 
         List<Guid> peopleIds = people.Select(x => x.Id).ToList();
 
@@ -85,6 +96,7 @@ public partial class MemorisationEntriesService
                 PersonId = dbPerson.Id,
                 Person = dbPerson,
                 ServiceId = request.ServiceId,
+                Service = service,
                 MemoryVerseId = request.MemoryVerseId,
             };
 
@@ -112,7 +124,8 @@ public partial class MemorisationEntriesService
         foreach (MemorisationEntry entry in dtoEntries)
         {
             entry.VerseHasBeenRecitedBefore = entriesNotForThisRequest
-                .Where(x => x.PersonId == entry.PersonId)
+                .Where(x => x.PersonId == entry.PersonId) // the entries relate to this entry's person
+                .Where(x => x.Service!.Date < entry.Service!.Date)
                 .Any(x => x.VerseRecited);
         }
 
