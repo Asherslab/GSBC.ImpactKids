@@ -31,11 +31,14 @@ public partial class MemorisationEntriesService
 
         if (request.SearchString != null)
         {
-            personQuery = personQuery.Where(x =>
-                x.FirstName.ToLower().Contains(request.SearchString.ToLower()) ||
-                x.LastName.ToLower().Contains(request.SearchString.ToLower()) ||
-                x.PreferredName!.ToLower().Contains(request.SearchString.ToLower())
-            );
+            foreach (string search in request.SearchString.Split(" "))
+            {
+                personQuery = personQuery.Where(x =>
+                    x.FirstName.ToLower().Contains(search.ToLower()) ||
+                    x.LastName.ToLower().Contains(search.ToLower()) ||
+                    x.PreferredName!.ToLower().Contains(search.ToLower())
+                );
+            }
         }
 
         personQuery = personQuery.OrderBy(x => x.FirstName).ThenBy(x => x.LastName);
