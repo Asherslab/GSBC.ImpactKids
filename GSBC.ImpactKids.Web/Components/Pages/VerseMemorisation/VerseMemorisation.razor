@@ -73,9 +73,9 @@
             <MudTable Elevation="6" Items="_memorisationEntries" Hover="true" Breakpoint="Breakpoint.None">
                 <HeaderContent>
                     <MudTh>Name</MudTh>
-                    <MudTh>Recited</MudTh>
-                    <MudTh>$5</MudTh>
-                    <MudTh>$1</MudTh>
+                    <MudTh Style="width: 100px">Recited</MudTh>
+                    <MudTh Style="width: 25px">$5</MudTh>
+                    <MudTh Style="width: 25px">$1</MudTh>
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd DataLabel="Name">@context.Person?.GetDisplayName()</MudTd>
@@ -90,6 +90,7 @@
                                     RootStyle="display: flex !important"
                                     ShowOnClick
                                     ShowOnHover
+                                    ShowOnFocus
                                     Text="This is the first time this verse has been recited!">
                                     <MudIcon Icon="@Icons.Material.Filled.NewReleases"/>
                                 </MudTooltip>
@@ -103,6 +104,7 @@
                                 RootStyle="display: flex !important"
                                 ShowOnClick
                                 ShowOnHover
+                                ShowOnFocus
                                 Text="This verse has been recited before, give 1 dollary doo instead">
                                 <MudCheckBox T="bool"
                                              Disabled
@@ -123,6 +125,7 @@
                                 RootStyle="display: flex !important"
                                 ShowOnClick
                                 ShowOnHover
+                                ShowOnFocus
                                 Text="This verse has not been recited before, give 5 dollary doo instead">
                                 <MudCheckBox T="bool"
                                              Disabled
