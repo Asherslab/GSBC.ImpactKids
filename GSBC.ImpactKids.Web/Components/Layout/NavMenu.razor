@@ -1,20 +1,56 @@
 ﻿<MudNavMenu>
     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
     <MudNavLink Href="/roster" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Schedule">Roster</MudNavLink>
-    
-    <MudNavGroup Icon="@Icons.Material.Filled.School" Title="Verse Memorisation">
-        <MudNavLink Href="/verseMemorisation/Previous" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.NavigateBefore">Previous Service Memorisation</MudNavLink>
-        <MudNavLink Href="/verseMemorisation/Upcoming" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.NavigateNext">Upcoming Service Memorisation</MudNavLink>
-    </MudNavGroup>
-    <MudNavGroup Icon="@Icons.Material.Filled.CalendarToday" Title="School Terms">
-        <MudNavLink Href="/terms" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.CalendarViewMonth">All Terms</MudNavLink>
-        <MudNavLink Href="/term" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.CalendarMonth">Current Term</MudNavLink>
-        <MudNavGroup Icon="@Icons.Material.Filled.Schedule" Title="Services">
-            <MudNavLink Href="/service?previous=true" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.NavigateBefore">Previous Service</MudNavLink>
-            <MudNavLink Href="/service?upcoming=true" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.NavigateNext">Upcoming Service</MudNavLink>
-        </MudNavGroup>
-    </MudNavGroup>
-    <MudNavLink Href="/bible" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Book">Bible</MudNavLink>
-    <MudNavLink Href="/people" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Person">People</MudNavLink>
-    <MudNavLink Href="/users" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.ManageAccounts">Users</MudNavLink>
+
+
+    <MudNavPopout Icon="@Icons.Material.Filled.School"
+                  Title="Verse Memorisation">
+        <MudMenuItem Icon="@Icons.Material.Filled.Undo"
+                     Label="Previous"
+                     Href="/verseMemorisation/Previous"/>
+        <MudMenuItem Icon="@Icons.Material.Filled.Redo"
+                     Label="Upcoming"
+                     Href="/verseMemorisation/Upcoming"/>
+    </MudNavPopout>
+    <MudNavPopout Icon="@Icons.Material.Filled.Schedule"
+                  Title="Services">
+        <MudMenuItem Icon="@Icons.Material.Filled.Undo"
+                     Label="Previous"
+                     Href="/service?previous=true"/>
+        <MudMenuItem Icon="@Icons.Material.Filled.Redo"
+                     Label="Upcoming"
+                     Href="/service?upcoming=true"/>
+        <MudMenu Label="School Terms">
+            <MudMenuItem Icon="@Icons.Material.Filled.CalendarViewMonth"
+                         Label="All"
+                         Href="/terms"/>
+            <MudMenuItem Icon="@Icons.Material.Filled.CalendarMonth"
+                         Label="Current"
+                         Href="/term"/>
+        </MudMenu>
+    </MudNavPopout>
+    <MudNavPopout Icon="@Icons.Material.Filled.Settings"
+                  Title="Admin">
+        <MudMenuItem Icon="@Icons.Material.Filled.Book"
+                     Label="Bible"
+                     Href="/bible"/>
+        <MudMenuItem Icon="@Icons.Material.Filled.Person"
+                     Label="People"
+                     Href="/people"/>
+        <MudMenuItem Icon="@Icons.Material.Filled.ManageAccounts"
+                     Label="Users"
+                     Href="/users"/>
+    </MudNavPopout>
 </MudNavMenu>
+
+@code {
+
+    private bool _menuOpen;
+
+    private void MenuOpenChanged(bool b)
+    {
+        _menuOpen = b;
+        StateHasChanged();
+    }
+
+}
