@@ -8,22 +8,26 @@ public interface IPeopleService
 {
     Task<BasicResponse?> Create(
         CreatePersonRequest request,
-        CallContext             context = default
+        CallContext         context = default
+    );
+
+    Task<BasicResponse?> SyncWithElvanto(
+        CallContext context = default
     );
 
     Task<BasicReadResponse<Person>?> Read(
         BasicReadRequest request,
-        CallContext       context = default
+        CallContext      context = default
     );
 
     Task<BasicReadMultipleResponse<Person>?> ReadMultiple(
         BasicReadMultipleRequest request,
-        CallContext        context = default
+        CallContext              context = default
     );
 
     Task<BasicResponse?> Update(
         UpdatePersonRequest request,
-        CallContext             context = default
+        CallContext         context = default
     );
 
     Task<BasicResponse?> Delete(

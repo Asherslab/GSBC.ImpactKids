@@ -13,7 +13,7 @@ public partial class ElvantoService(
     ElvantoConfig config
 ) : IElvantoService
 {
-    private async Task<TResponse?> SendMessage<TRequest, TResponse>(TRequest request)
+    private async Task<TResponse?> SendMessage<TRequest, TResponse>(TRequest request, CancellationToken token = default)
         where TRequest : IRequestMessage
     {
         HttpRequestMessage httpRequest = new(HttpMethod.Post, TRequest.RequestUri);
@@ -22,7 +22,7 @@ public partial class ElvantoService(
 
         httpRequest.Content = JsonContent.Create(request);
 
-        HttpResponseMessage message = await httpClient.SendAsync(httpRequest);
-        return await message.Content.ReadFromJsonAsync<TResponse>();
+        HttpResponseMessage message = await httpClient.SendAsync(httpRequest, token);
+        return await message.Content.ReadFromJsonAsync<TResponse>(cancellationToken: token);
     }
 }

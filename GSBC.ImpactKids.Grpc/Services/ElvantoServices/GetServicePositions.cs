@@ -7,6 +7,8 @@ public partial class ElvantoService
 {
     public async Task<ElvantoServicePositionsResponse> GetServicePositions(CallContext context = default)
     {
+        CancellationToken token = context.CancellationToken;
+        
         ServicesRequest request = new()
         {
             Start = DateOnly.FromDateTime(DateTime.Now),
@@ -15,7 +17,7 @@ public partial class ElvantoService
             Fields = ["volunteers"]
         };
 
-        ServicesResponse? response = await SendMessage<ServicesRequest, ServicesResponse>(request);
+        ServicesResponse? response = await SendMessage<ServicesRequest, ServicesResponse>(request, token);
         if (response?.Services == null)
         {
             return new ElvantoServicePositionsResponse

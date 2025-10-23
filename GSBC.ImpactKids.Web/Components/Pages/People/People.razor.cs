@@ -65,6 +65,11 @@ public partial class People
         });
     }
 
+    private async Task SyncElvantoPeople()
+    {
+        await PeopleService.SyncWithElvanto();
+    }
+
     private async Task CreatePerson()
     {
         await DialogService.ShowAsync<CreatePersonDialog>("Create Person");
