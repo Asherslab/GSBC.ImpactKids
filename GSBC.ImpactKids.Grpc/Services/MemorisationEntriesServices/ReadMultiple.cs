@@ -49,15 +49,21 @@ public partial class MemorisationEntriesService
             .Include(x => x.Person);
 
         List<Guid> peopleIds = people.Select(x => x.Id).ToList();
-        
+
         query = query
-            .Where(x => x.ServiceId == request.ServiceId)
+            // .Where(x => x.ServiceId == request.ServiceId)
+            // don't filter by service because we're going to use past services to determine some details
             .Where(x => x.MemoryVerseId == request.MemoryVerseId)
             .Where(x => peopleIds.Contains(x.PersonId));
 
-        List<DbMemorisationEntry> entries = await query.ToListAsync(token);
+        List<DbMemorisationEntry> entries = await query
+            .OrderBy(x => x.Person!.FirstName)
+            .ThenBy(x => x.Person!.LastName)
+            .ToListAsync(token);
 
-        if (entries.Count > people.Count)
+        List<DbMemorisationEntry> entriesForRequest = entries.Where(x => x.ServiceId == request.ServiceId).ToList();
+
+        if (entriesForRequest.Count > people.Count)
         {
             return new BasicReadMultipleResponse<MemorisationEntry>
             {
@@ -69,7 +75,7 @@ public partial class MemorisationEntriesService
         List<DbMemorisationEntry> newEntries = [];
         foreach (DbPerson dbPerson in people)
         {
-            if (entries.Any(x => x.PersonId == dbPerson.Id))
+            if (entriesForRequest.Any(x => x.PersonId == dbPerson.Id))
                 continue;
 
             DbMemorisationEntry newEntry = new()
@@ -93,11 +99,27 @@ public partial class MemorisationEntriesService
         }
 
         entries.AddRange(newEntries);
+        entriesForRequest = entries.Where(x => x.ServiceId == request.ServiceId).ToList();
+        List<DbMemorisationEntry> entriesNotForThisRequest =
+            entries.Where(x => x.ServiceId != request.ServiceId).ToList();
+
+        List<MemorisationEntry> dtoEntries = entriesForRequest
+            .Select(converter.Convert)
+            .OrderBy(x => x.Person!.FirstName)
+            .ThenBy(x => x.Person!.LastName)
+            .ToList();
+        
+        foreach (MemorisationEntry entry in dtoEntries)
+        {
+            entry.VerseHasBeenRecitedBefore = entriesNotForThisRequest
+                .Where(x => x.PersonId == entry.PersonId)
+                .Any(x => x.VerseRecited);
+        }
 
         return new BasicReadMultipleResponse<MemorisationEntry>
         {
             Success = true,
-            Entities = entries.Select(converter.Convert).ToList()
+            Entities = dtoEntries
         };
     }
 }
