@@ -9,7 +9,7 @@
 @inject NavigationManager           Navigation
 
 <MudPaper Elevation="6" Class="mt-4">
-    <MudCard Style="height: 90vh">
+    <MudCard>
         <MudCardHeader>
             <CardHeaderContent>
                 <MudText Typo="Typo.h6" Align="Align.Center">Verse Memorisation Recording Tool</MudText>
@@ -67,7 +67,11 @@
                 IconSize="Size.Medium"
                 Clearable="true"
                 Class="py-6 px-6"/>
-            <MudTable Elevation="6" Items="_memorisationEntries" Hover="true" Breakpoint="Breakpoint.None">
+            <MudTable Elevation="6"
+                      Style="height: 340px"
+                      Items="_memorisationEntries" 
+                      Hover="true" 
+                      Breakpoint="Breakpoint.None">
                 <HeaderContent>
                     <MudTh>Name</MudTh>
                     <MudTh Style="width: 100px">Recited</MudTh>
