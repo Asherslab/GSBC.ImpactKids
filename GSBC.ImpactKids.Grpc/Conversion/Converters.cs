@@ -82,5 +82,6 @@ public partial class MemorisationEntryConverter(
     [UseMapper]
     private readonly IConverter<DbService, Service> _serviceConverter = serviceConverter;
 
+    [MapperIgnoreTarget(nameof(MemorisationEntry.VerseHasBeenRecitedBefore))]
     public partial MemorisationEntry Convert(DbMemorisationEntry input);
 }

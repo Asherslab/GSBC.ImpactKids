@@ -80,19 +80,61 @@
                 <RowTemplate>
                     <MudTd DataLabel="Name">@context.Person?.GetDisplayName()</MudTd>
                     <MudTd DataLabel="Recited">
-                        <MudCheckBox T="bool"
-                                     Value="@context.VerseRecited"
-                                     ValueChanged="@(() => UpdateMemorisationEntry(context, recited: !context.VerseRecited))"/>
+                        <MudStack Row>
+                            <MudCheckBox T="bool"
+                                         Value="@context.VerseRecited"
+                                         ValueChanged="@(() => UpdateMemorisationEntry(context, recited: !context.VerseRecited))"/>
+                            @if (context is { VerseHasBeenRecitedBefore: false, VerseRecited: true })
+                            {
+                                <MudTooltip
+                                    RootStyle="display: flex !important"
+                                    ShowOnClick
+                                    ShowOnHover
+                                    Text="This is the first time this verse has been recited!">
+                                    <MudIcon Icon="@Icons.Material.Filled.NewReleases"/>
+                                </MudTooltip>
+                            }
+                        </MudStack>
                     </MudTd>
                     <MudTd DataLabel="$5">
-                        <MudCheckBox T="bool"
-                                     Value="@context.FiveDollaryDoosGiven"
-                                     ValueChanged="@(() => UpdateMemorisationEntry(context, fiveDollaryDoos: !context.FiveDollaryDoosGiven))"/>
+                        @if (context.VerseHasBeenRecitedBefore)
+                        {
+                            <MudTooltip
+                                RootStyle="display: flex !important"
+                                ShowOnClick
+                                ShowOnHover
+                                Text="This verse has been recited before, give 1 dollary doo instead">
+                                <MudCheckBox T="bool"
+                                             Disabled
+                                             Value="false"/>
+                            </MudTooltip>
+                        }
+                        else
+                        {
+                            <MudCheckBox T="bool"
+                                         Value="@context.FiveDollaryDoosGiven"
+                                         ValueChanged="@(() => UpdateMemorisationEntry(context, fiveDollaryDoos: !context.FiveDollaryDoosGiven))"/>
+                        }
                     </MudTd>
                     <MudTd DataLabel="$1">
-                        <MudCheckBox T="bool"
-                                     Value="@context.OneDollaryDooGiven"
-                                     ValueChanged="@(() => UpdateMemorisationEntry(context, oneDollaryDoo: !context.OneDollaryDooGiven))"/>
+                        @if (!context.VerseHasBeenRecitedBefore)
+                        {
+                            <MudTooltip
+                                RootStyle="display: flex !important"
+                                ShowOnClick
+                                ShowOnHover
+                                Text="This verse has not been recited before, give 5 dollary doo instead">
+                                <MudCheckBox T="bool"
+                                             Disabled
+                                             Value="false"/>
+                            </MudTooltip>
+                        }
+                        else
+                        {
+                            <MudCheckBox T="bool"
+                                         Value="@context.OneDollaryDooGiven"
+                                         ValueChanged="@(() => UpdateMemorisationEntry(context, oneDollaryDoo: !context.OneDollaryDooGiven))"/>
+                        }
                     </MudTd>
                 </RowTemplate>
             </MudTable>
