@@ -39,6 +39,9 @@ internal sealed class CookieOidcRefresher(IOptionsMonitor<OpenIdConnectOptions> 
         var oidcConfiguration = await oidcOptions.ConfigurationManager!.GetConfigurationAsync(validateContext.HttpContext.RequestAborted);
         string tokenEndpoint = oidcConfiguration.TokenEndpoint ?? throw new InvalidOperationException("Cannot refresh cookie. TokenEndpoint missing!");
 
+        if (validateContext.Properties.GetTokenValue("refresh_token") == null)
+            return;
+        
         using var refreshResponse = await oidcOptions.Backchannel.PostAsync(tokenEndpoint,
             new FormUrlEncodedContent(new Dictionary<string, string?>
             {
@@ -79,7 +82,7 @@ internal sealed class CookieOidcRefresher(IOptionsMonitor<OpenIdConnectOptions> 
 
         var validatedIdToken = JwtSecurityTokenConverter.Convert(validationResult.SecurityToken as JsonWebToken);
         validatedIdToken.Payload["nonce"] = null;
-        _oidcTokenValidator.ValidateTokenResponse(new()
+        _oidcTokenValidator.ValidateTokenResponse(new OpenIdConnectProtocolValidationContext
         {
             ProtocolMessage = message,
             ClientId = oidcOptions.ClientId,
