@@ -11,7 +11,6 @@ namespace GSBC.ImpactKids.Web.Components.Pages.People;
 
 public partial class People
 {
-    [SupplyParameterFromQuery]
     public string? Search { get; set; }
 
     private ICollection<Person>? _people;
@@ -48,21 +47,7 @@ public partial class People
         Search = text;
         if (string.IsNullOrWhiteSpace(Search))
             Search = null;
-        SetQueryParameters();
         await RefreshPeople();
-    }
-
-    private void SetQueryParameters()
-    {
-        Navigation.NavigateTo(GetQueryParameters());
-    }
-
-    private string GetQueryParameters()
-    {
-        return Navigation.GetUriWithQueryParameters(new Dictionary<string, object?>
-        {
-            [nameof(Search)] = Search
-        });
     }
 
     private async Task SyncElvantoPeople()

@@ -56,21 +56,23 @@
                     </MudCardActions>
                 </MudCard>
             }
-            <MudTextField
-                T="string"
-                Value="Search"
-                ValueChanged="@(OnSearch)"
-                Placeholder="Search for People"
-                Adornment="Adornment.Start"
-                AdornmentIcon="@Icons.Material.Filled.Search"
-                DebounceInterval="100"
-                IconSize="Size.Medium"
-                Clearable="true"
-                Class="py-6 px-6"/>
+
+            <MudFocusTrap DefaultFocus="DefaultFocus.Element">
+                <MudTextField
+                    T="string"
+                    Value="Search"
+                    ValueChanged="@(OnSearch)"
+                    Placeholder="Search for People"
+                    Adornment="Adornment.Start"
+                    AdornmentIcon="@Icons.Material.Filled.Search"
+                    DebounceInterval="100"
+                    IconSize="Size.Medium"
+                    Clearable="true"
+                    Class="py-6 px-6"/>
+            </MudFocusTrap>
             <MudTable Elevation="6"
-                      Style="height: 340px"
-                      Items="_memorisationEntries" 
-                      Hover="true" 
+                      Items="_memorisationEntries"
+                      Hover="true"
                       Breakpoint="Breakpoint.None">
                 <HeaderContent>
                     <MudTh>Name</MudTh>

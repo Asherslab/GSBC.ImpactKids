@@ -3,13 +3,11 @@ using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using GSBC.ImpactKids.Web.Components.Base;
 using GSBC.ImpactKids.Web.Extensions;
-using Microsoft.AspNetCore.Components;
 
 namespace GSBC.ImpactKids.Web.Components.Pages.Users;
 
 public partial class Users : EventListeningComponent
 {
-    [SupplyParameterFromQuery]
     public string? Search { get; set; }
     
     private ICollection<User>? _users;
@@ -47,21 +45,7 @@ public partial class Users : EventListeningComponent
         Search = text;
         if (string.IsNullOrWhiteSpace(Search))
             Search = null;
-        SetQueryParameters();
         await RefreshUsers();
-    }
-    
-    private void SetQueryParameters()
-    {
-        Navigation.NavigateTo(GetQueryParameters());
-    }
-
-    private string GetQueryParameters()
-    {
-        return Navigation.GetUriWithQueryParameters(new Dictionary<string, object?>
-        {
-            [nameof(Search)] = Search
-        });
     }
 
     private async Task ToggleUser(User user)
