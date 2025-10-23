@@ -20,11 +20,14 @@ public partial class PeopleService
 
         if (request.SearchString != null)
         {
-            query = query.Where(x =>
-                x.FirstName.ToLower().Contains(request.SearchString.ToLower()) ||
-                x.LastName.ToLower().Contains(request.SearchString.ToLower()) ||
-                x.PreferredName!.ToLower().Contains(request.SearchString.ToLower())
-            );
+            foreach (string search in request.SearchString.Split(" "))
+            {
+                query = query.Where(x =>
+                    x.FirstName.ToLower().Contains(search.ToLower()) ||
+                    x.LastName.ToLower().Contains(search.ToLower()) ||
+                    x.PreferredName!.ToLower().Contains(search.ToLower())
+                );
+            }
         }
 
         query = query.OrderBy(x => x.FirstName).ThenBy(x => x.LastName);
