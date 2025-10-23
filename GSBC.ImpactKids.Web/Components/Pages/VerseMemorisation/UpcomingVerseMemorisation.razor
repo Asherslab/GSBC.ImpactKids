@@ -1,8 +1,8 @@
 @inherits EventListeningComponent
-@page "/VerseMemorisation/{ServiceId:guid}"
+@page "/VerseMemorisation/Upcoming"
 @attribute [Authorize(Policy = Policies.EnabledOnly)]
 
 <PageTitle>Verse Memorisation Recording Tool</PageTitle>
 
-<MemorisationComponent ServiceId="ServiceId"/>
+<MemorisationComponent Upcoming/>
 
