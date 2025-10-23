@@ -1,12 +1,17 @@
 ﻿<MudNavMenu>
     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
     <MudNavLink Href="/roster" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Schedule">Roster</MudNavLink>
-    <MudNavGroup Icon="@Icons.Material.Filled.School" Title="School Terms">
+    
+    <MudNavGroup Icon="@Icons.Material.Filled.School" Title="Verse Memorisation">
+        <MudNavLink Href="/verseMemorisation/Previous" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.NavigateBefore">Previous Service Memorisation</MudNavLink>
+        <MudNavLink Href="/verseMemorisation/Upcoming" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.NavigateNext">Upcoming Service Memorisation</MudNavLink>
+    </MudNavGroup>
+    <MudNavGroup Icon="@Icons.Material.Filled.CalendarToday" Title="School Terms">
         <MudNavLink Href="/terms" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.CalendarViewMonth">All Terms</MudNavLink>
         <MudNavLink Href="/term" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.CalendarMonth">Current Term</MudNavLink>
         <MudNavGroup Icon="@Icons.Material.Filled.Schedule" Title="Services">
-            <MudNavLink Href="/service?previous=true" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.SkipPrevious">Previous Service</MudNavLink>
-            <MudNavLink Href="/service?upcoming=true" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.SkipNext">Upcoming Service</MudNavLink>
+            <MudNavLink Href="/service?previous=true" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.NavigateBefore">Previous Service</MudNavLink>
+            <MudNavLink Href="/service?upcoming=true" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.NavigateNext">Upcoming Service</MudNavLink>
         </MudNavGroup>
     </MudNavGroup>
     <MudNavLink Href="/bible" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Book">Bible</MudNavLink>
