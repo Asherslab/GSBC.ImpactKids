@@ -27,7 +27,8 @@ internal static class CookieOidcServiceCollectionExtensions
             oidcOptions.Events.OnRedirectToIdentityProvider = context =>
             {
                 context.ProtocolMessage.SetParameter("access_type", "offline");
-                context.ProtocolMessage.SetParameter("prompt", "consent");
+                // context.ProtocolMessage.SetParameter("prompt", "consent"); // required to actually receive a refresh_token
+                // but refresh tokens are still really weird and buggy sadly. easier to not request it
                 return Task.CompletedTask;
             };
             // Store the refresh_token.
