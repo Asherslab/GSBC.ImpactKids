@@ -1,0 +1,52 @@
+<MudNavMenu>
+    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
+    <MudNavLink Href="/roster" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Schedule">Roster</MudNavLink>
+
+    <MudNavGroup Icon="@Icons.Material.Filled.School"
+                 Title="Verse Memorisation">
+        <MudNavLink Icon="@Icons.Material.Filled.Undo"
+                    Href="/verseMemorisation/Previous">
+            Previous
+        </MudNavLink>
+        <MudNavLink Icon="@Icons.Material.Filled.Redo"
+                    Href="/verseMemorisation/Upcoming">
+            Upcoming
+        </MudNavLink>
+    </MudNavGroup>
+    <MudNavGroup Icon="@Icons.Material.Filled.Schedule"
+                 Title="Services">
+        <MudNavLink Icon="@Icons.Material.Filled.Undo"
+                    Href="/service?previous=true">
+            Previous
+        </MudNavLink>
+        <MudNavLink Icon="@Icons.Material.Filled.Redo"
+                    Href="/service?upcoming=true">
+            Upcoming
+        </MudNavLink>
+        <MudNavGroup Title="School Terms">
+            <MudNavLink Icon="@Icons.Material.Filled.CalendarViewMonth"
+                        Href="/terms">
+                All
+            </MudNavLink>
+            <MudNavLink Icon="@Icons.Material.Filled.CalendarMonth"
+                        Href="/term">
+                Current
+            </MudNavLink>
+        </MudNavGroup>
+    </MudNavGroup>
+    <MudNavGroup Icon="@Icons.Material.Filled.Settings"
+                 Title="Admin">
+        <MudNavLink Icon="@Icons.Material.Filled.Book"
+                    Href="/bible">
+            Bible
+        </MudNavLink>
+        <MudNavLink Icon="@Icons.Material.Filled.Person"
+                    Href="/people">
+            People
+        </MudNavLink>
+        <MudNavLink Icon="@Icons.Material.Filled.ManageAccounts"
+                    Href="/users">
+            Users
+        </MudNavLink>
+    </MudNavGroup>
+</MudNavMenu>

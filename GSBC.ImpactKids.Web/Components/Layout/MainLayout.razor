@@ -16,7 +16,12 @@
         <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
     </MudAppBar>
     <MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
-        <NavMenu />
+        <MudHidden Breakpoint="Breakpoint.Xs">
+            <NavMenu/>
+        </MudHidden>
+        <MudHidden Invert Breakpoint="Breakpoint.Xs">
+            <MobileNavMenu/>
+        </MudHidden>
     </MudDrawer>
     <MudMainContent Class="pt-16 pa-4">
         @Body
