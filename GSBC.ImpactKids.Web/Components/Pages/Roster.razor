@@ -1,0 +1,64 @@
+@page "/roster"
+@inject IElvantoService ElvantoService
+@attribute [Authorize(Policy = Policies.EnabledOnly)]
+
+<PageTitle>Impact Kids Roster</PageTitle>
+
+@if (_elvantoResponse != null)
+{
+    <MudHidden Breakpoint="Breakpoint.Xs">
+        <MudDataGrid Items="@_elvantoResponse.Positions"
+                     Dense
+                     Bordered
+                     FixedHeader>
+            <Columns>
+                <PropertyColumn StickyLeft Sortable="false" Property="x => x.Name" Title="Position"/>
+                @foreach (string service in _elvantoResponse.Services)
+                {
+                    <PropertyColumn Sortable="false" Property="@(x => PositionForService(x, service))"
+                                    Title="@(TitleForService(service))"/>
+                }
+            </Columns>
+        </MudDataGrid>
+    </MudHidden>
+    <MudHidden Invert Breakpoint="Breakpoint.Xs">
+        <MudDataGrid Items="@_elvantoResponse.Services"
+                     Dense
+                     Bordered
+                     FixedHeader>
+            <Columns>
+                <PropertyColumn StickyLeft Sortable="false" Property="x => TitleForService(x)" Title="Service"/>
+                @foreach (ElvantoServicePosition position in _elvantoResponse.Positions)
+                {
+                    <PropertyColumn Sortable="false"
+                                    Property="@(x => PositionForService(position, x))"
+                                    Title="@(position.Name)"/>
+                }
+            </Columns>
+        </MudDataGrid>
+    </MudHidden>
+}
+
+@code {
+
+    private static string TitleForService(string service)
+    {
+        DateTime date = DateTime.Parse(service).ToLocalTime();
+
+        return $"{DateTime.Parse(service):dd/MM} {date.DayOfWeek.ToString()[..3]} {date.ToString("tt").ToUpper()}";
+    }
+
+    private static string PositionForService(ElvantoServicePosition position, string service)
+    {
+        return position.PositionsForService.GetValueOrDefault(service, "");
+    }
+
+    ElvantoServicePositionsResponse? _elvantoResponse;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        _elvantoResponse = await ElvantoService.GetServicePositions();
+    }
+
+}
