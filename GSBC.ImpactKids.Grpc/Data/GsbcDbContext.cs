@@ -71,7 +71,7 @@ public class GsbcDbContext(
 
         modelBuilder.Entity<DbMemorisationEntry>()
             .HasOne(x => x.MemoryVerse)
-            .WithMany()
+            .WithMany(x => x.MemorisationEntries)
             .HasForeignKey(x => x.MemoryVerseId);
     }
 }

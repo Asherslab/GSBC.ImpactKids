@@ -12,6 +12,9 @@ public class DbMemoryVerse
     public required Guid MemoryVerseListId { get; set; }
 
     [MapperIgnore]
+    public List<DbMemorisationEntry>? MemorisationEntries { get; set; }
+    
+    [MapperIgnore]
     public DbMemoryVerseList? MemoryVerseList { get; set; }
 
     public List<DbBibleVerse> BibleVerses { get; set; } = [];
