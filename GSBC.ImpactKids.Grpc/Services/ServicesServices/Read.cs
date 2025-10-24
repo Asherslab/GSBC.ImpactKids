@@ -16,13 +16,15 @@ public partial class ServicesService
 
         if (request.PreviousService)
         {
-           service = await db.Services
-                .FirstOrDefaultAsync(x => x.Date <= DateTime.Now, token);
+            service = await db.Services
+                .OrderByDescending(x => x.Date)
+                .FirstOrDefaultAsync(x => x.Date <= DateTime.Now.Date, token);
         }
         else if (request.UpcomingService)
         {
             service = await db.Services
-                .FirstOrDefaultAsync(x => x.Date >= DateTime.Now, token);
+                .OrderBy(x => x.Date)
+                .FirstOrDefaultAsync(x => x.Date >= DateTime.Now.Date, token);
         }
         else
         {
