@@ -29,26 +29,27 @@ public partial class MemorisationEntriesService
                 Success = false
             };
 
-        List<DbService> services = [];
+        List<DbService> services = list.MemoryVerses
+            .SelectMany(x => x.Services)
+            .DistinctBy(x => x.Id)
+            .OrderBy(x => x.Date)
+            .ToList();
 
         List<MemoryVerseVerticalAxis> verticalAxis = [];
         foreach (DbMemoryVerse verse in list.MemoryVerses.OrderByDescending(x => x.Services.Count))
         {
-            services.AddRange(verse.Services);
-
             List<double> dataPoints = [];
-            foreach (DbService service in verse.Services.OrderBy(x => x.Date))
+            foreach (DbService service in services)
             {
                 dataPoints.Add(verse.MemorisationEntries!.Count(x => x.ServiceId == service.Id && x.VerseRecited));
             }
-            
+
             verticalAxis.Add(new MemoryVerseVerticalAxis
             {
                 Verse = memoryVerseConverter.Convert(verse),
                 DataPoints = dataPoints.ToArray()
             });
         }
-        services = services.OrderBy(x => x.Date).DistinctBy(x => x.Id).ToList();
 
         return new MemoryVerseAnalyticsResponse
         {

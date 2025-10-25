@@ -29,12 +29,12 @@ public partial class MemoryVerseAnalytics : EventListeningComponent
     private List<ChartSeries>? _series;
     private List<string>?      _xAxisLabels;
 
-    private ChartOptions _chartOptions = new()
+    private readonly ChartOptions _chartOptions = new()
     {
         YAxisTicks = 1
     };
 
-protected override async Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
 
@@ -124,14 +124,19 @@ protected override async Task OnInitializedAsync()
     private async Task SelectedSchoolTermChanged(Guid value)
     {
         SelectedSchoolTerm = value;
+        SelectedMemoryVerseList = null;
+        _xAxisLabels = null;
+        _series = null;
         SetQueryParameters();
-        await SetSelectedVerseList();
+        await SetSelectedSchoolTerm();
         StateHasChanged();
     }
 
     private async Task SelectedMemoryVerseListChanged(Guid value)
     {
         SelectedMemoryVerseList = value;
+        _xAxisLabels = null;
+        _series = null;
         SetQueryParameters();
         await SetSelectedVerseList();
         StateHasChanged();
@@ -141,12 +146,17 @@ protected override async Task OnInitializedAsync()
     {
         if (SelectedSchoolTerm == null)
         {
-            SchoolTerm? term = _terms?.FirstOrDefault();
+            DateTime? now = DateTime.Now;
+
+            SchoolTerm? term = _terms?.FirstOrDefault(x => x.StartDate <= now && now <= x.EndDate);
+            term ??= _terms?.FirstOrDefault();
             SelectedSchoolTerm = term?.Id;
-            SetQueryParameters();
+            if (SelectedSchoolTerm != null)
+                SetQueryParameters();
         }
 
         _selectedTerm = _terms?.FirstOrDefault(x => x.Id == SelectedSchoolTerm);
+
         await RefreshMemoryVerseLists();
     }
 
@@ -156,7 +166,8 @@ protected override async Task OnInitializedAsync()
         {
             MemoryVerseList? list = _lists?.FirstOrDefault();
             SelectedMemoryVerseList = list?.Id;
-            SetQueryParameters();
+            if (SelectedMemoryVerseList != null)
+                SetQueryParameters();
         }
 
         _selectedList = _lists?.FirstOrDefault(x => x.Id == SelectedMemoryVerseList);
