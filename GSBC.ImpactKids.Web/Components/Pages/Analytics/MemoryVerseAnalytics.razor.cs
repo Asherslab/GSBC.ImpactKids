@@ -26,8 +26,8 @@ public partial class MemoryVerseAnalytics : EventListeningComponent
     private SchoolTerm?      _selectedTerm;
     private MemoryVerseList? _selectedList;
 
-    private List<ChartSeries>? _series;
-    private List<string>?      _xAxisLabels;
+    private MemoryVerseAnalyticsResponse? _recitationsPerMemoryVerseResp;
+    private MemoryVerseAnalyticsResponse? _recitationsPerChildResp;
 
     private readonly ChartOptions _chartOptions = new()
     {
@@ -95,38 +95,49 @@ public partial class MemoryVerseAnalytics : EventListeningComponent
         if (_selectedList == null)
             return;
 
-        MemoryVerseAnalyticsResponse? response = await MemorisationEntriesService.RetrieveAnalyticsData(
+        _recitationsPerMemoryVerseResp = await MemorisationEntriesService.RecitationsPerVerseAnalytics(
             new MemorisationEntriesAnalyticsRequest
             {
                 MemoryVerseListId = _selectedList.Id
             }
         );
-
-        if (response.HasErrorOrNull())
+        if (_recitationsPerMemoryVerseResp.HasErrorOrNull())
         {
-            Snackbar.AddErrorResponse(response);
+            Snackbar.AddErrorResponse(_recitationsPerMemoryVerseResp);
+            return;
+        }
+        
+        _recitationsPerChildResp = await MemorisationEntriesService.RecitationsPerChildAnalytics(
+            new MemorisationEntriesAnalyticsRequest
+            {
+                MemoryVerseListId = _selectedList.Id
+            }
+        );
+        if (_recitationsPerChildResp.HasErrorOrNull())
+        {
+            Snackbar.AddErrorResponse(_recitationsPerChildResp);
             return;
         }
 
-        _xAxisLabels = response.Services.Select(x => x.Date.ToString("dd/MM")).ToList();
+        StateHasChanged();
+    }
 
-        _series = response.VerticalAxis.Select(x =>
+    private List<ChartSeries> GetChartSeries(MemoryVerseAnalyticsResponse response)
+    {
+        return response.VerticalAxis.Select(x =>
             new ChartSeries
             {
-                Name = x.Verse.ReferenceName,
+                Name = x.Label,
                 Data = x.DataPoints
             }
         ).ToList();
-
-        StateHasChanged();
     }
 
     private async Task SelectedSchoolTermChanged(Guid value)
     {
         SelectedSchoolTerm = value;
         SelectedMemoryVerseList = null;
-        _xAxisLabels = null;
-        _series = null;
+        _recitationsPerMemoryVerseResp = null;
         SetQueryParameters();
         await SetSelectedSchoolTerm();
         StateHasChanged();
@@ -135,8 +146,7 @@ public partial class MemoryVerseAnalytics : EventListeningComponent
     private async Task SelectedMemoryVerseListChanged(Guid value)
     {
         SelectedMemoryVerseList = value;
-        _xAxisLabels = null;
-        _series = null;
+        _recitationsPerMemoryVerseResp = null;
         SetQueryParameters();
         await SetSelectedVerseList();
         StateHasChanged();

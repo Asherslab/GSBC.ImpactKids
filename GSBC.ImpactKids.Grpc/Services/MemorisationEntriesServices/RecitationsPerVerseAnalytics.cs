@@ -8,7 +8,7 @@ namespace GSBC.ImpactKids.Grpc.Services.MemorisationEntriesServices;
 
 public partial class MemorisationEntriesService
 {
-    public async Task<MemoryVerseAnalyticsResponse?> RetrieveAnalyticsData(
+    public async Task<MemoryVerseAnalyticsResponse?> RecitationsPerVerseAnalytics(
         MemorisationEntriesAnalyticsRequest request,
         CallContext                         context = default
     )
@@ -46,7 +46,7 @@ public partial class MemorisationEntriesService
 
             verticalAxis.Add(new MemoryVerseVerticalAxis
             {
-                Verse = memoryVerseConverter.Convert(verse),
+                Label = verse.ReferenceName,
                 DataPoints = dataPoints.ToArray()
             });
         }
@@ -55,7 +55,7 @@ public partial class MemorisationEntriesService
         {
             Success = true,
 
-            Services = services.Select(serviceConverter.Convert).ToList(),
+            XAxisLabels = services.Select(x => x.Date.ToString("dd/MM")).ToList(),
             VerticalAxis = verticalAxis
         };
     }
