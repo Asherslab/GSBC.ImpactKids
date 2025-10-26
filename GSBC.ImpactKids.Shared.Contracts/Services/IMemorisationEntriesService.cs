@@ -8,7 +8,12 @@ namespace GSBC.ImpactKids.Shared.Contracts.Services;
 [Service("GSBC.ImpactKids.MemorisationEntries")]
 public interface IMemorisationEntriesService
 {
-    public Task<MemoryVerseAnalyticsResponse?> RetrieveAnalyticsData(
+    public Task<MemoryVerseAnalyticsResponse?> RecitationsPerVerseAnalytics(
+        MemorisationEntriesAnalyticsRequest request,
+        CallContext                         context = default
+    );
+    
+    public Task<MemoryVerseAnalyticsResponse?> RecitationsPerChildAnalytics(
         MemorisationEntriesAnalyticsRequest request,
         CallContext                         context = default
     );

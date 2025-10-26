@@ -47,17 +47,36 @@
             <MudCard Elevation="6">
                 <MudCardHeader>
                     <CardHeaderContent>
-                        <MudText Typo="Typo.h6" Align="Align.Center">Recitations</MudText>
+                        <MudText Typo="Typo.h6" Align="Align.Center">Recitations Per Memory Verse</MudText>
                     </CardHeaderContent>
                 </MudCardHeader>
                 <MudCardContent>
-                    @if (_series != null && _xAxisLabels != null)
+                    @if (_recitationsPerMemoryVerseResp != null)
                     {
                         <MudChart ChartType="ChartType.Bar"
-                                  ChartSeries="@_series"
+                                  ChartSeries="@GetChartSeries(_recitationsPerMemoryVerseResp)"
                                   Width="100%"
                                   ChartOptions="_chartOptions"
-                                  XAxisLabels="@_xAxisLabels.ToArray()"/>
+                                  XAxisLabels="@_recitationsPerMemoryVerseResp.XAxisLabels.ToArray()"/>
+                    }
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudCard Elevation="6">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6" Align="Align.Center">Recitations Per Child</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    @if (_recitationsPerChildResp != null)
+                    {
+                        <MudChart ChartType="ChartType.Bar"
+                                  ChartSeries="@GetChartSeries(_recitationsPerChildResp)"
+                                  Width="100%"
+                                  ChartOptions="_chartOptions"
+                                  XAxisLabels="@_recitationsPerChildResp.XAxisLabels.ToArray()"/>
                     }
                 </MudCardContent>
             </MudCard>
