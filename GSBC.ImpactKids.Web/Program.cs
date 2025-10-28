@@ -3,6 +3,7 @@ using GSBC.ImpactKids.ServiceDefaults;
 using GSBC.ImpactKids.Shared.Contracts.Services;
 using GSBC.ImpactKids.Web.Components;
 using GSBC.ImpactKids.Web.Extensions;
+using GSBC.ImpactKids.Web.Services;
 using Microsoft.AspNetCore.HttpOverrides;
 using MudBlazor.Services;
 using ProtoBuf.Grpc.ClientFactory;
@@ -45,6 +46,12 @@ builder.Services.AddAuthenticatedGrpcClient<IBibleService>();
 builder.Services.AddAuthenticatedGrpcClient<IMemoryVersesService>();
 builder.Services.AddAuthenticatedGrpcClient<IMemoryVerseListsService>();
 builder.Services.AddAuthenticatedGrpcClient<IMemorisationEntriesService>();
+
+MetabaseConfig? metabaseConfig = builder.Configuration.GetSection("metabase").Get<MetabaseConfig>();
+if (metabaseConfig != null)
+{
+    builder.Services.AddSingleton(metabaseConfig);
+}
 
 var app = builder.Build();
 

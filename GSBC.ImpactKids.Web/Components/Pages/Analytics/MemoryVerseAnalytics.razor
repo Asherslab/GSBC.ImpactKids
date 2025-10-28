@@ -1,85 +1,15 @@
 @page "/Analytics/MemoryVerses"
-@using GSBC.ImpactKids.Shared.Contracts.Entities.MemoryVerses
-@inherits EventListeningComponent
+@using GSBC.ImpactKids.Web.Services
 @attribute [Authorize(Policy = Policies.EnabledOnly)]
-@inject ISchoolTermsService         SchoolTermsService
-@inject IMemoryVerseListsService    MemoryVerseListsService
-@inject IMemorisationEntriesService MemorisationEntriesService
-@inject ISnackbar                   Snackbar
-@inject IDialogService              DialogService
-@inject NavigationManager           Navigation
+@inject MetabaseConfig MetabaseConfig
 
 <PageTitle>Verse Memorisation Analytics</PageTitle>
 
-<MudPaper Elevation="6" Class="mt-4">
-    <MudToolBar>
-        @if (SelectedSchoolTerm != null && _terms != null)
-        {
-            <MudSelect T="Guid"
-                       Value="@SelectedSchoolTerm.Value"
-                       ValueChanged="SelectedSchoolTermChanged"
-                       Clearable="false"
-                       Required
-                       Class="pa-3">
-                @foreach (SchoolTerm term in _terms)
-                {
-                    <MudSelectItem Value="@term.Id">@term.Name</MudSelectItem>
-                }
-            </MudSelect>
-        }
-        @if (SelectedMemoryVerseList != null && _lists != null)
-        {
-            <MudSelect T="Guid"
-                       Value="@SelectedMemoryVerseList.Value"
-                       ValueChanged="SelectedMemoryVerseListChanged"
-                       Clearable="false"
-                       Required
-                       Class="pa-3">
-                @foreach (MemoryVerseList list in _lists)
-                {
-                    <MudSelectItem Value="@list.Id">@list.Name</MudSelectItem>
-                }
-            </MudSelect>
-        }
-    </MudToolBar>
-    <MudGrid Spacing="6" Justify="Justify.Center" Class="pt-3 pb-6 px-3">
-        <MudItem xs="12" md="6">
-            <MudCard Elevation="6">
-                <MudCardHeader>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.h6" Align="Align.Center">Recitations Per Memory Verse</MudText>
-                    </CardHeaderContent>
-                </MudCardHeader>
-                <MudCardContent>
-                    @if (_recitationsPerMemoryVerseResp != null)
-                    {
-                        <MudChart ChartType="ChartType.Bar"
-                                  ChartSeries="@GetChartSeries(_recitationsPerMemoryVerseResp)"
-                                  Width="100%"
-                                  ChartOptions="_chartOptions"
-                                  XAxisLabels="@_recitationsPerMemoryVerseResp.XAxisLabels.ToArray()"/>
-                    }
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
-        <MudItem xs="12" md="6">
-            <MudCard Elevation="6">
-                <MudCardHeader>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.h6" Align="Align.Center">Recitations Per Child</MudText>
-                    </CardHeaderContent>
-                </MudCardHeader>
-                <MudCardContent>
-                    @if (_recitationsPerChildResp != null)
-                    {
-                        <MudChart ChartType="ChartType.Bar"
-                                  ChartSeries="@GetChartSeries(_recitationsPerChildResp)"
-                                  Width="100%"
-                                  ChartOptions="_chartOptions"
-                                  XAxisLabels="@_recitationsPerChildResp.XAxisLabels.ToArray()"/>
-                    }
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
-    </MudGrid>
+<MudPaper Elevation="6" Class="mt-4" Style="height: 90vh">
+    <iframe
+        src="@DashboardUrl()"
+        width="100%"
+        height="100%"
+        allowtransparency>
+    </iframe>
 </MudPaper>
