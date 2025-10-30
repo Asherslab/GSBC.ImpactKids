@@ -43,7 +43,7 @@
 @code {
 
     [SupplyParameterFromQuery]
-    public Rosters Rosters { get; set; } = Rosters.ImpactKids;
+    public bool Production { get; set; }
 
     private static string TitleForService(string service)
     {
@@ -62,7 +62,7 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        _elvantoResponse = await ElvantoService.GetServicePositions(new ServicePositionsRequest { Rosters = Rosters });
+        _elvantoResponse = await ElvantoService.GetServicePositions(new ServicePositionsRequest { Rosters = Production ? Rosters.Production : Rosters.ImpactKids });
     }
 
 }

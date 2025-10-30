@@ -29,23 +29,26 @@ public partial class ElvantoService
 
         string   departmentName;
         string[] serviceTypes;
+        DateTime endDate;
         switch (request.Rosters)
         {
             default:
             case Rosters.ImpactKids:
                 departmentName = ImpactKidsDepartmentName;
                 serviceTypes = ImpactKidsServiceTypes;
+                endDate = DateTime.Now.AddMonths(3);
                 break;
             case Rosters.Production:
                 departmentName = ProductionDepartmentName;
                 serviceTypes = ProductionServiceTypes;
+                endDate = DateTime.Now.AddMonths(1).AddDays(7);
                 break;
         }
 
         ServicesRequest elvantoRequest = new()
         {
             Start = DateOnly.FromDateTime(DateTime.Now),
-            End = DateOnly.FromDateTime(DateTime.Now.AddMonths(3)),
+            End = DateOnly.FromDateTime(endDate),
             ServiceTypes = serviceTypes,
             Fields = ["volunteers"]
         };
