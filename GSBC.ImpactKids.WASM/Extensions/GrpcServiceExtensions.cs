@@ -43,15 +43,14 @@ public static class GrpcServiceExtensions
     )
     {
         return builder.AddCallCredentials(async (
-            _,
+            ctx,
             metadata,
             services
         ) =>
         {
             try
             {
-
-                if (metadata.FirstOrDefault(x => x.Key == "Authorization") != null)
+                if (ctx.ServiceUrl.EndsWith("GSBC.ImpactKids.Event/Stream")) // hard coded exception so that bearer token is added elsewhere
                     return;
                 
                 IAccessTokenProvider? authTokenProvider = services.GetService<IAccessTokenProvider>();
