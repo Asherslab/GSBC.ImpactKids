@@ -1,8 +1,0 @@
-@inherits EventListeningComponent
-@page "/VerseMemorisation/{ServiceId:guid}"
-@attribute [Authorize(Policy = Policies.EnabledOnly)]
-
-<PageTitle>Verse Memorisation Recording Tool</PageTitle>
-
-<MemorisationComponent ServiceId="ServiceId"/>
-

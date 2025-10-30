@@ -1,23 +1,56 @@
 using GSBC.ImpactKids.Grpc.Services.ElvantoServices.Models;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Elvanto;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Elvanto;
 
 namespace GSBC.ImpactKids.Grpc.Services.ElvantoServices;
 
 public partial class ElvantoService
 {
-    public async Task<ElvantoServicePositionsResponse> GetServicePositions(CallContext context = default)
+    private const string ImpactKidsDepartmentName = "Children's Ministry";
+    private static readonly string[] ImpactKidsServiceTypes =
+    [
+        "b4bead2d-2d49-4a39-8991-a81d97c10bf8"
+    ];
+
+    private const string ProductionDepartmentName = "Production Ministry";
+    private static readonly string[] ProductionServiceTypes =
+    [
+        "f891f318-bce8-11e0-9229-ea942707ad51",
+        "0af6997e-d142-11e0-9229-ea942707ad51",
+        "bb20e352-85d0-11e1-ab21-651537d68e43"
+    ];
+
+    public async Task<ElvantoServicePositionsResponse> GetServicePositions(
+        ServicePositionsRequest request,
+        CallContext             context = default
+    )
     {
         CancellationToken token = context.CancellationToken;
-        
-        ServicesRequest request = new()
+
+        string   departmentName;
+        string[] serviceTypes;
+        switch (request.Rosters)
+        {
+            default:
+            case Rosters.ImpactKids:
+                departmentName = ImpactKidsDepartmentName;
+                serviceTypes = ImpactKidsServiceTypes;
+                break;
+            case Rosters.Production:
+                departmentName = ProductionDepartmentName;
+                serviceTypes = ProductionServiceTypes;
+                break;
+        }
+
+        ServicesRequest elvantoRequest = new()
         {
             Start = DateOnly.FromDateTime(DateTime.Now),
             End = DateOnly.FromDateTime(DateTime.Now.AddMonths(3)),
-            ServiceTypes = ["b4bead2d-2d49-4a39-8991-a81d97c10bf8"],
+            ServiceTypes = serviceTypes,
             Fields = ["volunteers"]
         };
 
-        ServicesResponse? response = await SendMessage<ServicesRequest, ServicesResponse>(request, token);
+        ServicesResponse? response = await SendMessage<ServicesRequest, ServicesResponse>(elvantoRequest, token);
         if (response?.Services == null)
         {
             return new ElvantoServicePositionsResponse
@@ -34,7 +67,7 @@ public partial class ElvantoService
             if (service.Volunteers == null)
                 continue;
 
-            services.Add(service.Date);
+            services.Add(service.Date ?? "N/A");
 
             foreach (Plan plan in service.Volunteers.Plan)
             {
@@ -43,7 +76,8 @@ public partial class ElvantoService
 
                 plan.Positions.Position = plan.Positions.Position
                     .Where(x =>
-                        x is { DepartmentName: "Children's Ministry", Volunteers: not null }
+                        x.Volunteers != null &&
+                        x.DepartmentName == departmentName
                     )
                     .ToList();
 
@@ -64,7 +98,7 @@ public partial class ElvantoService
                             Name = position.PositionName!,
                             PositionsForService = new Dictionary<string, string>
                             {
-                                { service.Date, $"{person.FirstName.Replace(" (Jnr)", "")}" }
+                                { service.Date ?? "N/A", $"{person.FirstName?.Replace(" (Jnr)", "") ?? "N/A"}" }
                             }
                         };
 
@@ -72,7 +106,7 @@ public partial class ElvantoService
                         continue;
                     }
 
-                    displayPosition.PositionsForService[service.Date] = $"{person.FirstName.Replace(" (Jnr)", "")}";
+                    displayPosition.PositionsForService[service.Date ?? "N/A"] = $"{person.FirstName?.Replace(" (Jnr)", "") ?? "N/A"}";
                 }
             }
         }
@@ -80,7 +114,7 @@ public partial class ElvantoService
         return new ElvantoServicePositionsResponse
         {
             Success = true,
-            
+
             Services = services,
             Positions = positions
         };
