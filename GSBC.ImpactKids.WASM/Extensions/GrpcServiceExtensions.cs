@@ -51,6 +51,9 @@ public static class GrpcServiceExtensions
             try
             {
 
+                if (metadata.FirstOrDefault(x => x.Key == "Authorization") != null)
+                    return;
+                
                 IAccessTokenProvider? authTokenProvider = services.GetService<IAccessTokenProvider>();
                 if (authTokenProvider == null)
                     return;
