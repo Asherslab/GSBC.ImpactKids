@@ -1,4 +1,5 @@
 @page "/roster"
+@using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Elvanto
 @inject IElvantoService ElvantoService
 
 
@@ -41,6 +42,9 @@
 
 @code {
 
+    [SupplyParameterFromQuery]
+    public Rosters Rosters { get; set; } = Rosters.ImpactKids;
+
     private static string TitleForService(string service)
     {
         DateTime date = DateTime.Parse(service).ToLocalTime();
@@ -58,7 +62,7 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        _elvantoResponse = await ElvantoService.GetServicePositions();
+        _elvantoResponse = await ElvantoService.GetServicePositions(new ServicePositionsRequest { Rosters = Rosters });
     }
 
 }

@@ -41,14 +41,4 @@ IResourceBuilder<ProjectResource> wasm = builder
 
 grpcService.WithReference(wasm);
 
-builder.AddProject<Projects.GSBC_ImpactKids_Web>("webfrontend")
-    .WithExternalHttpEndpoints()
-    .WithHttpHealthCheck("/health")
-    .WithReference(rabbitmq)
-    .WaitFor(rabbitmq)
-    .WithReference(cache)
-    .WaitFor(cache)
-    .WithReference(grpcService)
-    .WaitFor(grpcService);
-
 builder.Build().Run();

@@ -12,7 +12,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\GSBC.ImpactKids.Grpc\GSBC.ImpactKids.Grpc.csproj" />
-        <ProjectReference Include="..\GSBC.ImpactKids.Web\GSBC.ImpactKids.Web.csproj"/>
         <ProjectReference Include="..\GSBC.ImpactKids.WASM\GSBC.ImpactKids.WASM.csproj"/>
         <ProjectReference Include="..\GSBC.ImpactKids.Workers.DbMigrations\GSBC.ImpactKids.Workers.DbMigrations.csproj" />
     </ItemGroup>
