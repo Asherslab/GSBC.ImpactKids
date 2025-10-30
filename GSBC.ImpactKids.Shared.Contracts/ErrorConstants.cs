@@ -5,6 +5,9 @@ public static class ErrorConstants
     public const string PermissionDenied  = "Permission Denied";
     public const string ExceptionOccurred = "An Unexpected error occurred. Please try again later";
 
+    public const string EventStreamIdNotFound = "Event service couldn't find stream id running. Might have disconnected?";
+    public const string EventStreamNotRunning = "Event stream not running";
+    
     public const string FailedToRetrieveServices = "Failed to retrieve elvanto services";
 
     public const string UserNotFound         = "User Not Found";

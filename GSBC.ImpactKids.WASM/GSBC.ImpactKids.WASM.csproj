@@ -1,0 +1,244 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Aspire4Wasm.WebAssembly" Version="6.0.1" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.10"/>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="9.0.10" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.10" PrivateAssets="all"/>
+        <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.10" />
+        <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="9.10.0" />
+        
+        <PackageReference Include="MudBlazor" Version="8.13.0" />
+
+        <PackageReference Include="Grpc.Net.Client" Version="2.70.0" />
+        <PackageReference Include="Grpc.Net.Client.Web" Version="2.70.0" />
+        <PackageReference Include="Grpc.Net.ClientFactory" Version="2.70.0" />
+        <PackageReference Include="protobuf-net.Grpc.ClientFactory" Version="1.2.2" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="..\GSBC.ImpactKids.Shared.Contracts\GSBC.ImpactKids.Shared.Contracts.csproj" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <AdditionalFiles Include="Components\Dialogs\BaseChangeDialog.razor" />
+      <AdditionalFiles Include="Components\Dialogs\Create\CreateMemoryVerseDialog.razor" />
+      <AdditionalFiles Include="Components\Dialogs\Create\CreateMemoryVerseListDialog.razor" />
+      <AdditionalFiles Include="Components\Dialogs\Create\CreatePersonDialog.razor" />
+      <AdditionalFiles Include="Components\Dialogs\Create\CreateSchoolTermDialog.razor" />
+      <AdditionalFiles Include="Components\Dialogs\Create\CreateServiceDialog.razor" />
+      <AdditionalFiles Include="Components\Dialogs\RequiredMudDatePicker.razor" />
+      <AdditionalFiles Include="Components\Dialogs\Update\UpdateMemoryVerseDialog.razor" />
+      <AdditionalFiles Include="Components\Dialogs\Update\UpdateMemoryVerseListDialog.razor" />
+      <AdditionalFiles Include="Components\Dialogs\Update\UpdatePersonDialog.razor" />
+      <AdditionalFiles Include="Components\Dialogs\Update\UpdateSchoolTermDialog.razor" />
+      <AdditionalFiles Include="Components\Dialogs\Update\UpdateServiceDialog.razor" />
+      <AdditionalFiles Include="Pages\Analytics\MemoryVerseAnalytics.razor" />
+      <AdditionalFiles Include="Pages\Bible\Index.razor" />
+      <AdditionalFiles Include="Pages\MemoryVerseLists\List.razor" />
+      <AdditionalFiles Include="Pages\People\People.razor" />
+      <AdditionalFiles Include="Pages\Services\ServicePage.razor" />
+      <AdditionalFiles Include="Pages\Terms\Index.razor" />
+      <AdditionalFiles Include="Pages\Terms\IndexHeader.razor" />
+      <AdditionalFiles Include="Pages\Terms\ServicesList.razor" />
+      <AdditionalFiles Include="Pages\Terms\Term.razor" />
+      <AdditionalFiles Include="Pages\Users\Users.razor" />
+      <AdditionalFiles Include="Pages\VerseMemorisation\MemorisationComponent.razor" />
+      <AdditionalFiles Include="Pages\VerseMemorisation\PreviousVerseMemorisation.razor" />
+      <AdditionalFiles Include="Pages\VerseMemorisation\UpcomingVerseMemorisation.razor" />
+      <AdditionalFiles Include="Pages\VerseMemorisation\VerseMemorisation.razor" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\datacollector.dll.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\DotnetTools\dotnet-format\BuildHost-net472\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.exe.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\DotnetTools\dotnet-format\BuildHost-netcore\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.dll.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\DotnetTools\dotnet-watch\9.0.306-servicing.25476.4\tools\net9.0\any\BuildHost-net472\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.exe.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\DotnetTools\dotnet-watch\9.0.306-servicing.25476.4\tools\net9.0\any\BuildHost-netcore\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.dll.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Extensions\dump\DumpMinitool.arm64.exe.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Extensions\dump\DumpMinitool.exe.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Extensions\dump\DumpMinitool.x86.exe.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Sdks\Microsoft.Build.Tasks.Git\tools\netframework\Microsoft.Build.Tasks.Git.dll.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Sdks\Microsoft.NET.Sdk.BlazorWebAssembly\targets\BlazorWasm.web.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Sdks\Microsoft.SourceLink.AzureRepos.Git\tools\netframework\Microsoft.SourceLink.AzureRepos.Git.dll.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Sdks\Microsoft.SourceLink.Bitbucket.Git\tools\netframework\Microsoft.SourceLink.Bitbucket.Git.dll.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Sdks\Microsoft.SourceLink.Common\tools\netframework\Microsoft.SourceLink.Common.dll.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Sdks\Microsoft.SourceLink.GitHub\tools\netframework\Microsoft.SourceLink.GitHub.dll.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Sdks\Microsoft.SourceLink.GitLab\tools\netframework\Microsoft.SourceLink.GitLab.dll.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\TestHostNetFramework\datacollector.arm64.exe.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\TestHostNetFramework\datacollector.exe.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\TestHostNetFramework\testhost.arm64.exe.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\TestHostNetFramework\testhost.exe.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\TestHostNetFramework\testhost.net47.arm64.exe.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\TestHostNetFramework\testhost.net47.exe.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\TestHostNetFramework\testhost.net47.x86.exe.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\TestHostNetFramework\testhost.net471.arm64.exe.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\TestHostNetFramework\testhost.net471.exe.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\TestHostNetFramework\testhost.net471.x86.exe.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\TestHostNetFramework\testhost.net472.arm64.exe.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\TestHostNetFramework\testhost.net472.exe.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\TestHostNetFramework\testhost.net472.x86.exe.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\TestHostNetFramework\testhost.net48.arm64.exe.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\TestHostNetFramework\testhost.net48.exe.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\TestHostNetFramework\testhost.net48.x86.exe.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\TestHostNetFramework\testhost.net481.arm64.exe.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\TestHostNetFramework\testhost.net481.exe.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\TestHostNetFramework\testhost.net481.x86.exe.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\TestHostNetFramework\testhost.x86.exe.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\vstest.console.dll.config" />
+      <_ContentIncludedByDefault Remove="output\web.config" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\8.0.100\microsoft.net.sdk.aspire\8.2.2\WorkloadManifest.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.sdk.android\35.0.7\WorkloadManifest.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.sdk.ios\18.0.9617\WorkloadManifest.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.sdk.maccatalyst\18.0.9617\WorkloadManifest.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.sdk.macos\15.0.9617\WorkloadManifest.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.sdk.maui\9.0.0\WorkloadManifest.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.sdk.tvos\18.0.9617\WorkloadManifest.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.emscripten.current\9.0.10\WorkloadManifest.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.emscripten.net6\9.0.10\WorkloadManifest.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.emscripten.net7\9.0.10\WorkloadManifest.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.emscripten.net8\9.0.10\WorkloadManifest.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.current\9.0.10\localize\WorkloadManifest.cs.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.current\9.0.10\localize\WorkloadManifest.de.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.current\9.0.10\localize\WorkloadManifest.en.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.current\9.0.10\localize\WorkloadManifest.es.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.current\9.0.10\localize\WorkloadManifest.fr.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.current\9.0.10\localize\WorkloadManifest.it.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.current\9.0.10\localize\WorkloadManifest.ja.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.current\9.0.10\localize\WorkloadManifest.ko.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.current\9.0.10\localize\WorkloadManifest.pl.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.current\9.0.10\localize\WorkloadManifest.pt-BR.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.current\9.0.10\localize\WorkloadManifest.ru.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.current\9.0.10\localize\WorkloadManifest.tr.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.current\9.0.10\localize\WorkloadManifest.zh-Hans.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.current\9.0.10\localize\WorkloadManifest.zh-Hant.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.current\9.0.10\WorkloadManifest.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net6\9.0.10\localize\WorkloadManifest.cs.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net6\9.0.10\localize\WorkloadManifest.de.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net6\9.0.10\localize\WorkloadManifest.en.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net6\9.0.10\localize\WorkloadManifest.es.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net6\9.0.10\localize\WorkloadManifest.fr.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net6\9.0.10\localize\WorkloadManifest.it.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net6\9.0.10\localize\WorkloadManifest.ja.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net6\9.0.10\localize\WorkloadManifest.ko.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net6\9.0.10\localize\WorkloadManifest.pl.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net6\9.0.10\localize\WorkloadManifest.pt-BR.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net6\9.0.10\localize\WorkloadManifest.ru.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net6\9.0.10\localize\WorkloadManifest.tr.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net6\9.0.10\localize\WorkloadManifest.zh-Hans.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net6\9.0.10\localize\WorkloadManifest.zh-Hant.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net6\9.0.10\WorkloadManifest.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net7\9.0.10\localize\WorkloadManifest.cs.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net7\9.0.10\localize\WorkloadManifest.de.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net7\9.0.10\localize\WorkloadManifest.en.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net7\9.0.10\localize\WorkloadManifest.es.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net7\9.0.10\localize\WorkloadManifest.fr.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net7\9.0.10\localize\WorkloadManifest.it.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net7\9.0.10\localize\WorkloadManifest.ja.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net7\9.0.10\localize\WorkloadManifest.ko.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net7\9.0.10\localize\WorkloadManifest.pl.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net7\9.0.10\localize\WorkloadManifest.pt-BR.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net7\9.0.10\localize\WorkloadManifest.ru.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net7\9.0.10\localize\WorkloadManifest.tr.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net7\9.0.10\localize\WorkloadManifest.zh-Hans.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net7\9.0.10\localize\WorkloadManifest.zh-Hant.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net7\9.0.10\WorkloadManifest.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net8\9.0.10\localize\WorkloadManifest.cs.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net8\9.0.10\localize\WorkloadManifest.de.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net8\9.0.10\localize\WorkloadManifest.en.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net8\9.0.10\localize\WorkloadManifest.es.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net8\9.0.10\localize\WorkloadManifest.fr.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net8\9.0.10\localize\WorkloadManifest.it.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net8\9.0.10\localize\WorkloadManifest.ja.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net8\9.0.10\localize\WorkloadManifest.ko.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net8\9.0.10\localize\WorkloadManifest.pl.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net8\9.0.10\localize\WorkloadManifest.pt-BR.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net8\9.0.10\localize\WorkloadManifest.ru.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net8\9.0.10\localize\WorkloadManifest.tr.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net8\9.0.10\localize\WorkloadManifest.zh-Hans.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net8\9.0.10\localize\WorkloadManifest.zh-Hant.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk-manifests\9.0.100\microsoft.net.workload.mono.toolchain.net8\9.0.10\WorkloadManifest.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Containers\tasks\net9.0\Microsoft.NET.Build.Containers.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\datacollector.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\datacollector.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\dotnet.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\dotnet.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\DotnetTools\dotnet-dev-certs\9.0.10-servicing.25475.17\tools\net9.0\any\dotnet-dev-certs.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\DotnetTools\dotnet-dev-certs\9.0.10-servicing.25475.17\tools\net9.0\any\dotnet-dev-certs.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\DotnetTools\dotnet-format\BuildHost-netcore\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\DotnetTools\dotnet-format\BuildHost-netcore\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\DotnetTools\dotnet-format\dotnet-format.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\DotnetTools\dotnet-format\dotnet-format.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\DotnetTools\dotnet-user-jwts\9.0.10-servicing.25475.17\tools\net9.0\any\dotnet-user-jwts.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\DotnetTools\dotnet-user-jwts\9.0.10-servicing.25475.17\tools\net9.0\any\dotnet-user-jwts.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\DotnetTools\dotnet-user-secrets\9.0.10-servicing.25475.17\tools\net9.0\any\dotnet-user-secrets.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\DotnetTools\dotnet-user-secrets\9.0.10-servicing.25475.17\tools\net9.0\any\dotnet-user-secrets.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\DotnetTools\dotnet-watch\9.0.306-servicing.25476.4\tools\net9.0\any\BuildHost-netcore\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\DotnetTools\dotnet-watch\9.0.306-servicing.25476.4\tools\net9.0\any\BuildHost-netcore\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\DotnetTools\dotnet-watch\9.0.306-servicing.25476.4\tools\net9.0\any\dotnet-watch.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\DotnetTools\dotnet-watch\9.0.306-servicing.25476.4\tools\net9.0\any\dotnet-watch.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\DotnetTools\dotnet-watch\9.0.306-servicing.25476.4\tools\net9.0\any\dotnet.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\DotnetTools\dotnet-watch\9.0.306-servicing.25476.4\tools\net9.0\any\dotnet.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\FSharp\fsc.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\FSharp\fsc.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\FSharp\fsi.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\FSharp\fsi.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\MSBuild.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\MSBuild.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\NuGet.Build.Tasks.Console.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\NuGet.CommandLine.XPlat.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\NuGet.CommandLine.XPlat.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\PortableRuntimeIdentifierGraph.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Roslyn\bincore\csc.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Roslyn\bincore\csc.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Roslyn\bincore\vbc.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Roslyn\bincore\vbc.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Roslyn\bincore\VBCSCompiler.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Roslyn\bincore\VBCSCompiler.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Roslyn\Microsoft.Build.Tasks.CodeAnalysis.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\RuntimeIdentifierGraph.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Sdks\Microsoft.Build.Tasks.Git\tools\net\Microsoft.Build.Tasks.Git.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Sdks\Microsoft.NET.Sdk.BlazorWebAssembly\tools\net9.0\Microsoft.NET.Sdk.BlazorWebAssembly.Tool.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Sdks\Microsoft.NET.Sdk.BlazorWebAssembly\tools\net9.0\Microsoft.NET.Sdk.BlazorWebAssembly.Tool.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Sdks\Microsoft.NET.Sdk.Razor\source-generators\Microsoft.CodeAnalysis.Razor.Compiler.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Sdks\Microsoft.NET.Sdk.Razor\tools\rzc.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Sdks\Microsoft.NET.Sdk.Razor\tools\rzc.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Sdks\Microsoft.NET.Sdk.StaticWebAssets\tools\net9.0\Microsoft.NET.Sdk.StaticWebAssets.Tool.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Sdks\Microsoft.NET.Sdk.StaticWebAssets\tools\net9.0\Microsoft.NET.Sdk.StaticWebAssets.Tool.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Sdks\Microsoft.SourceLink.AzureRepos.Git\tools\net\Microsoft.SourceLink.AzureRepos.Git.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Sdks\Microsoft.SourceLink.Bitbucket.Git\tools\net\Microsoft.SourceLink.Bitbucket.Git.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Sdks\Microsoft.SourceLink.Common\tools\net\Microsoft.SourceLink.Common.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Sdks\Microsoft.SourceLink.GitHub\tools\net\Microsoft.SourceLink.GitHub.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\Sdks\Microsoft.SourceLink.GitLab\tools\net\Microsoft.SourceLink.GitLab.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\testhost-1.0.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\testhost-1.1.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\testhost-2.0.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\testhost-2.1.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\testhost-3.0.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\testhost-3.1.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\testhost-5.0.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\testhost-6.0.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\testhost-7.0.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\testhost-8.0.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\testhost-9.0.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\testhost-latest.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\testhost.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\vstest.console.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\sdk\9.0.306\vstest.console.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\shared\Microsoft.AspNetCore.App\9.0.10\Microsoft.AspNetCore.App.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\shared\Microsoft.AspNetCore.App\9.0.10\Microsoft.AspNetCore.App.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\shared\Microsoft.NETCore.App\9.0.10\Microsoft.NETCore.App.deps.json" />
+      <_ContentIncludedByDefault Remove="output\dotnet\shared\Microsoft.NETCore.App\9.0.10\Microsoft.NETCore.App.runtimeconfig.json" />
+      <_ContentIncludedByDefault Remove="output\GSBC.ImpactKids.WASM.staticwebassets.endpoints.json" />
+      <_ContentIncludedByDefault Remove="output\wwwroot\appsettings.Development.json" />
+      <_ContentIncludedByDefault Remove="output\wwwroot\appsettings.json" />
+      <_ContentIncludedByDefault Remove="output\wwwroot\appsettings.Release.json" />
+      <_ContentIncludedByDefault Remove="output\wwwroot\_framework\blazor.boot.json" />
+    </ItemGroup>
+</Project>

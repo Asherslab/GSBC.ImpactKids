@@ -1,0 +1,39 @@
+@inherits EventListeningComponent
+@inject IServicesService ServicesService
+
+<MudList T="string">
+    <MudListItem>
+        <MudButton FullWidth
+                   OnClick="@CreateService"
+                   StartIcon="@Icons.Material.Filled.PostAdd">
+            Create Service
+        </MudButton>
+    </MudListItem>
+    @if (_services != null)
+    {
+        if (_services.Count != 0)
+        {
+            <MudDivider/>
+        }
+
+        foreach (Service service in _services)
+        {
+            <div>
+                @if (service.Name == null)
+                {
+                    <MudListItem
+                        Href="@($"/Service?Id={service.Id}")"
+                        Text="@(service.Date.ToString("dddd dd/MM"))"/>
+                }
+                else
+                {
+                    <MudListItem
+                        Href="@($"/Service?Id={service.Id}")"
+                        Icon="@Icons.Material.Filled.Celebration"
+                        Text="@service.Name"
+                        SecondaryText="@(service.Date.ToString("dddd dd/MM"))"/>
+                }
+            </div>
+        }
+    }
+</MudList>

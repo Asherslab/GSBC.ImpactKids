@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en" style="background-color: var(--mud-palette-background, rgba(50,51,61,1))">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Impact Kids</title>
+    <base href="/" />
+    <link rel="stylesheet" href="css/app.css" />
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
+    <!-- Important: Increment the version parameter whenever you update MudBlazor to prevent caching issues -->
+    <link href="_content/MudBlazor/MudBlazor.min.css?v=1" rel="stylesheet" />
+    <link href="GSBC.ImpactKids.WASM.styles.css" rel="stylesheet" />
+</head>
+
+<body>
+    <div id="app">
+        <svg class="loading-progress">
+            <circle r="40%" cx="50%" cy="50%" />
+            <circle r="40%" cx="50%" cy="50%" />
+        </svg>
+        <div class="loading-progress-text"></div>
+    </div>
+
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="." class="reload">Reload</a>
+        <span class="dismiss">x</span>
+    </div>
+    <script src="_content/Microsoft.AspNetCore.Components.WebAssembly.Authentication/AuthenticationService.js"></script>
+    <script src="_framework/blazor.webassembly.js"></script>
+    <!-- Important: Increment the version parameter whenever you update MudBlazor to prevent caching issues -->
+    <script src="_content/MudBlazor/MudBlazor.min.js?v=1"></script>
+    <script>
+        function getOidToken(key) {
+            var strJson = sessionStorage.getItem(key);
+            if (strJson != null) {
+                var json = JSON.parse(strJson);
+                return json.id_token;
+            }
+
+            return null;
+        }
+    </script>
+</body>
+
+</html>

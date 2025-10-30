@@ -1,36 +1,23 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Text;
-using Microsoft.IdentityModel.Tokens;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Responses;
 
 namespace GSBC.ImpactKids.Web.Components.Pages.Analytics;
 
 public partial class MemoryVerseAnalytics
 {
-    private string DashboardUrl()
+    private string? _token;
+    
+    protected override async Task OnInitializedAsync()
     {
-        return "https://kids-metabase.baptist.com.au/embed/dashboard/" + GetToken(MetabaseConfig.DashboardMappings["MemoryVerseAnalytics"]) + "#theme=night&bordered=true&titled=true";
+        await base.OnInitializedAsync();
+        MetabaseJwtResponse? resp = await MetabaseService.GetMetabaseJwt(new MetabaseJwtRequest
+            { DashboardId = MetabaseConfig.DashboardMappings["MemoryVerseAnalytics"] });
+
+        _token = resp?.Jwt;
     }
 
-    private string GetToken(int dashboardId)
+    private string DashboardUrl()
     {
-        SymmetricSecurityKey securityKey = new(Encoding.UTF8.GetBytes(MetabaseConfig.Secret));
-        SigningCredentials   credentials = new(securityKey, SecurityAlgorithms.HmacSha256Signature);
-        JwtHeader            header      = new(credentials);
-        Dictionary<string, int> dash = new()
-        {
-            { "dashboard", dashboardId }
-        };
-
-        Dictionary<string, string> pars = new();
-        JwtPayload payload = new()
-        {
-            { "resource", dash },
-            { "params", pars }
-        };
-        
-        var     secToken    = new JwtSecurityToken(header, payload);
-        var     handler     = new JwtSecurityTokenHandler();
-        string? tokenString = handler.WriteToken(secToken);
-        return tokenString;
+        return "https://kids-metabase.baptist.com.au/embed/dashboard/" + _token + "#theme=night&bordered=true&titled=true";
     }
 }

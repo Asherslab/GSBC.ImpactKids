@@ -30,7 +30,7 @@ public class CustomClaimsTransformation(
                 GoogleSub = subClaim,
                 Name = principal.FindFirstValue("name") ?? "Name Not Found",
 
-                Enabled = subClaim == "108820909534487863492" // sub claim for Asher
+                Enabled = subClaim == "google-oauth2|108820909534487863492" // sub claim for Asher
             };
             await db.Users.AddAsync(user);
             await db.SaveChangesAsync();

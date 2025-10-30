@@ -5,6 +5,8 @@ using GSBC.ImpactKids.Grpc.Services;
 using GSBC.ImpactKids.Grpc.Services.BibleServices;
 using GSBC.ImpactKids.Grpc.Services.ElvantoServices;
 using GSBC.ImpactKids.Grpc.Services.ElvantoServices.Models;
+using GSBC.ImpactKids.Grpc.Services.EventServices;
+using GSBC.ImpactKids.Grpc.Services.EventServices.Internal;
 using GSBC.ImpactKids.Grpc.Services.MemorisationEntriesServices;
 using GSBC.ImpactKids.Grpc.Services.MemoryVerseListsServices;
 using GSBC.ImpactKids.Grpc.Services.MemoryVersesServices;
@@ -24,12 +26,15 @@ builder.AddRabbitMQClient("rabbitmq");
 
 builder.Services.AddTransient(typeof(IEventService<>), typeof(EventService<>));
 
-AuthConfig? config = builder.Configuration.GetSection("Google").Get<AuthConfig>();
 builder.Services.AddAuthentication()
     .AddJwtBearer("Bearer", jwtOptions =>
     {
-        jwtOptions.Authority = "https://accounts.google.com";
-        jwtOptions.Audience = config?.ClientId;
+        jwtOptions.Authority = $"https://{builder.Configuration["Auth0:Domain"]}";
+        jwtOptions.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            ValidAudience = builder.Configuration["Auth0:Audience"],
+            ValidIssuer = $"https://{builder.Configuration["Auth0:Domain"]}"
+        };
     });
 
 builder.Services.AddAuthorization(opts =>
@@ -42,6 +47,8 @@ builder.Services.AddCodeFirstGrpc();
 builder.Services.AddGrpc();
 builder.Services.AddConverters();
 builder.Services.AddTransient<ElvantoService>();
+builder.Services.AddSingleton<EventServicesService>();
+builder.Services.AddTransient<KeyedEventService>();
 
 builder.AddNpgsqlDbContext<GsbcDbContext>("impact-kids");
 
@@ -49,8 +56,26 @@ ElvantoConfig? elvantoConfig = builder.Configuration.GetSection("Elvanto").Get<E
 if (elvantoConfig != null)
     builder.Services.AddSingleton(elvantoConfig);
 
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        string[] clients = builder.Configuration.GetServiceEndpoints("wasm");
+
+        policy.WithOrigins(clients); // Add the clients as allowed origins for cross origin resource sharing.
+        policy.AllowAnyMethod()
+            .AllowAnyHeader()
+            .WithExposedHeaders("Grpc-Status", "Grpc-Message",
+                "Grpc-Encoding", "Grpc-Accept-Encoding",
+                "Grpc-Status-Details-Bin")
+            .AllowCredentials();
+        // policy.WithHeaders("X-Requested-With");
+    });
+});
+
 var app = builder.Build();
 
+app.UseCors();
 app.MapDefaultEndpoints();
 
 app.UseGrpcWeb(new GrpcWebOptions { DefaultEnabled = true });
@@ -60,6 +85,8 @@ app.UseAuthorization();
 
 // Configure the HTTP request pipeline.
 app.MapGrpcService<LoginService>();
+app.MapGrpcService<EventService>();
+app.MapGrpcService<MetabaseService>();
 app.MapGrpcService<UsersService>();
 app.MapGrpcService<PeopleService>();
 app.MapGrpcService<ElvantoService>();

@@ -1,0 +1,21 @@
+@inject IPeopleService PeopleService
+
+<BaseChangeDialog
+    T="BasicResponse"
+    Response="_response"
+    OnSubmit="@Submit">
+    <MudForm>
+        <MudTextField Required
+                      @bind-Value="_request.FirstName.Value"
+                      Label="First Name"
+                      Class="mb-3"/>
+        <MudTextField Required
+                      @bind-Value="_request.LastName.Value"
+                      Label="Last Name"
+                      Class="mb-3"/>
+        <MudTextField @bind-Value="_request.PreferredName.Value"
+                      Label="Preferred Name"
+                      HelperText="Optional"
+                      Class="mb-3"/>
+    </MudForm>
+</BaseChangeDialog>
