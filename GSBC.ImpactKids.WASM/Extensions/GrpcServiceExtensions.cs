@@ -50,8 +50,10 @@ public static class GrpcServiceExtensions
         {
             try
             {
-                if (ctx.ServiceUrl.EndsWith("GSBC.ImpactKids.Event/Stream")) // hard coded exception so that bearer token is added elsewhere
+                if (ctx.ServiceUrl.EndsWith("GSBC.ImpactKids.Event") && ctx.MethodName == "Stream") // hard coded exception so that bearer token is added elsewhere
                     return;
+                
+                Console.WriteLine($"TESTING: {ctx.ServiceUrl} | {ctx.MethodName}");
                 
                 IAccessTokenProvider? authTokenProvider = services.GetService<IAccessTokenProvider>();
                 if (authTokenProvider == null)
