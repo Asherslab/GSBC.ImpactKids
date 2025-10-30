@@ -13,7 +13,8 @@ public class KeyedEventService(
 {
     public Guid StreamId { get; set; }
 
-    private readonly Channel<BasicDeliverEventArgs> _eventsChannel = Channel.CreateUnbounded<BasicDeliverEventArgs>();
+    private readonly Channel<BasicDeliverEventArgs?> _eventsChannel = Channel.CreateUnbounded<BasicDeliverEventArgs?>();
+    private          Timer?                          _keepAliveTimer;
 
     private IChannel? _channel;
     private string?   _queueName;
@@ -30,13 +31,20 @@ public class KeyedEventService(
         consumer.ReceivedAsync += async (_, eventArgs) => { await _eventsChannel.Writer.WriteAsync(eventArgs, token); };
         await _channel.BasicConsumeAsync(_queueName, autoAck: true, consumer, cancellationToken: token);
 
+        _keepAliveTimer = new Timer(
+            _ => _eventsChannel.Writer.TryWrite(null),
+            null,
+            TimeSpan.FromSeconds(15),
+            TimeSpan.FromSeconds(15)
+        );
+
         while (!token.IsCancellationRequested)
         {
-            await foreach (BasicDeliverEventArgs args in _eventsChannel.Reader.ReadAllAsync(token))
+            await foreach (BasicDeliverEventArgs? args in _eventsChannel.Reader.ReadAllAsync(token))
             {
                 yield return new EventResponse
                 {
-                    RoutingKey = args.RoutingKey
+                    RoutingKey = args?.RoutingKey
                 };
             }
         }
@@ -58,6 +66,7 @@ public class KeyedEventService(
                 cancellationToken: token
             );
         }
+
         Guid subscriptionId = Guid.NewGuid();
         _routingKeys[subscriptionId] = routingKey;
         return subscriptionId;
@@ -67,7 +76,7 @@ public class KeyedEventService(
     {
         if (_channel == null || _queueName == null)
             return;
-        
+
         _routingKeys.Remove(subscriptionId, out string? routingKey);
 
         // don't unbind until ALL subscribers are gone
@@ -124,8 +133,14 @@ public class KeyedEventService(
 
     public async ValueTask DisposeAsync()
     {
+        if (_keepAliveTimer != null)
+            await _keepAliveTimer.DisposeAsync();
+
         await eventServicesService.RemoveKeyedEventService(StreamId);
-        if (_channel != null) await _channel.DisposeAsync();
+
+        if (_channel != null)
+            await _channel.DisposeAsync();
+
         _eventsChannel.Writer.TryComplete();
 
         GC.SuppressFinalize(this);
