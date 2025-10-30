@@ -1,0 +1,64 @@
+using Grpc.Net.Client.Web;
+using GSBC.ImpactKids.Shared.Contracts.Services;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using GSBC.ImpactKids.WASM;
+using GSBC.ImpactKids.WASM.Authentication;
+using GSBC.ImpactKids.WASM.Extensions;
+using GSBC.ImpactKids.WASM.Services;
+using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
+using MudBlazor.Services;
+using ProtoBuf.Grpc.ClientFactory;
+
+var builder = WebAssemblyHostBuilder.CreateDefault(args);
+builder.RootComponents.Add<App>("#app");
+builder.RootComponents.Add<HeadOutlet>("head::after");
+
+builder.AddServiceDefaults();
+builder.Services.AddMudServices();
+builder.Services.AddSingleton<EventSubscriptionService>();
+
+builder.Services.AddOidcAuthentication<RemoteAuthenticationState, RemoteUserAccount>(options =>
+    {
+        builder.Configuration.Bind("Auth0", options.ProviderOptions);
+        options.ProviderOptions.ResponseType = "code";
+        options.ProviderOptions.AdditionalProviderParameters.Add("audience", builder.Configuration["Auth0:Audience"]!);
+    })
+    .AddAccountClaimsPrincipalFactory<RemoteAuthenticationState, RemoteUserAccount, CustomAccountFactory>();
+
+builder.Services.AddAuthorizationCore(opts =>
+    {
+        opts.AddPolicy(Policies.EnabledOnly, policy => policy.RequireClaim("Enabled", true.ToString()));
+    }
+);
+builder.Services.AddCascadingAuthenticationState();
+
+builder.Services
+    .AddCodeFirstGrpcClient<ILoginService>(
+        typeof(ILoginService).FullName!,
+        x => { x.Address = new Uri("https://grpc"); }
+    )
+    .ConfigureChannel(x => { x.UnsafeUseInsecureChannelCallCredentials = true; })
+    .ConfigurePrimaryHttpMessageHandler(() =>
+        new GrpcWebHandler(new HttpClientHandler())); // login service is unauthenticated
+
+builder.Services.AddScoped<UnauthorizedMessageHandler>();
+builder.Services.AddAuthenticatedGrpcClient<IEventService>(true);
+builder.Services.AddAuthenticatedGrpcClient<IMetabaseService>();
+builder.Services.AddAuthenticatedGrpcClient<IUsersService>();
+builder.Services.AddAuthenticatedGrpcClient<IPeopleService>();
+builder.Services.AddAuthenticatedGrpcClient<IElvantoService>();
+builder.Services.AddAuthenticatedGrpcClient<ISchoolTermsService>();
+builder.Services.AddAuthenticatedGrpcClient<IServicesService>();
+builder.Services.AddAuthenticatedGrpcClient<IBibleService>();
+builder.Services.AddAuthenticatedGrpcClient<IMemoryVersesService>();
+builder.Services.AddAuthenticatedGrpcClient<IMemoryVerseListsService>();
+builder.Services.AddAuthenticatedGrpcClient<IMemorisationEntriesService>();
+
+MetabaseConfig? metabaseConfig = builder.Configuration.GetSection("metabase").Get<MetabaseConfig>();
+if (metabaseConfig != null)
+{
+    builder.Services.AddSingleton(metabaseConfig);
+}
+
+await builder.Build().RunAsync();

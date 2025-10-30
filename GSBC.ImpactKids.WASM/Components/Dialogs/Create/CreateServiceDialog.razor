@@ -1,0 +1,41 @@
+@inject IServicesService    ServicesService
+@inject ISchoolTermsService SchoolTermsService
+@inject ISnackbar Snackbar
+
+<BaseChangeDialog
+    T="BasicResponse"
+    Response="_response"
+    OnSubmit="@Submit">
+    <MudForm>
+        <MudTextField HelperText="Use for special event names, otherwise leave blank"
+                      @bind-Value="_request.Name"
+                      Label="Name"
+                      Class="mb-3"/>
+        <RequiredMudDatePicker
+            @bind-Date="@_request.Date"
+            Label="Date"
+            Class="mb-3"/>
+        <MudAutocomplete
+            T="SchoolTerm?"
+            @bind-Value="SchoolTerm"
+            Required
+            DebounceInterval="100"
+            Immediate="true"
+            CloseIcon="@Icons.Material.Filled.Search"
+            SearchFunc="SearchFunc"
+            ToStringFunc="@(x => x?.Name ?? "")"
+            Clearable="false"
+            ShowProgressIndicator="true">
+            <ProgressIndicatorTemplate>
+                <MudProgressLinear Size="Size.Small" Indeterminate="true"/>
+            </ProgressIndicatorTemplate>
+            <ProgressIndicatorInPopoverTemplate>
+                <MudList T="string" ReadOnly="true">
+                    <MudListItem T="string">
+                        Loading...
+                    </MudListItem>
+                </MudList>
+            </ProgressIndicatorInPopoverTemplate>
+        </MudAutocomplete>
+    </MudForm>
+</BaseChangeDialog>

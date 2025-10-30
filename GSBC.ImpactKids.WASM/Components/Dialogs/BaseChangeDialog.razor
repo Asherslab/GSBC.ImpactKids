@@ -1,0 +1,12 @@
+@inject ISnackbar Snackbar
+@typeparam T
+
+<MudDialog DialogContent="ChildContent">
+    <TitleContent>
+        @MudDialog.Title
+    </TitleContent>
+    <DialogActions>
+        <MudButton OnClick="@Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="@Submit">Submit</MudButton>
+    </DialogActions>
+</MudDialog>

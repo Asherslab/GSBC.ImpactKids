@@ -1,0 +1,50 @@
+@using GSBC.ImpactKids.Shared.Contracts.Entities.MemoryVerses
+@inherits EventListeningComponent
+@page "/Service"
+
+@inject IServicesService     ServicesService
+@inject IMemoryVersesService MemoryVersesService
+@inject NavigationManager    Navigation
+
+@if (_service != null)
+{
+    <PageTitle>@PageName()</PageTitle>
+
+    <MudPaper Elevation="6" Class="mt-4">
+        <EntityHeader Name="@PageName()"
+                      Subtitle="@(_service.Date.ToString("dd/MM/yyyy"))"
+                      OnUpdate="@UpdateService"
+                      OnDelete="@DeleteService"/>
+        <MudGrid Spacing="6" Justify="Justify.Center" Class="pt-3 pb-6 px-3">
+            <MudItem xs="12" md="6">
+                <MudCard Elevation="6">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6" Align="Align.Center">Memory Verses</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudList T="string">
+                            @if (_memoryVerses != null)
+                            {
+                                if (_memoryVerses.Count != 0)
+                                {
+                                    <MudDivider/>
+                                }
+
+                                foreach (MemoryVerse verse in _memoryVerses)
+                                {
+                                    <div>
+                                        <MudListItem
+                                            Href="@($"/VerseMemorisation/{_service.Id}?selectedMemoryVerse={verse.Id}")"
+                                            Text="@(verse.ReferenceName)"/>
+                                    </div>
+                                }
+                            }
+                        </MudList>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+}

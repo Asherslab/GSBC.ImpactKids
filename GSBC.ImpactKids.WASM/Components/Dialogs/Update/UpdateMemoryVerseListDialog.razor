@@ -1,0 +1,35 @@
+@inject IMemoryVerseListsService MemoryVerseListsService
+@inject ISchoolTermsService      SchoolTermsService
+@inject ISnackbar                Snackbar
+
+<BaseChangeDialog
+    T="BasicResponse"
+    Response="_response"
+    OnSubmit="@Submit">
+    <MudForm>
+        <MudTextField @bind-Value="_request.Name.Value"
+                      Label="Name"
+                      Class="mb-3"/>
+        <MudAutocomplete
+            T="SchoolTerm?"
+            @bind-Value="SchoolTerm"
+            DebounceInterval="100"
+            Immediate="true"
+            CloseIcon="@Icons.Material.Filled.Search"
+            SearchFunc="SearchFunc"
+            ToStringFunc="@(x => x?.Name ?? "")"
+            Clearable="true"
+            ShowProgressIndicator="true">
+            <ProgressIndicatorTemplate>
+                <MudProgressLinear Size="Size.Small" Indeterminate="true"/>
+            </ProgressIndicatorTemplate>
+            <ProgressIndicatorInPopoverTemplate>
+                <MudList T="string" ReadOnly="true">
+                    <MudListItem T="string">
+                        Loading...
+                    </MudListItem>
+                </MudList>
+            </ProgressIndicatorInPopoverTemplate>
+        </MudAutocomplete>
+    </MudForm>
+</BaseChangeDialog>

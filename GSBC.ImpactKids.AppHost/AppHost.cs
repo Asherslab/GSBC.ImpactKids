@@ -12,7 +12,7 @@ IResourceBuilder<RedisResource> cache = builder.AddRedis("cache")
 
 IResourceBuilder<RabbitMQServerResource> rabbitmq = builder.AddRabbitMQ("rabbitmq")
     .WithDataVolume()
-    .WithManagementPlugin()
+    .WithManagementPlugin(63001)
     .WithLifetime(ContainerLifetime.Persistent);
 
 IResourceBuilder<PostgresServerResource> sql = builder.AddPostgres("sql")
@@ -33,6 +33,13 @@ IResourceBuilder<ProjectResource> grpcService = builder.AddProject<Projects.GSBC
     .WithReference(db)
     .WithReference(migrations)
     .WaitForCompletion(migrations);
+
+IResourceBuilder<ProjectResource> wasm = builder
+    .AddStandaloneBlazorWebAssemblyProject<Projects.GSBC_ImpactKids_WASM>("wasm")
+    .WithReference(grpcService)
+    .WaitFor(grpcService);
+
+grpcService.WithReference(wasm);
 
 builder.AddProject<Projects.GSBC_ImpactKids_Web>("webfrontend")
     .WithExternalHttpEndpoints()

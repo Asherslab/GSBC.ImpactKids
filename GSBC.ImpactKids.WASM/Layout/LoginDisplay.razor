@@ -1,0 +1,29 @@
+﻿@inject NavigationManager NavigationManager
+
+<AuthorizeView>
+    <Authorized>
+        <MudText>Hello, @context.User.Identity?.Name!</MudText>
+    </Authorized>
+    <NotAuthorized>
+        <MudLink OnClick="@BeginSignIn">Log in</MudLink>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code
+{
+    protected override void OnInitialized()
+    {
+        NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+    }
+
+    private void BeginSignIn(MouseEventArgs args)
+    {
+        InteractiveRequestOptions requestOptions = new()
+        {
+            Interaction = InteractionType.SignIn,
+            ReturnUrl = NavigationManager.Uri
+        };
+
+        NavigationManager.NavigateToLogin("authentication/login", requestOptions);
+    }
+}
