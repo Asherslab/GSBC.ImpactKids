@@ -43,7 +43,7 @@ builder.Services
         new GrpcWebHandler(new HttpClientHandler())); // login service is unauthenticated
 
 builder.Services.AddScoped<UnauthorizedMessageHandler>();
-builder.Services.AddAuthenticatedGrpcClient<IEventService>(true);
+builder.Services.AddAuthenticatedGrpcClient<IEventService>();
 builder.Services.AddAuthenticatedGrpcClient<IMetabaseService>();
 builder.Services.AddAuthenticatedGrpcClient<IUsersService>();
 builder.Services.AddAuthenticatedGrpcClient<IPeopleService>();
