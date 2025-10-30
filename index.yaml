@@ -2,6 +2,19 @@ apiVersion: v1
 entries:
   impact-kids-app:
   - apiVersion: v2
+    created: "2025-10-30T10:52:04.76677596Z"
+    description: Aspire Helm Chart
+    digest: 75cdb668c4ba8f416f64cd6c82ddd5d14c256729dac405a20d0b411c4786da0b
+    keywords:
+    - aspire
+    - kubernetes
+    kubeVersion: '>= 1.18.0-0'
+    name: impact-kids-app
+    type: application
+    urls:
+    - https://github.com/Asherslab/GSBC.ImpactKids/releases/download/impact-kids-app-0.0.71/impact-kids-app-0.0.71.tgz
+    version: 0.0.71
+  - apiVersion: v2
     created: "2025-10-30T10:35:49.907598792Z"
     description: Aspire Helm Chart
     digest: 3bd5f7220fc0548cf78784185f29aa8c0a31e72058a23ffca8ecaf3f3c31b3b1
@@ -872,4 +885,4 @@ entries:
     urls:
     - https://github.com/Asherslab/GSBC.ImpactKids/releases/download/impact-kids-app-0.0.2/impact-kids-app-0.0.2.tgz
     version: 0.0.2
-generated: "2025-10-30T10:35:49.907898493Z"
+generated: "2025-10-30T10:52:04.767085576Z"
