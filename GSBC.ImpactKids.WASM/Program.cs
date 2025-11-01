@@ -61,4 +61,10 @@ if (metabaseConfig != null)
     builder.Services.AddSingleton(metabaseConfig);
 }
 
+ElvantoReportsConfig? reportsConfig = builder.Configuration.GetSection("elvanto").Get<ElvantoReportsConfig>();
+if (reportsConfig != null)
+{
+    builder.Services.AddSingleton(reportsConfig);
+}
+
 await builder.Build().RunAsync();

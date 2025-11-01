@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using GSBC.ImpactKids.Grpc.Services.ElvantoServices.Interfaces;
 using GSBC.ImpactKids.Grpc.Services.ElvantoServices.Models;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Elvanto;
 using GSBC.ImpactKids.Shared.Contracts.Services;
 using Microsoft.AspNetCore.Authorization;
 
