@@ -8,6 +8,11 @@ public interface IElvantoService
 {
     Task<ElvantoServicePositionsResponse> GetServicePositions(
         ServicePositionsRequest request,
+        CallContext             context = default
+    );
+
+    Task<ElvantoReportResponse?> GetElvantoReport(
+        string      reportLabel,
         CallContext context = default
     );
 }

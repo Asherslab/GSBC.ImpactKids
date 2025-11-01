@@ -1,4 +1,8 @@
-﻿<MudNavMenu>
+﻿@using GSBC.ImpactKids.WASM.Services
+@inject ElvantoReportsConfig ElvantoReportsConfig
+@inject MetabaseConfig       MetabaseConfig
+
+<MudNavMenu>
     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
     <MudNavLink Href="/roster" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Schedule">Roster</MudNavLink>
 
@@ -31,12 +35,30 @@
                          Href="/term"/>
         </MudMenu>
     </MudNavPopout>
-    <MudNavPopout Icon="@Icons.Material.Filled.BarChart"
-                  Title="Analytics">
-        <MudMenuItem Icon="@Icons.Material.Filled.School"
-                     Label="Verse Memorisation"
-                     Href="/Analytics/MemoryVerses"/>
-    </MudNavPopout>
+    @if (MetabaseConfig.DashboardMappings.Any())
+    {
+        <MudNavPopout Icon="@Icons.Material.Filled.BarChart"
+                      Title="Analytics">
+            @foreach (string dashboardLabel in MetabaseConfig.DashboardMappings.Keys)
+            {
+                <MudMenuItem Icon="@Icons.Material.Filled.AreaChart"
+                             Label="@dashboardLabel"
+                             Href="@($"/Analytics/{dashboardLabel}")"/>
+            }
+        </MudNavPopout>
+    }
+    @if (ElvantoReportsConfig.ReportLabels.Any())
+    {
+        <MudNavPopout Icon="@Icons.Material.Filled.ViewList"
+                      Title="Reports">
+            @foreach (string reportLabel in ElvantoReportsConfig.ReportLabels)
+            {
+                <MudMenuItem Icon="@Icons.Material.Filled.ViewList"
+                             Label="@reportLabel"
+                             Href="@($"/Reports/{reportLabel}")"/>
+            }
+        </MudNavPopout>
+    }
     <MudNavPopout Icon="@Icons.Material.Filled.Settings"
                   Title="Admin">
         <MudMenuItem Icon="@Icons.Material.Filled.Book"
