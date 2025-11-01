@@ -127,7 +127,7 @@ public partial class MemorisationComponent : EventListeningComponent
         Search = text;
         if (string.IsNullOrWhiteSpace(Search))
             Search = null;
-        // SetQueryParameters();
+        SetQueryParameters();
         await RefreshMemorisationEntries();
     }
 
@@ -216,7 +216,7 @@ public partial class MemorisationComponent : EventListeningComponent
         return Navigation.GetUriWithQueryParameters(new Dictionary<string, object?>
         {
             [nameof(SelectedMemoryVerse)] = SelectedMemoryVerse,
-            // [nameof(Search)] = Search, // we can't do this until .net 10, because every navigation scrolls to the top
+            [nameof(Search)] = Search,
             [nameof(Upcoming)] = Upcoming,
             [nameof(Previous)] = Previous
         });
