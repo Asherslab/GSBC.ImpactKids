@@ -1,0 +1,44 @@
+@inject IDollarStoreEntryService DollarStoreEntryService
+@inject IServicesService         ServicesService
+@inject ISnackbar                Snackbar
+
+<BaseChangeDialog
+    T="BasicResponse"
+    Response="_response"
+    OnSubmit="@Submit">
+    <MudForm>
+        <MudNumericField @bind-Value="_request.DollarDoosMade"
+                         Label="Dollary Doos Made"
+                         Class="mb-3"/>
+        <MudTextField Lines="5"
+                      @bind-Value="_request.Notes"
+                      Label="Notes"
+                      Class="mb-3"/>
+        @if (ServiceId == null)
+        {
+            <MudAutocomplete
+                T="Service?"
+                Required
+                Label="Service"
+                @bind-Value="_service"
+                DebounceInterval="100"
+                Immediate="true"
+                CloseIcon="@Icons.Material.Filled.Search"
+                SearchFunc="SearchFunc"
+                ToStringFunc="@(x => x?.GetDisplayName() ?? "")"
+                Clearable="true"
+                ShowProgressIndicator="true">
+                <ProgressIndicatorTemplate>
+                    <MudProgressLinear Size="Size.Small" Indeterminate="true"/>
+                </ProgressIndicatorTemplate>
+                <ProgressIndicatorInPopoverTemplate>
+                    <MudList T="string" ReadOnly="true">
+                        <MudListItem T="string">
+                            Loading...
+                        </MudListItem>
+                    </MudList>
+                </ProgressIndicatorInPopoverTemplate>
+            </MudAutocomplete>
+        }
+    </MudForm>
+</BaseChangeDialog>

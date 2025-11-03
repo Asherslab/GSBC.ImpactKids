@@ -1,6 +1,7 @@
 using GSBC.ImpactKids.Shared.Contracts.Entities;
 using GSBC.ImpactKids.Shared.Contracts.Entities.MemoryVerses;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.DollarStoreEntries;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.MemoryVerseLists;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.SchoolTerms;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
@@ -18,20 +19,20 @@ public partial class Term : EventListeningComponent
     [Parameter]
     public Guid? Id { get; set; }
 
-    private SchoolTerm?                   _term;
-    private ICollection<MemoryVerseList>? _lists;
-
-    private Guid? _selectedMemoryVerseList;
+    private SchoolTerm?                    _term;
+    private ICollection<MemoryVerseList>?  _lists;
+    private ICollection<DollarStoreEntry>? _dollarStoreEntries;
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        
+
         await RefreshTerm();
         await SubscribeToEvent(SchoolTerm.BuildSubscription(_term?.Id), RefreshTerm);
 
-        await RefreshMemoryVerseLists();
+        await Task.WhenAll(RefreshMemoryVerseLists(), RefreshDollarStoreEntries());
         await SubscribeToEvent(MemoryVerseList.BuildSubscription(_term?.Id), RefreshMemoryVerseLists);
+        await SubscribeToEvent(DollarStoreEntry.BuildSubscription(), RefreshDollarStoreEntries);
     }
 
     private async Task RefreshTerm()
@@ -54,6 +55,25 @@ public partial class Term : EventListeningComponent
         StateHasChanged();
     }
 
+    private async Task RefreshDollarStoreEntries()
+    {
+        BasicReadMultipleResponse<DollarStoreEntry>? response = await DollarStoreEntryService.ReadMultiple(
+            new DollarStoreEntriesRequest()
+            {
+                SchoolTermId = Id
+            }
+        );
+
+        if (response.HasErrorOrNull())
+        {
+            Snackbar.AddErrorResponse(response);
+            return;
+        }
+
+        _dollarStoreEntries = response.Entities;
+        StateHasChanged();
+    }
+
     private async Task RefreshMemoryVerseLists()
     {
         BasicReadMultipleResponse<MemoryVerseList>? response = await MemoryVerseListsService.ReadMultiple(
@@ -72,7 +92,7 @@ public partial class Term : EventListeningComponent
         _lists = response.Entities;
         StateHasChanged();
     }
-    
+
     private async Task CreateMemoryVerseList()
     {
         DialogParameters<CreateMemoryVerseListDialog> parameters = new()
@@ -84,10 +104,15 @@ public partial class Term : EventListeningComponent
         {
             FullWidth = true
         };
-        
+
         await DialogService.ShowAsync<CreateMemoryVerseListDialog>("Create Memory Verse List", parameters, opts);
     }
     
+    private async Task CreateDollarStoreEntry()
+    {
+        await DialogService.ShowAsync<CreateDollarStoreEntryDialog>("Create Dollar Store Entry");
+    }
+
     private async Task UpdateSchoolTerm()
     {
         DialogParameters<UpdateSchoolTermDialog> parameters = new()
@@ -101,13 +126,13 @@ public partial class Term : EventListeningComponent
     private async Task DeleteSchoolTerm()
     {
         bool? result = await DialogService.ShowMessageBox(
-            "Warning", 
-            "Deleting can not be undone!", 
-            yesText:"Delete!", cancelText:"Cancel");
-        
+            "Warning",
+            "Deleting can not be undone!",
+            yesText: "Delete!", cancelText: "Cancel");
+
         if (result == null || _term == null)
             return;
-        
+
         BasicReadRequest request = new()
         {
             Guid = _term.Id

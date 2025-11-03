@@ -33,6 +33,17 @@ public partial class ServiceConverter : IConverter<DbService, Service>
 }
 
 [Mapper]
+public partial class DollarStoreEntryConverter(
+    IConverter<DbService, Service> serviceConverter
+) : IConverter<DbDollarStoreEntry, DollarStoreEntry>
+{
+    [UseMapper]
+    private readonly IConverter<DbService, Service> _serviceConverter = serviceConverter;
+
+    public partial DollarStoreEntry Convert(DbDollarStoreEntry input);
+}
+
+[Mapper]
 public partial class BibleVerseConverter : IConverter<DbBibleVerse, BibleVerse>
 {
     public partial BibleVerse Convert(DbBibleVerse input);
@@ -52,8 +63,9 @@ public partial class MemoryVerseConverter(
 {
     [UseMapper]
     private readonly IConverter<DbBibleVerse, BibleVerse> _bibleVerseConverter = bibleVerseConverter;
+
     [UseMapper]
-    private readonly IConverter<DbService, Service>       _serviceConverter    = serviceConverter;
+    private readonly IConverter<DbService, Service> _serviceConverter = serviceConverter;
 
     [MapProperty(nameof(DbMemoryVerse.BibleVerses), nameof(MemoryVerse.BibleVerseIds), Use = nameof(MapBibleVerseIds))]
     [MapProperty(nameof(DbMemoryVerse.Services), nameof(MemoryVerse.ServiceIds), Use = nameof(MapServiceIds))]

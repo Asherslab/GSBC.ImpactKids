@@ -12,8 +12,9 @@ public class GsbcDbContext(
     
     public required DbSet<DbPerson> People { get; set; }
     
-    public required DbSet<DbSchoolTerm> Terms    { get; set; }
-    public required DbSet<DbService>    Services { get; set; }
+    public required DbSet<DbSchoolTerm>       Terms              { get; set; }
+    public required DbSet<DbService>          Services           { get; set; }
+    public required DbSet<DbDollarStoreEntry> DollarStoreEntries { get; set; }
 
     public required DbSet<DbBibleVerse> BibleVerses { get; set; }
 
@@ -33,6 +34,11 @@ public class GsbcDbContext(
             .HasMany(x => x.Services)
             .WithOne(x => x.SchoolTerm)
             .HasForeignKey(x => x.SchoolTermId);
+
+        modelBuilder.Entity<DbService>()
+            .HasOne(x => x.DollarStoreEntry)
+            .WithOne(x => x.Service)
+            .HasForeignKey<DbDollarStoreEntry>(x => x.ServiceId);
 
         modelBuilder.Entity<DbMemoryVerseBibleVerseRelationship>()
             .HasKey(x => new { x.MemoryVersesId, x.BibleVersesId });

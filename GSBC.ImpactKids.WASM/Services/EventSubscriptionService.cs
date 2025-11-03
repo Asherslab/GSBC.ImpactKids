@@ -60,6 +60,7 @@ public class EventSubscriptionService(
                                 if (eventResp.RoutingKey == null)
                                     continue; // DON'T RETURN YOU DUMMY. KILLS THE STREAM
                                 
+                                // Console.WriteLine($"TESTING: {eventResp.RoutingKey}");
                                 foreach (
                                     Callback callback in _callbacks
                                         .Where(callback => callback.TopicMatcher.IsMatch(eventResp.RoutingKey))

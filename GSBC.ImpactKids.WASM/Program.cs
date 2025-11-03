@@ -50,6 +50,7 @@ builder.Services.AddAuthenticatedGrpcClient<IPeopleService>();
 builder.Services.AddAuthenticatedGrpcClient<IElvantoService>();
 builder.Services.AddAuthenticatedGrpcClient<ISchoolTermsService>();
 builder.Services.AddAuthenticatedGrpcClient<IServicesService>();
+builder.Services.AddAuthenticatedGrpcClient<IDollarStoreEntryService>();
 builder.Services.AddAuthenticatedGrpcClient<IBibleService>();
 builder.Services.AddAuthenticatedGrpcClient<IMemoryVersesService>();
 builder.Services.AddAuthenticatedGrpcClient<IMemoryVerseListsService>();

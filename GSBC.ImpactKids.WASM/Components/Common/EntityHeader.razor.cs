@@ -15,4 +15,10 @@ public partial class EntityHeader : ComponentBase
     
     [Parameter]
     public required EventCallback OnDelete { get; set; }
+    
+    [Parameter]
+    public RenderFragment? LeftSideContent { get; set; }
+    
+    [Parameter]
+    public RenderFragment? RightSideContent { get; set; }
 }
