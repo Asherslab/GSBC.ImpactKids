@@ -1,3 +1,4 @@
+using GSBC.ImpactKids.Shared.Contracts;
 using GSBC.ImpactKids.Shared.Contracts.Entities;
 using GSBC.ImpactKids.Shared.Contracts.Entities.MemoryVerses;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
@@ -5,6 +6,7 @@ using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.MemoryVerses;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Services;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using GSBC.ImpactKids.WASM.Components.Base;
+using GSBC.ImpactKids.WASM.Components.Dialogs.Create;
 using GSBC.ImpactKids.WASM.Components.Dialogs.Update;
 using GSBC.ImpactKids.WASM.Extensions;
 using Microsoft.AspNetCore.Components;
@@ -24,6 +26,7 @@ public partial class ServicePage : EventListeningComponent
     public bool Upcoming { get; set; }
 
     private Service?                  _service;
+    private DollarStoreEntry?         _dollarStoreEntry;
     private ICollection<MemoryVerse>? _memoryVerses;
 
     // use OnParametersSet because changing between pages of different query values does not reload with OnInitialized
@@ -34,9 +37,9 @@ public partial class ServicePage : EventListeningComponent
         await RefreshService();
         await SubscribeToEvent(Service.BuildSubscription(_service?.SchoolTermId, _service?.Id), RefreshService);
 
-        await RefreshMemoryVerses();
-        await SubscribeToEvent(MemoryVerse.BuildSubscription(),
-            RefreshMemoryVerses); // We subscribe to all memory verse changes since filtering by service is complex
+        await Task.WhenAll(RefreshMemoryVerses(), RefreshDollarStoreEntry());
+        await SubscribeToEvent(MemoryVerse.BuildSubscription(), RefreshMemoryVerses);
+        await SubscribeToEvent(DollarStoreEntry.BuildSubscription(serviceId: _service?.Id), RefreshDollarStoreEntry);
     }
 
     private async Task RefreshService()
@@ -58,6 +61,29 @@ public partial class ServicePage : EventListeningComponent
 
         _service = response.Entity;
         StateHasChanged();
+    }
+
+    private async Task RefreshDollarStoreEntry()
+    {
+        if (_service == null)
+            return;
+
+        BasicReadResponse<DollarStoreEntry>? response = await DollarStoreEntryService.Read(
+            new BasicReadRequest
+            {
+                Guid = _service.Id
+            }
+        );
+
+        _dollarStoreEntry = response?.Entity;
+        StateHasChanged();
+        
+        if (response.HasErrorOrNull())
+        {
+            if (response?.Error == ErrorConstants.DollarStoreEntryNotFound)
+                return; // this is fine dollar store entry is optional
+            Snackbar.AddErrorResponse(response);
+        }
     }
 
     private async Task RefreshMemoryVerses()
@@ -110,6 +136,53 @@ public partial class ServicePage : EventListeningComponent
         await Unbind(); // unbinds this component from events first, so that we don't get a refresh after deleting before navigating
         await ServicesService.Delete(request);
         Navigation.NavigateTo("/terms");
+    }
+
+    private async Task CreateDollarStoreEntry()
+    {
+        if (_service == null)
+            return;
+
+        DialogParameters<CreateDollarStoreEntryDialog> parameters = new()
+        {
+            { x => x.ServiceId, _service.Id }
+        };
+
+        await DialogService.ShowAsync<CreateDollarStoreEntryDialog>(
+            $"Create Dollar Store Entry for: {_service.GetDisplayName()}", parameters);
+    }
+
+    private async Task UpdateDollarStoreEntry()
+    {
+        if (_service == null || _dollarStoreEntry == null)
+            return;
+
+        DialogParameters<UpdateDollarStoreEntryDialog> parameters = new()
+        {
+            { x => x.Entry, _dollarStoreEntry },
+            { x => x.ServiceId, _service.Id }
+        };
+
+        await DialogService.ShowAsync<UpdateDollarStoreEntryDialog>(
+            $"Update Dollar Store Entry for: {_service.GetDisplayName()}", parameters);
+    }
+
+    private async Task DeleteDollarStoreEntry()
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Warning",
+            "Deleting can not be undone!",
+            yesText: "Delete!", cancelText: "Cancel");
+
+        if (result == null || _dollarStoreEntry == null)
+            return;
+
+        BasicReadRequest request = new()
+        {
+            Guid = _dollarStoreEntry.Id
+        };
+
+        await DollarStoreEntryService.Delete(request);
     }
 
     private string PageName()

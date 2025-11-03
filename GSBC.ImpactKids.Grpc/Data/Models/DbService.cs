@@ -16,6 +16,9 @@ public class DbService
 
     [MapperIgnore]
     public DbSchoolTerm? SchoolTerm { get; set; }
+    
+    [MapperIgnore]
+    public DbDollarStoreEntry? DollarStoreEntry { get; set; }
 
     [MapperIgnore]
     public List<DbMemoryVerse> MemoryVerses { get; set; } = [];

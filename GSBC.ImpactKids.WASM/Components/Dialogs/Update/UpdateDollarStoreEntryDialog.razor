@@ -1,0 +1,16 @@
+@inject IDollarStoreEntryService DollarStoreEntryService
+
+<BaseChangeDialog
+    T="BasicResponse"
+    Response="_response"
+    OnSubmit="@Submit">
+    <MudForm>
+        <MudNumericField @bind-Value="_request.DollarDoosMade.Value"
+                         Label="Dollary Doos Made"
+                         Class="mb-3"/>
+        <MudTextField Lines="5"
+                      @bind-Value="_request.Notes.Value"
+                      Label="Notes"
+                      Class="mb-3"/>
+    </MudForm>
+</BaseChangeDialog>

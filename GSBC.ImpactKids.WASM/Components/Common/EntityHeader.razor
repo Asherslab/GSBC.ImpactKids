@@ -2,6 +2,7 @@
     <MudToolBar Style="position: relative; justify-content: center; align-items: center;">
         <div class="side-left">
             <MudIconButton OnClick="@OnDelete" Icon="@Icons.Material.Filled.Delete"/>
+            @LeftSideContent
         </div>
         <div class="center">
             @if (Subtitle == null)
@@ -15,6 +16,7 @@
             }
         </div>
         <div class="side-right">
+            @RightSideContent
             <MudIconButton OnClick="@OnUpdate" Icon="@Icons.Material.Filled.Edit"/>
         </div>
     </MudToolBar>
@@ -23,8 +25,10 @@
     <MudToolBar Style="position: relative; justify-content: center; align-items: center;">
         <div class="side-left">
             <MudIconButton OnClick="@OnDelete" Icon="@Icons.Material.Filled.Delete"/>
+            @LeftSideContent
         </div>
         <div class="side-right">
+            @RightSideContent
             <MudIconButton OnClick="@OnUpdate" Icon="@Icons.Material.Filled.Edit"/>
         </div>
     </MudToolBar>

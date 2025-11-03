@@ -42,7 +42,7 @@ public partial class MemoryVersesService
             );
         }
 
-        query = query.OrderByDescending(x => x.Services.Count);
+        query = query.OrderBy(x => x.Services.OrderBy(y => y.Date).First());
         
         query = query.Paginate(request);
 

@@ -27,6 +27,9 @@ public static class ErrorConstants
     public const string ServiceSchoolTermNull = "Service School Term Must Be Set";
     public const string ServiceDateNull       = "Service Date Must Be Set";
 
+    public const string DollarStoreEntryNotFound = "Dollar Store Entry Not Found";
+    public const string DollarStoreServiceExists = "Service can only have one Dollar Store Entry";
+
     public const string MemoryVerseListNotFound = "Memory Verse List Not Found";
     public const string MemoryVerseListNameNull = "Memory Verse List Name Must Be Set";
 
