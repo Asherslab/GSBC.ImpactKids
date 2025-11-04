@@ -45,10 +45,16 @@ public partial class ElvantoService
                 break;
         }
 
+        DateTime startDate = request.StartDate ??= DateTime.Now;
+        if (request.EndDate != null)
+        {
+            endDate = request.EndDate.Value;
+        }
+
         ServicesRequest elvantoRequest = new()
         {
-            Start = DateOnly.FromDateTime(DateTime.Now),
-            End = DateOnly.FromDateTime(endDate),
+            Start = DateOnly.FromDateTime(startDate),
+            End = DateOnly.FromDateTime(endDate.AddDays(1)),
             ServiceTypes = serviceTypes,
             Fields = ["volunteers"]
         };

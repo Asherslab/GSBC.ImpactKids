@@ -1,0 +1,15 @@
+@page "/roster"
+
+<PageTitle>Impact Kids Roster</PageTitle>
+
+<MudPaper Elevation="6" Class="mt-4">
+    <Roster
+        Rosters="@(Production ? Shared.Contracts.Messages.Requests.Elvanto.Rosters.Production : Shared.Contracts.Messages.Requests.Elvanto.Rosters.ImpactKids)"/>
+</MudPaper>
+
+@code {
+
+    [SupplyParameterFromQuery]
+    public bool Production { get; set; }
+
+}
