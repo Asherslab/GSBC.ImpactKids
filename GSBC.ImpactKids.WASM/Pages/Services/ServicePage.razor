@@ -1,4 +1,5 @@
 @using GSBC.ImpactKids.Shared.Contracts.Entities.MemoryVerses
+@using Rosters = GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Elvanto.Rosters
 @inherits EventListeningComponent
 @page "/Service"
 @inject IServicesService         ServicesService
@@ -23,7 +24,7 @@
             </RightSideContent>
         </EntityHeader>
         <MudGrid Spacing="6" Justify="Justify.Center" Class="pt-3 pb-6 px-3">
-            <MudItem xs="12" md="6">
+            <MudItem xs="12" md="4">
                 <MudCard Elevation="6">
                     <MudCardHeader>
                         <CardHeaderContent>
@@ -52,9 +53,25 @@
                     </MudCardContent>
                 </MudCard>
             </MudItem>
+            <MudItem xs="12" md="4">
+                <MudCard Elevation="6">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6" Align="Align.Center">Roster</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <Roster
+                            Rosters="Rosters.ImpactKids"
+                            StartDate="@_service.Date"
+                            EndDate="@_service.Date"
+                            MobileLayoutBreakpoint="Breakpoint.Always"/>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
             @if (_dollarStoreEntry != null)
             {
-                <MudItem xs="12" md="6">
+                <MudItem xs="12" md="4">
                     <MudCard Elevation="6">
                         <MudCardHeader>
                             <CardHeaderContent>
@@ -75,7 +92,8 @@
                         @if (_dollarStoreEntry.Notes != null)
                         {
                             <MudCardContent>
-                                <MudText Typo="Typo.body2" Style="white-space: pre-line">@_dollarStoreEntry.Notes</MudText>
+                                <MudText Typo="Typo.body2"
+                                         Style="white-space: pre-line">@_dollarStoreEntry.Notes</MudText>
                             </MudCardContent>
                         }
                     </MudCard>
