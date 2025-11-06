@@ -1,8 +1,10 @@
 using GSBC.ImpactKids.Grpc.Data.Models;
 using GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses;
+using GSBC.ImpactKids.Grpc.Data.Models.People;
 using GSBC.ImpactKids.Shared.Contracts.Entities;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Bible;
 using GSBC.ImpactKids.Shared.Contracts.Entities.MemoryVerses;
+using GSBC.ImpactKids.Shared.Contracts.Entities.People;
 using Riok.Mapperly.Abstractions;
 
 namespace GSBC.ImpactKids.Grpc.Conversion;
@@ -15,9 +17,48 @@ public partial class UserConverter : IConverter<DbUser, User>
 }
 
 [Mapper]
-public partial class PersonConverter : IConverter<DbPerson, Person>
+public partial class PersonConverter(
+    IConverter<DbSchoolGrade, SchoolGrade> schoolGradeConverter,
+    IConverter<DbMedicalNote, MedicalNote> medicalNoteConverter,
+    IConverter<DbAllergy, Allergy> allergyConverter
+) : IConverter<DbPerson, Person>
 {
+    [UseMapper]
+    private readonly IConverter<DbSchoolGrade, SchoolGrade> _schoolGradeConverter = schoolGradeConverter;
+    
+    [UseMapper]
+    private readonly IConverter<DbMedicalNote, MedicalNote> _medicalNoteConverter = medicalNoteConverter;
+    
+    [UseMapper]
+    private readonly IConverter<DbAllergy, Allergy> _allergyConverter = allergyConverter;
+    
     public partial Person Convert(DbPerson person);
+}
+
+[Mapper]
+public partial class SchoolGradeConverter : IConverter<DbSchoolGrade, SchoolGrade>
+{
+    public partial SchoolGrade Convert(DbSchoolGrade person);
+}
+
+[Mapper]
+public partial class MedicalNoteConverter : IConverter<DbMedicalNote, MedicalNote>
+{
+    [MapProperty(nameof(DbMedicalNote.MedicalType), nameof(MedicalNote.MedicalType), Use = nameof(MapMedicalType))]
+    public partial MedicalNote Convert(DbMedicalNote note);
+    
+    string MapMedicalType(DbMedicalType? medicalType)
+        => medicalType?.Label ?? "Other";
+}
+
+[Mapper]
+public partial class AllergyConverter : IConverter<DbAllergy, Allergy>
+{
+    [MapProperty(nameof(DbAllergy.Allergen), nameof(Allergy.Allergen), Use = nameof(MapAllergen))]
+    public partial Allergy Convert(DbAllergy note);
+    
+    string MapAllergen(DbAllergen? allergen)
+        => allergen?.Label ?? "Other";
 }
 
 [Mapper]

@@ -1,5 +1,6 @@
 using GSBC.ImpactKids.Grpc.Data.Models;
 using GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses;
+using GSBC.ImpactKids.Grpc.Data.Models.People;
 using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.MemoryVerses;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.MemorisationEntries;
@@ -10,6 +11,19 @@ namespace GSBC.ImpactKids.Grpc.Services.MemorisationEntriesServices;
 
 public partial class MemorisationEntriesService
 {
+    private static readonly string[] SchoolGrades =
+    [
+        "Nursery/Pre-school",
+        "Kindergarten",
+        "Prep",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6"
+    ];
+    
     public async Task<BasicReadMultipleResponse<MemorisationEntry>?> ReadMultiple(
         MemorisationEntriesRequest request,
         CallContext                context = default
@@ -27,7 +41,8 @@ public partial class MemorisationEntriesService
                 Error = ServiceNotFound
             };
 
-        IQueryable<DbPerson> personQuery = db.People;
+        IQueryable<DbPerson> personQuery = db.People
+            .Where(x => x.SchoolGrade != null && SchoolGrades.Contains(x.SchoolGrade!.Label));
 
         if (request.SearchString != null)
         {
@@ -35,8 +50,7 @@ public partial class MemorisationEntriesService
             {
                 personQuery = personQuery.Where(x =>
                     x.FirstName.ToLower().Contains(search.ToLower()) ||
-                    x.LastName.ToLower().Contains(search.ToLower()) ||
-                    x.PreferredName!.ToLower().Contains(search.ToLower())
+                    x.LastName.ToLower().Contains(search.ToLower())
                 );
             }
         }

@@ -1,0 +1,23 @@
+<MudPaper Elevation="6" Class="d-flex justify-start flex-direction-row flex-grow-1">
+    <MudAvatar Rounded Color="@AvatarColor()" Class="ma-3">
+        @if (AvatarDisplay() == null)
+        {
+            <MudProgressCircular Indeterminate/>
+        }
+        else
+        {
+            @AvatarDisplay()
+        }
+    </MudAvatar>
+    <MudPaper Elevation="0" Class="d-flex justify-center flex-column flex-grow-1">
+        <MudText>
+            @DisplayText()
+        </MudText>
+        @if (Allergy?.Notes != null)
+        {
+            <MudText Typo="Typo.caption">
+                @(Allergy.Notes)
+            </MudText>
+        }
+    </MudPaper>
+</MudPaper>

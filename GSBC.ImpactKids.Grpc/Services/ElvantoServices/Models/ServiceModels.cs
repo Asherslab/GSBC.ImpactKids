@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using GSBC.ImpactKids.Grpc.Serialization;
+
 // ReSharper disable ClassNeverInstantiated.Global
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 // ReSharper disable CollectionNeverUpdated.Global
@@ -40,7 +41,7 @@ public class ServiceType
 public class Volunteers
 {
     [JsonPropertyName("plan")]
-    public List<Plan> Plan { get; set; } = [];
+    public List<Plan>? Plan { get; set; } = [];
 }
 
 public class Plan
@@ -80,25 +81,52 @@ public class PositionVolunteers
 public class Volunteer
 {
     [JsonPropertyName("person")]
-    public Person? Person { get; set; }
+    public ElvantoPerson? Person { get; set; }
 }
 
-public class Person
+public class ElvantoPerson
 {
+    public const string CustomFieldMedicalId      = "fceebdfd-777f-4cde-be09-0b04b2fe68c8";
+    public const string CustomFieldMediaConsentId = "196785e4-a63d-48e1-873f-154144ff4c06";
+    public const string CustomFieldFirstTimeId    = "d77458f4-5a18-4820-9e59-a0765d25817a";
+
     [JsonPropertyName("id")]
     public string? Id { get; set; }
-    
+
     [JsonPropertyName("firstname")]
     public string? FirstName { get; set; }
 
     [JsonPropertyName("lastname")]
     public string? LastName { get; set; }
+
+    [JsonPropertyName("family_relationship")]
+    public string? FamilyRelationship { get; set; }
+
+    [JsonPropertyName("family_id")]
+    public string? FamilyId { get; set; }
     
-    [JsonPropertyName("preferred_name")]
-    public string? PreferredName { get; set; }
-    
+    [JsonPropertyName("birthday")]
+    public string? Birthday { get; set; }
+
+    [JsonPropertyName($"custom_{CustomFieldMedicalId}")]
+    public string? MedicalAllergyNotes { get; set; }
+
+    [JsonPropertyName($"custom_{CustomFieldFirstTimeId}")]
+    public string? FirstTimeAtImpactKids { get; set; }
+
+    [JsonPropertyName($"custom_{CustomFieldMediaConsentId}")]
+    [JsonConverter(typeof(NullableStringConverter<MediaConsent?>))]
+    public MediaConsent? MediaConsent { get; set; }
+
     [JsonPropertyName("school_grade")]
+    [JsonConverter(typeof(NullableStringConverter<SchoolGrade?>))]
     public SchoolGrade? SchoolGrade { get; set; }
+}
+
+public class MediaConsent
+{
+    public string? Id   { get; set; }
+    public string? Name { get; set; }
 }
 
 public class SchoolGrade

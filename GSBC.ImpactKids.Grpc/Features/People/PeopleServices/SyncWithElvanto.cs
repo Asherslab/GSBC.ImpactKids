@@ -1,0 +1,91 @@
+using GSBC.ImpactKids.Grpc.Data.Models.People;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
+
+namespace GSBC.ImpactKids.Grpc.Features.People.PeopleServices;
+
+public partial class PeopleService
+{
+    public async Task<BasicResponse?> SyncWithElvanto(CallContext context = default)
+    {
+        CancellationToken token = context.CancellationToken;
+
+        BasicReadMultipleResponse<DbPerson> resp = await elvantoService
+            .GetPeople(token);
+
+        ICollection<string> existingPeopleElvantoIds = await UpdateExistingPeople(resp, token);
+        await CreateNewPeople(resp, existingPeopleElvantoIds, token);
+
+        foreach (DbPerson person in resp.Entities)
+        {
+            await SendEvent(person.Id, person.FamilyId, token);
+        }
+
+        return new BasicResponse
+        {
+            Success = true
+        };
+    }
+
+    private async Task<ICollection<string>> UpdateExistingPeople(
+        BasicReadMultipleResponse<DbPerson> resp,
+        CancellationToken                   token = default
+    )
+    {
+        List<string> matchedElvantoPeople = [];
+        await foreach (DbPerson dbPerson in db.People)
+        {
+            DbPerson? elvantoPerson = resp.Entities.FirstOrDefault(x => x.ElvantoId == dbPerson.ElvantoId);
+
+            if (elvantoPerson == null || dbPerson.ElvantoId == null)
+                continue;
+
+            matchedElvantoPeople.Add(dbPerson.ElvantoId);
+            if (dbPerson.FirstName != elvantoPerson.FirstName)
+                dbPerson.FirstName = elvantoPerson.FirstName;
+            if (dbPerson.LastName != elvantoPerson.LastName)
+                dbPerson.LastName = elvantoPerson.LastName;
+            if (dbPerson.SchoolGradeId != elvantoPerson.SchoolGradeId)
+                dbPerson.SchoolGradeId = elvantoPerson.SchoolGradeId;
+            if (dbPerson.MediaConsent != elvantoPerson.MediaConsent)
+                dbPerson.MediaConsent = elvantoPerson.MediaConsent;
+            
+            if (elvantoPerson.DateOfBirth != null && dbPerson.DateOfBirth != elvantoPerson.DateOfBirth)
+                dbPerson.DateOfBirth = elvantoPerson.DateOfBirth;
+            if (elvantoPerson.FirstTime != null && dbPerson.FirstTime != elvantoPerson.FirstTime)
+                dbPerson.FirstTime = elvantoPerson.FirstTime;
+            
+            if (dbPerson.FamilyId != elvantoPerson.FamilyId)
+                dbPerson.FamilyId = elvantoPerson.FamilyId;
+            if (dbPerson.FamilyGuardian != elvantoPerson.FamilyGuardian)
+                dbPerson.FamilyGuardian = elvantoPerson.FamilyGuardian;
+
+            if (
+                elvantoPerson.MedicalNotes.Count != 0 &&
+                dbPerson.Allergies.Count == 0 &&
+                dbPerson.MedicalNotes.Count == 0
+            )
+                dbPerson.MedicalNotes = elvantoPerson.MedicalNotes;
+
+            db.People.Update(dbPerson);
+        }
+
+        await db.SaveChangesAsync(token);
+        return matchedElvantoPeople;
+    }
+
+    private async Task CreateNewPeople(
+        BasicReadMultipleResponse<DbPerson> resp,
+        ICollection<string>                 existingPeopleElvantoIds,
+        CancellationToken                   token = default
+    )
+    {
+        foreach (DbPerson respEntity in resp.Entities
+                     .Where(x => x.ElvantoId != null && !existingPeopleElvantoIds.Contains(x.ElvantoId))
+                )
+        {
+            await db.People.AddAsync(respEntity, token);
+        }
+
+        await db.SaveChangesAsync(token);
+    }
+}

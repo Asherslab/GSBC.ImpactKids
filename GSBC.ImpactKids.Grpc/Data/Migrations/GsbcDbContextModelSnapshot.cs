@@ -73,31 +73,6 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.ToTable("DollarStoreEntries");
                 });
 
-            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.DbPerson", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ElvantoId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("PreferredName")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("People");
-                });
-
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.DbSchoolTerm", b =>
                 {
                     b.Property<Guid>("Id")
@@ -276,6 +251,165 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.ToTable("DbMemoryVerseServiceRelationship");
                 });
 
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.People.DbAllergen", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Allergens");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.People.DbAllergy", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("AllergenId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("PersonId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Severe")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AllergenId");
+
+                    b.HasIndex("PersonId");
+
+                    b.ToTable("Allergies");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.People.DbMedicalNote", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("MedicalTypeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("PersonId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Severe")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MedicalTypeId");
+
+                    b.HasIndex("PersonId");
+
+                    b.ToTable("MedicalNotes");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.People.DbMedicalType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MedicalTypes");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.People.DbPerson", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DateOfBirth")
+                        .HasColumnType("date");
+
+                    b.Property<string>("ElvantoId")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("FamilyGuardian")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("FirstTime")
+                        .HasColumnType("date");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("MediaConsent")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("NotRequested");
+
+                    b.Property<Guid?>("SchoolGradeId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ElvantoId")
+                        .IsUnique();
+
+                    b.HasIndex("SchoolGradeId");
+
+                    b.ToTable("People");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.People.DbSchoolGrade", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ElvantoId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("NextGradeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("OrderNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("PreviousGrade")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SchoolGrades");
+                });
+
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.DbDollarStoreEntry", b =>
                 {
                     b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.DbService", "Service")
@@ -306,7 +440,7 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.DbPerson", "Person")
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.People.DbPerson", "Person")
                         .WithMany()
                         .HasForeignKey("PersonId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -375,6 +509,49 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.People.DbAllergy", b =>
+                {
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.People.DbAllergen", "Allergen")
+                        .WithMany()
+                        .HasForeignKey("AllergenId");
+
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.People.DbPerson", "Person")
+                        .WithMany("Allergies")
+                        .HasForeignKey("PersonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Allergen");
+
+                    b.Navigation("Person");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.People.DbMedicalNote", b =>
+                {
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.People.DbMedicalType", "MedicalType")
+                        .WithMany()
+                        .HasForeignKey("MedicalTypeId");
+
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.People.DbPerson", "Person")
+                        .WithMany("MedicalNotes")
+                        .HasForeignKey("PersonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("MedicalType");
+
+                    b.Navigation("Person");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.People.DbPerson", b =>
+                {
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.People.DbSchoolGrade", "SchoolGrade")
+                        .WithMany()
+                        .HasForeignKey("SchoolGradeId");
+
+                    b.Navigation("SchoolGrade");
+                });
+
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.DbSchoolTerm", b =>
                 {
                     b.Navigation("Services");
@@ -393,6 +570,13 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses.DbMemoryVerseList", b =>
                 {
                     b.Navigation("MemoryVerses");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.People.DbPerson", b =>
+                {
+                    b.Navigation("Allergies");
+
+                    b.Navigation("MedicalNotes");
                 });
 #pragma warning restore 612, 618
         }

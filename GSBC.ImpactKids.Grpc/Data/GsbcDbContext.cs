@@ -1,23 +1,33 @@
 using GSBC.ImpactKids.Grpc.Data.Models;
 using GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses;
+using GSBC.ImpactKids.Grpc.Data.Models.People;
 using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ImpactKids.Grpc.Data;
 
-public class GsbcDbContext(
+public partial class GsbcDbContext(
     DbContextOptions options
 ) : DbContext(options)
 {
     public required DbSet<DbUser> Users { get; set; }
-    
-    public required DbSet<DbPerson> People { get; set; }
-    
+
+    // People \\
+    public required DbSet<DbPerson>      People       { get; set; }
+    public required DbSet<DbAllergy>     Allergies    { get; set; }
+    public required DbSet<DbMedicalNote> MedicalNotes { get; set; }
+
+    // People Data \\
+    public required DbSet<DbSchoolGrade> SchoolGrades { get; set; }
+    public required DbSet<DbAllergen>    Allergens    { get; set; }
+    public required DbSet<DbMedicalType> MedicalTypes { get; set; }
+
+    // Services \\
     public required DbSet<DbSchoolTerm>       Terms              { get; set; }
     public required DbSet<DbService>          Services           { get; set; }
     public required DbSet<DbDollarStoreEntry> DollarStoreEntries { get; set; }
 
-    public required DbSet<DbBibleVerse> BibleVerses { get; set; }
-
+    // Memory Verses \\
+    public required DbSet<DbBibleVerse>        BibleVerses         { get; set; }
     public required DbSet<DbMemoryVerseList>   MemoryVerseLists    { get; set; }
     public required DbSet<DbMemoryVerse>       MemoryVerses        { get; set; }
     public required DbSet<DbMemorisationEntry> MemorisationEntries { get; set; }
@@ -29,55 +39,9 @@ public class GsbcDbContext(
         modelBuilder.Entity<DbUser>()
             .HasIndex(x => x.GoogleSub)
             .IsUnique();
-        
-        modelBuilder.Entity<DbSchoolTerm>()
-            .HasMany(x => x.Services)
-            .WithOne(x => x.SchoolTerm)
-            .HasForeignKey(x => x.SchoolTermId);
 
-        modelBuilder.Entity<DbService>()
-            .HasOne(x => x.DollarStoreEntry)
-            .WithOne(x => x.Service)
-            .HasForeignKey<DbDollarStoreEntry>(x => x.ServiceId);
-
-        modelBuilder.Entity<DbMemoryVerseBibleVerseRelationship>()
-            .HasKey(x => new { x.MemoryVersesId, x.BibleVersesId });
-
-        modelBuilder.Entity<DbMemoryVerseServiceRelationship>()
-            .HasKey(x => new { x.MemoryVersesId, x.ServicesId });
-
-        modelBuilder.Entity<DbBibleVerse>()
-            .HasMany(x => x.MemoryVerses)
-            .WithMany(x => x.BibleVerses)
-            .UsingEntity<DbMemoryVerseBibleVerseRelationship>();
-
-        modelBuilder.Entity<DbMemoryVerseList>()
-            .HasMany(x => x.MemoryVerses)
-            .WithOne(x => x.MemoryVerseList)
-            .HasForeignKey(x => x.MemoryVerseListId);
-
-        modelBuilder.Entity<DbMemoryVerse>()
-            .HasMany(x => x.Services)
-            .WithMany(x => x.MemoryVerses)
-            .UsingEntity<DbMemoryVerseServiceRelationship>();
-
-        modelBuilder.Entity<DbMemorisationEntry>()
-            .HasIndex(x => new { x.PersonId, x.ServiceId, x.MemoryVerseId })
-            .IsUnique();
-        
-        modelBuilder.Entity<DbMemorisationEntry>()
-            .HasOne(x => x.Person)
-            .WithMany()
-            .HasForeignKey(x => x.PersonId);
-
-        modelBuilder.Entity<DbMemorisationEntry>()
-            .HasOne(x => x.Service)
-            .WithMany()
-            .HasForeignKey(x => x.ServiceId);
-
-        modelBuilder.Entity<DbMemorisationEntry>()
-            .HasOne(x => x.MemoryVerse)
-            .WithMany(x => x.MemorisationEntries)
-            .HasForeignKey(x => x.MemoryVerseId);
+        BuildPeopleModel(modelBuilder);
+        BuildServiceModel(modelBuilder);
+        BuildMemoryVerseModel(modelBuilder);
     }
 }

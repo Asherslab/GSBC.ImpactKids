@@ -1,0 +1,47 @@
+@inherits EventListeningComponent
+@page "/People"
+
+@inject IPeopleService PeopleService
+
+<PageTitle>People</PageTitle>
+
+<MudPaper Elevation="6" Class="mt-4">
+    <MudButton FullWidth
+               Class="py-5"
+               OnClick="@SyncElvantoPeople"
+               StartIcon="@Icons.Material.Filled.Sync">
+        Sync Elvanto Users
+    </MudButton>
+    <MudTextField
+        T="string"
+        Value="Search"
+        ValueChanged="@(OnSearch)"
+        Placeholder="Search"
+        Adornment="Adornment.Start"
+        AdornmentIcon="@Icons.Material.Filled.Search"
+        DebounceInterval="100"
+        IconSize="Size.Medium"
+        Clearable="true"
+        Class="py-6 px-6"/>
+    <MudTable Items="_people" Hover="true" Breakpoint="Breakpoint.None">
+        <HeaderContent>
+            <MudTh>
+                <MudIconButton OnClick="@CreatePerson"
+                               Icon="@Icons.Material.Filled.PersonAdd"/>
+            </MudTh>
+            <MudTh>First Name</MudTh>
+            <MudTh>Last Name</MudTh>
+            <MudTh>Grade</MudTh>
+            <MudTh>Guardian</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>
+                <MudButton Variant="Variant.Outlined" Href="@($"/People/{context.Id}")">View</MudButton>
+            </MudTd>
+            <MudTd DataLabel="First Name">@context.FirstName</MudTd>
+            <MudTd DataLabel="Last Name">@context.LastName</MudTd>
+            <MudTd DataLabel="Grade">@(context.SchoolGrade?.Label ?? "")</MudTd>
+            <MudTd DataLabel="Guardian">@context.FamilyGuardian</MudTd>
+        </RowTemplate>
+    </MudTable>
+</MudPaper>

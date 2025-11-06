@@ -1,4 +1,4 @@
-using GSBC.ImpactKids.Shared.Contracts.Entities;
+using GSBC.ImpactKids.Shared.Contracts.Entities.People;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.People;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using Microsoft.AspNetCore.Components;
@@ -20,7 +20,6 @@ public partial class UpdatePersonDialog
         _request.Guid = Person.Id;
         _request.FirstName.SetInitialValue(Person.FirstName);
         _request.LastName.SetInitialValue(Person.LastName);
-        _request.PreferredName.SetInitialValue(Person.PreferredName);
     }
 
     private async Task Submit() => _response = await PeopleService.Update(_request);

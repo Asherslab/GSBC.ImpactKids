@@ -14,6 +14,18 @@ public class PeopleResponse
 
 public class People
 {
+    [JsonPropertyName("on_this_page")]
+    public int OnThisPage { get; set; }
+    
+    [JsonPropertyName("page")]
+    public int Page { get; set; }
+    
+    [JsonPropertyName("per_page")]
+    public string? PerPage { get; set; }
+    
+    [JsonPropertyName("total")]
+    public int Total { get; set; }
+    
     [JsonPropertyName("person")]
-    public Person[]? Person { get; set; }
+    public ElvantoPerson[]? Person { get; set; }
 }

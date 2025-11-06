@@ -1,0 +1,34 @@
+using System.ComponentModel.DataAnnotations.Schema;
+using Riok.Mapperly.Abstractions;
+
+namespace GSBC.ImpactKids.Grpc.Data.Models.People;
+
+public class DbPerson
+{
+    public required Guid Id { get; set; }
+
+    [MapperIgnore]
+    public string? ElvantoId { get; set; }
+
+    public required string FirstName { get; set; }
+    public required string LastName  { get; set; }
+
+    [MapperIgnore]
+    public required Guid? SchoolGradeId { get; set; }
+
+    public          DbSchoolGrade? SchoolGrade  { get; set; }
+    public required string         MediaConsent { get; set; }
+
+    [Column(TypeName = "date")]
+    public required DateTime? DateOfBirth { get; set; }
+
+    [Column(TypeName = "date")]
+    public required DateTime? FirstTime { get; set; }
+
+    public List<DbAllergy>     Allergies    { get; set; } = [];
+    public List<DbMedicalNote> MedicalNotes { get; set; } = [];
+
+    // family stuff
+    public required Guid FamilyId       { get; set; }
+    public required bool FamilyGuardian { get; set; }
+}

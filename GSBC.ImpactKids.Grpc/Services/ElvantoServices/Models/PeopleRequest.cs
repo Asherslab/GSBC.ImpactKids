@@ -5,8 +5,20 @@ namespace GSBC.ImpactKids.Grpc.Services.ElvantoServices.Models;
 
 public class PeopleRequest : IRequestMessage
 {
-    public static Uri RequestUri { get; } = new("https://api.elvanto.com/v1/people/search.json");
+    public static Uri RequestUri { get; } = new("https://api.elvanto.com/v1/people/getAll.json");
 
+    [JsonPropertyName("suspended")]
+    public string? Suspended { get; set; }
+    
+    [JsonPropertyName("contact")]
+    public string? Contact { get; set; }
+    
+    [JsonPropertyName("archived")]
+    public string? Archived { get; set; }
+    
+    [JsonPropertyName("page")]
+    public int Page { get; set; }
+    
     [JsonPropertyName("page_size")]
     public int PageSize { get; set; }
 

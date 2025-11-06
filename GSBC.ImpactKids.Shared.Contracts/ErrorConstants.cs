@@ -18,6 +18,9 @@ public static class ErrorConstants
     public const string PersonFirstNameNull = "Person First Name Must Be Set";
     public const string PersonLastNameNull  = "Person Last Name Must Be Set";
 
+    public const string SchoolGradeNotFound = "School Grade Not Found";
+    public const string MediaConsentNotFound = "Media Consent Value Not Found";
+
     public const string SchoolTermNotFound      = "School Term Not Found";
     public const string SchoolTermNameNull      = "School Term Name Must Be Set";
     public const string SchoolTermStartDateNull = "School Term Start Date Must Be Set";

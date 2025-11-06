@@ -1,3 +1,5 @@
+using GSBC.ImpactKids.Grpc.Data.Models.People;
+
 namespace GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses;
 
 public class DbMemorisationEntry

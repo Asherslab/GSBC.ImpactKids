@@ -1,0 +1,35 @@
+<MudPaper Elevation="6">
+    <MudLink Href="@(Person == null ? null : $"/People/{Person.Id}")">
+        <MudPaper Elevation="0" Class="d-flex justify-start flex-direction-row flex-grow-0">
+            <MudAvatar Rounded Color="@AvatarColor()" Class="ma-3">
+                @if (AvatarDisplay() == null)
+                {
+                    <MudProgressCircular Indeterminate/>
+                }
+                else
+                {
+                    @AvatarDisplay()
+                }
+            </MudAvatar>
+            <MudPaper Elevation="0" Class="d-flex justify-center flex-column flex-grow-1">
+                <MudText>
+                    @DisplayText()
+                </MudText>
+                @if (Person != null)
+                {
+                    <MudText>
+                        @(Person.FamilyGuardian ? "Guardian" : "Child")
+                    </MudText>
+                }
+            </MudPaper>
+            <MudPaper Elevation="0" Class="d-flex justify-center flex-column flex-grow-0 mr-5">
+                @if (Person?.GetAge() != null)
+                {
+                    <MudText Typo="Typo.h6">
+                        @Person.GetAge()
+                    </MudText>
+                }
+            </MudPaper>
+        </MudPaper>
+    </MudLink>
+</MudPaper>

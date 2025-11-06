@@ -21,6 +21,7 @@ public class EventSubscriptionService(
     private readonly List<Callback> _callbacks = [];
 
     private bool _streamConnected;
+
     public async Task InitializeStreamIfDisconnected()
     {
         CallOptions callOptions;
@@ -40,8 +41,8 @@ public class EventSubscriptionService(
         {
             _eventTask = Task.Run(async () =>
                 {
-                    while
-                        (true) // this should run as long as the app is running, it will get "cancelled" once the browser tab is closed
+                    // this should run as long as the app is running, it will get "cancelled" once the browser tab is closed
+                    while (true) 
                     {
                         try
                         {
@@ -59,14 +60,14 @@ public class EventSubscriptionService(
                                 _streamConnected = true;
                                 if (eventResp.RoutingKey == null)
                                     continue; // DON'T RETURN YOU DUMMY. KILLS THE STREAM
-                                
+
                                 // Console.WriteLine($"TESTING: {eventResp.RoutingKey}");
                                 foreach (
                                     Callback callback in _callbacks
                                         .Where(callback => callback.TopicMatcher.IsMatch(eventResp.RoutingKey))
                                 )
                                 {
-                                    await callback.CallOnEvent();
+                                    callback.Debounce();
                                 }
                             }
                         }
@@ -144,14 +145,40 @@ public class EventSubscriptionService(
 
     public void RemoveCallback(Guid subscriptionId)
     {
+        ICollection<Callback> callbacks = _callbacks.Where(x => x.Subscription == subscriptionId).ToList();
         _callbacks.RemoveAll(x => x.Subscription == subscriptionId);
+        foreach (Callback callback in callbacks)
+        {
+            callback.Dispose();
+        }
     }
 
-    public class Callback
+    public class Callback : IDisposable
     {
-        public required string     Topic        { get; init; }
-        public required Regex      TopicMatcher { get; init; }
-        public          Guid?      Subscription { get; set; }
-        public required Func<Task> CallOnEvent  { get; init; }
+        public required string     Topic         { get; init; }
+        public required Regex      TopicMatcher  { get; init; }
+        public          Guid?      Subscription  { get; set; }
+        public required Func<Task> CallOnEvent   { get; init; }
+
+        private readonly System.Timers.Timer _debounceTimer;
+        public Callback()
+        {
+            _debounceTimer = new System.Timers.Timer(TimeSpan.FromMilliseconds(50));
+            _debounceTimer.AutoReset = false;
+            _debounceTimer.Elapsed += (_, _) => CallOnEvent?.Invoke();
+        }
+
+        public void Debounce()
+        {
+            _debounceTimer.Stop();
+            _debounceTimer.Interval = TimeSpan.FromMilliseconds(50).TotalMilliseconds;
+            _debounceTimer.Start();
+        }
+
+        public void Dispose()
+        {
+            _debounceTimer.Dispose();
+            GC.SuppressFinalize(this);
+        }
     }
 }

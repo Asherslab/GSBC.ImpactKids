@@ -15,6 +15,12 @@ public class GsbcDbContextFactory : IDesignTimeDbContextFactory<GsbcDbContext>
             Users = null!,
             
             People = null!,
+            Allergies = null!,
+            MedicalNotes = null!,
+            
+            SchoolGrades = null!,
+            Allergens = null!,
+            MedicalTypes = null!,
             
             Terms = null!,
             Services = null!,

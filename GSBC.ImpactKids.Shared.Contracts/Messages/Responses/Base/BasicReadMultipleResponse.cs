@@ -1,4 +1,3 @@
-using GSBC.ImpactKids.Shared.Contracts.Entities.Pagination;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base.Interfaces;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;

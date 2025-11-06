@@ -1,0 +1,63 @@
+@inject IPeopleService       PeopleService
+@inject ISchoolGradesService SchoolGradesService
+@inject ISnackbar            Snackbar
+
+<MudPaper Elevation="0" Class="d-flex flex-column flex-grow-1">
+    <MudOverlay Visible="@(Person == null || _schoolGrades == null || _waitingForRefresh)" DarkBackground="true" Absolute="true">
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+    <MudPaper Elevation="0" Class="d-flex flex-row flex-grow-1 mb-4">
+        <MudTextField
+            Class="mr-4"
+            @bind-Value="@_updateRequest.FirstName.Value"
+            Label="First Name"
+            Immediate
+            Variant="Variant.Filled"
+            ReadOnly="_readonly"/>
+        <MudTextField
+            @bind-Value="@_updateRequest.LastName.Value"
+            Label="Last Name"
+            Immediate
+            Variant="Variant.Filled"
+            ReadOnly="_readonly"/>
+    </MudPaper>
+    @if (_schoolGrades != null)
+    {
+        <MudSelect T="Guid?"
+                   @bind-Value="@_updateRequest.SchoolGradeId.Value"
+                   Class="mb-4"
+                   Label="School Grade"
+                   Variant="Variant.Filled"
+                   Clearable
+                   ReadOnly="_readonly">
+            @foreach (SchoolGrade schoolGrade in _schoolGrades)
+            {
+                <MudSelectItem T="Guid?" Value="@schoolGrade.Id">@schoolGrade.Label</MudSelectItem>
+            }
+        </MudSelect>
+    }
+    <MudSelect @bind-Value="_updateRequest.MediaConsent.Value"
+               Class="mb-4"
+               Label="Media Consent"
+               Variant="Variant.Filled"
+               ReadOnly="_readonly">
+        @foreach (MediaConsent consent in Enum.GetValues<MediaConsent>())
+        {
+            <MudSelectItem Value="consent">@consent.ToDisplay()</MudSelectItem>
+        }
+    </MudSelect>
+    <MudDatePicker
+        Class="mb-4"
+        @bind-Date="@_updateRequest.DateOfBirth.Value"
+        Editable
+        Label="Date of Birth"
+        Variant="Variant.Filled"
+        ReadOnly="_readonly"/>
+    <MudDatePicker
+        @bind-Date="@_updateRequest.FirstTime.Value"
+        Editable
+        Label="First Time at Impact Kids"
+        HelperText="01/01/2025 is used to signify that the first time was before our systems were in place to track it"
+        Variant="Variant.Filled"
+        ReadOnly="_readonly"/>
+</MudPaper>

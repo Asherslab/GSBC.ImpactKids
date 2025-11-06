@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Text;
+using GSBC.ImpactKids.Grpc.Data;
 using GSBC.ImpactKids.Grpc.Services.ElvantoServices.Interfaces;
 using GSBC.ImpactKids.Grpc.Services.ElvantoServices.Models;
 using GSBC.ImpactKids.Shared.Contracts.Services;
@@ -9,7 +10,8 @@ namespace GSBC.ImpactKids.Grpc.Services.ElvantoServices;
 
 [Authorize(Policy = Policies.EnabledOnly)]
 public partial class ElvantoService(
-    HttpClient httpClient,
+    GsbcDbContext db,
+    HttpClient    httpClient,
     ElvantoConfig config
 ) : IElvantoService
 {
@@ -22,7 +24,14 @@ public partial class ElvantoService(
 
         httpRequest.Content = JsonContent.Create(request);
 
-        HttpResponseMessage message = await httpClient.SendAsync(httpRequest, token);
-        return await message.Content.ReadFromJsonAsync<TResponse>(cancellationToken: token);
+        try
+        {
+            HttpResponseMessage message = await httpClient.SendAsync(httpRequest, token);
+            return await message.Content.ReadFromJsonAsync<TResponse>(cancellationToken: token);
+        }
+        catch (Exception)
+        {
+            return default;
+        }
     }
 }
