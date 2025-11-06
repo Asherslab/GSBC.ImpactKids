@@ -1,5 +1,4 @@
 using GSBC.ImpactKids.Shared.Contracts.Entities;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base.Interfaces;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Messages.Requests.MemoryVerseLists;
 

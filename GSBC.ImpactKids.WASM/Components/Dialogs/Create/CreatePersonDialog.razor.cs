@@ -1,4 +1,4 @@
-using GSBC.ImpactKids.Shared.Contracts.Entities;
+using GSBC.ImpactKids.Shared.Contracts.Entities.People;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.People;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using Microsoft.AspNetCore.Components;

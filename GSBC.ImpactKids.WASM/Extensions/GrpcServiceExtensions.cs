@@ -1,5 +1,6 @@
 using Grpc.Net.Client.Web;
 using GSBC.ImpactKids.WASM.Authentication;
+using GSBC.ImpactKids.WASM.Services;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using ProtoBuf.Grpc.ClientFactory;
 
@@ -27,6 +28,7 @@ public static class GrpcServiceExtensions
             .ConfigureChannel(x => { x.UnsafeUseInsecureChannelCallCredentials = true; })
             .AddCallCredentials()
             .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(new HttpClientHandler()))
+            .AddInterceptor<ExceptionInterceptor>()
             .AddHttpMessageHandler<UnauthorizedMessageHandler>();
 
         return services;

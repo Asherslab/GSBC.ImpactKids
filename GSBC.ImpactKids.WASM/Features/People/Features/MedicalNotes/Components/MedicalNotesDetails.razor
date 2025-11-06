@@ -1,0 +1,22 @@
+<MudOverlay Visible="@(MedicalNotes == null)" DarkBackground="true" Absolute="true">
+    <MudProgressCircular Indeterminate/>
+</MudOverlay>
+@if (MedicalNotes != null && MedicalNotes.Count != 0)
+{
+    <MudGrid Spacing="6" Justify="Justify.FlexStart">
+        @foreach (MedicalNote note in MedicalNotes)
+        {
+            <MudItem xs="12" md="6">
+                <MedicalNoteDisplay MedicalNote="note"/>
+            </MudItem>
+        }
+    </MudGrid>
+}
+else
+{
+    <MudGrid Spacing="6" Justify="Justify.FlexStart">
+        <MudItem xs="12">
+            <MedicalNoteDisplay None/>
+        </MudItem>
+    </MudGrid>
+}

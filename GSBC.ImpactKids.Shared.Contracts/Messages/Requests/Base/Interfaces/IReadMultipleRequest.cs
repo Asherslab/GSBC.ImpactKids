@@ -1,5 +1,3 @@
-using GSBC.ImpactKids.Shared.Contracts.Entities.Pagination;
-
 namespace GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base.Interfaces;
 
 public interface IReadMultipleRequest

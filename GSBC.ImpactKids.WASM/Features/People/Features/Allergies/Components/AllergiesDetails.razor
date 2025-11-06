@@ -1,0 +1,22 @@
+<MudOverlay Visible="@(Allergies == null)" DarkBackground="true" Absolute="true">
+    <MudProgressCircular Indeterminate/>
+</MudOverlay>
+@if (Allergies != null && Allergies.Count != 0)
+{
+    <MudGrid Spacing="6" Justify="Justify.FlexStart">
+        @foreach (Allergy allergy in Allergies)
+        {
+            <MudItem xs="12" md="6">
+                <AllergyDisplay Allergy="allergy"/>
+            </MudItem>
+        }
+    </MudGrid>
+}
+else
+{
+    <MudGrid Spacing="6" Justify="Justify.FlexStart">
+        <MudItem xs="12">
+            <AllergyDisplay None/>
+        </MudItem>
+    </MudGrid>
+}

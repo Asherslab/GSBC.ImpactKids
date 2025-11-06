@@ -1,16 +1,19 @@
-﻿@inherits LayoutComponentBase
+﻿@using GSBC.ImpactKids.WASM.Services
+@inject EventSubscriptionService EventSubscriptionService
+@inherits LayoutComponentBase
 
-<MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode" />
-<MudPopoverProvider />
-<MudDialogProvider />
-<MudSnackbarProvider />
+<MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode"/>
+<MudPopoverProvider/>
+<MudDialogProvider/>
+<MudSnackbarProvider/>
 <MudLayout>
     <MudAppBar Elevation="1">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
+                       OnClick="@((e) => DrawerToggle())"/>
         <MudText Typo="Typo.h5" Class="ml-3">Impact Kids</MudText>
-        <MudSpacer />
+        <MudSpacer/>
         <LoginDisplay/>
-        <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
+        <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle"/>
     </MudAppBar>
     <MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
         <MudHidden Breakpoint="Breakpoint.Xs">
@@ -33,9 +36,9 @@
 </div>
 
 @code {
-    private bool _drawerOpen = true;
-    private bool _isDarkMode = true;
-    private MudTheme? _theme = null;
+    private bool      _drawerOpen = true;
+    private bool      _isDarkMode = true;
+    private MudTheme? _theme      = null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -104,9 +107,10 @@
 
     public string DarkLightModeButtonIcon => _isDarkMode switch
     {
-        true => Icons.Material.Rounded.AutoMode,
-        false => Icons.Material.Outlined.DarkMode,
+        true  => Icons.Material.Filled.LightMode,
+        false => Icons.Material.Filled.DarkMode,
     };
+
 }
 
 

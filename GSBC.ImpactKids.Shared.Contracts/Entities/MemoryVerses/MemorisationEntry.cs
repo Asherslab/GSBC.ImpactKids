@@ -1,3 +1,5 @@
+using GSBC.ImpactKids.Shared.Contracts.Entities.People;
+
 namespace GSBC.ImpactKids.Shared.Contracts.Entities.MemoryVerses;
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]

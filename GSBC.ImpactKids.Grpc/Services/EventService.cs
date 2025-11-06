@@ -17,7 +17,7 @@ public class EventService<T>(
     {
         await using IChannel channel = await connection.CreateChannelAsync(cancellationToken: token);
         await channel.ExchangeDeclareAsync("data-events", ExchangeType.Topic, cancellationToken: token);
-        
+
         StringBuilder topic = new();
         topic.Append(typeof(T).Name);
         if (topicParentIds.Length != 0)
@@ -27,8 +27,10 @@ public class EventService<T>(
                 topic.Append($".{topicParentId}");
             }
         }
+
         topic.Append($".{id}");
-        
-        await channel.BasicPublishAsync(exchange: "data-events", topic.ToString(), "event"u8.ToArray(), cancellationToken: token);
+
+        await channel.BasicPublishAsync(exchange: "data-events", topic.ToString(), "event"u8.ToArray(),
+            cancellationToken: token);
     }
 }

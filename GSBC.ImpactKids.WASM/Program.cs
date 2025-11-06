@@ -1,5 +1,6 @@
 using Grpc.Net.Client.Web;
 using GSBC.ImpactKids.Shared.Contracts.Services;
+using GSBC.ImpactKids.Shared.Contracts.Services.Features.People;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using GSBC.ImpactKids.WASM;
@@ -17,6 +18,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.AddServiceDefaults();
 builder.Services.AddMudServices();
 builder.Services.AddSingleton<EventSubscriptionService>();
+builder.Services.AddScoped<ExceptionInterceptor>();
 
 builder.Services.AddOidcAuthentication<RemoteAuthenticationState, RemoteUserAccount>(options =>
     {
@@ -47,6 +49,7 @@ builder.Services.AddAuthenticatedGrpcClient<IEventService>();
 builder.Services.AddAuthenticatedGrpcClient<IMetabaseService>();
 builder.Services.AddAuthenticatedGrpcClient<IUsersService>();
 builder.Services.AddAuthenticatedGrpcClient<IPeopleService>();
+builder.Services.AddAuthenticatedGrpcClient<ISchoolGradesService>();
 builder.Services.AddAuthenticatedGrpcClient<IElvantoService>();
 builder.Services.AddAuthenticatedGrpcClient<ISchoolTermsService>();
 builder.Services.AddAuthenticatedGrpcClient<IServicesService>();

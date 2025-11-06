@@ -3,6 +3,7 @@ using System.Globalization;
 using CsvHelper;
 using GSBC.ImpactKids.Grpc.Data;
 using GSBC.ImpactKids.Grpc.Data.Models;
+using GSBC.ImpactKids.Grpc.Data.Models.People;
 using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ImpactKids.Workers.DbMigrations;
@@ -26,6 +27,8 @@ public class Worker(
             var       dbContext = scope.ServiceProvider.GetRequiredService<GsbcDbContext>();
 
             await RunMigrationAsync(dbContext, cancellationToken);
+            await SeedMedicalAsync(dbContext, cancellationToken);
+            await SeedAllergensAsync(dbContext, cancellationToken);
             await SeedBibleAsync(dbContext, cancellationToken);
         }
         catch (Exception ex)
@@ -44,6 +47,78 @@ public class Worker(
         {
             // Run migration in a transaction to avoid partial migration if it fails.
             await dbContext.Database.MigrateAsync(cancellationToken);
+        });
+    }
+
+    private static readonly string[] Medical =
+    [
+        "ADHD",
+        "Autism",
+        "Asthma"
+    ];
+
+    private static async Task SeedMedicalAsync(GsbcDbContext dbContext, CancellationToken cancellationToken)
+    {
+        var strategy = dbContext.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
+        {
+            // Seed the database
+            await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+            if (await dbContext.MedicalTypes.AnyAsync(cancellationToken))
+                return;
+
+            await dbContext.MedicalTypes.AddRangeAsync(
+                Medical.Select(x => new DbMedicalType
+                    {
+                        Id = Guid.Empty,
+                        Label = x
+                    }
+                ),
+                cancellationToken
+            );
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        });
+    }
+
+    private static readonly string[] Allergens =
+    [
+        "Dairy",
+        "Gluten",
+        "Soy",
+        "Grass",
+        "Nuts",
+        "Eggs",
+        "Honey",
+        "Bees / Wasps",
+        "Mosquitos / Mites / Sandflies"
+    ];
+
+    private static async Task SeedAllergensAsync(GsbcDbContext dbContext, CancellationToken cancellationToken)
+    {
+        var strategy = dbContext.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
+        {
+            // Seed the database
+            await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+            if (await dbContext.Allergens.AnyAsync(cancellationToken))
+                return;
+
+            await dbContext.Allergens.AddRangeAsync(
+                Allergens.Select(x => new DbAllergen
+                    {
+                        Id = Guid.Empty,
+                        Label = x
+                    }
+                ),
+                cancellationToken
+            );
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
         });
     }
 
@@ -77,14 +152,14 @@ public class Worker(
                 return;
 
             List<CsvBook> csvBooks = booksCsv.GetRecords<CsvBook>().ToList();
-            
-            List<DbBibleVerse>   verses   = [];
+
+            List<DbBibleVerse> verses = [];
             await foreach (var csvVerse in versesCsv.GetRecordsAsync<CsvVerse>(cancellationToken))
             {
                 DbBibleVerse verse = new()
                 {
                     Id = Guid.Empty,
-                    
+
                     VerseNumber = csvVerse.Versecount,
                     Verse = csvVerse.Verse,
 

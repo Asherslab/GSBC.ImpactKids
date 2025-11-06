@@ -73,7 +73,7 @@ public partial class ElvantoService
         List<string>                 services  = [];
         foreach (Service service in response.Services.Service)
         {
-            if (service.Volunteers == null)
+            if (service.Volunteers?.Plan == null)
                 continue;
 
             services.Add(service.Date ?? "N/A");
@@ -98,7 +98,7 @@ public partial class ElvantoService
                     if (position.Volunteers!.Volunteer[0].Person == null)
                         continue;
 
-                    Person person = position.Volunteers!.Volunteer[0].Person!;
+                    ElvantoPerson person = position.Volunteers!.Volunteer[0].Person!;
 
                     if (displayPosition == null)
                     {

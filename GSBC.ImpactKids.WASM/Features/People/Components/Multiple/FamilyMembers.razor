@@ -1,0 +1,34 @@
+<MudOverlay Visible="@(Members == null)" DarkBackground="true" Absolute="true">
+    <MudProgressCircular Indeterminate/>
+</MudOverlay>
+@if (Members != null)
+{
+    <MudGrid Spacing="6" Justify="Justify.Center">
+        @foreach (Person member in Members)
+        {
+            <MudItem xs="12" md="6">
+                <PersonDisplay Person="member"/>
+            </MudItem>
+        }
+    </MudGrid>
+}
+else
+{
+    <MudGrid Spacing="6" Justify="Justify.Center">
+        <MudItem xs="12" md="6">
+            <PersonDisplay None/>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <PersonDisplay None/>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <PersonDisplay None/>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <PersonDisplay None/>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <PersonDisplay None/>
+        </MudItem>
+    </MudGrid>
+}

@@ -1,5 +1,3 @@
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base.Interfaces;
-
 namespace GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]

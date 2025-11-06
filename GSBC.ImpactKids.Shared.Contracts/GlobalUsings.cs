@@ -6,3 +6,5 @@ global using ProtoBuf.Grpc.Configuration;
 
 global using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 global using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
+global using GSBC.ImpactKids.Shared.Contracts.Entities.Pagination;
+global using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base.Interfaces;
