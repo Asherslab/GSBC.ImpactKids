@@ -56,6 +56,9 @@ public partial class ElvantoService
                       Guid.NewGuid()
             );
 
+        Guid? nonMedicalId  = (await db.MedicalTypes.FirstOrDefaultAsync(x => x.Label == "None", token))?.Id;
+        Guid? nonAllergenId = (await db.Allergens.FirstOrDefaultAsync(x => x.Label == "None", token))?.Id;
+
         List<DbPerson> people = [];
         foreach (ElvantoPerson elvantoPerson in elvantoPeople)
         {
@@ -85,7 +88,8 @@ public partial class ElvantoService
                 FirstName = matchedPerson?.DbPerson.FirstName ?? elvantoPerson.FirstName ?? "Elvanto import error",
                 LastName = matchedPerson?.DbPerson.LastName ?? elvantoPerson.LastName ?? "Elvanto import error",
 
-                SchoolGradeId = matchedPerson?.DbPerson.SchoolGradeId ?? schoolGrades.FirstOrDefault(x => x.ElvantoId == elvantoPerson.SchoolGrade?.Id)?.Id,
+                SchoolGradeId = matchedPerson?.DbPerson.SchoolGradeId ??
+                                schoolGrades.FirstOrDefault(x => x.ElvantoId == elvantoPerson.SchoolGrade?.Id)?.Id,
                 MediaConsent = matchedPerson?.DbPerson.MediaConsent == nameof(MediaConsent.NotRequested)
                     ? MediaConsentHelper.FromElvanto(elvantoPerson.MediaConsent?.Name).ToString()
                     : matchedPerson?.DbPerson.MediaConsent
@@ -99,21 +103,19 @@ public partial class ElvantoService
 
             if (!string.IsNullOrWhiteSpace(elvantoPerson.MedicalAllergyNotes))
             {
-                if (
-                    !elvantoPerson.MedicalAllergyNotes.StartsWith("None",
-                        StringComparison.InvariantCultureIgnoreCase) &&
-                    !elvantoPerson.MedicalAllergyNotes.StartsWith("Nil",
-                        StringComparison.InvariantCultureIgnoreCase) &&
-                    !elvantoPerson.MedicalAllergyNotes.StartsWith("unknown",
-                        StringComparison.InvariantCultureIgnoreCase)
-                )
+                if (matchedPerson == null ||
+                    (
+                        matchedPerson.DbPerson.Allergies.Count == 0 &&
+                        matchedPerson.DbPerson.MedicalNotes.Count == 0
+                    )
+                   )
                 {
-                    if (matchedPerson == null ||
-                        (
-                            matchedPerson.DbPerson.Allergies.Count == 0 &&
-                            matchedPerson.DbPerson.MedicalNotes.Count == 0
-                        )
-                       )
+                    if (
+                        !elvantoPerson.MedicalAllergyNotes.StartsWith("None",
+                            StringComparison.InvariantCultureIgnoreCase) &&
+                        !elvantoPerson.MedicalAllergyNotes.StartsWith("Nil",
+                            StringComparison.InvariantCultureIgnoreCase)
+                    )
                     {
                         person.MedicalNotes.Add(new DbMedicalNote
                         {
@@ -121,6 +123,23 @@ public partial class ElvantoService
                             MedicalTypeId = null,
                             PersonId = Guid.Empty,
                             Notes = elvantoPerson.MedicalAllergyNotes
+                        });
+                    }
+                    else
+                    {
+                        person.MedicalNotes.Add(new DbMedicalNote
+                        {
+                            Id = Guid.Empty,
+                            MedicalTypeId = nonMedicalId,
+                            PersonId = Guid.Empty,
+                            Notes = null
+                        });
+                        person.Allergies.Add(new DbAllergy
+                        {
+                            Id = Guid.Empty,
+                            AllergenId = nonAllergenId,
+                            PersonId = Guid.Empty,
+                            Notes = null
                         });
                     }
                 }

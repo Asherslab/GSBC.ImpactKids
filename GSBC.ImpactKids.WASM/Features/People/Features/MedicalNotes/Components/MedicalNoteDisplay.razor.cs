@@ -17,16 +17,18 @@ public partial class MedicalNoteDisplay : ComponentBase
         : MedicalNote?.MedicalType[0].ToString();
 
     private string DisplayText() => None
-        ? "No Medical Notes"
+        ? "Medical not requested"
         : MedicalNote == null
             ? "Type"
             : $"{MedicalNote.MedicalType}";
 
     private Color AvatarColor() => None
-        ? Color.Success
+        ? Color.Error
         : MedicalNote == null
             ? Color.Default
             : MedicalNote.Severe
                 ? Color.Error
-                : Color.Primary;
+                : MedicalNote.MedicalType == "None"
+                    ? Color.Success
+                    : Color.Primary;
 }

@@ -17,16 +17,18 @@ public partial class AllergyDisplay : ComponentBase
         : Allergy?.Allergen[0].ToString();
 
     private string DisplayText() => None
-        ? "No Allergies Known"
+        ? "Allergies not requested"
         : Allergy == null
             ? "Allergen"
             : $"{Allergy.Allergen}";
 
     private Color AvatarColor() => None
-        ? Color.Success
+        ? Color.Error
         : Allergy == null
             ? Color.Default
-            : Allergy.Severe
+            :  Allergy.Severe
                 ? Color.Error
-                : Color.Primary;
+                : Allergy.Allergen == "None"
+                    ? Color.Success
+                    : Color.Primary;
 }

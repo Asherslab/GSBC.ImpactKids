@@ -59,12 +59,15 @@ public partial class PeopleService
             if (dbPerson.FamilyGuardian != elvantoPerson.FamilyGuardian)
                 dbPerson.FamilyGuardian = elvantoPerson.FamilyGuardian;
 
-            if (
-                elvantoPerson.MedicalNotes.Count != 0 &&
-                dbPerson.Allergies.Count == 0 &&
-                dbPerson.MedicalNotes.Count == 0
-            )
-                dbPerson.MedicalNotes = elvantoPerson.MedicalNotes;
+            if (dbPerson.Allergies.Count == 0 &&
+                dbPerson.MedicalNotes.Count == 0)
+            {
+                if (elvantoPerson.MedicalNotes.Count != 0)
+                    dbPerson.MedicalNotes = elvantoPerson.MedicalNotes;
+
+                if (elvantoPerson.Allergies.Count != 0)
+                    dbPerson.Allergies = elvantoPerson.Allergies;
+            }
 
             db.People.Update(dbPerson);
         }

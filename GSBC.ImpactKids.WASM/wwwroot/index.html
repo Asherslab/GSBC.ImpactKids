@@ -27,6 +27,38 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">x</span>
 </div>
+<script>
+    /* 
+	Since oidc-client-js by default uses sessionStorage and the Blazor AuthenticationService
+	wrapper around it does not allow changing the configuration of that to localStorage,
+	and because the wrapper directly uses window.sessionStorage for its own additional data,
+	we have to copy data from session to local and back.
+
+	See https://github.com/dotnet/aspnetcore/issues/40757
+    */
+
+    const tokenKeyPrefix = "oidc.user";
+
+    // copy local to session
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith(tokenKeyPrefix)) {
+            sessionStorage.setItem(key, localStorage.getItem(key));
+        }
+    }
+
+    // copy session to local on app hidden
+    document.onvisibilitychange = () => {
+        if (document.visibilityState === "hidden") {
+            for (let i = 0; i < sessionStorage.length; i++) {
+                const key = sessionStorage.key(i);
+                if (key.startsWith(tokenKeyPrefix)) {
+                    localStorage.setItem(key, sessionStorage.getItem(key));
+                }
+            }
+        }
+    };
+</script>
 <script src="_content/Microsoft.AspNetCore.Components.WebAssembly.Authentication/AuthenticationService.js"></script>
 <script src="_framework/blazor.webassembly.js"></script>
 <!-- Important: Increment the version parameter whenever you update MudBlazor to prevent caching issues -->
@@ -41,6 +73,7 @@
 
         return null;
     }
+
     window.scrollTo = undefined; // required for our query usage until .net 10, which has fixed the scroll to top on query change
 </script>
 </body>
