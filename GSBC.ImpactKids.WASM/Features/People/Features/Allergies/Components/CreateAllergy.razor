@@ -1,0 +1,35 @@
+@inject IAllergenService AllergenService
+@inject IAllergyService  AllergyService
+@inject ISnackbar        Snackbar
+
+<MudPaper Elevation="0" Class="d-flex flex-column flex-grow-1">
+    <MudOverlay Visible="@(Allergens == null || _creatingAllergy)" DarkBackground="true" Absolute="true">
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+
+    <MudPaper Elevation="0" Class="d-flex flex-row flex-grow-1 mb-4">
+        @if (Allergens != null)
+        {
+            <MudSelect T="Guid?"
+                       @bind-Value="@_createRequest.AllergenId"
+                       Label="Allergen"
+                       Variant="Variant.Filled"
+                       Clearable>
+                @foreach (Allergen allergen in Allergens)
+                {
+                    <MudSelectItem T="Guid?" Value="@allergen.Id">@allergen.Label</MudSelectItem>
+                }
+            </MudSelect>
+        }
+        <MudCheckBox
+            @bind-Value="@_createRequest.Severe"
+            Label="Severe"/>
+    </MudPaper>
+
+    <MudTextField
+        @bind-Value="@_createRequest.Notes"
+        Label="Optional Notes"
+        Immediate
+        Variant="Variant.Filled"
+        Lines="3"/>
+</MudPaper>

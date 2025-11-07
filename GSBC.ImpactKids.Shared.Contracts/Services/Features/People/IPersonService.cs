@@ -1,10 +1,10 @@
 using GSBC.ImpactKids.Shared.Contracts.Entities.People;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.People;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Services.Features.People;
 
-[Service("GSBC.ImpactKids.People")]
-public interface IPeopleService
+[Service("GSBC.ImpactKids.Person")]
+public interface IPersonService
 {
     Task<BasicResponse?> Create(
         CreatePersonRequest request,

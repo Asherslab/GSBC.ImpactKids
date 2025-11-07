@@ -5,9 +5,9 @@ using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using Microsoft.EntityFrameworkCore;
 
-namespace GSBC.ImpactKids.Grpc.Features.People.SchoolGradesServices;
+namespace GSBC.ImpactKids.Grpc.Features.People.SchoolGradeServices;
 
-public partial class SchoolGradesService
+public partial class SchoolGradeService
 {
     public async Task<BasicReadMultipleResponse<SchoolGrade>?> ReadMultiple(
         BasicReadMultipleRequest request,

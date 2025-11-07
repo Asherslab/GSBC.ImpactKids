@@ -1,8 +1,11 @@
 using GSBC.ImpactKids.Grpc;
 using GSBC.ImpactKids.Grpc.Data;
 using GSBC.ImpactKids.Grpc.Extensions;
-using GSBC.ImpactKids.Grpc.Features.People.PeopleServices;
-using GSBC.ImpactKids.Grpc.Features.People.SchoolGradesServices;
+using GSBC.ImpactKids.Grpc.Features.People.AllergenServices;
+using GSBC.ImpactKids.Grpc.Features.People.AllergyServices;
+using GSBC.ImpactKids.Grpc.Features.People.MedicalNoteServices;
+using GSBC.ImpactKids.Grpc.Features.People.MedicalTypeServices;
+using GSBC.ImpactKids.Grpc.Features.People.SchoolGradeServices;
 using GSBC.ImpactKids.Grpc.Features.Scripture.Memorisation.MemorisationEntriesServices;
 using GSBC.ImpactKids.Grpc.Features.Scripture.Memorisation.MemoryVerseListsServices;
 using GSBC.ImpactKids.Grpc.Features.Scripture.Memorisation.MemoryVersesServices;
@@ -20,6 +23,7 @@ using Microsoft.AspNetCore.Authentication;
 using ProtoBuf.Grpc.Server;
 using RabbitMQ.Client;
 using BibleService = GSBC.ImpactKids.Grpc.Features.Scripture.BibleServices.BibleService;
+using PersonService = GSBC.ImpactKids.Grpc.Features.People.PersonServices.PersonService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -90,8 +94,12 @@ app.MapGrpcService<LoginService>();
 app.MapGrpcService<EventService>();
 app.MapGrpcService<MetabaseService>();
 app.MapGrpcService<UsersService>();
-app.MapGrpcService<PeopleService>();
-app.MapGrpcService<SchoolGradesService>();
+app.MapGrpcService<PersonService>();
+app.MapGrpcService<AllergyService>();
+app.MapGrpcService<AllergenService>();
+app.MapGrpcService<MedicalNoteService>();
+app.MapGrpcService<MedicalTypeService>();
+app.MapGrpcService<SchoolGradeService>();
 app.MapGrpcService<ElvantoService>();
 app.MapGrpcService<SchoolTermService>();
 app.MapGrpcService<ServicesService>();

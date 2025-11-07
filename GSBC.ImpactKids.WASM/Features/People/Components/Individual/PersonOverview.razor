@@ -67,10 +67,38 @@
                 <MudCard Elevation="6" Class="relative">
                     <MudCardHeader>
                         <CardHeaderContent>
-                            <MudText Typo="Typo.h6" Align="Align.Start">Medical Notes</MudText>
+                            <MudPaper Elevation="0" Class="d-flex justify-space-between flex-grow-1">
+                                <MudText Typo="Typo.h6" Align="Align.Start">Medical Notes</MudText>
+                                <MudPaper Elevation="0" Class="d-flex justify-end flex-grow-0">
+                                    @if (!_creatingMedicalNote)
+                                    {
+                                        <MudButton Size="Size.Small" Color="Color.Default"
+                                                   OnClick="@(_ => _creatingMedicalNote = true)">
+                                            <MudIcon Icon="@Icons.Material.Filled.PostAdd"/>
+                                        </MudButton>
+                                    }
+                                    else
+                                    {
+                                        <MudButton Size="Size.Small" Color="Color.Error"
+                                                   OnClick="@(_ => _creatingMedicalNote = false)">
+                                            Cancel
+                                        </MudButton>
+                                        <MudButton Size="Size.Small" Color="Color.Success" OnClick="@CreateMedicalNote">
+                                            Submit
+                                        </MudButton>
+                                    }
+                                </MudPaper>
+                            </MudPaper>
                         </CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent>
+                        @if (_creatingMedicalNote && Person?.Id != null)
+                        {
+                            <CreateMedicalNote @ref="_createMedicalNoteComponent"
+                                               @bind-MedicalTypes="_medicalTypes"
+                                               PersonId="Person.Id"/>
+                            <MudDivider Class="my-6"/>
+                        }
                         <MedicalNotesDetails MedicalNotes="Person?.MedicalNotes"/>
                     </MudCardContent>
                 </MudCard>
@@ -79,10 +107,38 @@
                 <MudCard Elevation="6" Class="relative">
                     <MudCardHeader>
                         <CardHeaderContent>
-                            <MudText Typo="Typo.h6" Align="Align.Start">Allergies</MudText>
+                            <MudPaper Elevation="0" Class="d-flex justify-space-between flex-grow-1">
+                                <MudText Typo="Typo.h6" Align="Align.Start">Allergies</MudText>
+                                <MudPaper Elevation="0" Class="d-flex justify-end flex-grow-0">
+                                    @if (!_creatingAllergy)
+                                    {
+                                        <MudButton Size="Size.Small" Color="Color.Default"
+                                                   OnClick="@(_ => _creatingAllergy = true)">
+                                            <MudIcon Icon="@Icons.Material.Filled.PostAdd"/>
+                                        </MudButton>
+                                    }
+                                    else
+                                    {
+                                        <MudButton Size="Size.Small" Color="Color.Error"
+                                                   OnClick="@(_ => _creatingAllergy = false)">
+                                            Cancel
+                                        </MudButton>
+                                        <MudButton Size="Size.Small" Color="Color.Success" OnClick="@CreateAllergy">
+                                            Submit
+                                        </MudButton>
+                                    }
+                                </MudPaper>
+                            </MudPaper>
                         </CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent>
+                        @if (_creatingAllergy && Person?.Id != null)
+                        {
+                            <CreateAllergy @ref="_createAllergyComponent"
+                                           @bind-Allergens="_allergens"
+                                           PersonId="Person.Id"/>
+                            <MudDivider Class="my-6"/>
+                        }
                         <AllergiesDetails Allergies="Person?.Allergies"/>
                     </MudCardContent>
                 </MudCard>

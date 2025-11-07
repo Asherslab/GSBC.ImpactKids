@@ -5,9 +5,11 @@ public static class ErrorConstants
     public const string PermissionDenied  = "Permission Denied";
     public const string ExceptionOccurred = "An Unexpected error occurred. Please try again later";
 
-    public const string EventStreamIdNotFound = "Event service couldn't find stream id running. Might have disconnected?";
+    public const string EventStreamIdNotFound =
+        "Event service couldn't find stream id running. Might have disconnected?";
+
     public const string EventStreamNotRunning = "Event stream not running";
-    
+
     public const string FailedToRetrieveServices = "Failed to retrieve elvanto services";
 
     public const string UserNotFound         = "User Not Found";
@@ -18,8 +20,14 @@ public static class ErrorConstants
     public const string PersonFirstNameNull = "Person First Name Must Be Set";
     public const string PersonLastNameNull  = "Person Last Name Must Be Set";
 
-    public const string SchoolGradeNotFound = "School Grade Not Found";
-    public const string MediaConsentNotFound = "Media Consent Value Not Found";
+    public const string SchoolGradeNotFound             = "School Grade Not Found";
+    public const string MediaConsentNotFound            = "Media Consent Value Not Found";
+    public const string MedicalTypeNotFound             = "Medical Note Type Not Found";
+    public const string AllergenNotFound                = "Allergen Not Found";
+    public const string MedicalNoteNotFound             = "Medical Note Not Found";
+    public const string AllergyNotFound                 = "Allergy Not Found";
+    public const string MedicalNotesMustHaveTypeOrNotes = "Medical Notes Must Have A Type or Notes Text";
+    public const string AllergiesMustHaveTypeOrNotes    = "Allergies Must Have A Type or Notes Text";
 
     public const string SchoolTermNotFound      = "School Term Not Found";
     public const string SchoolTermNameNull      = "School Term Name Must Be Set";

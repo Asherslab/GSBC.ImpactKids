@@ -4,9 +4,9 @@ using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using Microsoft.EntityFrameworkCore;
 
-namespace GSBC.ImpactKids.Grpc.Features.People.PeopleServices;
+namespace GSBC.ImpactKids.Grpc.Features.People.PersonServices;
 
-public partial class PeopleService
+public partial class PersonService
 {
     public async Task<BasicReadResponse<Person>?> Read(BasicReadRequest request, CallContext context = default)
     {

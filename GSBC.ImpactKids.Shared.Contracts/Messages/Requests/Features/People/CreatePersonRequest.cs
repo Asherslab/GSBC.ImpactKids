@@ -1,6 +1,6 @@
 using GSBC.ImpactKids.Shared.Contracts.Entities.People;
 
-namespace GSBC.ImpactKids.Shared.Contracts.Messages.Requests.People;
+namespace GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People;
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
 public class CreatePersonRequest

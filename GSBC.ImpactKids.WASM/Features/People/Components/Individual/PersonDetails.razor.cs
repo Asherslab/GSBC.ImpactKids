@@ -1,7 +1,7 @@
 using GSBC.ImpactKids.Shared.Contracts.Entities.Pagination;
 using GSBC.ImpactKids.Shared.Contracts.Entities.People;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.People;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using GSBC.ImpactKids.WASM.Extensions;
 using Microsoft.AspNetCore.Components;
@@ -53,7 +53,7 @@ public partial class PersonDetails : ComponentBase
 
     private async Task RefreshSchoolGrades()
     {
-        BasicReadMultipleResponse<SchoolGrade>? resp = await SchoolGradesService.ReadMultiple(
+        BasicReadMultipleResponse<SchoolGrade>? resp = await SchoolGradeService.ReadMultiple(
             new BasicReadMultipleRequest
             {
                 Pagination = PaginationRequest.All()
@@ -77,7 +77,7 @@ public partial class PersonDetails : ComponentBase
 
         _waitingForRefresh = true;
         StateHasChanged();
-        BasicResponse? resp = await PeopleService.Update(_updateRequest);
+        BasicResponse? resp = await PersonService.Update(_updateRequest);
 
         if (resp.HasErrorOrNull())
         {
