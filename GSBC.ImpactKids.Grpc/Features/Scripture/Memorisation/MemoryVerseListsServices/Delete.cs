@@ -3,23 +3,23 @@ using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using Microsoft.EntityFrameworkCore;
 
-namespace GSBC.ImpactKids.Grpc.Services.MemoryVersesServices;
+namespace GSBC.ImpactKids.Grpc.Features.Scripture.Memorisation.MemoryVerseListsServices;
 
-public partial class MemoryVersesService
+public partial class MemoryVerseListsService
 {
     public async Task<BasicResponse?> Delete(BasicReadRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 
-        DbMemoryVerse? verse = await db.MemoryVerses
+        DbMemoryVerseList? list = await db.MemoryVerseLists
             .FirstOrDefaultAsync(x => x.Id == request.Guid, token);
 
-        if (verse == null)
-            return BasicResponse.WithError(MemoryVerseNotFound);
+        if (list == null)
+            return BasicResponse.WithError(MemoryVerseListNotFound);
 
-        db.MemoryVerses.Remove(verse);
+        db.MemoryVerseLists.Remove(list);
         await db.SaveChangesAsync(token);
-        await eventService.SendUpdatedEvent(verse.Id, token: token, verse.MemoryVerseListId);
+        await eventService.SendUpdatedEvent(list.Id, token: token, list.SchoolTermId ?? Guid.Empty);
 
         return new BasicResponse
         {

@@ -27,10 +27,11 @@ public partial class GsbcDbContext(
     public required DbSet<DbDollarStoreEntry> DollarStoreEntries { get; set; }
 
     // Memory Verses \\
-    public required DbSet<DbBibleVerse>        BibleVerses         { get; set; }
-    public required DbSet<DbMemoryVerseList>   MemoryVerseLists    { get; set; }
-    public required DbSet<DbMemoryVerse>       MemoryVerses        { get; set; }
-    public required DbSet<DbMemorisationEntry> MemorisationEntries { get; set; }
+    public required DbSet<DbBibleVerse>               BibleVerses                { get; set; }
+    public required DbSet<DbMemoryVerseList>          MemoryVerseLists           { get; set; }
+    public required DbSet<DbMemoryVerse>              MemoryVerses               { get; set; }
+    public required DbSet<DbMemorisationEntry>        MemorisationEntries        { get; set; }
+    public required DbSet<DbVirtualMemorisationEntry> VirtualMemorisationEntries { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

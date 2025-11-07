@@ -3,6 +3,7 @@ using System;
 using GSBC.ImpactKids.Grpc.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GSBC.ImpactKids.Grpc.Data.Migrations
 {
     [DbContext(typeof(GsbcDbContext))]
-    partial class GsbcDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251106122555_1762431952")]
+    partial class _1762431952
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -143,29 +146,36 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
 
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses.DbMemorisationEntry", b =>
                 {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("FiveDollaryDoosGiven")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("MemoryVerseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("OneDollaryDooGiven")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid>("PersonId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("ServiceId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("MemoryVerseId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("FiveDollaryDoosGiven")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("OneDollaryDooGiven")
-                        .HasColumnType("boolean");
-
                     b.Property<bool>("VerseRecited")
                         .HasColumnType("boolean");
 
-                    b.HasKey("PersonId", "ServiceId", "MemoryVerseId");
+                    b.HasKey("Id");
 
                     b.HasIndex("MemoryVerseId");
 
                     b.HasIndex("ServiceId");
+
+                    b.HasIndex("PersonId", "ServiceId", "MemoryVerseId")
+                        .IsUnique();
 
                     b.ToTable("MemorisationEntries");
                 });
@@ -242,40 +252,6 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.HasIndex("ServicesId");
 
                     b.ToTable("DbMemoryVerseServiceRelationship");
-                });
-
-            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses.DbVirtualMemorisationEntry", b =>
-                {
-                    b.Property<Guid>("PersonId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ServiceId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("MemoryVerseId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("FiveDollaryDoosGiven")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("OneDollaryDooGiven")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("VerseHasBeenRecitedBefore")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("VerseRecited")
-                        .HasColumnType("boolean");
-
-                    b.HasKey("PersonId", "ServiceId", "MemoryVerseId");
-
-                    b.HasIndex("MemoryVerseId");
-
-                    b.HasIndex("ServiceId");
-
-                    b.ToTable((string)null);
-
-                    b.ToView("VirtualMemorisationEntries", (string)null);
                 });
 
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.People.DbAllergen", b =>
@@ -437,6 +413,15 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.ToTable("SchoolGrades");
                 });
 
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses.DbVirtualMemorisationEntry", b =>
+                {
+                    b.HasBaseType("GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses.DbMemorisationEntry");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("VirtualMemorisationEntries", (string)null);
+                });
+
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.DbDollarStoreEntry", b =>
                 {
                     b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.DbService", "Service")
@@ -534,33 +519,6 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                         .HasForeignKey("ServicesId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses.DbVirtualMemorisationEntry", b =>
-                {
-                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses.DbMemoryVerse", "MemoryVerse")
-                        .WithMany()
-                        .HasForeignKey("MemoryVerseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.People.DbPerson", "Person")
-                        .WithMany()
-                        .HasForeignKey("PersonId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.DbService", "Service")
-                        .WithMany()
-                        .HasForeignKey("ServiceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("MemoryVerse");
-
-                    b.Navigation("Person");
-
-                    b.Navigation("Service");
                 });
 
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.People.DbAllergy", b =>

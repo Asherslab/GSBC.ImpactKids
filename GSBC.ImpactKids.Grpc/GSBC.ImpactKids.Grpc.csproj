@@ -30,6 +30,7 @@
 
     <ItemGroup>
       <Folder Include="Data\Migrations\" />
+      <Folder Include="Features\Scripture\Memorisation\" />
     </ItemGroup>
 
 </Project>

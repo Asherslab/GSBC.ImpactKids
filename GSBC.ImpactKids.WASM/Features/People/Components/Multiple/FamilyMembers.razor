@@ -1,10 +1,10 @@
-<MudOverlay Visible="@(Members == null)" DarkBackground="true" Absolute="true">
+<MudOverlay Visible="@_waitingForUpdate" DarkBackground="true" Absolute="true">
     <MudProgressCircular Indeterminate/>
 </MudOverlay>
-@if (Members != null)
+@if (_familyMembers != null)
 {
     <MudGrid Spacing="6" Justify="Justify.Center">
-        @foreach (Person member in Members)
+        @foreach (Person member in _familyMembers)
         {
             <MudItem xs="12" md="6">
                 <PersonDisplay Person="member"/>
