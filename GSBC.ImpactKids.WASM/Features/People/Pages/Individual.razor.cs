@@ -92,6 +92,8 @@ public partial class Individual : EventListeningComponent
         BasicReadMultipleResponse<MemorisationEntry>? response = await MemorisationEntriesService.ReadMultiple(
             new MemorisationEntriesRequest
             {
+                Pagination = PaginationRequest.All(),
+                
                 IncludeService = true,
                 IncludeMemoryVerse = true,
 
