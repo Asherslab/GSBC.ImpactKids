@@ -40,22 +40,25 @@
                     </MudCardContent>
                 </MudCard>
             </MudItem>
-            <MudItem xs="12">
-                <MudCard Elevation="6" Class="relative">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.h6" Align="Align.Start">Memorisation Entries</MudText>
-                            <MudText Typo="Typo.caption" Align="Align.Start">For current term</MudText>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        <VerseMemorisationEntries
-                            ShowMemoryVerse
-                            ShowService
-                            MemorisationEntries="MemorisationEntries"/>
-                    </MudCardContent>
-                </MudCard>
-            </MudItem>
+            @if (Person?.FamilyGuardian != true)
+            {
+                <MudItem xs="12">
+                    <MudCard Elevation="6" Class="relative">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6" Align="Align.Start">Memorisation Entries</MudText>
+                                <MudText Typo="Typo.caption" Align="Align.Start">For current term</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <VerseMemorisationEntries
+                                ShowMemoryVerse
+                                ShowService
+                                MemorisationEntries="MemorisationEntries"/>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            }
         </MudGrid>
     </MudItem>
     <MudItem xs="12" md="8">

@@ -4,40 +4,30 @@
         <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
+        <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Aspire4Wasm.WebAssembly" Version="6.0.1" />
+        <PackageReference Include="Aspire4Wasm.WebAssembly" Version="6.0.1"/>
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.10"/>
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="9.0.10" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="9.0.10"/>
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.10" PrivateAssets="all"/>
-        <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.10" />
-        
-        <PackageReference Include="MudBlazor" Version="8.13.0" />
+        <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.10"/>
 
-        <PackageReference Include="Grpc.Net.Client" Version="2.70.0" />
-        <PackageReference Include="Grpc.Net.Client.Web" Version="2.70.0" />
-        <PackageReference Include="Grpc.Net.ClientFactory" Version="2.70.0" />
-        <PackageReference Include="protobuf-net.Grpc.ClientFactory" Version="1.2.2" />
+        <PackageReference Include="MudBlazor" Version="8.13.0"/>
+
+        <PackageReference Include="Grpc.Net.Client" Version="2.70.0"/>
+        <PackageReference Include="Grpc.Net.Client.Web" Version="2.70.0"/>
+        <PackageReference Include="Grpc.Net.ClientFactory" Version="2.70.0"/>
+        <PackageReference Include="protobuf-net.Grpc.ClientFactory" Version="1.2.2"/>
     </ItemGroup>
-    
+
     <ItemGroup>
-      <ProjectReference Include="..\GSBC.ImpactKids.Shared.Contracts\GSBC.ImpactKids.Shared.Contracts.csproj" />
+        <ProjectReference Include="..\GSBC.ImpactKids.Shared.Contracts\GSBC.ImpactKids.Shared.Contracts.csproj"/>
     </ItemGroup>
-    
+
     <ItemGroup>
-      <Folder Include="Features\People\Features\" />
-    </ItemGroup>
-    
-    <ItemGroup>
-      <AdditionalFiles Include="Features\People\Features\Allergies\Components\AllergiesDetails.razor" />
-      <AdditionalFiles Include="Features\People\Features\Allergies\Components\AllergyDisplay.razor" />
-      <AdditionalFiles Include="Features\People\Features\MedicalNotes\Components\MedicalNoteDisplay.razor" />
-      <AdditionalFiles Include="Features\People\Features\MedicalNotes\Components\MedicalNotesDetails.razor" />
-    </ItemGroup>
-    
-    <ItemGroup>
-      <_ContentIncludedByDefault Remove="Features\People\Allergies\Components\AllergiesDetails.razor" />
-      <_ContentIncludedByDefault Remove="Features\People\Allergies\Components\AllergyDisplay.razor" />
+        <ServiceWorker Include="wwwroot\service-worker.js"
+                       PublishedContent="wwwroot\service-worker.published.js"/>
     </ItemGroup>
 </Project>
