@@ -5,7 +5,7 @@ using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.MemoryVerseLists;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using Microsoft.EntityFrameworkCore;
 
-namespace GSBC.ImpactKids.Grpc.Services.MemoryVerseListsServices;
+namespace GSBC.ImpactKids.Grpc.Features.Scripture.Memorisation.MemoryVerseListsServices;
 
 public partial class MemoryVerseListsService
 {

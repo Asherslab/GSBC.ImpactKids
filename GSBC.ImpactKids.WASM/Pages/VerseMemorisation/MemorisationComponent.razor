@@ -1,4 +1,5 @@
 @using GSBC.ImpactKids.Shared.Contracts.Entities.MemoryVerses
+@using GSBC.ImpactKids.WASM.Features.Scripture.Memorisation.Components.Multiple
 @inherits EventListeningComponent
 
 @inject IServicesService            ServicesService
@@ -54,93 +55,21 @@
                     </MudCardActions>
                 </MudCard>
             }
-            <MudTextField
-                T="string"
-                Value="Search"
-                ValueChanged="@(OnSearch)"
-                Placeholder="Search for People"
-                Adornment="Adornment.Start"
-                AdornmentIcon="@Icons.Material.Filled.Search"
-                DebounceInterval="100"
-                IconSize="Size.Medium"
-                Clearable="true"
-                Class="py-6 px-6"/>
-            <MudTable Elevation="6"
-                      Items="_memorisationEntries"
-                      Hover="true"
-                      Breakpoint="Breakpoint.None">
-                <HeaderContent>
-                    <MudTh>Name</MudTh>
-                    <MudTh Style="width: 100px">Recited</MudTh>
-                    <MudTh Style="width: 25px">$5</MudTh>
-                    <MudTh Style="width: 25px">$1</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="Name">@context.Person?.GetDisplayName()</MudTd>
-                    <MudTd DataLabel="Recited">
-                        <MudStack Row>
-                            <MudCheckBox T="bool"
-                                         Value="@context.VerseRecited"
-                                         ValueChanged="@(() => UpdateMemorisationEntry(context, recited: !context.VerseRecited))"/>
-                            @if (context is { VerseHasBeenRecitedBefore: false, VerseRecited: true })
-                            {
-                                <MudTooltip
-                                    RootStyle="display: flex !important"
-                                    ShowOnClick
-                                    ShowOnHover
-                                    ShowOnFocus
-                                    Text="This is the first time this verse has been recited by this child!">
-                                    <MudIcon tabindex="0" Icon="@Icons.Material.Filled.NewReleases"/>
-                                </MudTooltip>
-                            }
-                        </MudStack>
-                    </MudTd>
-                    <MudTd DataLabel="$5">
-                        @if (context.VerseHasBeenRecitedBefore)
-                        {
-                            <MudTooltip
-                                RootStyle="display: flex !important"
-                                ShowOnClick
-                                ShowOnHover
-                                ShowOnFocus
-                                Text="This verse has been recited before, give 1 dollary doo instead">
-                                <MudCheckBox T="bool"
-                                             Disabled
-                                             tabindex="0"
-                                             Value="false"/>
-                            </MudTooltip>
-                        }
-                        else
-                        {
-                            <MudCheckBox T="bool"
-                                         Value="@context.FiveDollaryDoosGiven"
-                                         ValueChanged="@(() => UpdateMemorisationEntry(context, fiveDollaryDoos: !context.FiveDollaryDoosGiven))"/>
-                        }
-                    </MudTd>
-                    <MudTd DataLabel="$1">
-                        @if (!context.VerseHasBeenRecitedBefore)
-                        {
-                            <MudTooltip
-                                RootStyle="display: flex !important"
-                                ShowOnClick
-                                ShowOnHover
-                                ShowOnFocus
-                                Text="This verse has not been recited before, give 5 dollary doo instead">
-                                <MudCheckBox T="bool"
-                                             Disabled
-                                             tabindex="0"
-                                             Value="false"/>
-                            </MudTooltip>
-                        }
-                        else
-                        {
-                            <MudCheckBox T="bool"
-                                         Value="@context.OneDollaryDooGiven"
-                                         ValueChanged="@(() => UpdateMemorisationEntry(context, oneDollaryDoo: !context.OneDollaryDooGiven))"/>
-                        }
-                    </MudTd>
-                </RowTemplate>
-            </MudTable>
+            <MudPaper Elevation="0" Class="mt-1 relative">
+                <MudTextField
+                    T="string"
+                    Value="Search"
+                    ValueChanged="@(OnSearch)"
+                    Placeholder="Search for People"
+                    Adornment="Adornment.Start"
+                    AdornmentIcon="@Icons.Material.Filled.Search"
+                    DebounceInterval="100"
+                    IconSize="Size.Medium"
+                    Clearable="true"
+                    Class="py-6 px-6"/>
+                <VerseMemorisationEntries ShowPersonName
+                                          MemorisationEntries="_memorisationEntries"/>
+            </MudPaper>
         </MudCardContent>
     </MudCard>
 </MudPaper>

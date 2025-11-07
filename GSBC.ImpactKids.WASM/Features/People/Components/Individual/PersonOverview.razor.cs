@@ -1,3 +1,4 @@
+using GSBC.ImpactKids.Shared.Contracts.Entities.MemoryVerses;
 using GSBC.ImpactKids.Shared.Contracts.Entities.People;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
@@ -11,10 +12,33 @@ public partial class PersonOverview : ComponentBase
 
     [Parameter]
     public ICollection<Person>? FamilyMembers { get; set; }
+    
+    [Parameter]
+    public ICollection<MemorisationEntry>? MemorisationEntries { get; set; }
 
     private PersonDetails? _personDetailsComponent;
     private bool           _editingDetails;
-    private bool           _editReloading;
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        if (Person == null)
+        {
+            if (_editingDetails)
+            {
+                Snackbar.Add(
+                    "Somebody else has made modifications to this family, your edit has been cancelled",
+                    Severity.Warning,
+                    x =>
+                    {
+                        x.CloseAfterNavigation = true;
+                        x.VisibleStateDuration = int.MaxValue;
+                    });
+            }
+
+            _editingDetails = false;
+        }
+    }
 
     private async Task UpdatePerson()
     {
@@ -23,28 +47,8 @@ public partial class PersonOverview : ComponentBase
             bool success = await _personDetailsComponent.UpdatePersonDetails();
             if (success)
             {
-                _editReloading = true;
-                StateHasChanged();
+                _editingDetails = false;
             }
         }
-    }
-
-    public void PersonUpdated()
-    {
-        if (_editingDetails && !_editReloading)
-        {
-            Snackbar.Add(
-                "Somebody else has made modifications to this family, your edit has been cancelled",
-                Severity.Warning,
-                x =>
-                {
-                    x.CloseAfterNavigation = true;
-                    x.VisibleStateDuration = int.MaxValue;
-                });
-        }
-
-        _editingDetails = false;
-        _editReloading = false;
-        _personDetailsComponent?.PersonUpdated();
     }
 }

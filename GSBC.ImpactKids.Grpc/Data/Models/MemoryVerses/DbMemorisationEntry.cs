@@ -2,10 +2,15 @@ using GSBC.ImpactKids.Grpc.Data.Models.People;
 
 namespace GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses;
 
-public class DbMemorisationEntry
-{
-    public required Guid Id { get; set; }
+public class DbMemorisationEntry : BaseMemorisationEntry;
 
+public class DbVirtualMemorisationEntry : BaseMemorisationEntry
+{
+    public bool VerseHasBeenRecitedBefore { get; set; }
+}
+
+public abstract class BaseMemorisationEntry
+{
     public required Guid      PersonId { get; set; }
     public          DbPerson? Person   { get; set; }
 

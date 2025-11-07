@@ -24,7 +24,7 @@ public partial class PersonDetails : ComponentBase
     protected override async Task OnParametersSetAsync()
     {
         await base.OnParametersSetAsync();
-        if (Person != null && !_waitingForRefresh)
+        if (Person != null)
         {
             _updateRequest = new UpdatePersonRequest
             {
@@ -38,6 +38,11 @@ public partial class PersonDetails : ComponentBase
             _updateRequest.MediaConsent.SetInitialValue(Person.MediaConsent);
             _updateRequest.DateOfBirth.SetInitialValue(Person.DateOfBirth);
             _updateRequest.FirstTime.SetInitialValue(Person.FirstTime);
+            _waitingForRefresh = false;
+        }
+        else
+        {
+            _waitingForRefresh = true;
         }
 
         if (_schoolGrades == null)
@@ -83,10 +88,5 @@ public partial class PersonDetails : ComponentBase
         
         StateHasChanged();
         return true;
-    }
-    
-    public void PersonUpdated()
-    {
-        _waitingForRefresh = false;
     }
 }

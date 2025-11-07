@@ -101,12 +101,16 @@ public partial class MemorisationComponent : EventListeningComponent
         if (_selectedVerse == null || _service == null)
             return;
 
+        _memorisationEntries = null;
+        StateHasChanged();
         BasicReadMultipleResponse<MemorisationEntry>? response = await MemorisationEntriesService.ReadMultiple(
             new MemorisationEntriesRequest
             {
                 SearchString = Search,
                 Pagination = new PaginationRequest(0, 5),
 
+                IncludePerson = true,
+                
                 ServiceId = _service.Id,
                 MemoryVerseId = _selectedVerse.Id
             }
@@ -161,36 +165,6 @@ public partial class MemorisationComponent : EventListeningComponent
         SetQueryParameters();
         await SetSelectedVerse();
         StateHasChanged();
-    }
-
-
-    private async Task UpdateMemorisationEntry(
-        MemorisationEntry memorisationEntry,
-        bool?             recited         = null,
-        bool?             fiveDollaryDoos = null,
-        bool?             oneDollaryDoo   = null
-    )
-    {
-        UpdateMemorisationEntryRequest request = new()
-        {
-            Guid = memorisationEntry.Id
-        };
-
-        if (recited != null)
-            request.VerseRecited.Value = recited.Value;
-
-        if (fiveDollaryDoos != null)
-            request.FiveDollaryDoosGiven.Value = fiveDollaryDoos.Value;
-
-        if (oneDollaryDoo != null)
-            request.OneDollaryDooGiven.Value = oneDollaryDoo.Value;
-
-        BasicResponse? response = await MemorisationEntriesService.Update(request);
-
-        if (response.HasErrorOrNull())
-        {
-            Snackbar.AddErrorResponse(response);
-        }
     }
 
     private async Task SetSelectedVerse()

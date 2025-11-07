@@ -8,7 +8,7 @@ using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using Microsoft.EntityFrameworkCore;
 
-namespace GSBC.ImpactKids.Grpc.Services.BibleServices;
+namespace GSBC.ImpactKids.Grpc.Features.Scripture.BibleServices;
 
 public partial class BibleService(
     GsbcDbContext                        db,

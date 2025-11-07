@@ -1,6 +1,7 @@
 @inherits EventListeningComponent
 @page "/People/{Id:guid}"
-@inject IPeopleService PeopleService
+@inject IPeopleService              PeopleService
+@inject IMemorisationEntriesService MemorisationEntriesService
 
 <PageTitle>@(_person == null ? "Person" : _person.FirstName + " " + _person.LastName)</PageTitle>
 
@@ -13,5 +14,5 @@
     {
         <MudText Align="Align.Center" Typo="Typo.h5">Person</MudText>
     }
-    <PersonOverview @ref="_personOverviewComponent" Person="_person" FamilyMembers="_familyMembers"/>
+    <PersonOverview Person="_person" FamilyMembers="_familyMembers" MemorisationEntries="_memorisationEntries"/>
 </MudPaper>

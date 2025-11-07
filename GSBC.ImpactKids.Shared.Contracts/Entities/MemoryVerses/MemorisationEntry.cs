@@ -5,8 +5,6 @@ namespace GSBC.ImpactKids.Shared.Contracts.Entities.MemoryVerses;
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
 public class MemorisationEntry
 {
-    public required Guid Id { get; set; }
-
     public required Guid PersonId      { get; set; }
     public required Guid MemoryVerseId { get; set; }
     public required Guid ServiceId     { get; set; }
@@ -21,8 +19,12 @@ public class MemorisationEntry
     public Service?     Service     { get; set; }
 
     public static string BuildSubscription(
-        Guid? memorisationEntryId = null
+        Guid? personId      = null,
+        Guid? serviceId     = null,
+        Guid? memoryVerseId = null
     ) =>
         $"{nameof(MemorisationEntry)}." +
-        $"{memorisationEntryId?.ToString() ?? "*"}";
+        $"{serviceId?.ToString() ?? "*"}." +
+        $"{memoryVerseId?.ToString() ?? "*"}." +
+        $"{personId?.ToString() ?? "*"}";
 }

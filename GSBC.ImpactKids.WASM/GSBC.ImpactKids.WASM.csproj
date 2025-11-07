@@ -27,7 +27,6 @@
     
     <ItemGroup>
       <Folder Include="Features\People\Features\" />
-      <Folder Include="Pages\People\" />
     </ItemGroup>
     
     <ItemGroup>

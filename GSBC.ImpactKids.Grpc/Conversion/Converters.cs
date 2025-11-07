@@ -120,11 +120,11 @@ public partial class MemoryVerseConverter(
 }
 
 [Mapper]
-public partial class MemorisationEntryConverter(
+public partial class VirtualMemorisationEntryConverter(
     IConverter<DbPerson, Person>           personConverter,
     IConverter<DbMemoryVerse, MemoryVerse> memoryVerseConverter,
     IConverter<DbService, Service>         serviceConverter
-) : IConverter<DbMemorisationEntry, MemorisationEntry>
+) : IConverter<DbVirtualMemorisationEntry, MemorisationEntry>
 {
     [UseMapper]
     private readonly IConverter<DbPerson, Person> _personConverter = personConverter;
@@ -135,6 +135,5 @@ public partial class MemorisationEntryConverter(
     [UseMapper]
     private readonly IConverter<DbService, Service> _serviceConverter = serviceConverter;
 
-    [MapperIgnoreTarget(nameof(MemorisationEntry.VerseHasBeenRecitedBefore))]
-    public partial MemorisationEntry Convert(DbMemorisationEntry input);
+    public partial MemorisationEntry Convert(DbVirtualMemorisationEntry input);
 }
