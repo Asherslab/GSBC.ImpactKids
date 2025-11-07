@@ -6,7 +6,7 @@
     <MudGrid Spacing="6" Justify="Justify.FlexStart">
         @foreach (MedicalNote note in _medicalNotes)
         {
-            <MudItem lg="12" xl="6">
+            <MudItem md="12" lg="6">
                 <MedicalNoteDisplay MedicalNote="note" AllowDeleting/>
             </MudItem>
         }
