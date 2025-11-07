@@ -52,39 +52,42 @@ public class Worker(
 
     private static readonly string[] Medical =
     [
+        "None",
         "ADHD",
         "Autism",
         "Asthma"
     ];
 
-    private static async Task SeedMedicalAsync(GsbcDbContext dbContext, CancellationToken cancellationToken)
+    private static async Task SeedMedicalAsync(GsbcDbContext dbContext, CancellationToken token)
     {
         var strategy = dbContext.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
         {
             // Seed the database
-            await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+            await using var transaction = await dbContext.Database.BeginTransactionAsync(token);
 
-            if (await dbContext.MedicalTypes.AnyAsync(cancellationToken))
-                return;
+            foreach (string medical in Medical)
+            {
+                if (await dbContext.MedicalTypes.AnyAsync(x => x.Label == medical, token))
+                    continue;
 
-            await dbContext.MedicalTypes.AddRangeAsync(
-                Medical.Select(x => new DbMedicalType
+                await dbContext.MedicalTypes.AddAsync(new DbMedicalType
                     {
                         Id = Guid.Empty,
-                        Label = x
-                    }
-                ),
-                cancellationToken
-            );
+                        Label = medical
+                    },
+                    token
+                );
+            }
 
-            await dbContext.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(token);
+            await transaction.CommitAsync(token);
         });
     }
 
     private static readonly string[] Allergens =
     [
+        "None",
         "Dairy",
         "Gluten",
         "Soy",
@@ -96,29 +99,30 @@ public class Worker(
         "Mosquitos / Mites / Sandflies"
     ];
 
-    private static async Task SeedAllergensAsync(GsbcDbContext dbContext, CancellationToken cancellationToken)
+    private static async Task SeedAllergensAsync(GsbcDbContext dbContext, CancellationToken token)
     {
         var strategy = dbContext.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
         {
             // Seed the database
-            await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+            await using var transaction = await dbContext.Database.BeginTransactionAsync(token);
 
-            if (await dbContext.Allergens.AnyAsync(cancellationToken))
-                return;
+            foreach (string allergen in Allergens)
+            {
+                if (await dbContext.Allergens.AnyAsync(x => x.Label == allergen, token))
+                    continue;
 
-            await dbContext.Allergens.AddRangeAsync(
-                Allergens.Select(x => new DbAllergen
+                await dbContext.Allergens.AddAsync(new DbAllergen
                     {
                         Id = Guid.Empty,
-                        Label = x
-                    }
-                ),
-                cancellationToken
-            );
+                        Label = allergen
+                    },
+                    token
+                );
+            }
 
-            await dbContext.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
+            await dbContext.SaveChangesAsync(token);
+            await transaction.CommitAsync(token);
         });
     }
 
