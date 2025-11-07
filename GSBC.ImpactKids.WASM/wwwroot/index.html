@@ -64,15 +64,6 @@
             }
         }
     };
-
-    // make service worker install immediately upon update
-    self.addEventListener('install', event => {
-        self.skipWaiting();
-
-        event.waitUntil(
-            // caching etc
-        );
-    });
 </script>
 <script src="_content/Microsoft.AspNetCore.Components.WebAssembly.Authentication/AuthenticationService.js"></script>
 <script src="_framework/blazor.webassembly.js"></script>
