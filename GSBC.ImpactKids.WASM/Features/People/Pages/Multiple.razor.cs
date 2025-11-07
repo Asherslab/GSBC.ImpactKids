@@ -1,5 +1,5 @@
 using GSBC.ImpactKids.Shared.Contracts.Entities.People;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.People;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using GSBC.ImpactKids.WASM.Components.Dialogs.Create;
 using GSBC.ImpactKids.WASM.Extensions;
@@ -26,7 +26,7 @@ public partial class Multiple
         await _refreshPeopleTokenSource.CancelAsync();
         _refreshPeopleTokenSource = new CancellationTokenSource();
         
-        BasicReadMultipleResponse<Person>? response = await PeopleService.ReadMultiple(
+        BasicReadMultipleResponse<Person>? response = await PersonService.ReadMultiple(
             new PeopleRequest
             {
                 SearchString = Search
@@ -53,7 +53,7 @@ public partial class Multiple
 
     private async Task SyncElvantoPeople()
     {
-        await PeopleService.SyncWithElvanto();
+        await PersonService.SyncWithElvanto();
     }
 
     private async Task CreatePerson()

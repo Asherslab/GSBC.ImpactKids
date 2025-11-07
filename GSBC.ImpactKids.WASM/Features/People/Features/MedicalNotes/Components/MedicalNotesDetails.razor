@@ -7,7 +7,7 @@
         @foreach (MedicalNote note in _medicalNotes)
         {
             <MudItem xs="12" md="6">
-                <MedicalNoteDisplay MedicalNote="note"/>
+                <MedicalNoteDisplay MedicalNote="note" AllowDeleting/>
             </MudItem>
         }
     </MudGrid>

@@ -42,6 +42,12 @@ public partial class SchoolGradeConverter : IConverter<DbSchoolGrade, SchoolGrad
 }
 
 [Mapper]
+public partial class MedicalTypeConverter : IConverter<DbMedicalType, MedicalType>
+{
+    public partial MedicalType Convert(DbMedicalType person);
+}
+
+[Mapper]
 public partial class MedicalNoteConverter : IConverter<DbMedicalNote, MedicalNote>
 {
     [MapProperty(nameof(DbMedicalNote.MedicalType), nameof(MedicalNote.MedicalType), Use = nameof(MapMedicalType))]
@@ -49,6 +55,12 @@ public partial class MedicalNoteConverter : IConverter<DbMedicalNote, MedicalNot
     
     string MapMedicalType(DbMedicalType? medicalType)
         => medicalType?.Label ?? "Other";
+}
+
+[Mapper]
+public partial class AllergenConverter : IConverter<DbAllergen, Allergen>
+{
+    public partial Allergen Convert(DbAllergen person);
 }
 
 [Mapper]

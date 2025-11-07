@@ -1,9 +1,9 @@
 using GSBC.ImpactKids.Grpc.Data.Models.People;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 
-namespace GSBC.ImpactKids.Grpc.Features.People.PeopleServices;
+namespace GSBC.ImpactKids.Grpc.Features.People.PersonServices;
 
-public partial class PeopleService
+public partial class PersonService
 {
     public async Task<BasicResponse?> SyncWithElvanto(CallContext context = default)
     {

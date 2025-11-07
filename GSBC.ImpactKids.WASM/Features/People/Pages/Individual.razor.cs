@@ -2,8 +2,8 @@ using GSBC.ImpactKids.Shared.Contracts.Entities.MemoryVerses;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Pagination;
 using GSBC.ImpactKids.Shared.Contracts.Entities.People;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.MemorisationEntries;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.People;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using GSBC.ImpactKids.WASM.Components.Base;
 using GSBC.ImpactKids.WASM.Extensions;
@@ -62,7 +62,7 @@ public partial class Individual : EventListeningComponent
         await _refreshPersonTokenSource.CancelAsync();
         _refreshPersonTokenSource = new CancellationTokenSource();
 
-        BasicReadResponse<Person>? response = await PeopleService.Read(
+        BasicReadResponse<Person>? response = await PersonService.Read(
             new BasicReadRequest
             {
                 Guid = Id
@@ -123,7 +123,7 @@ public partial class Individual : EventListeningComponent
         await _refreshFamilyMembersTokenSource.CancelAsync();
         _refreshFamilyMembersTokenSource = new CancellationTokenSource();
 
-        BasicReadMultipleResponse<Person>? response = await PeopleService.ReadMultiple(
+        BasicReadMultipleResponse<Person>? response = await PersonService.ReadMultiple(
             new PeopleRequest
             {
                 FamilyId = _familyId,

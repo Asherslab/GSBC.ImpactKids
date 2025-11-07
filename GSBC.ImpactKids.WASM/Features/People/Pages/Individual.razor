@@ -1,6 +1,6 @@
 @inherits EventListeningComponent
 @page "/People/{Id:guid}"
-@inject IPeopleService              PeopleService
+@inject IPersonService              PersonService
 @inject IMemorisationEntriesService MemorisationEntriesService
 
 <PageTitle>@(_person == null ? "Person" : _person.FirstName + " " + _person.LastName)</PageTitle>
@@ -12,7 +12,7 @@
     }
     else
     {
-        <MudText Align="Align.Center" Typo="Typo.h5">Person</MudText>
+        <MudText Align="Align.Center" Typo="Typo.h5" Class="py-3">Person</MudText>
     }
     <PersonOverview Person="_person" FamilyMembers="_familyMembers" MemorisationEntries="_memorisationEntries"/>
 </MudPaper>

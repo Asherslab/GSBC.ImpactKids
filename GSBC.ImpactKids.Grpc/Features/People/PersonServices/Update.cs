@@ -1,12 +1,12 @@
 using GSBC.ImpactKids.Grpc.Data.Models.People;
 using GSBC.ImpactKids.Shared.Contracts.Entities.People;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.People;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using Microsoft.EntityFrameworkCore;
 
-namespace GSBC.ImpactKids.Grpc.Features.People.PeopleServices;
+namespace GSBC.ImpactKids.Grpc.Features.People.PersonServices;
 
-public partial class PeopleService
+public partial class PersonService
 {
     public async Task<BasicResponse?> Update(UpdatePersonRequest request, CallContext context = default)
     {
