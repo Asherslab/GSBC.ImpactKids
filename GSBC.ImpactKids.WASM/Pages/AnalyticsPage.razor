@@ -66,7 +66,7 @@ else
     {
         string refreshString = Refresh == null ? "" : $"&refresh={Refresh}";
         return "https://kids-metabase.baptist.com.au/embed/dashboard/" + _token +
-               $"#theme=night&bordered=true&titled=true{refreshString}";
+               $"#theme=night&bordered=true&titled=false{refreshString}";
     }
 
 }
