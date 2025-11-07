@@ -36,11 +36,20 @@
     {
         <MudNavPopout Icon="@Icons.Material.Filled.BarChart"
                       Title="Analytics">
-            @foreach (string dashboardLabel in MetabaseConfig.DashboardMappings.Keys)
+            @foreach (DashboardMapping mapping in MetabaseConfig.DashboardMappings)
             {
-                <MudMenuItem Icon="@Icons.Material.Filled.AreaChart"
-                             Label="@dashboardLabel"
-                             Href="@($"/Analytics/{dashboardLabel}")"/>
+                @if (mapping.Type == "question")
+                {
+                    <MudMenuItem Icon="@Icons.Material.Filled.TableChart"
+                                 Label="@mapping.Label"
+                                 Href="@($"/Analytics/{mapping.Label}")"/>
+                }
+                else
+                {
+                    <MudMenuItem Icon="@Icons.Material.Filled.AreaChart"
+                                 Label="@mapping.Label"
+                                 Href="@($"/Analytics/{mapping.Label}")"/>
+                }
             }
         </MudNavPopout>
     }

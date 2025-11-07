@@ -42,12 +42,22 @@
     {
         <MudNavGroup Icon="@Icons.Material.Filled.BarChart"
                      Title="Analytics">
-            @foreach (string dashboardLabel in MetabaseConfig.DashboardMappings.Keys)
+            @foreach (DashboardMapping mapping in MetabaseConfig.DashboardMappings)
             {
-                <MudNavLink Icon="@Icons.Material.Filled.AreaChart"
-                            Href="@($"/Analytics/{dashboardLabel}")">
-                    @dashboardLabel
-                </MudNavLink>
+                @if (mapping.Type == "question")
+                {
+                    <MudNavLink Icon="@Icons.Material.Filled.TableChart"
+                                Href="@($"/Analytics/{mapping.Label}")">
+                        @mapping
+                    </MudNavLink>
+                }
+                else
+                {
+                    <MudNavLink Icon="@Icons.Material.Filled.AreaChart"
+                                Href="@($"/Analytics/{mapping.Label}")">
+                        @mapping
+                    </MudNavLink>
+                }
             }
         </MudNavGroup>
     }
