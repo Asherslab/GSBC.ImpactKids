@@ -36,10 +36,11 @@ else
     [SupplyParameterFromQuery]
     public int? Refresh { get; set; }
 
-    private Guid    _iframeKey = Guid.NewGuid();
-    private string? _label;
-    private string? _reportUrl;
-    private string? _token;
+    private Guid              _iframeKey = Guid.NewGuid();
+    private string?           _label;
+    private string?           _reportUrl;
+    private string?           _token;
+    private DashboardMapping? _mapping;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -47,6 +48,7 @@ else
         _iframeKey = Guid.NewGuid();
         StateHasChanged();
 
+        _mapping = MetabaseConfig.DashboardMappings.FirstOrDefault(x => x.Label == DashboardLabel);
         _label = DashboardLabel;
         await RefreshDashboard();
         _reportUrl = DashboardUrl();
@@ -55,7 +57,10 @@ else
     private async Task RefreshDashboard()
     {
         MetabaseJwtResponse? resp = await MetabaseService.GetMetabaseJwt(new MetabaseJwtRequest
-            { DashboardId = MetabaseConfig.DashboardMappings[DashboardLabel] });
+        {
+            DashboardId = _mapping!.Id,
+            Type = _mapping.Type
+        });
 
         _token = resp?.Jwt;
 
@@ -65,7 +70,7 @@ else
     private string DashboardUrl()
     {
         string refreshString = Refresh == null ? "" : $"&refresh={Refresh}";
-        return "https://kids-metabase.baptist.com.au/embed/dashboard/" + _token +
+        return $"https://kids-metabase.baptist.com.au/embed/{_mapping?.Type}/" + _token +
                $"#theme=night&bordered=true&titled=false{refreshString}";
     }
 

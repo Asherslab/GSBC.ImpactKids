@@ -26,7 +26,7 @@ public class MetabaseService(
         JwtHeader            header      = new(credentials);
         Dictionary<string, int> dash = new()
         {
-            { "dashboard", request.DashboardId }
+            { request.Type, request.DashboardId }
         };
 
         Dictionary<string, string> pars = new();
