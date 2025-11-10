@@ -48,14 +48,14 @@
                 {
                     <MudNavLink Icon="@Icons.Material.Filled.TableChart"
                                 Href="@($"/Analytics/{mapping.Label}")">
-                        @mapping
+                        @mapping.Label
                     </MudNavLink>
                 }
                 else
                 {
                     <MudNavLink Icon="@Icons.Material.Filled.AreaChart"
                                 Href="@($"/Analytics/{mapping.Label}")">
-                        @mapping
+                        @mapping.Label
                     </MudNavLink>
                 }
             }
