@@ -18,8 +18,9 @@ spec:
       containers:
         - image: "docker.io/library/postgres:17.6"
           name: "sql"
-          environment:
-            PGDATA: "/var/lib/postgresql/data/postgres"
+          env:
+            - name: PGDATA
+              value: "/var/lib/postgresql/data/postgres"
           envFrom:
             - configMapRef:
                 name: "sql-config"
