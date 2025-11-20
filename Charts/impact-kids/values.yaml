@@ -1,13 +1,13 @@
 image_tag: 0.0.1
 parameters:
   migrations:
-    migrations_image: "asherslab/gsbc-kids-migrations"
+    migrations_image: "docker.io/asherslab/gsbc-kids-migrations"
   grpc:
     port_http: 80
-    grpc_image: "asherslab/gsbc-kids-grpc"
+    grpc_image: "docker.io/asherslab/gsbc-kids-grpc"
   webfrontend:
     port_http: 80
-    webfrontend_image: "asherslab/gsbc-kids-web"
+    webfrontend_image: "docker.io/asherslab/gsbc-kids-web"
 config:
   rabbitmq:
     RABBITMQ_DEFAULT_USER: "guest"
