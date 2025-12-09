@@ -20,6 +20,11 @@ public class EventSubscriptionService(
     private          Task?          _eventTask;
     private readonly List<Callback> _callbacks = [];
 
+    private TaskCompletionSource<bool>? _tcs;
+    public Task<bool> WaitForStream() => _tcs == null
+        ? Task.FromResult(false)
+        : _tcs.Task;
+    
     private bool _streamConnected;
 
     public async Task InitializeStreamIfDisconnected()
@@ -37,6 +42,7 @@ public class EventSubscriptionService(
             callOptions = new CallOptions(metadata);
         }
 
+        _tcs ??= new TaskCompletionSource<bool>();
         if (_eventTask == null || _eventTask.IsCompleted)
         {
             _eventTask = Task.Run(async () =>
@@ -56,7 +62,11 @@ public class EventSubscriptionService(
                             )
                             {
                                 if (!_streamConnected) // we just reconnected
+                                {
+                                    _tcs.TrySetResult(true);
                                     _ = Task.Run(async () => await RebindAll());
+                                }
+
                                 _streamConnected = true;
                                 if (eventResp.RoutingKey == null)
                                     continue; // DON'T RETURN YOU DUMMY. KILLS THE STREAM
@@ -73,13 +83,16 @@ public class EventSubscriptionService(
                         }
                         catch (Exception)
                         {
+                            _tcs?.TrySetResult(false);
                             // ignored
                         }
                         finally
                         {
+                            _tcs = null;
                             _streamConnected = false;
                         }
 
+                        _tcs = new TaskCompletionSource<bool>();
                         await Task.Delay(TimeSpan.FromSeconds(5));
                     }
                     // ReSharper disable once FunctionNeverReturns

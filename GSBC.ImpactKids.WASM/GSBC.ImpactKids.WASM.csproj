@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
@@ -9,16 +9,16 @@
 
     <ItemGroup>
         <PackageReference Include="Aspire4Wasm.WebAssembly" Version="6.0.1"/>
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.10"/>
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="9.0.10"/>
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.10" PrivateAssets="all"/>
-        <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.10"/>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="10.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.0" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
 
-        <PackageReference Include="MudBlazor" Version="8.13.0"/>
+        <PackageReference Include="MudBlazor" Version="8.15.0" />
 
-        <PackageReference Include="Grpc.Net.Client" Version="2.70.0"/>
-        <PackageReference Include="Grpc.Net.Client.Web" Version="2.70.0"/>
-        <PackageReference Include="Grpc.Net.ClientFactory" Version="2.70.0"/>
+        <PackageReference Include="Grpc.Net.Client" Version="2.71.0" />
+        <PackageReference Include="Grpc.Net.Client.Web" Version="2.71.0" />
+        <PackageReference Include="Grpc.Net.ClientFactory" Version="2.71.0" />
         <PackageReference Include="protobuf-net.Grpc.ClientFactory" Version="1.2.2"/>
     </ItemGroup>
 
@@ -29,9 +29,5 @@
     <ItemGroup>
         <ServiceWorker Include="wwwroot\service-worker.js"
                        PublishedContent="wwwroot\service-worker.published.js"/>
-    </ItemGroup>
-
-    <ItemGroup>
-      <_ContentIncludedByDefault Remove="Pages\Analytics\MemoryVerseAnalytics.razor" />
     </ItemGroup>
 </Project>

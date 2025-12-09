@@ -15,13 +15,15 @@ public partial class ServicesList : EventListeningComponent
     public required SchoolTerm SchoolTerm { get; set; }
 
     private ICollection<Service>? _services;
-    
-    protected override async Task OnInitializedAsync()
+
+    protected override async Task OnParametersSetAsync()
     {
-        await base.OnInitializedAsync();
-        
-        await RefreshServices();
-        await SubscribeToEvent(Service.BuildSubscription(SchoolTerm.Id), RefreshServices);
+        await base.OnParametersSetAsync();
+
+        await Task.WhenAll(
+            RefreshServices(),
+            SubscribeToEvent(Service.BuildSubscription(SchoolTerm.Id), RefreshServices)
+        );
     }
 
     private async Task RefreshServices()
@@ -54,7 +56,7 @@ public partial class ServicesList : EventListeningComponent
         {
             FullWidth = true
         };
-        
+
         await DialogService.ShowAsync<CreateServiceDialog>("Create Service", parameters, opts);
     }
 }

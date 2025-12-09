@@ -1,0 +1,40 @@
+<div>
+    <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="@Toggle">
+        @(Date.HasValue ? Date.Value.ToString("MMMM yyyy") : "Choose date")
+    </MudButton>
+
+    <MudPopover Open="@_open"
+                AnchorOrigin="Origin.BottomCenter"
+                TransformOrigin="Origin.TopCenter">
+        <MudPaper Class="pa-2">
+            <MudDatePicker
+                @attributes="InputAttributes"
+                Date="@Date"
+                DateChanged="PassOnDateChanged"
+                PickerVariant="PickerVariant.Static"/>
+        </MudPaper>
+    </MudPopover>
+</div>
+
+@code {
+
+    [Parameter]
+    public DateTime? Date { get; set; }
+
+    [Parameter]
+    public EventCallback<DateTime?> OnDateChanged { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? InputAttributes { get; set; }
+
+    private bool _open;
+    private void Toggle() => _open = !_open;
+
+    private async Task PassOnDateChanged(DateTime? d)
+    {
+        Date = d;
+        _open = false;
+        await OnDateChanged.InvokeAsync(d);
+    }
+
+}

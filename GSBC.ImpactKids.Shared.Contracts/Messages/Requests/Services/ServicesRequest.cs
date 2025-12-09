@@ -7,4 +7,5 @@ public class ServicesRequest : IReadMultipleRequest
     public string?            SearchString { get; set; }
 
     public Guid? SchoolTermId { get; set; }
+    public int?  Year         { get; set; }
 }

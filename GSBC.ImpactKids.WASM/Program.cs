@@ -76,3 +76,5 @@ if (reportsConfig != null)
 }
 
 await builder.Build().RunAsync();
+
+// is { Entity: null }

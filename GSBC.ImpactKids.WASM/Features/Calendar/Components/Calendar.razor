@@ -1,0 +1,23 @@
+<MudStack Spacing="1" Class="flex-grow-1">
+    <MudStack Row Spacing="1">
+        @foreach (DayOfWeek day in Enum.GetValues<DayOfWeek>())
+        {
+            <MudText Align="Align.Center" Style="flex:1">@day.ToString()[..3]</MudText>
+        }
+    </MudStack>
+    @foreach (int week in Enumerable.Range(1, _numberOfWeeks))
+    {
+        <MudStack Row Spacing="1" Class="flex-grow-1" Style="flex:1; min-width: 0">
+            @foreach (CalendarDayRecord day in _calendarDays.Where(x => x.Week == week))
+            {
+                <div Style="flex:1; min-width: 0">
+                    <CalendarDay
+                        Date="day.Date"
+                        OutOfMonth="day.OutOfMonth"
+                        Events="day.Events"
+                        Term="day.Term"/>
+                </div>
+            }
+        </MudStack>
+    }
+</MudStack>
