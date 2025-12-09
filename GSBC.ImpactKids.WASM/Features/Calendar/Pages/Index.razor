@@ -1,0 +1,25 @@
+@inherits EventListeningComponent
+@page "/Calendar"
+@inject ISchoolTermsService SchoolTermsService
+@inject IServicesService    ServicesService
+
+<PageTitle>Calendar</PageTitle>
+
+<MudPaper Elevation="6" Class="pt-4 px-3 pb-6 d-flex flex-column" Style="height: 90vh">
+    <MudToolBar>
+        <MudButtonGroup Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" Class="mr-3">
+            <MudButton OnClick="@(() => DateChanged(CalendarDate.AddMonths(-1)))">@("<")</MudButton>
+            <MudButton OnClick="@(() => DateChanged(CalendarDate.AddMonths(1)))">@(">")</MudButton>
+            <MudDatePickerButton
+                Date="_dateTime"
+                OnDateChanged="DateChanged"
+                OpenTo="@OpenTo.Month"
+                Variant="@Variant.Filled"
+                FixDay="@(1)"/>
+        </MudButtonGroup>
+    </MudToolBar>
+    <Calendar
+        Terms="_calendarTerms"
+        Events="_events"
+        Date="CalendarDate"/>
+</MudPaper>

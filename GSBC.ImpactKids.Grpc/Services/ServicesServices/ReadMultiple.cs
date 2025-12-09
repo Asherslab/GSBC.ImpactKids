@@ -27,6 +27,13 @@ public partial class ServicesService
             );
         }
 
+        if (request.Year != null)
+        {
+            query = query.Where(x =>
+                x.Date.Year == request.Year.Value
+            );
+        }
+
         if (request.SchoolTermId != null)
         {
             query = query.Where(x =>

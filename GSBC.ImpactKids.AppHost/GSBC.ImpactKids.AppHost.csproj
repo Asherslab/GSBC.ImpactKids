@@ -1,10 +1,8 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-    <Sdk Name="Aspire.AppHost.Sdk" Version="9.5.1"/>
+<Project Sdk="Aspire.AppHost.Sdk/13.0.2">
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <UserSecretsId>88705c3c-8603-4e41-afd3-b947d2a3ac4e</UserSecretsId>
@@ -12,16 +10,15 @@
 
     <ItemGroup>
         <ProjectReference Include="..\GSBC.ImpactKids.Grpc\GSBC.ImpactKids.Grpc.csproj" />
-        <ProjectReference Include="..\GSBC.ImpactKids.WASM\GSBC.ImpactKids.WASM.csproj"/>
+        <ProjectReference Include="..\GSBC.ImpactKids.WASM\GSBC.ImpactKids.WASM.csproj" />
         <ProjectReference Include="..\GSBC.ImpactKids.Workers.DbMigrations\GSBC.ImpactKids.Workers.DbMigrations.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Aspire.Hosting.AppHost" Version="9.5.1"/>
-        <PackageReference Include="Aspire.Hosting.Kubernetes" Version="9.5.1-preview.1.25502.11" />
-        <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="9.5.1" />
-        <PackageReference Include="Aspire.Hosting.RabbitMQ" Version="9.5.1" />
-        <PackageReference Include="Aspire.Hosting.Redis" Version="9.5.1"/>
+        <PackageReference Include="Aspire.Hosting.Kubernetes" Version="13.0.2-preview.1.25603.5" />
+        <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="13.0.2" />
+        <PackageReference Include="Aspire.Hosting.RabbitMQ" Version="13.0.2" />
+        <PackageReference Include="Aspire.Hosting.Redis" Version="13.0.2" />
         <PackageReference Include="Aspire4Wasm.AppHost" Version="6.0.0" />
     </ItemGroup>
 

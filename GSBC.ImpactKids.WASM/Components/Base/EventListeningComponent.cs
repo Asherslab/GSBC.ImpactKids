@@ -27,12 +27,18 @@ public abstract class EventListeningComponent : ComponentBase, IAsyncDisposable
     {
         await base.OnInitializedAsync();
         await EventSubscriptionService.InitializeStreamIfDisconnected();
-        await Task.Delay(TimeSpan
-            .FromSeconds(0.1)); // wait for the stream to have started before allowing subscriptions
+        
+        // wait for the stream to have started before allowing subscriptions
+        // await Task.Delay(TimeSpan.FromSeconds(1));
     }
 
     protected async Task SubscribeToEvent(string topic, Func<Task> callOnEvent)
     {
+        while (!await EventSubscriptionService.WaitForStream())
+        {
+            await Task.Delay(TimeSpan.FromSeconds(3));
+        }
+        
         if (EventSubscriptionService.GetCallbacks()
             .Where(x => x.Subscription != null)
             .Any(x => x.Topic == topic)
