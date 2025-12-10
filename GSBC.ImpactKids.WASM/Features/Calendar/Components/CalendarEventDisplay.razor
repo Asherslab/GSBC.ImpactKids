@@ -1,15 +1,16 @@
-@using GSBC.ImpactKids.WASM.Utilities
 @if (Event != null)
 {
-    <MudPaper Class="flex-grow-1"
-              Style="@($"background: {Event.Color}; min-width: 0")"
-              Elevation="0">
-        <MudText
-            Class="px-1"
-            Style="@($"min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;{TextColorCss}")"
-            Typo="Typo.body2"
-            Align="Align.Start">
-            @Event.Name
-        </MudText>
-    </MudPaper>
+    <MudLink Underline="Underline.None" Href="@Event.Href">
+        <MudPaper Class="@($"{Class} flex-grow-1")"
+                  Style="@($"background-color: {BackgroundColor}; min-width: 0")"
+                  Elevation="0">
+            <MudText
+                Class="px-1"
+                Style="@($"min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;{TextColorCss}")"
+                Typo="Typo.body2"
+                Align="Align.Start">
+                @Event.Name
+            </MudText>
+        </MudPaper>
+    </MudLink>
 }

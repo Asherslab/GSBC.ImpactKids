@@ -1,16 +1,22 @@
+using System.Globalization;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Pagination;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.School.SchoolTerms;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.Services;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using GSBC.ImpactKids.WASM.Components.Base;
 using GSBC.ImpactKids.WASM.Extensions;
 using GSBC.ImpactKids.WASM.Features.Calendar.Models;
+using Microsoft.AspNetCore.Components;
 
 namespace GSBC.ImpactKids.WASM.Features.Calendar.Pages;
 
 public partial class CalendarPage : EventListeningComponent
 {
+    [SupplyParameterFromQuery]
+    public string? Date { get; set; }
+
     private DateTime? _dateTime = DateTime.Now;
     private DateTime  CalendarDate => _dateTime ?? DateTime.Now;
 
@@ -20,6 +26,15 @@ public partial class CalendarPage : EventListeningComponent
     protected override async Task OnParametersSetAsync()
     {
         await base.OnParametersSetAsync();
+
+        if (Date != null && DateTime.TryParseExact(
+                Date,
+                "MM-yyyy",
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.None,
+                out DateTime date)
+           )
+            _dateTime = date;
 
         await Task.WhenAll(
             RefreshSchoolTerms(),
@@ -39,6 +54,7 @@ public partial class CalendarPage : EventListeningComponent
         BasicReadMultipleResponse<SchoolTerm>? response = await SchoolTermsService.ReadMultiple(
             new SchoolTermsRequest
             {
+                Pagination = PaginationRequest.All(),
                 Year = CalendarDate.Year
             },
             _refreshSchoolTermsTokenSource.Token
@@ -73,6 +89,7 @@ public partial class CalendarPage : EventListeningComponent
         BasicReadMultipleResponse<Service>? response = await ServicesService.ReadMultiple(
             new ServicesRequest
             {
+                Pagination = PaginationRequest.All(),
                 Year = CalendarDate.Year
             },
             _refreshServicesTokenSource.Token
@@ -83,7 +100,8 @@ public partial class CalendarPage : EventListeningComponent
                 {
                     Date = x.Date,
                     Name = x.Name ?? x.ServiceType?.Label ?? "Service",
-                    Color = x.ServiceType?.Color
+                    Color = x.ServiceType?.Color,
+                    Href = $"/Service?Id={x.Id}"
                 }
             )
             .ToList();
@@ -106,6 +124,19 @@ public partial class CalendarPage : EventListeningComponent
         }
 
         _dateTime = dateTime;
-        StateHasChanged();
+        SetQueryParameters();
+    }
+
+    private void SetQueryParameters()
+    {
+        Navigation.NavigateTo(GetQueryParameters());
+    }
+
+    private string GetQueryParameters()
+    {
+        return Navigation.GetUriWithQueryParameters(new Dictionary<string, object?>
+        {
+            [nameof(Date)] = $"{_dateTime:MM-yyyy}"
+        });
     }
 }
