@@ -1,6 +1,6 @@
 using GSBC.ImpactKids.Grpc.Data;
 using GSBC.ImpactKids.Grpc.Services;
-using GSBC.ImpactKids.Shared.Contracts.Entities.People;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.People;
 using Microsoft.AspNetCore.Authorization;
 

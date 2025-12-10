@@ -1,0 +1,107 @@
+@using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School
+@using GSBC.ImpactKids.Shared.Contracts.Services.Features.Scheduling.School
+@inherits EventListeningComponent
+@page "/Services"
+@inject ISchoolTermsService SchoolTermsService
+@inject IServicesService    ServicesService
+
+<PageTitle>Services</PageTitle>
+
+@*
+Display these in Quarters of the year
+*@
+
+<MudPaper Elevation="6" Class="mt-4 px-6 pb-6">
+    <MudGrid>
+        <MudItem xs="4" md="3">
+            <MudDatePicker OpenTo="OpenTo.Year"
+                           Date="_date"
+                           DateChanged="OnDateChanged"
+                           FixMonth="1"
+                           FixDay="1"
+                           Class="pt-2"
+                           DateFormat="yyyy"/>
+        </MudItem>
+        <MudItem xs="4" md="6">
+            <MudText Align="Align.Center"
+                     Typo="Typo.h5"
+                     Class="flex-grow-1 py-3">
+                Services
+            </MudText>
+        </MudItem>
+        <MudItem xs="4" md="3">
+            <MudSelect T="ServiceDisplayOptions"
+                       @bind-Value="_displayOptions"
+                       Class="pt-2">
+                <MudSelectItem Value="ServiceDisplayOptions.Quarters">
+                    Quarters
+                </MudSelectItem>
+                <MudSelectItem Value="ServiceDisplayOptions.SchoolTerms">
+                    School Terms
+                </MudSelectItem>
+            </MudSelect>
+        </MudItem>
+    </MudGrid>
+    <MudGrid>
+        @if (_displayOptions == ServiceDisplayOptions.Quarters)
+        {
+            foreach ((int quarter, ICollection<Service>? services) in _quarters)
+            {
+                <MudItem xs="12" md="3">
+                    <MudCard Elevation="6" Class="relative">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6" Align="Align.Start">@($"Q{quarter} {_date?.Year}")</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <ServicesList Services="services"/>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            }
+        }
+        else if (_schoolTerms == null)
+        {
+            foreach (int term in Enumerable.Range(1, 4))
+            {
+                <MudItem xs="12" md="3">
+                    <MudCard Elevation="6" Class="relative">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6" Align="Align.Start">@($"Term {term} {_date?.Year}")</MudText>
+                                <MudText Typo="Typo.body2">
+                                    dd/MM -> dd/MM
+                                </MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <ServicesList/>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            }
+        }
+        else
+        {
+            foreach (SchoolTerm term in _schoolTerms)
+            {
+                <MudItem xs="12" md="3">
+                    <MudCard Elevation="6" Class="relative">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6" Align="Align.Start">@term.Name</MudText>
+                                <MudText Typo="Typo.body2">
+                                    @term.StartDate.ToString("dd/MM") -> @term.EndDate.ToString("dd/MM")
+                                </MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <ServicesList Services="@(_services?.Where(x => x.SchoolTermId == term.Id).ToList())"/>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            }
+        }
+    </MudGrid>
+</MudPaper>

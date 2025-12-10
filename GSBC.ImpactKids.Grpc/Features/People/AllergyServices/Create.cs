@@ -1,6 +1,5 @@
 using GSBC.ImpactKids.Grpc.Data.Models.People;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People.Allergies;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People.MedicalNotes;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using Microsoft.EntityFrameworkCore;
 

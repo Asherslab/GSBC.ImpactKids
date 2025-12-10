@@ -1,9 +1,10 @@
 using GSBC.ImpactKids.Shared.Contracts;
 using GSBC.ImpactKids.Shared.Contracts.Entities;
-using GSBC.ImpactKids.Shared.Contracts.Entities.MemoryVerses;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.MemoryVerses;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Services;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.Services;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scripture.Memorisation.MemoryVerses;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using GSBC.ImpactKids.WASM.Components.Base;
 using GSBC.ImpactKids.WASM.Components.Dialogs.Create;

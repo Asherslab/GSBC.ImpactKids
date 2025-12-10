@@ -9,16 +9,16 @@
 
     <ItemGroup>
         <PackageReference Include="Aspire4Wasm.WebAssembly" Version="6.0.1"/>
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.0" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="10.0.0" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.0" PrivateAssets="all" />
-        <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.0"/>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="10.0.0"/>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.0" PrivateAssets="all"/>
+        <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0"/>
 
-        <PackageReference Include="MudBlazor" Version="8.15.0" />
+        <PackageReference Include="MudBlazor" Version="8.15.0"/>
 
-        <PackageReference Include="Grpc.Net.Client" Version="2.71.0" />
-        <PackageReference Include="Grpc.Net.Client.Web" Version="2.71.0" />
-        <PackageReference Include="Grpc.Net.ClientFactory" Version="2.71.0" />
+        <PackageReference Include="Grpc.Net.Client" Version="2.71.0"/>
+        <PackageReference Include="Grpc.Net.Client.Web" Version="2.71.0"/>
+        <PackageReference Include="Grpc.Net.ClientFactory" Version="2.71.0"/>
         <PackageReference Include="protobuf-net.Grpc.ClientFactory" Version="1.2.2"/>
     </ItemGroup>
 
@@ -29,5 +29,12 @@
     <ItemGroup>
         <ServiceWorker Include="wwwroot\service-worker.js"
                        PublishedContent="wwwroot\service-worker.published.js"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="Features\Scheduling\Features\School\Components\"/>
+        <Folder Include="Features\Scheduling\Features\School\Pages\"/>
+        <Folder Include="Features\Scheduling\Features\Services\Features\"/>
+        <Folder Include="Features\Scheduling\Features\Services\Models\"/>
     </ItemGroup>
 </Project>

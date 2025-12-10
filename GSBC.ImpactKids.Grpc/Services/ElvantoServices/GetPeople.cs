@@ -1,10 +1,10 @@
 using System.Globalization;
 using GSBC.ImpactKids.Grpc.Data.Models.People;
 using GSBC.ImpactKids.Grpc.Services.ElvantoServices.Models;
-using GSBC.ImpactKids.Shared.Contracts.Entities.People;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using Microsoft.EntityFrameworkCore;
-using MediaConsent = GSBC.ImpactKids.Shared.Contracts.Entities.People.MediaConsent;
+using MediaConsent = GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.MediaConsent;
 
 namespace GSBC.ImpactKids.Grpc.Services.ElvantoServices;
 

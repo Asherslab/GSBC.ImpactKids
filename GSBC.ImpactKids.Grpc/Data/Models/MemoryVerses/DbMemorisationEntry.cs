@@ -1,4 +1,5 @@
 using GSBC.ImpactKids.Grpc.Data.Models.People;
+using GSBC.ImpactKids.Grpc.Data.Models.Scheduling;
 
 namespace GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses;
 

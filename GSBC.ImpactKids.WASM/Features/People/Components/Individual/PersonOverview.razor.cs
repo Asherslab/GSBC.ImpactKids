@@ -1,5 +1,7 @@
-using GSBC.ImpactKids.Shared.Contracts.Entities.MemoryVerses;
-using GSBC.ImpactKids.Shared.Contracts.Entities.People;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.Allergies;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.MedicalNotes;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
 using GSBC.ImpactKids.WASM.Features.People.Features.Allergies.Components;
 using GSBC.ImpactKids.WASM.Features.People.Features.MedicalNotes.Components;
 using Microsoft.AspNetCore.Components;

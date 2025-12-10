@@ -17,7 +17,7 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.9")
+                .HasAnnotation("ProductVersion", "10.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -71,49 +71,6 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("DollarStoreEntries");
-                });
-
-            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.DbSchoolTerm", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("EndDate")
-                        .HasColumnType("date");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("date");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Terms");
-                });
-
-            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.DbService", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("date");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("SchoolTermId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SchoolTermId");
-
-                    b.ToTable("Services");
                 });
 
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.DbUser", b =>
@@ -437,26 +394,81 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.ToTable("SchoolGrades");
                 });
 
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.DbService", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("SchoolTermId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ServiceTypeId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SchoolTermId");
+
+                    b.HasIndex("ServiceTypeId");
+
+                    b.ToTable("Services");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.DbServiceType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Color")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ServiceTypes");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.School.DbSchoolTerm", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Terms");
+                });
+
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.DbDollarStoreEntry", b =>
                 {
-                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.DbService", "Service")
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.DbService", "Service")
                         .WithOne("DollarStoreEntry")
                         .HasForeignKey("GSBC.ImpactKids.Grpc.Data.Models.DbDollarStoreEntry", "ServiceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Service");
-                });
-
-            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.DbService", b =>
-                {
-                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.DbSchoolTerm", "SchoolTerm")
-                        .WithMany("Services")
-                        .HasForeignKey("SchoolTermId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("SchoolTerm");
                 });
 
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses.DbMemorisationEntry", b =>
@@ -473,7 +485,7 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.DbService", "Service")
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.DbService", "Service")
                         .WithMany()
                         .HasForeignKey("ServiceId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -514,7 +526,7 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
 
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses.DbMemoryVerseList", b =>
                 {
-                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.DbSchoolTerm", "SchoolTerm")
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.School.DbSchoolTerm", "SchoolTerm")
                         .WithMany()
                         .HasForeignKey("SchoolTermId");
 
@@ -529,7 +541,7 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.DbService", null)
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.DbService", null)
                         .WithMany()
                         .HasForeignKey("ServicesId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -550,7 +562,7 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.DbService", "Service")
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.DbService", "Service")
                         .WithMany()
                         .HasForeignKey("ServiceId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -606,14 +618,19 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.Navigation("SchoolGrade");
                 });
 
-            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.DbSchoolTerm", b =>
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.DbService", b =>
                 {
-                    b.Navigation("Services");
-                });
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.School.DbSchoolTerm", "SchoolTerm")
+                        .WithMany("Services")
+                        .HasForeignKey("SchoolTermId");
 
-            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.DbService", b =>
-                {
-                    b.Navigation("DollarStoreEntry");
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.DbServiceType", "ServiceType")
+                        .WithMany()
+                        .HasForeignKey("ServiceTypeId");
+
+                    b.Navigation("SchoolTerm");
+
+                    b.Navigation("ServiceType");
                 });
 
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses.DbMemoryVerse", b =>
@@ -631,6 +648,16 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.Navigation("Allergies");
 
                     b.Navigation("MedicalNotes");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.DbService", b =>
+                {
+                    b.Navigation("DollarStoreEntry");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.School.DbSchoolTerm", b =>
+                {
+                    b.Navigation("Services");
                 });
 #pragma warning restore 612, 618
         }

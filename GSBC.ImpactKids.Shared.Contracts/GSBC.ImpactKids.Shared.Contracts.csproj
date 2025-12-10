@@ -11,4 +11,9 @@
         <PackageReference Include="protobuf-net.Grpc" Version="1.2.2" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Entities\Features\" />
+      <Folder Include="Messages\Requests\Features\Scripture\Memorisation\" />
+    </ItemGroup>
+
 </Project>

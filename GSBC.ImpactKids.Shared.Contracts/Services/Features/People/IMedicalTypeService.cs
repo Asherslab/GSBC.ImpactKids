@@ -1,4 +1,4 @@
-using GSBC.ImpactKids.Shared.Contracts.Entities.People;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.MedicalNotes;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Services.Features.People;
 

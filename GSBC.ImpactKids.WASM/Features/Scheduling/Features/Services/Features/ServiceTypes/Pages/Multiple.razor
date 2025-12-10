@@ -1,0 +1,67 @@
+@inherits EventListeningComponent
+@page "/Services/ServiceTypes"
+
+@inject IServiceTypeService ServiceTypeService
+
+<PageTitle>Service Types</PageTitle>
+
+<MudPaper Elevation="6" Class="mt-4">
+    <MudTextField
+        T="string"
+        Value="_search"
+        ValueChanged="@(OnSearch)"
+        Placeholder="Search"
+        Adornment="Adornment.Start"
+        AdornmentIcon="@Icons.Material.Filled.Search"
+        DebounceInterval="100"
+        IconSize="Size.Medium"
+        Clearable="true"
+        Class="py-6 px-6"/>
+    <MudTable Items="_serviceTypes" Hover="true" Breakpoint="Breakpoint.None">
+        <HeaderContent>
+            <MudTh>
+                <MudIconButton OnClick="@(() => _showCreateDialog = true)"
+                               Icon="@Icons.Material.Filled.PostAdd"/>
+            </MudTh>
+            <MudTh>Label</MudTh>
+            <MudTh>Color</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>
+                <MudIconButton OnClick="@(() => ShowUpdateServiceType(context))"
+                               Icon="@Icons.Material.Filled.Edit"/>
+            </MudTd>
+            <MudTd DataLabel="Label">@context.Label</MudTd>
+            <MudTd DataLabel="Color">
+                <MudText Style="@($"color: {context.Color}")">@context.Color</MudText>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+</MudPaper>
+
+<MudDialog @bind-Visible="_showCreateDialog">
+    <TitleContent>Create Service Type</TitleContent>
+    <DialogContent>
+        <ServiceTypeDetails
+            @ref="_serviceTypeDetails"
+            State="ModificationState.Creating"/>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _showCreateDialog = false)">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="@CreateServiceType">Submit</MudButton>
+    </DialogActions>
+</MudDialog>
+
+<MudDialog @bind-Visible="_showUpdateDialog">
+    <TitleContent>Update Service Type</TitleContent>
+    <DialogContent>
+        <ServiceTypeDetails
+            @ref="_serviceTypeDetails"
+            ServiceType="_updatingServiceType"
+            State="ModificationState.Updating"/>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _showUpdateDialog = false)">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="@UpdateServiceType">Submit</MudButton>
+    </DialogActions>
+</MudDialog>

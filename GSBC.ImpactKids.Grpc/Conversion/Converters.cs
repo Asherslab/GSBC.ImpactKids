@@ -1,10 +1,16 @@
 using GSBC.ImpactKids.Grpc.Data.Models;
 using GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses;
 using GSBC.ImpactKids.Grpc.Data.Models.People;
+using GSBC.ImpactKids.Grpc.Data.Models.Scheduling;
+using GSBC.ImpactKids.Grpc.Data.Models.Scheduling.School;
 using GSBC.ImpactKids.Shared.Contracts.Entities;
-using GSBC.ImpactKids.Shared.Contracts.Entities.Bible;
-using GSBC.ImpactKids.Shared.Contracts.Entities.MemoryVerses;
-using GSBC.ImpactKids.Shared.Contracts.Entities.People;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.Allergies;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.MedicalNotes;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
 using Riok.Mapperly.Abstractions;
 
 namespace GSBC.ImpactKids.Grpc.Conversion;
@@ -80,9 +86,20 @@ public partial class SchoolTermConverter : IConverter<DbSchoolTerm, SchoolTerm>
 }
 
 [Mapper]
-public partial class ServiceConverter : IConverter<DbService, Service>
+public partial class ServiceConverter(
+    IConverter<DbServiceType, ServiceType> serviceTypeConverter
+    ) : IConverter<DbService, Service>
 {
+    [UseMapper]
+    private readonly IConverter<DbServiceType, ServiceType> _serviceTypeConverter = serviceTypeConverter;
+    
     public partial Service Convert(DbService input);
+}
+
+[Mapper]
+public partial class ServiceTypeConverter : IConverter<DbServiceType, ServiceType>
+{
+    public partial ServiceType Convert(DbServiceType input);
 }
 
 [Mapper]

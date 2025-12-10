@@ -1,4 +1,4 @@
-using GSBC.ImpactKids.Shared.Contracts.Services;
+using GSBC.ImpactKids.Shared.Contracts.Services.Features.Scripture;
 using Microsoft.AspNetCore.Authorization;
 
 namespace GSBC.ImpactKids.Grpc.Features.Scripture.BibleServices;

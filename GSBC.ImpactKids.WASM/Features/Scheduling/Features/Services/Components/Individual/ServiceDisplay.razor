@@ -1,0 +1,44 @@
+<MudLink Underline="Underline.None"
+         Href="@(Service == null ? null : $"/Service?id={Service.Id}")">
+    <MudPaper Elevation="6"
+              Class="clickable mud-ripple d-flex justify-start flex-direction-row flex-grow-1">
+        <MudPaper Elevation="0" Class="d-flex justify-center flex-column flex-grow-1 ma-3">
+            @if (Service == null || (Service?.ServiceType == null && Service?.Name == null))
+            {
+                <MudText Typo="Typo.body1">
+                    Service
+                </MudText>
+            }
+            @if (Service?.Name != null)
+            {
+                <MudText Typo="Typo.body1">
+                    @Service.Name
+                </MudText>
+            }
+            @if (Service?.ServiceType != null)
+            {
+                Typo typo = Typo.body1;
+                @if (Service.Name != null)
+                    typo = Typo.body2;
+                
+                <MudText Typo="typo">
+                    @Service.ServiceType.Label
+                </MudText>
+            }
+        </MudPaper>
+        <MudPaper Elevation="0" Class="d-flex justify-center flex-column flex-grow-0 mr-5">
+            @if (Service == null)
+            {
+                <MudText Typo="Typo.caption">
+                    Date
+                </MudText>
+            }
+            @if (Service != null)
+            {
+                <MudText Typo="Typo.caption">
+                    @Service.Date.ToString("ddd dd/MM")
+                </MudText>
+            }
+        </MudPaper>
+    </MudPaper>
+</MudLink>

@@ -1,0 +1,10 @@
+namespace GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.School.SchoolTerms;
+
+[ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
+public class SchoolTermsRequest : IReadMultipleRequest
+{
+    public PaginationRequest? Pagination   { get; set; }
+    public string?            SearchString { get; set; }
+
+    public int? Year { get; set; }
+}
