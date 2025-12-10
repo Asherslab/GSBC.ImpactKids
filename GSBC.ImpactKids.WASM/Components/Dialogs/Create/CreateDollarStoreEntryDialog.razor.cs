@@ -1,7 +1,7 @@
 using Grpc.Core;
-using GSBC.ImpactKids.Shared.Contracts.Entities;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.DollarStoreEntries;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Services;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.Services;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using GSBC.ImpactKids.WASM.Extensions;
 using Microsoft.AspNetCore.Components;

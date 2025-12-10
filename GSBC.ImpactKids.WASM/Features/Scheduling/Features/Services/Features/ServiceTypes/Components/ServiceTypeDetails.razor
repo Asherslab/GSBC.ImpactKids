@@ -1,0 +1,34 @@
+@inject IServiceTypeService ServiceTypeService
+@inject ISnackbar           Snackbar
+
+<MudPaper Elevation="0" Class="d-flex flex-column flex-grow-1">
+    <MudOverlay Visible="@(State != ModificationState.Creating && (ServiceType == null || _waitingForRefresh))"
+                DarkBackground="true"
+                Absolute="true">
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+    <MudTextFieldCreateOrUpdate
+        @bind-Create="@_createRequest.Label"
+        Read="@_updateRequest.Label.Value"
+        @bind-Update="@_updateRequest.Label.Value"
+        State="State"
+
+        Class="mb-4"
+        Label="Label"
+        Variant="Variant.Filled"
+        Immediate/>
+    <MudColorPickerCreateOrUpdate
+        @bind-Create="@_createRequest.Color"
+        Read="@_updateRequest.Color.Value"
+        @bind-Update="@_updateRequest.Color.Value"
+        State="State"
+
+        Class="mb-4"
+        Label="Colour"
+        Variant="Variant.Filled"
+        ColorPickerMode="ColorPickerMode.HEX"
+        ShowAlpha="false"
+    
+        Style="@($"color: {_updateRequest.Color.Value ?? _createRequest.Color}")"
+        ShowToolbar/>
+</MudPaper>

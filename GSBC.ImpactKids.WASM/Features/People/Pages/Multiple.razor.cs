@@ -1,4 +1,4 @@
-using GSBC.ImpactKids.Shared.Contracts.Entities.People;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using GSBC.ImpactKids.WASM.Components.Dialogs.Create;
@@ -15,22 +15,26 @@ public partial class Multiple
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        
-        await RefreshPeople();
-        await SubscribeToEvent(Person.BuildSubscription(), RefreshPeople);
+
+        await Task.WhenAll(
+            RefreshPeople(),
+            SubscribeToEvent(Person.BuildSubscription(), RefreshPeople)
+        );
     }
 
     private CancellationTokenSource _refreshPeopleTokenSource = new();
+
     private async Task RefreshPeople()
     {
         await _refreshPeopleTokenSource.CancelAsync();
         _refreshPeopleTokenSource = new CancellationTokenSource();
-        
+
         BasicReadMultipleResponse<Person>? response = await PersonService.ReadMultiple(
             new PeopleRequest
             {
                 SearchString = Search
-            }
+            },
+            _refreshPeopleTokenSource.Token
         );
 
         if (response.HasErrorOrNull())

@@ -15,20 +15,11 @@
 else
 {
     <MudGrid Spacing="6" Justify="Justify.Center">
-        <MudItem xs="12" md="6">
-            <PersonDisplay None/>
-        </MudItem>
-        <MudItem xs="12" md="6">
-            <PersonDisplay None/>
-        </MudItem>
-        <MudItem xs="12" md="6">
-            <PersonDisplay None/>
-        </MudItem>
-        <MudItem xs="12" md="6">
-            <PersonDisplay None/>
-        </MudItem>
-        <MudItem xs="12" md="6">
-            <PersonDisplay None/>
-        </MudItem>
+        @foreach (int _ in Enumerable.Range(0, 5))
+        {
+            <MudItem xs="12" md="6">
+                <PersonDisplay None/>
+            </MudItem>
+        }
     </MudGrid>
 }

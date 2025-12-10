@@ -1,4 +1,5 @@
 using GSBC.ImpactKids.Grpc.Data.Models;
+using GSBC.ImpactKids.Grpc.Data.Models.Scheduling;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.DollarStoreEntries;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +13,7 @@ public partial class DollarStoreEntryService
         CancellationToken token = context.CancellationToken;
 
         if (request.ServiceId == Guid.Empty)
-            return BasicResponse.WithError(ServiceSchoolTermNull);
+            return BasicResponse.WithError(DollarStoreServiceNull);
         
         DbService? service = await db.Services
             .Include(x => x.DollarStoreEntry)

@@ -1,3 +1,5 @@
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
+
 namespace GSBC.ImpactKids.Shared.Contracts.Entities;
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]

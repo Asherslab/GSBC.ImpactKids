@@ -1,6 +1,6 @@
-using GSBC.ImpactKids.Grpc.Data.Models;
 using GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.MemoryVerseLists;
+using GSBC.ImpactKids.Grpc.Data.Models.Scheduling.School;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scripture.Memorisation.MemoryVerseLists;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,10 +15,13 @@ public partial class MemoryVerseListsService
         if (string.IsNullOrWhiteSpace(request.Name))
             return BasicResponse.WithError(MemoryVerseListNameNull);
 
-        DbSchoolTerm? term = await db.Terms
-            .FirstOrDefaultAsync(x => x.Id == request.SchoolTermId, token);
-        if (term == null)
-            return BasicResponse.WithError(SchoolTermNotFound);
+        if (request.SchoolTermId != null)
+        {
+            DbSchoolTerm? term = await db.Terms
+                .FirstOrDefaultAsync(x => x.Id == request.SchoolTermId, token);
+            if (term == null)
+                return BasicResponse.WithError(SchoolTermNotFound);
+        }
 
         DbMemoryVerseList list = new()
         {

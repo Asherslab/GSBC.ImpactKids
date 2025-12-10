@@ -1,6 +1,7 @@
 using GSBC.ImpactKids.Grpc.Data.Models;
 using GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.MemoryVerses;
+using GSBC.ImpactKids.Grpc.Data.Models.Scheduling;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scripture.Memorisation.MemoryVerses;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using Microsoft.EntityFrameworkCore;
 

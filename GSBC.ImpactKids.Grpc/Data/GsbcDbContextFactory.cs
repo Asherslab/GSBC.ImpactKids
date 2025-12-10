@@ -13,21 +13,22 @@ public class GsbcDbContextFactory : IDesignTimeDbContextFactory<GsbcDbContext>
         return new GsbcDbContext(optionsBuilder.Options)
         {
             Users = null!,
-            
+
             People = null!,
             Allergies = null!,
             MedicalNotes = null!,
-            
+
             SchoolGrades = null!,
             Allergens = null!,
             MedicalTypes = null!,
-            
-            Terms = null!,
+
             Services = null!,
+            ServiceTypes = null!,
             DollarStoreEntries = null!,
+            Terms = null!,
 
             BibleVerses = null!,
-            
+
             MemoryVerseLists = null!,
             MemoryVerses = null!,
             MemorisationEntries = null!,

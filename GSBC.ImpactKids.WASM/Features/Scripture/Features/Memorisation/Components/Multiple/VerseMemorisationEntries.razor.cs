@@ -1,5 +1,5 @@
-using GSBC.ImpactKids.Shared.Contracts.Entities.MemoryVerses;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.MemorisationEntries;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scripture.Memorisation.MemorisationEntries;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using GSBC.ImpactKids.WASM.Extensions;
 using Microsoft.AspNetCore.Components;

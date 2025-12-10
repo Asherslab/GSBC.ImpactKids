@@ -1,5 +1,5 @@
 using GSBC.ImpactKids.Shared.Contracts.Entities;
-using GSBC.ImpactKids.Shared.Contracts.Entities.People;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People;
 

@@ -1,4 +1,4 @@
-using GSBC.ImpactKids.Shared.Contracts.Entities.People;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.Allergies;
 using Microsoft.AspNetCore.Components;
 
 namespace GSBC.ImpactKids.WASM.Features.People.Features.Allergies.Components;

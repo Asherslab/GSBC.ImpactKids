@@ -1,6 +1,8 @@
 using GSBC.ImpactKids.Grpc.Data.Models;
 using GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses;
 using GSBC.ImpactKids.Grpc.Data.Models.People;
+using GSBC.ImpactKids.Grpc.Data.Models.Scheduling;
+using GSBC.ImpactKids.Grpc.Data.Models.Scheduling.School;
 using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ImpactKids.Grpc.Data;
@@ -21,10 +23,11 @@ public partial class GsbcDbContext(
     public required DbSet<DbAllergen>    Allergens    { get; set; }
     public required DbSet<DbMedicalType> MedicalTypes { get; set; }
 
-    // Services \\
-    public required DbSet<DbSchoolTerm>       Terms              { get; set; }
+    // Schedule \\
     public required DbSet<DbService>          Services           { get; set; }
+    public required DbSet<DbServiceType>      ServiceTypes       { get; set; }
     public required DbSet<DbDollarStoreEntry> DollarStoreEntries { get; set; }
+    public required DbSet<DbSchoolTerm>       Terms              { get; set; }
 
     // Memory Verses \\
     public required DbSet<DbBibleVerse>               BibleVerses                { get; set; }
@@ -42,7 +45,7 @@ public partial class GsbcDbContext(
             .IsUnique();
 
         BuildPeopleModel(modelBuilder);
-        BuildServiceModel(modelBuilder);
-        BuildMemoryVerseModel(modelBuilder);
+        BuildScheduleModel(modelBuilder);
+        BuildScriptureModel(modelBuilder);
     }
 }

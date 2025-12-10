@@ -1,6 +1,3 @@
-using GSBC.ImpactKids.Shared.Contracts.Entities.Pagination;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base.Interfaces;
-
 namespace GSBC.ImpactKids.Shared.Contracts.Messages.Requests.DollarStoreEntries;
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]

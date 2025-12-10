@@ -1,4 +1,4 @@
-using GSBC.ImpactKids.Shared.Contracts.Entities.Bible;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Pagination;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;

@@ -1,3 +1,5 @@
+using GSBC.ImpactKids.Grpc.Data.Models.Scheduling;
+
 namespace GSBC.ImpactKids.Grpc.Data.Models;
 
 public class DbDollarStoreEntry

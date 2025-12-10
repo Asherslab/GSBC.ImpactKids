@@ -1,5 +1,5 @@
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.MedicalNotes;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Pagination;
-using GSBC.ImpactKids.Shared.Contracts.Entities.People;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People.MedicalNotes;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;

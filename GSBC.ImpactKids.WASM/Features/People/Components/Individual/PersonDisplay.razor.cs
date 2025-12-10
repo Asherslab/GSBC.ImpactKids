@@ -1,4 +1,4 @@
-using GSBC.ImpactKids.Shared.Contracts.Entities.People;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 

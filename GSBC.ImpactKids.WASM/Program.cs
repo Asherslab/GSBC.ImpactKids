@@ -1,6 +1,10 @@
 using Grpc.Net.Client.Web;
 using GSBC.ImpactKids.Shared.Contracts.Services;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.People;
+using GSBC.ImpactKids.Shared.Contracts.Services.Features.Scheduling;
+using GSBC.ImpactKids.Shared.Contracts.Services.Features.Scheduling.School;
+using GSBC.ImpactKids.Shared.Contracts.Services.Features.Scripture;
+using GSBC.ImpactKids.Shared.Contracts.Services.Features.Scripture.Memorisation;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using GSBC.ImpactKids.WASM;
@@ -57,6 +61,7 @@ builder.Services.AddAuthenticatedGrpcClient<ISchoolGradeService>();
 builder.Services.AddAuthenticatedGrpcClient<IElvantoService>();
 builder.Services.AddAuthenticatedGrpcClient<ISchoolTermsService>();
 builder.Services.AddAuthenticatedGrpcClient<IServicesService>();
+builder.Services.AddAuthenticatedGrpcClient<IServiceTypeService>();
 builder.Services.AddAuthenticatedGrpcClient<IDollarStoreEntryService>();
 builder.Services.AddAuthenticatedGrpcClient<IBibleService>();
 builder.Services.AddAuthenticatedGrpcClient<IMemoryVersesService>();

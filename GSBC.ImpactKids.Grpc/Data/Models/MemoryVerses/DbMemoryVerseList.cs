@@ -1,3 +1,4 @@
+using GSBC.ImpactKids.Grpc.Data.Models.Scheduling.School;
 using Riok.Mapperly.Abstractions;
 
 namespace GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses;

@@ -1,5 +1,5 @@
-using GSBC.ImpactKids.Shared.Contracts.Entities;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.SchoolTerms;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.School.SchoolTerms;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using Microsoft.AspNetCore.Components;
 

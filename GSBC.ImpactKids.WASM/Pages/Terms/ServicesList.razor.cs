@@ -1,5 +1,6 @@
-using GSBC.ImpactKids.Shared.Contracts.Entities;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Services;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.Services;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using GSBC.ImpactKids.WASM.Components.Base;
 using GSBC.ImpactKids.WASM.Components.Dialogs.Create;

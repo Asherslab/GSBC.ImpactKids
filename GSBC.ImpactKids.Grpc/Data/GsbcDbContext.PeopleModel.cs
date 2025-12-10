@@ -1,5 +1,5 @@
 using GSBC.ImpactKids.Grpc.Data.Models.People;
-using GSBC.ImpactKids.Shared.Contracts.Entities.People;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
 using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ImpactKids.Grpc.Data;
