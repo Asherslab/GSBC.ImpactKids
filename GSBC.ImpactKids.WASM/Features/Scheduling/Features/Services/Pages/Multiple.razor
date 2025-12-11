@@ -4,6 +4,7 @@
 @page "/Services"
 @inject ISchoolTermsService SchoolTermsService
 @inject IServicesService    ServicesService
+@inject NavigationManager   Navigation
 
 <PageTitle>Services</PageTitle>
 
@@ -31,7 +32,8 @@ Display these in Quarters of the year
         </MudItem>
         <MudItem xs="4" md="3">
             <MudSelect T="ServiceDisplayOptions"
-                       @bind-Value="_displayOptions"
+                       Value="_display"
+                       ValueChanged="DisplayChanged"
                        Class="pt-2">
                 <MudSelectItem Value="ServiceDisplayOptions.Quarters">
                     Quarters
@@ -43,7 +45,7 @@ Display these in Quarters of the year
         </MudItem>
     </MudGrid>
     <MudGrid>
-        @if (_displayOptions == ServiceDisplayOptions.Quarters)
+        @if (_display == ServiceDisplayOptions.Quarters)
         {
             foreach ((int quarter, ICollection<Service>? services) in _quarters)
             {
@@ -97,7 +99,7 @@ Display these in Quarters of the year
                             </CardHeaderContent>
                         </MudCardHeader>
                         <MudCardContent>
-                            <ServicesList Services="@(_services?.Where(x => x.SchoolTermId == term.Id).ToList())"/>
+                            <ServicesList Services="GetServicesForTerm(term)"/>
                         </MudCardContent>
                     </MudCard>
                 </MudItem>
