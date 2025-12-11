@@ -1,10 +1,9 @@
 <MudHidden Breakpoint="Breakpoint.MdAndDown">
     <MudCard Elevation="6"
-             Class="relative"
              Style="height: 100%; min-width: 43px">
-        <MudOverlay Visible="OutOfMonth" DarkBackground="true" Absolute="true"/>
-        <MudCardHeader Class="pt-1 pl-2 pb-1" Style="@TermColor">
+        <MudCardHeader  Class="relative pt-1 pl-2 pb-1" Style="@TermColor">
             <CardHeaderContent>
+                <MudOverlay Visible="OutOfMonth" DarkBackground="true" Absolute="true"/>
                 <MudStack Row Justify="Justify.SpaceBetween">
                     <MudText Typo="Typo.body1" Align="Align.Start">
                         @Date.Day
@@ -30,8 +29,9 @@
     </MudCard>
 </MudHidden>
 <MudHidden Invert Breakpoint="Breakpoint.MdAndDown">
-    <MudStack Spacing="2">
-        <MudChip Style="@TermColor" T="string" Size="Size.Small">
+    <MudStack Style="height: 100%" Spacing="2">
+        <MudChip Class="relative" Style="@TermColor" T="string" Size="Size.Small">
+            <MudOverlay Visible="OutOfMonth" DarkBackground="true" Absolute="true"/>
             <MudText Align="Align.Center" Typo="Typo.body1">@Date.Day</MudText>
         </MudChip>
         @if (Events != null)
