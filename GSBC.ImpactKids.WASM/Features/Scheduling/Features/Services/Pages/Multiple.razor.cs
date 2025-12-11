@@ -1,3 +1,4 @@
+using System.Globalization;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Pagination;
@@ -6,13 +7,20 @@ using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.Ser
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using GSBC.ImpactKids.WASM.Components.Base;
 using GSBC.ImpactKids.WASM.Extensions;
+using Microsoft.AspNetCore.Components;
 
 namespace GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services.Pages;
 
 public partial class Multiple : EventListeningComponent
 {
-    private DateTime?             _date           = DateTime.Now;
-    private ServiceDisplayOptions _displayOptions = ServiceDisplayOptions.Quarters;
+    [SupplyParameterFromQuery]
+    public string? Year { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? Display { get; set; }
+
+    private DateTime?             _date    = DateTime.Now;
+    private ServiceDisplayOptions _display = ServiceDisplayOptions.Quarters;
 
     private ICollection<SchoolTerm>? _schoolTerms;
     private ICollection<Service>?    _services;
@@ -30,10 +38,30 @@ public partial class Multiple : EventListeningComponent
         await base.OnInitializedAsync();
 
         await Task.WhenAll(
-            RefreshServices(),
-            RefreshSchoolTerms(),
             SubscribeToEvent(Service.BuildSubscription(), RefreshServices),
             SubscribeToEvent(SchoolTerm.BuildSubscription(), RefreshSchoolTerms)
+        );
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+
+        if (Year != null && DateTime.TryParseExact(
+                Year,
+                "yyyy",
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.None,
+                out DateTime date)
+           )
+            _date = date;
+
+        if (Display != null && Enum.TryParse(Display, out ServiceDisplayOptions display))
+            _display = display;
+        
+        await Task.WhenAll(
+            RefreshServices(),
+            RefreshSchoolTerms()
         );
     }
 
@@ -104,6 +132,9 @@ public partial class Multiple : EventListeningComponent
         StateHasChanged();
     }
 
+    private List<Service>? GetServicesForTerm(SchoolTerm term) =>
+        _services?.Where(x => x.SchoolTermId == term.Id).ToList();
+
     private async Task OnDateChanged(DateTime? dateTime)
     {
         if (_date?.Year != dateTime?.Year)
@@ -114,7 +145,29 @@ public partial class Multiple : EventListeningComponent
                 RefreshSchoolTerms()
             );
         }
+
         _date = dateTime;
+        SetQueryParameters();
+    }
+
+    private void DisplayChanged(ServiceDisplayOptions display)
+    {
+        _display = display;
+        SetQueryParameters();
+    }
+    
+    private void SetQueryParameters()
+    {
+        Navigation.NavigateTo(GetQueryParameters());
+    }
+
+    private string GetQueryParameters()
+    {
+        return Navigation.GetUriWithQueryParameters(new Dictionary<string, object?>
+        {
+            [nameof(Year)] = $"{_date:yyyy}",
+            [nameof(Display)] = $"{_display}"
+        });
     }
 }
 
