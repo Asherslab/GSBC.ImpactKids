@@ -80,7 +80,7 @@ public partial class Calendar : ComponentBase
 
         int lastDayOfPreviousMonth = DateTime.DaysInMonth(lastMonthYear, lastMonth);
 
-        for (int i = 0; i < daysBeforeFirst; i++)
+        for (int i = daysBeforeFirst - 1; i >= 0; i--)
         {
             DateTime                    thisDay = new(lastMonthYear, lastMonth, lastDayOfPreviousMonth - i);
             ICollection<CalendarEvent>? events = Events?.Where(x => thisDay.Date == x.Date.Date).ToList();
