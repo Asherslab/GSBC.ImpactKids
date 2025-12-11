@@ -25,7 +25,7 @@ public partial class CalendarDay : ComponentBase
 
     private string BackgroundColor => Term?.Color ?? "#006400";
 
-    private string TermStyle => Term == null
+    private string TermColor => Term == null
         ? ""
         : $"background: {BackgroundColor}";
 
