@@ -1,29 +1,46 @@
-<MudCard Elevation="6"
-         Class="relative"
-         Style="height: 100%; min-width: 43px">
-    <MudOverlay Visible="OutOfMonth" DarkBackground="true" Absolute="true"/>
-    <MudCardHeader Class="pt-1 pl-2 pb-1" Style="@TermStyle">
-        <CardHeaderContent>
-            <MudStack Row Justify="Justify.SpaceBetween">
-                <MudText Typo="Typo.body1" Align="Align.Start">
-                    @Date.Day
-                </MudText>
-                @if (Term != null)
+<MudHidden Breakpoint="Breakpoint.MdAndDown">
+    <MudCard Elevation="6"
+             Class="relative"
+             Style="height: 100%; min-width: 43px">
+        <MudOverlay Visible="OutOfMonth" DarkBackground="true" Absolute="true"/>
+        <MudCardHeader Class="pt-1 pl-2 pb-1" Style="@TermColor">
+            <CardHeaderContent>
+                <MudStack Row Justify="Justify.SpaceBetween">
+                    <MudText Typo="Typo.body1" Align="Align.Start">
+                        @Date.Day
+                    </MudText>
+                    @if (Term != null)
+                    {
+                        <MudText Inline Align="Align.End" Style="@TermTextColorCss">@Term.Name</MudText>
+                    }
+                </MudStack>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent Class="pt-1 pl-1 pr-1" Style="min-width: 0; flex: 1 1 0;">
+            @if (Events != null)
+            {
+                foreach (CalendarEvent calendarEvent in Events)
                 {
-                    <MudText Inline Align="Align.End" Style="@TermTextColorCss">@Term.Name</MudText>
+                    <CalendarEventDisplay
+                        Class="mb-1"
+                        Event="calendarEvent"/>
                 }
-            </MudStack>
-        </CardHeaderContent>
-    </MudCardHeader>
-    <MudCardContent Class="pt-1 pl-1 pr-1" Style="min-width: 0; flex: 1 1 0;">
+            }
+        </MudCardContent>
+    </MudCard>
+</MudHidden>
+<MudHidden Invert Breakpoint="Breakpoint.MdAndDown">
+    <MudStack Spacing="2">
+        <MudChip Style="@TermColor" T="string" Size="Size.Small">
+            <MudText Align="Align.Center" Typo="Typo.body1">@Date.Day</MudText>
+        </MudChip>
         @if (Events != null)
         {
             foreach (CalendarEvent calendarEvent in Events)
             {
                 <CalendarEventDisplay
-                    Class="mb-1"
                     Event="calendarEvent"/>
             }
         }
-    </MudCardContent>
-</MudCard>
+    </MudStack>
+</MudHidden>
