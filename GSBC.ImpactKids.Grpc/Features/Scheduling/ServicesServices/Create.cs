@@ -21,21 +21,31 @@ public partial class ServicesService
                 return BasicResponse.WithError(SchoolTermNotFound);
         }
 
+        if (request.ServiceTypeId != null)
+        {
+            DbServiceType? serviceType =
+                await db.ServiceTypes.FirstOrDefaultAsync(x => x.Id == request.ServiceTypeId, cancellationToken: token);
+
+            if (serviceType == null)
+                return BasicResponse.WithError(ServiceTypeNotFound);
+        }
+
         if (request.Date == default)
             return BasicResponse.WithError(ServiceDateNull);
 
         if (string.IsNullOrWhiteSpace(request.Name))
             request.Name = null;
-        
+
         DbService service = new()
         {
             Id = Guid.Empty,
             Name = request.Name,
 
             Date = request.Date,
-            SchoolTermId = request.SchoolTermId
+            SchoolTermId = request.SchoolTermId,
+            ServiceTypeId = request.ServiceTypeId
         };
-        
+
         await db.Services.AddAsync(service, token);
         await db.SaveChangesAsync(token);
         await eventService.SendUpdatedEvent(service.Id, token: token, service.SchoolTermId ?? Guid.Empty);

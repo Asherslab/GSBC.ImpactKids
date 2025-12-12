@@ -2,45 +2,45 @@ using Microsoft.AspNetCore.Components;
 
 namespace GSBC.ImpactKids.WASM.Components.Common.Inputs;
 
-public partial class MudTextFieldCreateOrUpdate
+public partial class MudAutocompleteCreateOrUpdate<T>
 {
     [Parameter]
     public ModificationState State { get; set; } = ModificationState.Reading;
     
     [Parameter]
-    public string? Create { get; set; }
+    public required T Create { get; set; }
     
     [Parameter]
-    public EventCallback<string> CreateChanged { get; set; }
+    public EventCallback<T> CreateChanged { get; set; }
     
     [Parameter]
-    public string? Update { get; set; }
+    public required T Update { get; set; }
     
     [Parameter]
-    public EventCallback<string> UpdateChanged { get; set; }
+    public EventCallback<T> UpdateChanged { get; set; }
     
     [Parameter]
-    public string? Read { get; set; }
-
-    protected override void OnParametersSet()
+    public required T Read { get; set; }
+    
+    protected override async Task OnParametersSetAsync()
     {
-        base.OnParametersSet();
+        await base.OnParametersSetAsync();
         
         switch (State)
         {
             case ModificationState.Creating:
-                Text = Create;
-                TextChanged = CreateChanged;
+                await SelectOptionAsync(Create);
+                ValueChanged = CreateChanged;
                 ReadOnly = false;
                 break;
             case ModificationState.Reading:
-                Text = Read;
-                TextChanged = default;
+                await SelectOptionAsync(Read);
+                ValueChanged = new EventCallback<T>();
                 ReadOnly = true;
                 break;
             case ModificationState.Updating:
-                Text = Update;
-                TextChanged = UpdateChanged;
+                await SelectOptionAsync(Update);
+                ValueChanged = UpdateChanged;
                 ReadOnly = false;
                 break;
             default:

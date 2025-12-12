@@ -142,4 +142,24 @@ public partial class Individual : EventListeningComponent
             Snackbar.AddErrorResponse(response);
         }
     }
+    
+    private async Task DeletePerson()
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Warning",
+            "Deleting can not be undone!",
+            yesText: "Delete!", cancelText: "Cancel");
+
+        if (result == null || _person == null)
+            return;
+
+        BasicReadRequest request = new()
+        {
+            Guid = _person.Id
+        };
+
+        await Unbind(); // unbinds this component from events first, so that we don't get a refresh after deleting before navigating
+        await PersonService.Delete(request);
+        Navigation.NavigateTo("/People");
+    }
 }

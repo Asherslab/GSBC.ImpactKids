@@ -17,6 +17,7 @@ public partial class ServicesService
         CancellationToken token = context.CancellationToken;
 
         IQueryable<DbService> query = db.Services
+            .Include(x => x.SchoolTerm)
             .Include(x => x.ServiceType);
 
         if (request.SearchString != null)
@@ -39,6 +40,13 @@ public partial class ServicesService
         {
             query = query.Where(x =>
                 x.SchoolTermId == request.SchoolTermId
+            );
+        }
+
+        if (request.ServiceTypeId != null)
+        {
+            query = query.Where(x =>
+                x.ServiceTypeId == request.ServiceTypeId
             );
         }
 

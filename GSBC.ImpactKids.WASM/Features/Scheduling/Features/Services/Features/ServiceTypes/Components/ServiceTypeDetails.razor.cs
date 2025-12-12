@@ -1,6 +1,7 @@
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.Services.ServiceTypes;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
+using GSBC.ImpactKids.WASM.Components.Common.Inputs;
 using GSBC.ImpactKids.WASM.Extensions;
 using Microsoft.AspNetCore.Components;
 
@@ -19,9 +20,9 @@ public partial class ServiceTypeDetails : ComponentBase
 
     private bool _waitingForRefresh;
 
-    protected override async Task OnParametersSetAsync()
+    protected override void OnParametersSet()
     {
-        await base.OnParametersSetAsync();
+        base.OnParametersSet();
 
         if (ServiceType != null)
         {
@@ -44,7 +45,6 @@ public partial class ServiceTypeDetails : ComponentBase
     public async Task<bool> CreateServiceType()
     {
         _waitingForRefresh = true;
-        StateHasChanged();
         BasicResponse? resp = await ServiceTypeService.Create(_createRequest);
 
         if (resp.HasErrorOrNull())
@@ -54,7 +54,6 @@ public partial class ServiceTypeDetails : ComponentBase
             return false;
         }
 
-        StateHasChanged();
         return true;
     }
 
@@ -64,7 +63,6 @@ public partial class ServiceTypeDetails : ComponentBase
             return false;
 
         _waitingForRefresh = true;
-        StateHasChanged();
         BasicResponse? resp = await ServiceTypeService.Update(_updateRequest);
 
         if (resp.HasErrorOrNull())
@@ -74,14 +72,6 @@ public partial class ServiceTypeDetails : ComponentBase
             return false;
         }
 
-        StateHasChanged();
         return true;
     }
-}
-
-public enum ModificationState
-{
-    Creating,
-    Reading,
-    Updating
 }

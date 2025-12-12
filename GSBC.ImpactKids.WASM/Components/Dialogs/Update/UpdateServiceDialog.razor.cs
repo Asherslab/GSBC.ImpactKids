@@ -24,11 +24,11 @@ public partial class UpdateServiceDialog
     {
         await base.OnInitializedAsync();
 
-        if (SchoolTerm == null && Service.SchoolTermId != null)
+        if (SchoolTerm == null && Service.SchoolTerm?.Id != null)
         {
             BasicReadResponse<SchoolTerm>? resp = await SchoolTermsService.Read(new SchoolTermRequest
             {
-                Guid = Service.SchoolTermId.Value
+                Guid = Service.SchoolTerm.Id
             });
 
             if (resp.HasErrorOrNull())
@@ -40,7 +40,7 @@ public partial class UpdateServiceDialog
         _request.Guid = Service.Id;
         _request.Name.SetInitialValue(Service.Name);
         _request.Date.SetInitialValue(Service.Date);
-        _request.SchoolTermId.SetInitialValue(Service.SchoolTermId);
+        _request.SchoolTermId.SetInitialValue(Service.SchoolTerm?.Id);
     }
 
     private async Task Submit()

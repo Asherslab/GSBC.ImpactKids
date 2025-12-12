@@ -44,8 +44,6 @@ public partial class Multiple : EventListeningComponent
         {
             Snackbar.AddErrorResponse(response);
         }
-
-        StateHasChanged();
     }
 
     private async Task OnSearch(string text)

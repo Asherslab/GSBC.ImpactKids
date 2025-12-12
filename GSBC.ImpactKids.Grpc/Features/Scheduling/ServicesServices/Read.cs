@@ -13,6 +13,7 @@ public partial class ServicesService
         CancellationToken token = context.CancellationToken;
 
         IQueryable<DbService> query = db.Services
+            .Include(x => x.SchoolTerm)
             .Include(x => x.ServiceType);
         DbService? service;
 

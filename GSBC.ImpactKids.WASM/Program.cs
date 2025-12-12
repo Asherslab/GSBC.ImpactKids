@@ -19,6 +19,18 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
+// builder.Services.AddWhyDidYouRender(config =>
+// {
+//     config.Enabled = builder.HostEnvironment.IsDevelopment();
+//     config.Verbosity = TrackingVerbosity.Normal;
+//     config.Output = TrackingOutput.Both;
+//     config.TrackParameterChanges = true;
+//     config.EnableStateTracking = true;
+// });
+
+builder.Logging.AddConfiguration(
+    builder.Configuration.GetSection("Logging"));
+
 builder.AddServiceDefaults();
 builder.Services.AddMudServices();
 builder.Services.AddSingleton<EventSubscriptionService>();
@@ -80,6 +92,10 @@ if (reportsConfig != null)
     builder.Services.AddSingleton(reportsConfig);
 }
 
-await builder.Build().RunAsync();
+WebAssemblyHost host      = builder.Build();
 
-// is { Entity: null }
+// Enable Why Did You Render
+// IJSRuntime      jsRuntime = host.Services.GetRequiredService<IJSRuntime>();
+// await host.Services.InitializeWasmAsync(jsRuntime);
+
+await host.RunAsync();

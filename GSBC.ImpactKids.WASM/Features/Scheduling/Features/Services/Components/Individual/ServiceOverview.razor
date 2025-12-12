@@ -1,0 +1,92 @@
+@inject ISnackbar Snackbar
+
+<MudGrid Spacing="6" Justify="Justify.Center">
+    <MudItem xs="12" md="4">
+        <MudGrid Spacing="6" Justify="Justify.Center">
+            <MudItem xs="12">
+                <MudCard Elevation="6" Class="relative">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudPaper Elevation="0" Class="d-flex justify-space-between flex-grow-1">
+                                <MudText Typo="Typo.h6" Align="Align.Start">Details</MudText>
+                                <MudPaper Elevation="0" Class="d-flex justify-end flex-grow-0">
+                                    @if (_detailsState == ModificationState.Reading)
+                                    {
+                                        if (DeleteService.HasDelegate)
+                                        {
+                                            <MudButton Size="Size.Small" Color="Color.Error"
+                                                       OnClick="@DeleteService">
+                                                <MudIcon Icon="@Icons.Material.Filled.Delete"/>
+                                            </MudButton>
+                                        }
+
+                                        <MudButton Size="Size.Small" Color="Color.Default"
+                                                   OnClick="@(_ => _detailsState = ModificationState.Updating)">
+                                            <MudIcon Icon="@Icons.Material.Filled.Edit"/>
+                                        </MudButton>
+                                    }
+                                    else
+                                    {
+                                        <MudButton Size="Size.Small" Color="Color.Error"
+                                                   OnClick="@(_ => _detailsState = ModificationState.Reading)">
+                                            Cancel
+                                        </MudButton>
+                                        <MudButton Size="Size.Small" Color="Color.Success" OnClick="@UpdateService">
+                                            Submit
+                                        </MudButton>
+                                    }
+                                </MudPaper>
+                            </MudPaper>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <ServiceDetails @ref="_serviceDetailsComponent" 
+                                        Service="Service"
+                                        State="_detailsState"/>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+    </MudItem>
+    <MudItem xs="12" md="8">
+        <MudGrid Spacing="6" Justify="Justify.FlexStart">
+            <MudItem xs="12" md="6">
+                <MudCard Elevation="6" Class="relative">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudPaper Elevation="0" Class="d-flex justify-space-between flex-grow-1">
+                                <MudText Typo="Typo.h6" Align="Align.Start">Memory Verses</MudText>
+                            </MudPaper>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudCard Elevation="6" Class="relative">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudPaper Elevation="0" Class="d-flex justify-space-between flex-grow-1">
+                                <MudText Typo="Typo.h6" Align="Align.Start">Dollar Store</MudText>
+                            </MudPaper>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudCard Elevation="6" Class="relative">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6" Align="Align.Start">Roster</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+    </MudItem>
+</MudGrid>
