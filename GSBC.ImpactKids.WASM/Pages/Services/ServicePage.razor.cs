@@ -36,7 +36,7 @@ public partial class ServicePage : EventListeningComponent
         await base.OnParametersSetAsync();
 
         await RefreshService();
-        await SubscribeToEvent(Service.BuildSubscription(_service?.SchoolTermId, _service?.Id), RefreshService);
+        await SubscribeToEvent(Service.BuildSubscription(_service?.SchoolTerm?.Id, _service?.Id), RefreshService);
 
         await Task.WhenAll(RefreshMemoryVerses(), RefreshDollarStoreEntry());
         await SubscribeToEvent(MemoryVerse.BuildSubscription(), RefreshMemoryVerses);

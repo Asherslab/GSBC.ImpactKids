@@ -11,4 +11,6 @@ public class ServiceType
 
     public static string BuildSubscription(Guid? serviceTypeId = null) =>
         $"{nameof(ServiceType)}.{serviceTypeId?.ToString() ?? "*"}";
+    
+    public const string ColorBackup = "#008b8b";
 }

@@ -13,9 +13,14 @@
                                 <MudPaper Elevation="0" Class="d-flex justify-end flex-grow-0">
                                     @if (!_editingDetails)
                                     {
-                                        <MudButton Size="Size.Small" Color="Color.Error">
-                                            <MudIcon Icon="@Icons.Material.Filled.Delete"/>
-                                        </MudButton>
+                                        if (DeletePerson.HasDelegate)
+                                        {
+                                            <MudButton Size="Size.Small" Color="Color.Error"
+                                                       OnClick="@DeletePerson">
+                                                <MudIcon Icon="@Icons.Material.Filled.Delete"/>
+                                            </MudButton>
+                                        }
+
                                         <MudButton Size="Size.Small" Color="Color.Default"
                                                    OnClick="@(_ => _editingDetails = true)">
                                             <MudIcon Icon="@Icons.Material.Filled.Edit"/>

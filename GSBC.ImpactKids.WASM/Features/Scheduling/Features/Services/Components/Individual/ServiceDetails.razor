@@ -1,0 +1,108 @@
+@inject IServicesService    ServicesService
+@inject ISchoolTermsService SchoolTermsService
+@inject IServiceTypeService ServiceTypeService
+@inject ISnackbar           Snackbar
+
+<MudPaper Elevation="0" Class="d-flex flex-column flex-grow-1">
+    <MudOverlay Visible="@(State != ModificationState.Creating && (Service == null || _waitingForRefresh))"
+                DarkBackground="true"
+                Absolute="true">
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+    <MudTextFieldCreateOrUpdate
+        @bind-Create="@_createRequest.Name"
+        Read="@_updateRequest.Name.Value"
+        @bind-Update="@_updateRequest.Name.Value"
+        State="State"
+
+        Class="mb-4"
+        Label="Name"
+        Variant="Variant.Filled"
+        Immediate/>
+    <MudRequiredDatePickerCreateOrUpdate
+        @bind-Create="@_createRequest.Date"
+        Read="@_updateRequest.Date.Value"
+        @bind-Update="@_updateRequest.Date.Value"
+        State="State"
+
+        Class="mb-4"
+        Label="Date"
+        Variant="Variant.Filled"
+
+        Editable/>
+
+    <div class="relative mb-4">
+        <MudOverlay Visible="@(State != ModificationState.Reading && !_waitingForRefresh && SchoolTerms == null)"
+                    DarkBackground
+                    Absolute>
+            <MudProgressCircular Indeterminate/>
+        </MudOverlay>
+        <MudSelectCreateOrUpdate
+            @bind-Create="@_createRequest.SchoolTermId"
+            Read="@_updateRequest.SchoolTermId.Value"
+            @bind-Update="@_updateRequest.SchoolTermId.Value"
+            State="State"
+
+            Label="School Term"
+            Variant="Variant.Filled"
+
+            Clearable>
+            @if (_updateRequest.SchoolTerm != null)
+            {
+                <MudSelectItem T="Guid?"
+                               Value="@_updateRequest.SchoolTerm?.Id">
+                    @(_updateRequest.SchoolTerm?.Name ?? "")
+                </MudSelectItem>
+            }
+            @if (SchoolTerms != null)
+            {
+                foreach (SchoolTerm schoolTerm in GetSchoolTermsForDropdown())
+                {
+                    if (schoolTerm.Id == Service?.SchoolTerm?.Id)
+                        continue;
+                    <MudSelectItem T="Guid?" Value="@schoolTerm.Id">@schoolTerm.Name</MudSelectItem>
+                }
+            }
+        </MudSelectCreateOrUpdate>
+    </div>
+
+    <div class="relative mb-4">
+        <MudOverlay Visible="@(State != ModificationState.Reading && !_waitingForRefresh && ServiceTypes == null)"
+                    DarkBackground
+                    Absolute>
+            <MudProgressCircular Indeterminate/>
+        </MudOverlay>
+        <MudSelectCreateOrUpdate
+            @bind-Create="@_createRequest.ServiceTypeId"
+            Read="@_updateRequest.ServiceTypeId.Value"
+            @bind-Update="@_updateRequest.ServiceTypeId.Value"
+            State="State"
+
+            Label="Service Type"
+            Variant="Variant.Filled"
+
+            Clearable>
+            @if (_updateRequest.ServiceType != null)
+            {
+                <MudSelectItem T="Guid?"
+                               Value="@_updateRequest.ServiceType?.Id"
+                               Style="@($"color: {Service?.ServiceType?.Color ?? ServiceType.ColorBackup}")">
+                    @(_updateRequest.ServiceType?.Label ?? "")
+                </MudSelectItem>
+            }
+            @if (ServiceTypes != null)
+            {
+                foreach (ServiceType serviceType in ServiceTypes)
+                {
+                    if (serviceType.Id == Service?.ServiceType?.Id)
+                        continue;
+                    <MudSelectItem T="Guid?"
+                                   Value="@serviceType.Id"
+                                   Style="@($"color: {serviceType.Color ?? ServiceType.ColorBackup}")">
+                        @serviceType.Label
+                    </MudSelectItem>
+                }
+            }
+        </MudSelectCreateOrUpdate>
+    </div>
+</MudPaper>

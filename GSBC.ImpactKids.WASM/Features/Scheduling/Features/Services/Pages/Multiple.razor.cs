@@ -2,11 +2,13 @@ using System.Globalization;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Pagination;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.School.SchoolTerms;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.Services;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using GSBC.ImpactKids.WASM.Components.Base;
 using GSBC.ImpactKids.WASM.Extensions;
+using GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services.Components.Individual;
 using Microsoft.AspNetCore.Components;
 
 namespace GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services.Pages;
@@ -19,11 +21,15 @@ public partial class Multiple : EventListeningComponent
     [SupplyParameterFromQuery]
     public string? Display { get; set; }
 
+    [SupplyParameterFromForm]
+    public Guid? ServiceType { get; set; }
+
     private DateTime?             _date    = DateTime.Now;
     private ServiceDisplayOptions _display = ServiceDisplayOptions.Quarters;
 
-    private ICollection<SchoolTerm>? _schoolTerms;
-    private ICollection<Service>?    _services;
+    private ICollection<SchoolTerm>?  _schoolTerms;
+    private ICollection<ServiceType>? _serviceTypes;
+    private ICollection<Service>?     _services;
 
     private readonly Dictionary<int, ICollection<Service>?> _quarters = new()
     {
@@ -38,8 +44,11 @@ public partial class Multiple : EventListeningComponent
         await base.OnInitializedAsync();
 
         await Task.WhenAll(
+            RefreshServiceTypes(),
             SubscribeToEvent(Service.BuildSubscription(), RefreshServices),
-            SubscribeToEvent(SchoolTerm.BuildSubscription(), RefreshSchoolTerms)
+            SubscribeToEvent(SchoolTerm.BuildSubscription(), RefreshSchoolTerms),
+            SubscribeToEvent(Shared.Contracts.Entities.Features.Scheduling.ServiceType.BuildSubscription(),
+                RefreshServiceTypes)
         );
     }
 
@@ -58,7 +67,7 @@ public partial class Multiple : EventListeningComponent
 
         if (Display != null && Enum.TryParse(Display, out ServiceDisplayOptions display))
             _display = display;
-        
+
         await Task.WhenAll(
             RefreshServices(),
             RefreshSchoolTerms()
@@ -89,8 +98,30 @@ public partial class Multiple : EventListeningComponent
         }
 
         _schoolTerms = response.Entities;
+    }
 
-        StateHasChanged();
+    private CancellationTokenSource _refreshServiceTypesTokenSource = new();
+
+    private async Task RefreshServiceTypes()
+    {
+        await _refreshServiceTypesTokenSource.CancelAsync();
+        _refreshServiceTypesTokenSource = new CancellationTokenSource();
+
+        BasicReadMultipleResponse<ServiceType>? response = await ServiceTypeService.ReadMultiple(
+            new BasicReadMultipleRequest
+            {
+                Pagination = PaginationRequest.All()
+            },
+            _refreshServiceTypesTokenSource.Token
+        );
+
+        if (response.HasErrorOrNull())
+        {
+            Snackbar.AddErrorResponse(response);
+            return;
+        }
+
+        _serviceTypes = response.Entities;
     }
 
     private CancellationTokenSource _refreshServicesTokenSource = new();
@@ -105,7 +136,8 @@ public partial class Multiple : EventListeningComponent
             new ServicesRequest
             {
                 Pagination = PaginationRequest.All(),
-                Year = year
+                Year = year,
+                ServiceTypeId = ServiceType
             },
             _refreshServicesTokenSource.Token
         );
@@ -128,24 +160,13 @@ public partial class Multiple : EventListeningComponent
 
             _quarters[i + 1] = servicesForThisQuarter;
         }
-
-        StateHasChanged();
     }
 
     private List<Service>? GetServicesForTerm(SchoolTerm term) =>
-        _services?.Where(x => x.SchoolTermId == term.Id).ToList();
+        _services?.Where(x => x.SchoolTerm?.Id == term.Id).ToList();
 
-    private async Task OnDateChanged(DateTime? dateTime)
+    private void OnDateChanged(DateTime? dateTime)
     {
-        if (_date?.Year != dateTime?.Year)
-        {
-            _date = dateTime;
-            await Task.WhenAll(
-                RefreshServices(),
-                RefreshSchoolTerms()
-            );
-        }
-
         _date = dateTime;
         SetQueryParameters();
     }
@@ -156,6 +177,25 @@ public partial class Multiple : EventListeningComponent
         SetQueryParameters();
     }
     
+    private void ServiceTypeChanged(Guid? serviceTypeId)
+    {
+        ServiceType = serviceTypeId;
+        SetQueryParameters();
+    }
+
+    private ServiceDetails? _serviceDetails;
+
+    private bool _showCreateDialog;
+
+    private async Task CreateService()
+    {
+        if (_serviceDetails != null)
+        {
+            bool success = await _serviceDetails.CreateService();
+            _showCreateDialog = !success;
+        }
+    }
+
     private void SetQueryParameters()
     {
         Navigation.NavigateTo(GetQueryParameters());
@@ -166,7 +206,8 @@ public partial class Multiple : EventListeningComponent
         return Navigation.GetUriWithQueryParameters(new Dictionary<string, object?>
         {
             [nameof(Year)] = $"{_date:yyyy}",
-            [nameof(Display)] = $"{_display}"
+            [nameof(Display)] = $"{_display}",
+            [nameof(ServiceType)] = ServiceType
         });
     }
 }

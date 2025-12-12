@@ -2,45 +2,47 @@ using Microsoft.AspNetCore.Components;
 
 namespace GSBC.ImpactKids.WASM.Components.Common.Inputs;
 
-public partial class MudColorPickerCreateOrUpdate
+public partial class MudDatePickerCreateOrUpdate
 {
     [Parameter]
-    public ModificationState State { get; set; }
+    public ModificationState State { get; set; } = ModificationState.Reading;
     
     [Parameter]
-    public string? Create { get; set; }
+    public DateTime? Create { get; set; }
     
     [Parameter]
-    public EventCallback<string> CreateChanged { get; set; }
+    public EventCallback<DateTime?> CreateChanged { get; set; }
     
     [Parameter]
-    public string? Update { get; set; }
+    public DateTime? Update { get; set; }
     
     [Parameter]
-    public EventCallback<string> UpdateChanged { get; set; }
+    public EventCallback<DateTime?> UpdateChanged { get; set; }
     
     [Parameter]
-    public string? Read { get; set; }
+    public DateTime? Read { get; set; }
 
     protected override void OnParametersSet()
     {
         base.OnParametersSet();
-
+        
+        DateFormat = "dd/MM/yyyy";
+        
         switch (State)
         {
             case ModificationState.Creating:
-                Text = Create;
-                TextChanged = CreateChanged;
+                Date = Create;
+                DateChanged = CreateChanged;
                 ReadOnly = false;
                 break;
             case ModificationState.Reading:
-                Text = Read;
-                TextChanged = default;
+                Date = Read;
+                DateChanged = default;
                 ReadOnly = true;
                 break;
             case ModificationState.Updating:
-                Text = Update;
-                TextChanged = UpdateChanged;
+                Date = Update;
+                DateChanged = UpdateChanged;
                 ReadOnly = false;
                 break;
             default:

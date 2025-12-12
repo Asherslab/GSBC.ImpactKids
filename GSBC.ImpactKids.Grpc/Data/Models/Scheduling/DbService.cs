@@ -13,13 +13,15 @@ public class DbService
     [Column(TypeName = "date")]
     public required DateTime Date { get; set; }
 
+    [MapperIgnore]
     public Guid? SchoolTermId { get; set; }
 
-    [MapperIgnore]
     public DbSchoolTerm? SchoolTerm { get; set; }
 
-    public Guid?          ServiceTypeId { get; set; }
-    public DbServiceType? ServiceType   { get; set; }
+    [MapperIgnore]
+    public Guid? ServiceTypeId { get; set; }
+
+    public DbServiceType? ServiceType { get; set; }
 
     [MapperIgnore]
     public DbDollarStoreEntry? DollarStoreEntry { get; set; }

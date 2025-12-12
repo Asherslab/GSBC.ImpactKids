@@ -1,27 +1,53 @@
-@using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School
-@using GSBC.ImpactKids.Shared.Contracts.Services.Features.Scheduling.School
 @inherits EventListeningComponent
 @page "/Services"
 @inject ISchoolTermsService SchoolTermsService
+@inject IServiceTypeService ServiceTypeService
 @inject IServicesService    ServicesService
 @inject NavigationManager   Navigation
 
 <PageTitle>Services</PageTitle>
 
-@*
-Display these in Quarters of the year
-*@
-
 <MudPaper Elevation="6" Class="mt-4 px-6 pb-6">
     <MudGrid>
         <MudItem xs="4" md="3">
-            <MudDatePicker OpenTo="OpenTo.Year"
-                           Date="_date"
-                           DateChanged="OnDateChanged"
-                           FixMonth="1"
-                           FixDay="1"
-                           Class="pt-2"
-                           DateFormat="yyyy"/>
+            <MudGrid Spacing="1">
+                <MudItem xs="12" md="6">
+                    <MudDatePicker OpenTo="OpenTo.Year"
+                                   Date="_date"
+                                   DateChanged="OnDateChanged"
+                                   FixMonth="1"
+                                   FixDay="1"
+                                   Class="pt-2"
+                                   DateFormat="yyyy"/>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <div class="relative">
+                        <MudOverlay Visible="@(_serviceTypes == null)"
+                                    DarkBackground
+                                    Absolute>
+                            <MudProgressCircular Indeterminate/>
+                        </MudOverlay>
+                        <MudSelect T="Guid?"
+                                   Value="ServiceType"
+                                   ValueChanged="ServiceTypeChanged"
+                                   Placeholder="Service Type"
+                                   Class="pt-2"
+                                   Clearable>
+                            @if (_serviceTypes != null)
+                            {
+                                foreach (ServiceType serviceType in _serviceTypes)
+                                {
+                                    <MudSelectItem T="Guid?"
+                                                   Value="@serviceType.Id"
+                                                   Style="@($"color: {serviceType.Color ?? Shared.Contracts.Entities.Features.Scheduling.ServiceType.ColorBackup}")">
+                                        @serviceType.Label
+                                    </MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                    </div>
+                </MudItem>
+            </MudGrid>
         </MudItem>
         <MudItem xs="4" md="6">
             <MudText Align="Align.Center"
@@ -31,17 +57,25 @@ Display these in Quarters of the year
             </MudText>
         </MudItem>
         <MudItem xs="4" md="3">
-            <MudSelect T="ServiceDisplayOptions"
-                       Value="_display"
-                       ValueChanged="DisplayChanged"
-                       Class="pt-2">
-                <MudSelectItem Value="ServiceDisplayOptions.Quarters">
-                    Quarters
-                </MudSelectItem>
-                <MudSelectItem Value="ServiceDisplayOptions.SchoolTerms">
-                    School Terms
-                </MudSelectItem>
-            </MudSelect>
+            <MudGrid Spacing="1">
+                <MudItem xs="12" md="2">
+                    <MudIconButton OnClick="@(() => _showCreateDialog = true)"
+                                   Icon="@Icons.Material.Filled.PostAdd"/>
+                </MudItem>
+                <MudItem xs="12" md="10">
+                    <MudSelect T="ServiceDisplayOptions"
+                               Value="_display"
+                               ValueChanged="DisplayChanged"
+                               Class="pt-2">
+                        <MudSelectItem Value="ServiceDisplayOptions.Quarters">
+                            Quarters
+                        </MudSelectItem>
+                        <MudSelectItem Value="ServiceDisplayOptions.SchoolTerms">
+                            School Terms
+                        </MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
         </MudItem>
     </MudGrid>
     <MudGrid>
@@ -107,3 +141,16 @@ Display these in Quarters of the year
         }
     </MudGrid>
 </MudPaper>
+
+<MudDialog @bind-Visible="_showCreateDialog">
+    <TitleContent>Create Service</TitleContent>
+    <DialogContent>
+        <ServiceDetails
+            @ref="_serviceDetails"
+            State="ModificationState.Creating"/>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _showCreateDialog = false)">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="@CreateService">Submit</MudButton>
+    </DialogActions>
+</MudDialog>

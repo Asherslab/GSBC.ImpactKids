@@ -5,6 +5,7 @@ using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
 using GSBC.ImpactKids.WASM.Features.People.Features.Allergies.Components;
 using GSBC.ImpactKids.WASM.Features.People.Features.MedicalNotes.Components;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 
 namespace GSBC.ImpactKids.WASM.Features.People.Components.Individual;
@@ -19,6 +20,9 @@ public partial class PersonOverview : ComponentBase
 
     [Parameter]
     public ICollection<MemorisationEntry>? MemorisationEntries { get; set; }
+
+    [Parameter]
+    public EventCallback<MouseEventArgs> DeletePerson { get; set; }
 
     protected override void OnParametersSet()
     {

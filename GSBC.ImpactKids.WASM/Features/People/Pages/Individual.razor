@@ -1,6 +1,7 @@
 @using GSBC.ImpactKids.Shared.Contracts.Services.Features.Scripture.Memorisation
 @inherits EventListeningComponent
 @page "/People/{Id:guid}"
+@inject NavigationManager           Navigation
 @inject IPersonService              PersonService
 @inject IMemorisationEntriesService MemorisationEntriesService
 
@@ -15,5 +16,9 @@
     {
         <MudText Align="Align.Center" Typo="Typo.h5" Class="py-3">Person</MudText>
     }
-    <PersonOverview Person="_person" FamilyMembers="_familyMembers" MemorisationEntries="_memorisationEntries"/>
+    <PersonOverview Person="_person" 
+                    FamilyMembers="_familyMembers" 
+                    MemorisationEntries="_memorisationEntries"
+                    DeletePerson="DeletePerson"
+                    />
 </MudPaper>

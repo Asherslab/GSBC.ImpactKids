@@ -1,4 +1,5 @@
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling;
+using GSBC.ImpactKids.Grpc.Data.Models.Scheduling.School;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.Services;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using Microsoft.EntityFrameworkCore;
@@ -16,7 +17,7 @@ public partial class ServicesService
 
         if (service == null)
             return BasicResponse.WithError(ServiceNotFound);
-        
+
         if (request.Name.IsUpdated)
         {
             service.Name = request.Name.Value;
@@ -34,6 +35,29 @@ public partial class ServicesService
         if (request.SchoolTermId.IsUpdated)
         {
             service.SchoolTermId = request.SchoolTermId.Value;
+            if (request.SchoolTermId.Value != null)
+            {
+                DbSchoolTerm? term =
+                    await db.Terms.FirstOrDefaultAsync(x => x.Id == request.SchoolTermId.Value,
+                        cancellationToken: token);
+
+                if (term == null)
+                    return BasicResponse.WithError(SchoolTermNotFound);
+            }
+        }
+
+        if (request.ServiceTypeId.IsUpdated)
+        {
+            service.ServiceTypeId = request.ServiceTypeId.Value;
+            if (request.ServiceTypeId.Value != null)
+            {
+                DbServiceType? serviceType =
+                    await db.ServiceTypes.FirstOrDefaultAsync(x => x.Id == request.ServiceTypeId.Value,
+                        cancellationToken: token);
+
+                if (serviceType == null)
+                    return BasicResponse.WithError(ServiceTypeNotFound);
+            }
         }
 
         db.Services.Update(service);

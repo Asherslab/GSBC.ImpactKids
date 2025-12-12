@@ -1,3 +1,5 @@
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School;
+
 namespace GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
@@ -8,7 +10,7 @@ public class Service
 
     public required DateTime Date { get; set; }
 
-    public required Guid? SchoolTermId { get; set; }
+    public required SchoolTerm? SchoolTerm { get; set; }
 
     public required ServiceType? ServiceType { get; set; }
 
