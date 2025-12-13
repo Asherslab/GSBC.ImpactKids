@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Components;
-using MudBlazor.Utilities;
 
 namespace GSBC.ImpactKids.WASM.Components.Common.Inputs;
 
@@ -35,12 +34,13 @@ public partial class MudSelectCreateOrUpdate<T>
                 ReadOnly = false;
                 break;
             case ModificationState.Reading:
+                Value = default; // makes sure the select updates text when switched to read
                 SelectOption(Read);
                 ValueChanged = new EventCallback<T>();
                 ReadOnly = true;
                 break;
             case ModificationState.Updating:
-                SelectOption(UpdateChanged);
+                SelectOption(Update);
                 ValueChanged = UpdateChanged;
                 ReadOnly = false;
                 break;
