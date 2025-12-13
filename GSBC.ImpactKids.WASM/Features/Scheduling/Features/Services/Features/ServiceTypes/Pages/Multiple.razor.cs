@@ -39,6 +39,7 @@ public partial class Multiple : EventListeningComponent
         );
 
         _serviceTypes = response?.Entities;
+        StateHasChanged();
 
         if (response.HasErrorOrNull())
         {
