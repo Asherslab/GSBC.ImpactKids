@@ -40,7 +40,8 @@ public partial class CalendarPage : EventListeningComponent
             RefreshSchoolTerms(),
             RefreshServices(),
             SubscribeToEvent(SchoolTerm.BuildSubscription(), RefreshSchoolTerms),
-            SubscribeToEvent(Service.BuildSubscription(), RefreshServices)
+            SubscribeToEvent(Service.BuildSubscription(), RefreshServices),
+            SubscribeToEvent(ServiceType.BuildSubscription(), RefreshServices)
         );
     }
 
