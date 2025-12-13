@@ -46,7 +46,7 @@ public partial class Calendar : ComponentBase
                 _numberOfWeeks++;
 
             ICollection<CalendarEvent>? events = Events?.Where(x => thisDay.Date == x.Date.Date).ToList();
-            CalendarTerm?               term = Terms?.FirstOrDefault(x => x.StartDate < thisDay && thisDay < x.EndDate);
+            CalendarTerm?               term = Terms?.FirstOrDefault(x => x.StartDate <= thisDay && thisDay <= x.EndDate);
             _calendarDays.Add(new CalendarDayRecord(
                 thisDay,
                 false,
