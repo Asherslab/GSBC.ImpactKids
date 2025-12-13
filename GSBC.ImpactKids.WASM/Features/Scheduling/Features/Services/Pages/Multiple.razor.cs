@@ -98,6 +98,7 @@ public partial class Multiple : EventListeningComponent
         }
 
         _schoolTerms = response.Entities;
+        StateHasChanged();
     }
 
     private CancellationTokenSource _refreshServiceTypesTokenSource = new();
@@ -122,6 +123,7 @@ public partial class Multiple : EventListeningComponent
         }
 
         _serviceTypes = response.Entities;
+        StateHasChanged();
     }
 
     private CancellationTokenSource _refreshServicesTokenSource = new();
@@ -160,6 +162,7 @@ public partial class Multiple : EventListeningComponent
 
             _quarters[i + 1] = servicesForThisQuarter;
         }
+        StateHasChanged();
     }
 
     private List<Service>? GetServicesForTerm(SchoolTerm term) =>
