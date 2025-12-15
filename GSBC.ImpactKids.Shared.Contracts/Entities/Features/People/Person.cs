@@ -15,6 +15,20 @@ public class Person
     public required MediaConsent MediaConsent { get; set; }
     public required DateTime?    DateOfBirth  { get; set; }
     public required DateTime?    FirstTime    { get; set; }
+    
+    [ProtoIgnore]
+    public DateTime? LocalDateOfBirth
+    {
+        get => DateOfBirth?.ToLocalTime();
+        set => DateOfBirth = value?.ToUniversalTime();
+    }
+    
+    [ProtoIgnore]
+    public DateTime? LocalFirstTime
+    {
+        get => FirstTime?.ToLocalTime();
+        set => FirstTime = value?.ToUniversalTime();
+    }
 
     public required List<Allergy>     Allergies    { get; set; } = [];
     public required List<MedicalNote> MedicalNotes { get; set; } = [];
@@ -23,9 +37,9 @@ public class Person
     public required Guid FamilyId       { get; set; }
     public required bool FamilyGuardian { get; set; }
 
-    public int? GetAge() => DateOfBirth == null
+    public int? GetAge() => LocalDateOfBirth == null
         ? null
-        : (int.Parse(DateTime.Now.ToString("yyyyMMdd")) - int.Parse(DateOfBirth.Value.ToString("yyyyMMdd")))
+        : (int.Parse(DateTime.Now.ToString("yyyyMMdd")) - int.Parse(LocalDateOfBirth.Value.ToString("yyyyMMdd")))
           / 10000;
 
     public string GetDisplayName() => $"{FirstName} {LastName}";

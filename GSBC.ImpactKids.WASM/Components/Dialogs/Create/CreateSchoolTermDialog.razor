@@ -11,11 +11,11 @@
                       Label="Name"
                       Class="mb-3"/>
         <RequiredMudDatePicker
-            @bind-Date="@_request.StartDate"
+            @bind-Date="@_request.LocalStartDate"
             Label="Start Date"
             Class="mb-3"/>
         <RequiredMudDatePicker
-            @bind-Date="@_request.EndDate"
+            @bind-Date="@_request.LocalEndDate"
             Label="End Date"/>
     </MudForm>
 </BaseChangeDialog>

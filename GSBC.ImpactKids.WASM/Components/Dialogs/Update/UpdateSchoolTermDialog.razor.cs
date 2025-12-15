@@ -19,8 +19,8 @@ public partial class UpdateSchoolTermDialog
 
         _request.Guid = Term.Id;
         _request.Name.SetInitialValue(Term.Name);
-        _request.StartDate.SetInitialValue(Term.StartDate);
-        _request.EndDate.SetInitialValue(Term.EndDate);
+        _request.LocalStartDate.SetInitialValue(Term.LocalStartDate);
+        _request.LocalEndDate.SetInitialValue(Term.LocalEndDate);
     }
 
     private async Task Submit() => _response = await SchoolTermsService.Update(_request);

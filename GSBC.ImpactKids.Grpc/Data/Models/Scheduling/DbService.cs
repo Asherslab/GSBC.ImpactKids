@@ -10,8 +10,7 @@ public class DbService
     public required Guid    Id   { get; set; }
     public          string? Name { get; set; }
 
-    [Column(TypeName = "date")]
-    public required DateTime Date { get; set; }
+    public required DateTimeOffset Date { get; set; }
 
     [MapperIgnore]
     public Guid? SchoolTermId { get; set; }

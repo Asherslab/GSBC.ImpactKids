@@ -63,8 +63,8 @@ public partial class MemorisationEntriesService
         if (request.CurrentSchoolTerm)
         {
             entriesQuery = entriesQuery.Where(x =>
-                x.Service!.SchoolTerm!.StartDate <= DateTime.Now &&
-                x.Service!.SchoolTerm!.EndDate >= DateTime.Now
+                x.Service!.SchoolTerm!.StartDate <= DateTime.UtcNow &&
+                x.Service!.SchoolTerm!.EndDate >= DateTime.UtcNow
             );
         }
 

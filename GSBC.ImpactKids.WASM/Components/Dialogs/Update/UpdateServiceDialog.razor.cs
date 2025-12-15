@@ -39,7 +39,7 @@ public partial class UpdateServiceDialog
 
         _request.Guid = Service.Id;
         _request.Name.SetInitialValue(Service.Name);
-        _request.Date.SetInitialValue(Service.Date);
+        _request.LocalDate.SetInitialValue(Service.LocalDate);
         _request.SchoolTermId.SetInitialValue(Service.SchoolTerm?.Id);
     }
 

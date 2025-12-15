@@ -15,7 +15,7 @@
 
     <MudPaper Elevation="6" Class="mt-4">
         <EntityHeader Name="@PageName()"
-                      Subtitle="@(_service.Date.ToString("dd/MM/yyyy"))"
+                      Subtitle="@(_service.LocalDate.ToString("dd/MM/yyyy"))"
                       OnUpdate="@UpdateService"
                       OnDelete="@DeleteService">
             <RightSideContent>
@@ -65,8 +65,8 @@
                     <MudCardContent>
                         <Roster
                             Rosters="Rosters.ImpactKids"
-                            StartDate="@_service.Date"
-                            EndDate="@_service.Date"
+                            StartDate="@_service.LocalDate"
+                            EndDate="@_service.LocalDate"
                             MobileLayoutBreakpoint="Breakpoint.Always"/>
                     </MudCardContent>
                 </MudCard>

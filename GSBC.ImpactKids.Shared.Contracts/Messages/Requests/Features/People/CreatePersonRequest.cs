@@ -13,6 +13,20 @@ public class CreatePersonRequest
     public DateTime?    DateOfBirth   { get; set; }
     public DateTime?    FirstTime     { get; set; }
 
+    [ProtoIgnore]
+    public DateTime? LocalDateOfBirth
+    {
+        get => DateOfBirth?.ToLocalTime();
+        set => DateOfBirth = value?.ToUniversalTime();
+    }
+
+    [ProtoIgnore]
+    public DateTime? LocalFirstTime
+    {
+        get => FirstTime?.ToLocalTime();
+        set => FirstTime = value?.ToUniversalTime();
+    }
+
     public Guid? FamilyId       { get; set; }
     public bool  FamilyGuardian { get; set; }
 }

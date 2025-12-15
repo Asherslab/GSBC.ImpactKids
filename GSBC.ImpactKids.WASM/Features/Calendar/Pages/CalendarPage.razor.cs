@@ -64,8 +64,8 @@ public partial class CalendarPage : EventListeningComponent
         _calendarTerms = response?.Entities
             .Select(x => new CalendarTerm
                 {
-                    StartDate = x.StartDate,
-                    EndDate = x.EndDate,
+                    StartDate = x.LocalStartDate,
+                    EndDate = x.LocalEndDate,
                     Name = x.Name,
                     Color = null
                 }
@@ -99,7 +99,7 @@ public partial class CalendarPage : EventListeningComponent
         _events = response?.Entities
             .Select(x => new CalendarEvent
                 {
-                    Date = x.Date,
+                    Date = x.LocalDate,
                     Name = x.Name ?? x.ServiceType?.Label ?? "Service",
                     Color = x.ServiceType?.Color,
                     Href = $"/Service?Id={x.Id}"

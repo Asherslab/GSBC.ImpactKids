@@ -20,7 +20,7 @@ public partial class SchoolTermService
         }
         else
         {
-            DateTime? now = DateTime.Now;
+            DateTime? now = DateTime.UtcNow;
 
             term = await db.Terms
                 .FirstOrDefaultAsync(x => x.StartDate <= now && now <= x.EndDate, token);

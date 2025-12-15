@@ -19,11 +19,8 @@ public class DbPerson
     public          DbSchoolGrade? SchoolGrade  { get; set; }
     public required string         MediaConsent { get; set; }
 
-    [Column(TypeName = "date")]
-    public required DateTime? DateOfBirth { get; set; }
-
-    [Column(TypeName = "date")]
-    public required DateTime? FirstTime { get; set; }
+    public required DateTimeOffset? DateOfBirth { get; set; }
+    public required DateTimeOffset? FirstTime { get; set; }
 
     public List<DbAllergy>     Allergies    { get; set; } = [];
     public List<DbMedicalNote> MedicalNotes { get; set; } = [];
