@@ -10,11 +10,18 @@ public class Service
 
     public required DateTime Date { get; set; }
 
+    [ProtoIgnore]
+    public DateTime LocalDate
+    {
+        get => Date.ToLocalTime();
+        set => Date = value.ToUniversalTime();
+    }
+
     public required SchoolTerm? SchoolTerm { get; set; }
 
     public required ServiceType? ServiceType { get; set; }
 
-    public string GetDisplayName() => Name ?? Date.ToString("dd/MM/yyyy");
+    public string GetDisplayName() => Name ?? LocalDate.ToString("dd/MM/yyyy");
 
     public static string BuildSubscription(Guid? schoolTermId = null, Guid? serviceId = null) =>
         $"{nameof(Service)}.{schoolTermId?.ToString() ?? "*"}.{serviceId?.ToString() ?? "*"}";

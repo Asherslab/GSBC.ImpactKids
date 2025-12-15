@@ -7,8 +7,14 @@ namespace GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling
 public class CreateServiceRequest
 {
     public string? Name { get; set; }
-
     public DateTime Date { get; set; } = DateTime.Now;
+    
+    [ProtoIgnore]
+    public DateTime LocalDate
+    {
+        get => Date.ToLocalTime();
+        set => Date = value.ToUniversalTime();
+    }
 
     // Used by frontend only.
     [ProtoIgnore]

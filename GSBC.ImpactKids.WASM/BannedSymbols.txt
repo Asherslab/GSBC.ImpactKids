@@ -1,0 +1,20 @@
+# Service
+P:GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.Service.Date; Use LocalDate Instead
+P:GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.Services.CreateServiceRequest.Date; Use LocalDate Instead
+P:GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.Services.UpdateServiceRequest.Date; Use LocalDate Instead
+
+# School Term
+P:GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School.SchoolTerm.StartDate; Use LocalStartDate Instead
+P:GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School.SchoolTerm.EndDate; Use LocalEndDate Instead
+P:GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.School.SchoolTerms.CreateSchoolTermRequest.StartDate; Use LocalStartDate Instead
+P:GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.School.SchoolTerms.CreateSchoolTermRequest.EndDate; Use LocalEndDate Instead
+P:GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.School.SchoolTerms.UpdateSchoolTermRequest.StartDate; Use LocalStartDate Instead
+P:GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.School.SchoolTerms.UpdateSchoolTermRequest.EndDate; Use LocalEndDate Instead
+
+# Person
+P:GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.Person.DateOfBirth; Use LocalDateOfBirth Instead
+P:GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.Person.FirstTime; Use LocalFirstTime Instead
+P:GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People.CreatePersonRequest.DateOfBirth; Use LocalDateOfBirth Instead
+P:GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People.CreatePersonRequest.FirstTime; Use LocalFirstTime Instead
+P:GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People.UpdatePersonRequest.DateOfBirth; Use LocalDateOfBirth Instead
+P:GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People.UpdatePersonRequest.FirstTime; Use LocalFirstTime Instead

@@ -25,7 +25,7 @@
                 {
                     <MudListItem
                         Href="@($"/Service?Id={service.Id}")"
-                        Text="@(service.Date.ToString("dddd dd/MM"))"/>
+                        Text="@(service.LocalDate.ToString("dddd dd/MM"))"/>
                 }
                 else
                 {
@@ -33,7 +33,7 @@
                         Href="@($"/Service?Id={service.Id}")"
                         Icon="@Icons.Material.Filled.Celebration"
                         Text="@service.Name"
-                        SecondaryText="@(service.Date.ToString("dddd dd/MM"))"/>
+                        SecondaryText="@(service.LocalDate.ToString("dddd dd/MM"))"/>
                 }
             </div>
         }

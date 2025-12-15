@@ -157,7 +157,7 @@ public partial class Multiple : EventListeningComponent
             DateTime endDate   = new(year, (i + 1) * 3, DateTime.DaysInMonth(year, (i + 1) * 3));
 
             ICollection<Service> servicesForThisQuarter = response.Entities
-                .Where(x => x.Date >= startDate && x.Date <= endDate)
+                .Where(x => x.LocalDate >= startDate && x.LocalDate <= endDate)
                 .ToList();
 
             _quarters[i + 1] = servicesForThisQuarter;

@@ -16,6 +16,14 @@ using Riok.Mapperly.Abstractions;
 namespace GSBC.ImpactKids.Grpc.Conversion;
 
 // ReSharper disable UnusedType.Global
+public class DateTimeConverter : IConverter<DateTimeOffset, DateTime>
+{
+    public DateTime Convert(DateTimeOffset input)
+    {
+        return input.UtcDateTime;
+    }
+}
+
 [Mapper]
 public partial class UserConverter : IConverter<DbUser, User>
 {
@@ -26,18 +34,22 @@ public partial class UserConverter : IConverter<DbUser, User>
 public partial class PersonConverter(
     IConverter<DbSchoolGrade, SchoolGrade> schoolGradeConverter,
     IConverter<DbMedicalNote, MedicalNote> medicalNoteConverter,
-    IConverter<DbAllergy, Allergy> allergyConverter
+    IConverter<DbAllergy, Allergy>         allergyConverter,
+    IConverter<DateTimeOffset, DateTime>   dateTimeConverter
 ) : IConverter<DbPerson, Person>
 {
     [UseMapper]
     private readonly IConverter<DbSchoolGrade, SchoolGrade> _schoolGradeConverter = schoolGradeConverter;
-    
+
     [UseMapper]
     private readonly IConverter<DbMedicalNote, MedicalNote> _medicalNoteConverter = medicalNoteConverter;
-    
+
     [UseMapper]
     private readonly IConverter<DbAllergy, Allergy> _allergyConverter = allergyConverter;
-    
+
+    [UseMapper]
+    private readonly IConverter<DateTimeOffset, DateTime> _dateTimeConverter = dateTimeConverter;
+
     public partial Person Convert(DbPerson person);
 }
 
@@ -58,7 +70,7 @@ public partial class MedicalNoteConverter : IConverter<DbMedicalNote, MedicalNot
 {
     [MapProperty(nameof(DbMedicalNote.MedicalType), nameof(MedicalNote.MedicalType), Use = nameof(MapMedicalType))]
     public partial MedicalNote Convert(DbMedicalNote note);
-    
+
     string MapMedicalType(DbMedicalType? medicalType)
         => medicalType?.Label ?? "Other";
 }
@@ -74,25 +86,41 @@ public partial class AllergyConverter : IConverter<DbAllergy, Allergy>
 {
     [MapProperty(nameof(DbAllergy.Allergen), nameof(Allergy.Allergen), Use = nameof(MapAllergen))]
     public partial Allergy Convert(DbAllergy note);
-    
+
     string MapAllergen(DbAllergen? allergen)
         => allergen?.Label ?? "Other";
 }
 
 [Mapper]
-public partial class SchoolTermConverter : IConverter<DbSchoolTerm, SchoolTerm>
+public partial class SchoolTermConverter(
+    IConverter<DateTimeOffset, DateTime> dateTimeConverter
+) : IConverter<DbSchoolTerm, SchoolTerm>
 {
+    [UseMapper]
+    private readonly IConverter<DateTimeOffset, DateTime> _dateTimeConverter = dateTimeConverter;
+
+    [MapperIgnoreTarget(nameof(SchoolTerm.LocalStartDate))]
+    [MapperIgnoreTarget(nameof(SchoolTerm.LocalEndDate))]
     public partial SchoolTerm Convert(DbSchoolTerm input);
 }
 
 [Mapper]
 public partial class ServiceConverter(
-    IConverter<DbServiceType, ServiceType> serviceTypeConverter
-    ) : IConverter<DbService, Service>
+    IConverter<DbSchoolTerm, SchoolTerm> schoolTermConverter,
+    IConverter<DbServiceType, ServiceType> serviceTypeConverter,
+    IConverter<DateTimeOffset, DateTime>   dateTimeConverter
+) : IConverter<DbService, Service>
 {
+    [UseMapper]
+    private readonly IConverter<DbSchoolTerm, SchoolTerm> _schoolTermConverter = schoolTermConverter;
+    
     [UseMapper]
     private readonly IConverter<DbServiceType, ServiceType> _serviceTypeConverter = serviceTypeConverter;
     
+    [UseMapper]
+    private readonly IConverter<DateTimeOffset, DateTime> _dateTimeConverter = dateTimeConverter;
+
+    [MapperIgnoreTarget(nameof(Service.LocalDate))]
     public partial Service Convert(DbService input);
 }
 

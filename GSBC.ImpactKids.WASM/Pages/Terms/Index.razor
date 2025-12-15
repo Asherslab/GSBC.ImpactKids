@@ -20,7 +20,7 @@
                             <CardHeaderContent>
                                 <MudText Typo="Typo.h6">@schoolTerm.Name</MudText>
                                 <MudText
-                                    Typo="Typo.body2">@schoolTerm.StartDate.ToString("dd/MM") -> @schoolTerm.EndDate.ToString("dd/MM")</MudText>
+                                    Typo="Typo.body2">@schoolTerm.LocalStartDate.ToString("dd/MM") -> @schoolTerm.LocalEndDate.ToString("dd/MM")</MudText>
                             </CardHeaderContent>
                             <CardHeaderActions>
                                 <MudIconButton OnClick="@(_ => DeleteSchoolTerm(schoolTerm))"

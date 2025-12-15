@@ -36,8 +36,8 @@ public partial class PersonDetails : ComponentBase
 
             _updateRequest.SchoolGradeId.SetInitialValue(Person.SchoolGrade?.Id);
             _updateRequest.MediaConsent.SetInitialValue(Person.MediaConsent);
-            _updateRequest.DateOfBirth.SetInitialValue(Person.DateOfBirth);
-            _updateRequest.FirstTime.SetInitialValue(Person.FirstTime);
+            _updateRequest.LocalDateOfBirth.SetInitialValue(Person.LocalDateOfBirth);
+            _updateRequest.LocalFirstTime.SetInitialValue(Person.LocalFirstTime);
             _waitingForRefresh = false;
         }
         else

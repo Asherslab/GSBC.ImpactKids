@@ -49,13 +49,13 @@
     </MudSelect>
     <MudDatePicker
         Class="mb-4"
-        @bind-Date="@_updateRequest.DateOfBirth.Value"
+        @bind-Date="@_updateRequest.LocalDateOfBirth.Value"
         Editable
         Label="Date of Birth"
         Variant="Variant.Filled"
         ReadOnly="_readonly"/>
     <MudDatePicker
-        @bind-Date="@_updateRequest.FirstTime.Value"
+        @bind-Date="@_updateRequest.LocalFirstTime.Value"
         Editable
         Label="First Time at Impact Kids"
         HelperText="01/01/2025 is used to signify that the first time was before our systems were in place to track it"

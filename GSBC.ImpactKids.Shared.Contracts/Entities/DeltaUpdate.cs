@@ -21,3 +21,15 @@ public class DeltaUpdate<T>
     [MemberNotNullWhen(true, nameof(Value))]
     public bool IsUpdated { get; private set; }
 }
+
+// This should always be ProtoIgnored
+public class DelegatingDeltaUpdate<T>(DeltaUpdate<T> delegatedDelta, Func<T, T> getter, Func<T, T> setter)
+{
+    public T Value
+    {
+        get => getter(delegatedDelta.Value);
+        set => delegatedDelta.Value = setter(value);
+    }
+
+    public void SetInitialValue(T value) => delegatedDelta.SetInitialValue(setter(value));
+}

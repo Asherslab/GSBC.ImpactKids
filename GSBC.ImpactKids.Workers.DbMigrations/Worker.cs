@@ -46,6 +46,7 @@ public class Worker(
         await strategy.ExecuteAsync(async () =>
         {
             // Run migration in a transaction to avoid partial migration if it fails.
+            // await dbContext.Database.MigrateAsync("20251209095101_1765273855", cancellationToken);
             await dbContext.Database.MigrateAsync(cancellationToken);
         });
     }

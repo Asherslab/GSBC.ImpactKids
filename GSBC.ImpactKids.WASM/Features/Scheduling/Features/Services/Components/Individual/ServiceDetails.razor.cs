@@ -51,7 +51,7 @@ public partial class ServiceDetails
             };
 
             _updateRequest.Name.SetInitialValue(Service.Name);
-            _updateRequest.Date.SetInitialValue(Service.Date);
+            _updateRequest.LocalDate.SetInitialValue(Service.LocalDate); // Set Date for LocalDate usage
 
             _updateRequest.SchoolTermId.SetInitialValue(Service.SchoolTerm?.Id);
             _updateRequest.SchoolTerm = Service.SchoolTerm;
@@ -137,18 +137,18 @@ public partial class ServiceDetails
         {
             case ModificationState.Creating:
             {
-                int year = _createRequest.Date.Year;
+                int year = _createRequest.LocalDate.Year;
 
                 return SchoolTerms
-                    .Where(x => x.StartDate.Year == year)
+                    .Where(x => x.LocalStartDate.Year == year)
                     .ToList();
             }
             case ModificationState.Updating:
             {
-                int year = _updateRequest.Date.Value.Year;
+                int year = _updateRequest.LocalDate.Value.Year;
 
                 return SchoolTerms
-                    .Where(x => x.StartDate.Year == year)
+                    .Where(x => x.LocalStartDate.Year == year)
                     .ToList();
             }
             case ModificationState.Reading:
