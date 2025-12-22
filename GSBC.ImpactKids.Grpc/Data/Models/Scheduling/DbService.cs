@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations.Schema;
 using GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses;
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling.School;
 using Riok.Mapperly.Abstractions;
@@ -22,7 +21,6 @@ public class DbService
 
     public DbServiceType? ServiceType { get; set; }
 
-    [MapperIgnore]
     public DbDollarStoreEntry? DollarStoreEntry { get; set; }
 
     [MapperIgnore]

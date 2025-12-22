@@ -1,0 +1,31 @@
+@inject IDollarStoreEntryService DollarStoreEntryService
+@inject ISnackbar                Snackbar
+
+<MudPaper Elevation="0" Class="d-flex flex-column flex-grow-1">
+    <MudOverlay Visible="@(_waitingForRefresh && !DisableOverlay)"
+                DarkBackground="true"
+                Absolute="true">
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+    <MudNumericFieldCreateorUpdate
+        @bind-Create="@_createRequest.DollarDoosMade"
+        Read="@_updateRequest.DollarDoosMade.Value"
+        @bind-Update="@_updateRequest.DollarDoosMade.Value"
+        State="State"
+
+        Class="mb-4"
+        Label="Dollary Doos Made"
+        Variant="Variant.Filled"
+        Immediate/>
+    <MudTextFieldCreateOrUpdate
+        @bind-Create="@_createRequest.Notes"
+        Read="@_updateRequest.Notes.Value"
+        @bind-Update="@_updateRequest.Notes.Value"
+        State="State"
+
+        Lines="5"
+        Class="mb-4"
+        Label="Notes"
+        Variant="Variant.Filled"
+        Immediate/>
+</MudPaper>

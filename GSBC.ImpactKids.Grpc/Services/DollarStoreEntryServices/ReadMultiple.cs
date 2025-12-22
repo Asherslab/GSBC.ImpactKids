@@ -16,8 +16,7 @@ public partial class DollarStoreEntryService
     {
         CancellationToken token = context.CancellationToken;
 
-        IQueryable<DbDollarStoreEntry> query = db.DollarStoreEntries
-            .Include(x => x.Service);
+        IQueryable<DbDollarStoreEntry> query = db.DollarStoreEntries;
 
         if (request.SearchString != null)
         {
