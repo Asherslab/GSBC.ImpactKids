@@ -75,7 +75,7 @@
                                     <MudListItem
                                         Href="@($"/Service?Id={entry.ServiceId}")">
                                         <MudText Inline>
-                                            @(entry.Service!.GetDisplayName())
+                                            @(entry.ServiceId)
                                         </MudText>
                                         @if (entry.DollarDoosMade != null)
                                         {

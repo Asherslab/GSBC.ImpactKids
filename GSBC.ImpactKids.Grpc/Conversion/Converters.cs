@@ -50,6 +50,8 @@ public partial class PersonConverter(
     [UseMapper]
     private readonly IConverter<DateTimeOffset, DateTime> _dateTimeConverter = dateTimeConverter;
 
+    [MapperIgnoreTarget(nameof(Person.LocalDateOfBirth))]
+    [MapperIgnoreTarget(nameof(Person.LocalFirstTime))]
     public partial Person Convert(DbPerson person);
 }
 
@@ -106,17 +108,22 @@ public partial class SchoolTermConverter(
 
 [Mapper]
 public partial class ServiceConverter(
-    IConverter<DbSchoolTerm, SchoolTerm> schoolTermConverter,
-    IConverter<DbServiceType, ServiceType> serviceTypeConverter,
-    IConverter<DateTimeOffset, DateTime>   dateTimeConverter
+    IConverter<DbSchoolTerm, SchoolTerm>             schoolTermConverter,
+    IConverter<DbServiceType, ServiceType>           serviceTypeConverter,
+    IConverter<DbDollarStoreEntry, DollarStoreEntry> dollarStoreEntryConverter,
+    IConverter<DateTimeOffset, DateTime>             dateTimeConverter
 ) : IConverter<DbService, Service>
 {
     [UseMapper]
     private readonly IConverter<DbSchoolTerm, SchoolTerm> _schoolTermConverter = schoolTermConverter;
-    
+
     [UseMapper]
     private readonly IConverter<DbServiceType, ServiceType> _serviceTypeConverter = serviceTypeConverter;
-    
+
+    [UseMapper]
+    private readonly IConverter<DbDollarStoreEntry, DollarStoreEntry> _dollarStoreEntryConverter =
+        dollarStoreEntryConverter;
+
     [UseMapper]
     private readonly IConverter<DateTimeOffset, DateTime> _dateTimeConverter = dateTimeConverter;
 
@@ -131,13 +138,8 @@ public partial class ServiceTypeConverter : IConverter<DbServiceType, ServiceTyp
 }
 
 [Mapper]
-public partial class DollarStoreEntryConverter(
-    IConverter<DbService, Service> serviceConverter
-) : IConverter<DbDollarStoreEntry, DollarStoreEntry>
+public partial class DollarStoreEntryConverter : IConverter<DbDollarStoreEntry, DollarStoreEntry>
 {
-    [UseMapper]
-    private readonly IConverter<DbService, Service> _serviceConverter = serviceConverter;
-
     public partial DollarStoreEntry Convert(DbDollarStoreEntry input);
 }
 

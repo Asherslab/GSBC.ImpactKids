@@ -21,6 +21,8 @@ public class Service
 
     public required ServiceType? ServiceType { get; set; }
 
+    public required DollarStoreEntry? DollarStoreEntry { get; set; }
+
     public string GetDisplayName() => Name ?? LocalDate.ToString("dd/MM/yyyy");
 
     public static string BuildSubscription(Guid? schoolTermId = null, Guid? serviceId = null) =>

@@ -1,6 +1,10 @@
+@using GSBC.ImpactKids.Shared.Contracts.Services.Features.Scripture.Memorisation
 @inherits EventListeningComponent
 @page "/Services/{Id:guid}"
-@inject IServicesService ServicesService
+@inject IServicesService         ServicesService
+@inject IMemoryVersesService     MemoryVersesService
+@inject IDollarStoreEntryService DollarStoreEntryService
+@inject NavigationManager        Navigation
 
 <PageTitle>Service Name</PageTitle>
 
@@ -14,5 +18,8 @@
         <MudText Align="Align.Center" Typo="Typo.h5" Class="py-3">Service</MudText>
     }
     <ServiceOverview
-        Service="_service"/>
+        Service="_service"
+        MemoryVerses="_memoryVerses"
+        DeleteService="DeleteService"
+        DeleteDollarStore="DeleteDollarStoreEntry"/>
 </MudPaper>

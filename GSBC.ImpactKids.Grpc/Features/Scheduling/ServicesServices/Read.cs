@@ -14,7 +14,8 @@ public partial class ServicesService
 
         IQueryable<DbService> query = db.Services
             .Include(x => x.SchoolTerm)
-            .Include(x => x.ServiceType);
+            .Include(x => x.ServiceType)
+            .Include(x => x.DollarStoreEntry);
         DbService? service;
 
         if (request.PreviousService)

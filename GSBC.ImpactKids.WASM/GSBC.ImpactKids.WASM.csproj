@@ -43,6 +43,8 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Folder Include="Features\Elvanto\Components\" />
+        <Folder Include="Features\Elvanto\Pages\" />
         <Folder Include="Features\Scheduling\Features\School\Components\"/>
         <Folder Include="Features\Scheduling\Features\School\Pages\"/>
         <Folder Include="Features\Scheduling\Features\Services\Features\"/>

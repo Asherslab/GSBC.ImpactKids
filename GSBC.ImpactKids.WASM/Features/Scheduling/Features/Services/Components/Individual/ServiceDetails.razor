@@ -4,7 +4,7 @@
 @inject ISnackbar           Snackbar
 
 <MudPaper Elevation="0" Class="d-flex flex-column flex-grow-1">
-    <MudOverlay Visible="@(State != ModificationState.Creating && (Service == null || _waitingForRefresh))"
+    <MudOverlay Visible="_waitingForRefresh"
                 DarkBackground="true"
                 Absolute="true">
         <MudProgressCircular Indeterminate/>
