@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using GSBC.ImpactKids.Grpc.Data.Models;
 using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Shared.Contracts.Entities;
@@ -43,7 +44,7 @@ public partial class DollarStoreEntryService
         return new BasicReadMultipleResponse<DollarStoreEntry>
         {
             Success = true,
-            Entities = entries.Select(converter.Convert).ToList()
+            Entities = entries.Select(converter.Convert).ToImmutableList()
         };
     }
 }

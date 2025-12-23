@@ -76,8 +76,8 @@ public partial class UpdateMemoryVerseDialog : ComponentBase
         _request.ServiceIds.SetInitialValue(Verse.ServiceIds.ToArray());
         _request.BibleVerseIds.SetInitialValue(Verse.BibleVerseIds.ToArray());
 
-        _selectedServices = Verse.Services ?? [];
-        _selectedVerses = Verse.BibleVerses ?? [];
+        _selectedServices = Verse.Services?.ToList() ?? [];
+        _selectedVerses = Verse.BibleVerses?.ToList() ?? [];
     }
 
     private async Task Submit()

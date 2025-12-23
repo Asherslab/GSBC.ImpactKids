@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using GSBC.ImpactKids.Grpc.Data.Models.People;
 using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.MedicalNotes;
@@ -37,7 +38,7 @@ public partial class MedicalTypeService
         return new BasicReadMultipleResponse<MedicalType>
         {
             Success = true,
-            Entities = types.Select(converter.Convert).ToList()
+            Entities = types.Select(converter.Convert).ToImmutableList()
         };
     }
 }

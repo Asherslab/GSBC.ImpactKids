@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling;
 using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
@@ -60,7 +61,7 @@ public partial class ServicesService
         return new BasicReadMultipleResponse<Service>
         {
             Success = true,
-            Entities = terms.Select(converter.Convert).ToList()
+            Entities = terms.Select(converter.Convert).ToImmutableList()
         };
     }
 }

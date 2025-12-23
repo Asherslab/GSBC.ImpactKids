@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Globalization;
 using GSBC.ImpactKids.Grpc.Data.Models.People;
 using GSBC.ImpactKids.Grpc.Services.ElvantoServices.Models;
@@ -151,7 +152,7 @@ public partial class ElvantoService
         return new BasicReadMultipleResponse<DbPerson>
         {
             Success = true,
-            Entities = people
+            Entities = people.ToImmutableList()
         };
     }
 

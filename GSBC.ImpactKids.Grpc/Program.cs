@@ -61,8 +61,8 @@ builder.Services.AddTransient<KeyedEventService>();
 builder.AddNpgsqlDbContext<GsbcDbContext>(
     "impact-kids",
     null,
-    null
-    // x => x.AddInterceptors(new LatencyInterceptor(TimeSpan.FromSeconds(1.5)))
+    // null
+    x => x.AddInterceptors(new LatencyInterceptor(TimeSpan.FromSeconds(1.5)))
 );
 
 ElvantoConfig? elvantoConfig = builder.Configuration.GetSection("Elvanto").Get<ElvantoConfig>();

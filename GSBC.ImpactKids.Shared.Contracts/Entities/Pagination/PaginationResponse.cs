@@ -3,12 +3,12 @@
 namespace GSBC.ImpactKids.Shared.Contracts.Entities.Pagination;
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
-public class PaginationResponse
+public record PaginationResponse
 {
-    public int Page { get; set; }
-    public int PerPage { get; set; } = 10;
-    public int Total { get; set; }
-    public bool Disabled { get; set; }
+    public int  Page     { get; init; }
+    public int  PerPage  { get; init; } = 10;
+    public int  Total    { get; init; }
+    public bool Disabled { get; init; }
 
     public PaginationResponse(int total, int page = 0, int perPage = 10)
     {

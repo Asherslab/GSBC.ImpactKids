@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text.RegularExpressions;
 using GSBC.ImpactKids.Grpc.Conversion;
 using GSBC.ImpactKids.Grpc.Data;
@@ -85,7 +86,7 @@ public partial class BibleService(
         return new BasicReadMultipleResponse<BibleVerse>
         {
             Success = true,
-            Entities = verses.Select(converter.Convert).ToList()
+            Entities = verses.Select(converter.Convert).ToImmutableList()
         };
     }
     

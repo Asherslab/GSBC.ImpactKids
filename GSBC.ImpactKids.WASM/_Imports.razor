@@ -17,6 +17,7 @@
 @using GSBC.ImpactKids.WASM.Components
 @using GSBC.ImpactKids.WASM.Components.Base
 @using GSBC.ImpactKids.WASM.Components.Common
+@using GSBC.ImpactKids.WASM.Services.RefreshableStore
 @using GSBC.ImpactKids.Shared.Contracts.Services
 @using GSBC.ImpactKids.Shared.Contracts.Services.Features.People
 @using GSBC.ImpactKids.Shared.Contracts.Entities
@@ -24,3 +25,7 @@
 @using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Elvanto
 
 @using MudBlazor
+@using EasyAppDev.Blazor.Store.Blazor
+
+@inject ISnackbar         Snackbar
+@inject NavigationManager Navigation
