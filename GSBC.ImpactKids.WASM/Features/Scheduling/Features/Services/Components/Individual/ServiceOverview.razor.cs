@@ -73,7 +73,11 @@ public partial class ServiceOverview
             bool success = await _dollarStoreDetailsComponent.CreateDollarStoreEntry();
             if (success)
             {
-                Service?.DollarStoreEntry = null;
+                if (Service != null)
+                    Service = Service with
+                    {
+                        DollarStoreEntry = null
+                    };
                 _dollarStoreState = ModificationState.Reading;
             }
         }
@@ -86,7 +90,11 @@ public partial class ServiceOverview
             bool success = await _dollarStoreDetailsComponent.UpdateDollarStoreEntry();
             if (success)
             {
-                Service?.DollarStoreEntry = null;
+                if (Service != null)
+                    Service = Service with
+                    {
+                        DollarStoreEntry = null
+                    };
                 _dollarStoreState = ModificationState.Reading;
             }
         }

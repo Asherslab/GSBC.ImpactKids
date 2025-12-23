@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using GSBC.ImpactKids.Grpc.Data.Models;
 using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Shared.Contracts.Entities;
@@ -32,7 +33,7 @@ public partial class UsersService
         return new BasicReadMultipleResponse<User>
         {
             Success = true,
-            Entities = users.Select(converter.Convert).ToList()
+            Entities = users.Select(converter.Convert).ToImmutableList()
         };
     }
 }

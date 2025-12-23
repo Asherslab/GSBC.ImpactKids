@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using GSBC.ImpactKids.Grpc.Data.Models.People;
 using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
@@ -37,7 +38,7 @@ public partial class SchoolGradeService
         return new BasicReadMultipleResponse<SchoolGrade>
         {
             Success = true,
-            Entities = terms.Select(converter.Convert).ToList()
+            Entities = terms.Select(converter.Convert).ToImmutableList()
         };
     }
 }

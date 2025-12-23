@@ -1,9 +1,8 @@
-@inherits EventListeningComponent
+@inherits StoreComponentWithUtilities<MultipleServicesState>
 @page "/Services"
-@inject ISchoolTermsService SchoolTermsService
-@inject IServiceTypeService ServiceTypeService
-@inject IServicesService    ServicesService
-@inject NavigationManager   Navigation
+@inject IRefreshableStore<EntityListState<ServiceType>> ServiceTypesStore
+@inject ISchoolTermsService                             SchoolTermsService
+@inject IServicesService                                ServicesService
 
 <PageTitle>Services</PageTitle>
 
@@ -13,7 +12,7 @@
             <MudGrid Spacing="1">
                 <MudItem xs="12" md="6">
                     <MudDatePicker OpenTo="OpenTo.Year"
-                                   Date="_date"
+                                   Date="@State.Date"
                                    DateChanged="OnDateChanged"
                                    FixMonth="1"
                                    FixDay="1"
@@ -22,24 +21,24 @@
                 </MudItem>
                 <MudItem xs="12" md="6">
                     <div class="relative">
-                        <MudOverlay Visible="@(_serviceTypes == null)"
+                        <MudOverlay Visible="@(ServiceTypesStore.GetState().Entities.IsLoading)"
                                     DarkBackground
                                     Absolute>
                             <MudProgressCircular Indeterminate/>
                         </MudOverlay>
                         <MudSelect T="Guid?"
-                                   Value="ServiceType"
+                                   Value="@State.ServiceType"
                                    ValueChanged="ServiceTypeChanged"
                                    Placeholder="Service Type"
                                    Class="pt-2"
                                    Clearable>
-                            @if (_serviceTypes != null)
+                            @if (ServiceTypesStore.GetState().Entities.HasData)
                             {
-                                foreach (ServiceType serviceType in _serviceTypes)
+                                foreach (ServiceType serviceType in ServiceTypesStore.GetState().Entities.Data!)
                                 {
                                     <MudSelectItem T="Guid?"
                                                    Value="@serviceType.Id"
-                                                   Style="@($"color: {serviceType.Color ?? Shared.Contracts.Entities.Features.Scheduling.ServiceType.ColorBackup}")">
+                                                   Style="@($"color: {serviceType.Color ?? ServiceType.ColorBackup}")">
                                         @serviceType.Label
                                     </MudSelectItem>
                                 }
@@ -64,7 +63,7 @@
                 </MudItem>
                 <MudItem xs="12" md="10">
                     <MudSelect T="ServiceDisplayOptions"
-                               Value="_display"
+                               Value="@State.Display"
                                ValueChanged="DisplayChanged"
                                Class="pt-2">
                         <MudSelectItem Value="ServiceDisplayOptions.Quarters">
@@ -79,7 +78,7 @@
         </MudItem>
     </MudGrid>
     <MudGrid>
-        @if (_display == ServiceDisplayOptions.Quarters)
+        @if (State.Display == ServiceDisplayOptions.Quarters)
         {
             foreach ((int quarter, ICollection<Service>? services) in _quarters)
             {
@@ -87,7 +86,8 @@
                     <MudCard Elevation="6" Class="relative">
                         <MudCardHeader>
                             <CardHeaderContent>
-                                <MudText Typo="Typo.h6" Align="Align.Start">@($"Q{quarter} {_date?.Year}")</MudText>
+                                <MudText Typo="Typo.h6"
+                                         Align="Align.Start">@($"Q{quarter} {State.Date?.Year}")</MudText>
                             </CardHeaderContent>
                         </MudCardHeader>
                         <MudCardContent>
@@ -105,7 +105,8 @@
                     <MudCard Elevation="6" Class="relative">
                         <MudCardHeader>
                             <CardHeaderContent>
-                                <MudText Typo="Typo.h6" Align="Align.Start">@($"Term {term} {_date?.Year}")</MudText>
+                                <MudText Typo="Typo.h6"
+                                         Align="Align.Start">@($"Term {term} {State.Date?.Year}")</MudText>
                                 <MudText Typo="Typo.body2">
                                     dd/MM -> dd/MM
                                 </MudText>

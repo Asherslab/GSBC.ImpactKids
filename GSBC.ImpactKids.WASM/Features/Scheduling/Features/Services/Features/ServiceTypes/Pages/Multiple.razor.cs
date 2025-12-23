@@ -1,58 +1,53 @@
+using System.Collections.Immutable;
+using EasyAppDev.Blazor.Store.AsyncActions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
-using GSBC.ImpactKids.WASM.Components.Base;
-using GSBC.ImpactKids.WASM.Extensions;
 using GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services.Features.ServiceTypes.Components;
 
 namespace GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services.Features.ServiceTypes.Pages;
 
-public partial class Multiple : EventListeningComponent
+public partial class Multiple
 {
-    private string? _search;
-
-    private ICollection<ServiceType>? _serviceTypes;
-
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
 
-        await Task.WhenAll(
-            RefreshServiceTypes(),
-            SubscribeToEvent(ServiceType.BuildSubscription(), RefreshServiceTypes)
-        );
+        if (ServiceTypesStore.GetState().Entities.IsNotAsked)
+            await ServiceTypesStore.RefreshAll();
+
+        if (State.FilteredServiceTypes.IsNotAsked)
+            await UpdateFilteredServiceTypes();
+        
+        SubscribeToSelector(s => s.Search, _ => UpdateFilteredServiceTypes());
     }
 
-    private CancellationTokenSource _refreshServiceTypesTokenSource = new();
-
-    private async Task RefreshServiceTypes()
+    private Task UpdateFilteredServiceTypes()
     {
-        await _refreshServiceTypesTokenSource.CancelAsync();
-        _refreshServiceTypesTokenSource = new CancellationTokenSource();
+        AsyncData<ImmutableList<ServiceType>> serviceTypes = ServiceTypesStore.GetState().Entities;
 
-        BasicReadMultipleResponse<ServiceType>? response = await ServiceTypeService.ReadMultiple(
-            new BasicReadMultipleRequest
-            {
-                SearchString = _search
-            },
-            _refreshServiceTypesTokenSource.Token
-        );
+        if (!serviceTypes.HasData)
+            return Update(s => s with { FilteredServiceTypes = serviceTypes });
 
-        _serviceTypes = response?.Entities;
-        StateHasChanged();
-
-        if (response.HasErrorOrNull())
+        return Update(s => s with
         {
-            Snackbar.AddErrorResponse(response);
-        }
+            FilteredServiceTypes = s.FilteredServiceTypes.ToSuccess(
+                serviceTypes.Data!
+                    .Where(x => x.Label.Contains(State.Search ?? "", StringComparison.InvariantCultureIgnoreCase))
+                    .ToImmutableList()
+            )
+        });
     }
 
     private async Task OnSearch(string text)
     {
-        _search = text;
-        if (string.IsNullOrWhiteSpace(_search))
-            _search = null;
-        await RefreshServiceTypes();
+        await UpdateDebounced(s =>
+            {
+                string? nullableText = text;
+                if (string.IsNullOrWhiteSpace(nullableText))
+                    nullableText = null;
+                return s with { Search = nullableText };
+            },
+            TimeSpan.FromSeconds(0.25).Milliseconds
+        );
     }
 
     private ServiceTypeDetails? _serviceTypeDetails;

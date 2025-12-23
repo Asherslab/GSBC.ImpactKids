@@ -9,16 +9,13 @@ using MudBlazor;
 
 namespace GSBC.ImpactKids.WASM.Components.Base;
 
-public abstract class EventListeningComponent : ComponentBase, IAsyncDisposable
+public abstract partial class EventListeningComponent : IAsyncDisposable
 {
     [Inject]
     public required EventSubscriptionService EventSubscriptionService { get; set; }
 
     [Inject]
     public required IEventService EventService { get; set; }
-
-    [Inject]
-    public required ISnackbar Snackbar { get; set; }
 
     [Inject]
     public required IDialogService DialogService { get; set; }

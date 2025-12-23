@@ -1,23 +1,29 @@
-@inherits EventListeningComponent
+@inherits StoreComponentWithUtilities<MultipleServiceTypesState>
 @page "/Services/ServiceTypes"
-
-@inject IServiceTypeService ServiceTypeService
+@inject IRefreshableStore<EntityListState<ServiceType>> ServiceTypesStore
 
 <PageTitle>Service Types</PageTitle>
 
-<MudPaper Elevation="6" Class="mt-4">
+<MudPaper Elevation="6" Class="mt-4 relative">
+    <MudOverlay Visible="@(State.FilteredServiceTypes.IsLoading || State.FilteredServiceTypes.IsNotAsked)"
+                DarkBackground
+                Absolute>
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
     <MudTextField
         T="string"
-        Value="_search"
+        Value="State.Search"
         ValueChanged="@(OnSearch)"
         Placeholder="Search"
         Adornment="Adornment.Start"
         AdornmentIcon="@Icons.Material.Filled.Search"
-        DebounceInterval="100"
         IconSize="Size.Medium"
         Clearable="true"
-        Class="py-6 px-6"/>
-    <MudTable Items="_serviceTypes" Hover="true" Breakpoint="Breakpoint.None">
+        Class="py-6 px-6"
+        Immediate/>
+    <MudTable
+        Items="State.FilteredServiceTypes.Data"
+        Hover="true" Breakpoint="Breakpoint.None">
         <HeaderContent>
             <MudTh>
                 <MudIconButton OnClick="@(() => _showCreateDialog = true)"

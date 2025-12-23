@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling.School;
 using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School;
@@ -40,7 +41,7 @@ public partial class SchoolTermService
         return new BasicReadMultipleResponse<SchoolTerm>
         {
             Success = true,
-            Entities = terms.Select(converter.Convert).ToList()
+            Entities = terms.Select(converter.Convert).ToImmutableList()
         };
     }
 }

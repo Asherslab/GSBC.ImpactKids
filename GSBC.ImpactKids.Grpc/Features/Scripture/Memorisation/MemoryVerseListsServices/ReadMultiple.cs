@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses;
 using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
@@ -41,7 +42,7 @@ public partial class MemoryVerseListsService
         return new BasicReadMultipleResponse<MemoryVerseList>
         {
             Success = true,
-            Entities = lists.Select(converter.Convert).ToList()
+            Entities = lists.Select(converter.Convert).ToImmutableList()
         };
     }
 }

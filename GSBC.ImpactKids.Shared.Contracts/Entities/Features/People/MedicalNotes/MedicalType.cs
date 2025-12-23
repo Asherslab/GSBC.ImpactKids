@@ -1,8 +1,8 @@
 namespace GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.MedicalNotes;
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
-public class MedicalType
+public record MedicalType
 {
-    public required Guid   Id    { get; set; }
-    public required string Label { get; set; }
+    public required Guid   Id    { get; init; }
+    public required string Label { get; init; }
 }
