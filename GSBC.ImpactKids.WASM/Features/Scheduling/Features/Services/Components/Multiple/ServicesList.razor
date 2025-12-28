@@ -1,12 +1,14 @@
-<MudOverlay Visible="@_waitingForUpdate" DarkBackground="true" Absolute="true">
+@inject IRefreshableStore<Service> ServicesStore
+
+<MudOverlay Visible="@(_serviceIds.IsNotAsked || _serviceIds.IsLoading)" DarkBackground="true" Absolute="true">
     <MudProgressCircular Indeterminate/>
 </MudOverlay>
-@if (_services != null)
+@if (_serviceIds.Data != null && !ShowFakes)
 {
     <MudStack>
-        @foreach (Service service in _services)
+        @foreach (Guid id in _serviceIds.Data)
         {
-            <ServiceDisplay Service="service"/>
+            <ServiceDisplay Id="id"/>
         }
     </MudStack>
 }

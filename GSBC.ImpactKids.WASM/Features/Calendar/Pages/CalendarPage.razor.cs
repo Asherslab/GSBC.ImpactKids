@@ -5,6 +5,7 @@ using GSBC.ImpactKids.Shared.Contracts.Entities.Pagination;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.School.SchoolTerms;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.Services;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base.Interfaces;
 using GSBC.ImpactKids.WASM.Components.Base;
 using GSBC.ImpactKids.WASM.Extensions;
 using GSBC.ImpactKids.WASM.Features.Calendar.Models;
@@ -87,7 +88,7 @@ public partial class CalendarPage : EventListeningComponent
         await _refreshServicesTokenSource.CancelAsync();
         _refreshServicesTokenSource = new CancellationTokenSource();
 
-        BasicReadMultipleResponse<Service>? response = await ServicesService.ReadMultiple(
+        IReadMultipleResponse<Service>? response = await ServicesService.ReadMultiple(
             new ServicesRequest
             {
                 Pagination = PaginationRequest.All(),
@@ -100,9 +101,9 @@ public partial class CalendarPage : EventListeningComponent
             .Select(x => new CalendarEvent
                 {
                     Date = x.LocalDate,
-                    Name = x.Name ?? x.ServiceType?.Label ?? "Service",
-                    Color = x.ServiceType?.Color,
-                    Href = $"/Service?Id={x.Id}"
+                    Name = x.Name ?? "Service", // TODO: x.ServiceType?.Label ?? "Service",
+                    Color = null, //TODO: x.ServiceType?.Color,
+                    Href = $"/Services/{x.Id}"
                 }
             )
             .ToList();
@@ -117,7 +118,6 @@ public partial class CalendarPage : EventListeningComponent
 
     private async Task DateChanged(DateTime? dateTime)
     {
-        Console.WriteLine($"{dateTime} | {CalendarDate}");
         if (dateTime?.Year != CalendarDate.Year)
         {
             _dateTime = dateTime;

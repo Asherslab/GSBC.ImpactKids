@@ -1,6 +1,9 @@
 using System.Collections.Immutable;
 using EasyAppDev.Blazor.Store.AsyncActions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
+using GSBC.ImpactKids.WASM.Extensions;
 using GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services.Features.ServiceTypes.Components;
 
 namespace GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services.Features.ServiceTypes.Pages;
@@ -11,13 +14,13 @@ public partial class Multiple
     {
         await base.OnInitializedAsync();
 
-        if (ServiceTypesStore.GetState().Entities.IsNotAsked)
-            await ServiceTypesStore.RefreshAll();
-
-        if (State.FilteredServiceTypes.IsNotAsked)
-            await UpdateFilteredServiceTypes();
-        
         SubscribeToSelector(s => s.Search, _ => UpdateFilteredServiceTypes());
+        ServiceTypesStore.Subscribe(_ => UpdateFilteredServiceTypes());
+
+        await Task.WhenAll(
+            ServiceTypesStore.RefreshAll(),
+            UpdateFilteredServiceTypes()
+        );
     }
 
     private Task UpdateFilteredServiceTypes()
@@ -44,7 +47,7 @@ public partial class Multiple
                 string? nullableText = text;
                 if (string.IsNullOrWhiteSpace(nullableText))
                     nullableText = null;
-                return s with { Search = nullableText };
+                return s.SetSearch(nullableText);
             },
             TimeSpan.FromSeconds(0.25).Milliseconds
         );
@@ -58,8 +61,13 @@ public partial class Multiple
     {
         if (_serviceTypeDetails != null)
         {
+            await Update(s => s with { FilteredServiceTypes = s.FilteredServiceTypes.ToLoading() });
+
             bool success = await _serviceTypeDetails.CreateServiceType();
             _showCreateDialog = !success;
+
+            if (!success)
+                await UpdateFilteredServiceTypes();
         }
     }
 
@@ -76,8 +84,36 @@ public partial class Multiple
     {
         if (_serviceTypeDetails != null)
         {
+            await Update(s => s with { FilteredServiceTypes = s.FilteredServiceTypes.ToLoading() });
+
             bool success = await _serviceTypeDetails.UpdateServiceType();
             _showUpdateDialog = !success;
+
+            if (!success)
+                await UpdateFilteredServiceTypes();
         }
+    }
+
+    private async Task ShowDeleteServiceType(ServiceType serviceType)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Warning",
+            "Deleting can not be undone!",
+            yesText: "Delete!", cancelText: "Cancel");
+
+        if (result == null)
+            return;
+
+        BasicReadRequest request = new()
+        {
+            Guid = serviceType.Id
+        };
+
+        await Update(s => s with { FilteredServiceTypes = s.FilteredServiceTypes.ToLoading() });
+
+        BasicResponse resp = await ServiceTypesService.Delete(request);
+
+        if (resp.HasErrorOrNull())
+            await UpdateFilteredServiceTypes();
     }
 }

@@ -1,5 +1,3 @@
-using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School;
-
 namespace GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
@@ -13,11 +11,9 @@ public record Service
     [ProtoIgnore]
     public DateTime LocalDate => Date.ToLocalTime();
 
-    public required SchoolTerm? SchoolTerm { get; init; }
-
-    public required ServiceType? ServiceType { get; init; }
-
-    public required DollarStoreEntry? DollarStoreEntry { get; init; }
+    public required Guid? SchoolTermId       { get; init; }
+    public required Guid? ServiceTypeId      { get; init; }
+    public required Guid? DollarStoreEntryId { get; init; }
 
     public string GetDisplayName() => Name ?? LocalDate.ToString("dd/MM/yyyy");
 

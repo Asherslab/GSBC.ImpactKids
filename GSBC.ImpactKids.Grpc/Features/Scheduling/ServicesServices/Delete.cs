@@ -7,7 +7,7 @@ namespace GSBC.ImpactKids.Grpc.Features.Scheduling.ServicesServices;
 
 public partial class ServicesService
 {
-    public async Task<BasicResponse?> Delete(BasicReadRequest request, CallContext context = default)
+    public async Task<BasicResponse> Delete(BasicReadRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 

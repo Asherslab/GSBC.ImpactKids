@@ -1,5 +1,6 @@
 using Grpc.Net.Client.Web;
 using GSBC.ImpactKids.Shared.Contracts.Services;
+using GSBC.ImpactKids.Shared.Contracts.Services.Features.Eventing;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.Scheduling;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.Scheduling.School;
@@ -10,12 +11,13 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using GSBC.ImpactKids.WASM;
 using GSBC.ImpactKids.WASM.Authentication;
 using GSBC.ImpactKids.WASM.Extensions;
+using GSBC.ImpactKids.WASM.Features.Eventing.Services;
 using GSBC.ImpactKids.WASM.Services;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using MudBlazor.Services;
 using ProtoBuf.Grpc.ClientFactory;
 
-var builder = WebAssemblyHostBuilder.CreateDefault(args);
+WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
@@ -62,7 +64,10 @@ builder.Services
     .ConfigurePrimaryHttpMessageHandler(() =>
         new GrpcWebHandler(new HttpClientHandler())); // login service is unauthenticated
 
+builder.Services.AddSingleton<ISseClientService, SseClientService>();
+
 builder.Services.AddScoped<UnauthorizedMessageHandler>();
+builder.Services.AddAuthenticatedGrpcClient<IEventingService>();
 builder.Services.AddAuthenticatedGrpcClient<IEventService>();
 builder.Services.AddAuthenticatedGrpcClient<IMetabaseService>();
 builder.Services.AddAuthenticatedGrpcClient<IUsersService>();
@@ -94,7 +99,11 @@ if (reportsConfig != null)
     builder.Services.AddSingleton(reportsConfig);
 }
 
-WebAssemblyHost host      = builder.Build();
+WebAssemblyHost host = builder.Build();
+
+// Start the global subscription before rendering
+ISseClientService sse = host.Services.GetRequiredService<ISseClientService>();
+await sse.StartAsync();
 
 // Enable Why Did You Render
 // IJSRuntime      jsRuntime = host.Services.GetRequiredService<IJSRuntime>();

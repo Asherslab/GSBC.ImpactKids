@@ -1,6 +1,5 @@
 using System.Text;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
-using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Pagination;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.Services;
@@ -80,8 +79,7 @@ public partial class MemorisationComponent : EventListeningComponent
         BasicReadMultipleResponse<MemoryVerse>? response = await MemoryVersesService.ReadMultiple(
             new MemoryVersesRequest
             {
-                ServiceId = _service.Id,
-                IncludeBibleVerses = true
+                ServiceId = _service.Id
             }
         );
 
@@ -137,20 +135,20 @@ public partial class MemorisationComponent : EventListeningComponent
 
     private async Task ShowOriginalText()
     {
-        if (_selectedVerse?.BibleVerses == null)
-            return;
+        // if (_selectedVerse?.BibleVerses == null)
+        //     return;
 
         StringBuilder builder = new();
 
-        foreach (BibleVerse verse in _selectedVerse.BibleVerses)
-        {
-            builder.Append($"{verse.BookName} {verse.ChapterNumber}:{verse.VerseNumber}<br />");
-            builder.Append(verse.Verse);
-            builder.Append("<br /><br />");
-        }
-
-        if (_selectedVerse.BibleVerses.Count != 0)
-            builder.Length -= "<br /><br />".Length;
+        // foreach (BibleVerse verse in _selectedVerse.BibleVerses)
+        // {
+        //     builder.Append($"{verse.BookName} {verse.ChapterNumber}:{verse.VerseNumber}<br />");
+        //     builder.Append(verse.Verse);
+        //     builder.Append("<br /><br />");
+        // }
+        //
+        // if (_selectedVerse.BibleVerses.Count != 0)
+        //     builder.Length -= "<br /><br />".Length;
 
         await DialogService.ShowMessageBox(
             "Original Text",

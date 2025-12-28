@@ -9,6 +9,7 @@ using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.Ser
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scripture.Memorisation.MemoryVerseLists;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scripture.Memorisation.MemoryVerses;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base.Interfaces;
 using GSBC.ImpactKids.WASM.Extensions;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
@@ -262,7 +263,7 @@ public partial class CreateMemoryVerseDialog : ComponentBase
 
     private async Task RefreshServices()
     {
-        BasicReadMultipleResponse<Service>? response = await
+        IReadMultipleResponse<Service>? response = await
             ServicesService.ReadMultiple(new ServicesRequest
             {
                 SearchString = _serviceSearch,

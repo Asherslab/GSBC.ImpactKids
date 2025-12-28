@@ -1,127 +1,59 @@
+using System.Collections.Immutable;
+using EasyAppDev.Blazor.Store.AsyncActions;
 using EasyAppDev.Blazor.Store.Blazor;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School;
-using GSBC.ImpactKids.Shared.Contracts.Entities.Pagination;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.School.SchoolTerms;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.Services;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using GSBC.ImpactKids.WASM.Extensions;
+using GSBC.ImpactKids.WASM.Features.Scheduling.Features.School.Components.Individual;
 using GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services.Components.Individual;
 
 namespace GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services.Pages;
 
 public partial class Multiple : StoreComponentWithUtilities<MultipleServicesState>
 {
-    private ICollection<SchoolTerm>? _schoolTerms;
-
-    // private ICollection<ServiceType>? _serviceTypes;
-    private ICollection<Service>? _services;
-
-    private readonly Dictionary<int, ICollection<Service>?> _quarters = new()
-    {
-        { 1, null },
-        { 2, null },
-        { 3, null },
-        { 4, null },
-    };
+    // filter services by selected service type
+    private Func<Service, bool> ServiceFilter => x => State.ServiceType == null || x.ServiceTypeId == State.ServiceType;
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
 
-        if (ServiceTypesStore.GetState().Entities.IsNotAsked)
-        {
-            await ServiceTypesStore.RefreshAll();
-        }
+        SchoolTermsStore.Subscribe(_ => UpdateFilteredSchoolTerms());
+        ServiceTypesStore.Subscribe(_ => StateHasChanged());
 
-        // await Task.WhenAll(
-        //     RefreshServiceTypes()
-        //     // SubscribeToEvent(Service.BuildSubscription(), RefreshServices),
-        //     // SubscribeToEvent(SchoolTerm.BuildSubscription(), RefreshSchoolTerms),
-        //     // SubscribeToEvent(Shared.Contracts.Entities.Features.Scheduling.ServiceType.BuildSubscription(),
-        //     //     RefreshServiceTypes)
-        // );
-    }
-
-    protected override async Task OnParametersSetAsync()
-    {
-        await base.OnParametersSetAsync();
+        SubscribeToSelector(x => x.Date, _ => UpdateFilteredSchoolTerms());
 
         await Task.WhenAll(
-            RefreshServices(),
-            RefreshSchoolTerms()
+            SchoolTermsStore.RefreshAll(),
+            ServiceTypesStore.RefreshAll()
         );
+
+        UpdateFilteredSchoolTerms();
     }
 
-    private CancellationTokenSource _refreshSchoolTermsTokenSource = new();
-
-    private async Task RefreshSchoolTerms()
+    private void UpdateFilteredSchoolTerms()
     {
-        await _refreshSchoolTermsTokenSource.CancelAsync();
-        _refreshSchoolTermsTokenSource = new CancellationTokenSource();
+        AsyncData<ImmutableList<SchoolTerm>> schoolTerms = SchoolTermsStore.GetState().Entities;
 
-        int year = State.Date?.Year ?? DateTime.Now.Year;
-        BasicReadMultipleResponse<SchoolTerm>? response = await SchoolTermsService.ReadMultiple(
-            new SchoolTermsRequest
-            {
-                Pagination = PaginationRequest.All(),
-                Year = year
-            },
-            _refreshSchoolTermsTokenSource.Token
-        );
-
-        if (response.HasErrorOrNull())
+        if (schoolTerms.Data == null)
         {
-            Snackbar.AddErrorResponse(response);
+            Update(s => s with { FilteredSchoolTerms = s.FilteredSchoolTerms.CopyStatus(schoolTerms) });
             return;
         }
 
-        _schoolTerms = response.Entities;
-        StateHasChanged();
-    }
-
-    private CancellationTokenSource _refreshServicesTokenSource = new();
-
-    private async Task RefreshServices()
-    {
-        await _refreshServicesTokenSource.CancelAsync();
-        _refreshServicesTokenSource = new CancellationTokenSource();
-
         int year = State.Date?.Year ?? DateTime.Now.Year;
-        BasicReadMultipleResponse<Service>? response = await ServicesService.ReadMultiple(
-            new ServicesRequest
-            {
-                Pagination = PaginationRequest.All(),
-                Year = year,
-                ServiceTypeId = State.ServiceType
-            },
-            _refreshServicesTokenSource.Token
-        );
-
-        if (response.HasErrorOrNull())
+        Update(s => s with
         {
-            Snackbar.AddErrorResponse(response);
-            return;
-        }
-
-        _services = response.Entities;
-        foreach (int i in Enumerable.Range(0, 4))
-        {
-            DateTime startDate = new(year, i * 3 + 1, 1);
-            DateTime endDate   = new(year, (i + 1) * 3, DateTime.DaysInMonth(year, (i + 1) * 3));
-
-            ICollection<Service> servicesForThisQuarter = response.Entities
-                .Where(x => x.LocalDate >= startDate && x.LocalDate <= endDate)
-                .ToList();
-
-            _quarters[i + 1] = servicesForThisQuarter;
-        }
-
-        StateHasChanged();
+            FilteredSchoolTerms = s.FilteredSchoolTerms.ToSuccess(
+                schoolTerms.Data
+                    .Where(x => x.LocalStartDate.Year == year || x.LocalEndDate.Year == year)
+                    .ToImmutableList()
+            )
+        });
     }
 
-    private List<Service>? GetServicesForTerm(SchoolTerm term) =>
-        _services?.Where(x => x.SchoolTerm?.Id == term.Id).ToList();
+
+    private int GetYear() => State.Date?.Year ?? DateTime.Now.Year;
 
     private void OnDateChanged(DateTime? dateTime)
     {
@@ -137,10 +69,21 @@ public partial class Multiple : StoreComponentWithUtilities<MultipleServicesStat
     {
         Update(x => x.SetServiceType(serviceTypeId));
     }
+    
+    private SchoolTermDetails? _schoolTermDetails;
+    private bool               _showCreateSchoolTermDialog;
+
+    private async Task CreateSchoolTerm()
+    {
+        if (_schoolTermDetails != null)
+        {
+            bool success = await _schoolTermDetails.CreateSchoolTerm();
+            _showCreateSchoolTermDialog = !success;
+        }
+    }
 
     private ServiceDetails? _serviceDetails;
-
-    private bool _showCreateDialog;
+    private bool            _showCreateDialog;
 
     private async Task CreateService()
     {

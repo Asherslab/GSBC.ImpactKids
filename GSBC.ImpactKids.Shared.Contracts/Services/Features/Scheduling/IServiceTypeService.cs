@@ -6,24 +6,24 @@ namespace GSBC.ImpactKids.Shared.Contracts.Services.Features.Scheduling;
 
 [Service("GSBC.ImpactKids.Services.ServiceTypes")]
 public interface IServiceTypeService :
-    IReadMultipleServiceBase<ServiceType>
+    IBasicReadMultipleService<ServiceType>
 {
-    Task<BasicResponse?> Create(
+    Task<BasicResponse> Create(
         CreateServiceTypeRequest request,
         CallContext              context = default
     );
 
-    Task<BasicReadResponse<ServiceType>?> Read(
+    Task<BasicReadResponse<ServiceType>> Read(
         BasicReadRequest request,
         CallContext      context = default
     );
 
-    Task<BasicResponse?> Update(
+    Task<BasicResponse> Update(
         UpdateServiceTypeRequest request,
         CallContext              context = default
     );
 
-    Task<BasicResponse?> Delete(
+    Task<BasicResponse> Delete(
         BasicReadRequest request,
         CallContext      context = default
     );

@@ -1,4 +1,5 @@
-﻿@using GSBC.ImpactKids.WASM.Services
+﻿@using GSBC.ImpactKids.WASM.Features.Eventing.Components
+@using GSBC.ImpactKids.WASM.Services
 @inject EventSubscriptionService EventSubscriptionService
 @inherits LayoutComponentBase
 
@@ -13,6 +14,7 @@
         <MudText Typo="Typo.h5" Class="ml-3">Impact Kids</MudText>
         <MudSpacer/>
         <LoginDisplay/>
+        <EventStreamStatus/>
         <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle"/>
     </MudAppBar>
     <MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">

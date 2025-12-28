@@ -1,15 +1,17 @@
+@inject IRefreshableStore<MemoryVerse> MemoryVersesStore
+
 @using GSBC.ImpactKids.WASM.Pages.VerseMemorisation
-<MudOverlay Visible="@_waitingForUpdate" DarkBackground="true" Absolute="true">
+<MudOverlay Visible="@(_memoryVerseIds.IsNotAsked || _memoryVerseIds.IsLoading)" DarkBackground="true" Absolute="true">
     <MudProgressCircular Indeterminate/>
 </MudOverlay>
-@if (_memoryVerses != null)
+@if (_memoryVerseIds.Data != null)
 {
     <MudStack>
-        @foreach (MemoryVerse memoryVerse in _memoryVerses)
+        @foreach (Guid id in _memoryVerseIds.Data)
         {
             <MemoryVerseDisplay ShowReference
-                                Href="@(ServiceId == null ? null : $"/VerseMemorisation/{ServiceId}?{nameof(MemorisationComponent.SelectedMemoryVerse)}={memoryVerse.Id}")"
-                                MemoryVerse="memoryVerse"/>
+                                Href="@(ServiceId == null ? null : $"/VerseMemorisation/{ServiceId}?{nameof(MemorisationComponent.SelectedMemoryVerse)}={id}")"
+                                Id="id"/>
         }
     </MudStack>
 }

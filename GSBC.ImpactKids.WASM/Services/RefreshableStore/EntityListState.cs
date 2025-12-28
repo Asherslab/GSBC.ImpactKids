@@ -5,7 +5,7 @@ namespace GSBC.ImpactKids.WASM.Services.RefreshableStore;
 
 public record EntityListState<T>(
     AsyncData<ImmutableList<T>> Entities
-)
+) : IInitialisableState<EntityListState<T>>
 {
     public static EntityListState<T> Initial => new(AsyncData<ImmutableList<T>>.NotAsked());
 }

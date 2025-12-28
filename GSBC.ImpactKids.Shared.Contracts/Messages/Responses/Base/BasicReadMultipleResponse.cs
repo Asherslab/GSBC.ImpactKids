@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base.Interfaces;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;

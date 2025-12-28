@@ -1,24 +1,23 @@
-@using GSBC.ImpactKids.Shared.Contracts.Services.Features.Scripture.Memorisation
-@inherits EventListeningComponent
 @page "/Services/{Id:guid}"
-@inject IServicesService         ServicesService
-@inject IMemoryVersesService     MemoryVersesService
-@inject IDollarStoreEntryService DollarStoreEntryService
+@page "/Services/Rel"
+@inject IRefreshableStore<Service> ServicesStore
 
-<PageTitle>Service Name</PageTitle>
+<PageTitle>@(_service.Data?.GetDisplayName() ?? "Service")</PageTitle>
 
-<MudPaper Elevation="6" Class="mt-4 px-6 pb-6">
-    @if (_service != null)
+<MudPaper Elevation="6" Class="mt-4 pt-1 px-6 pb-6">
+    @if (_service.Data != null)
     {
-        <MudText Align="Align.Center" Typo="Typo.h5" Class="py-3">@_service.GetDisplayName()</MudText>
+        <MudText Align="Align.Center" Typo="Typo.h5" Class="py-3">@_service.Data.GetDisplayName()</MudText>
     }
     else
     {
         <MudText Align="Align.Center" Typo="Typo.h5" Class="py-3">Service</MudText>
     }
-    <ServiceOverview
-        Service="_service"
-        MemoryVerses="_memoryVerses"
-        DeleteService="DeleteService"
-        DeleteDollarStore="DeleteDollarStoreEntry"/>
+    @if (_service.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">
+            @(_service.Error ?? "An Unexpected error occured")
+        </MudAlert>
+    }
+    <ServiceOverview ServiceId="Id"/>
 </MudPaper>

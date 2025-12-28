@@ -1,6 +1,7 @@
 @inherits StoreComponentWithUtilities<MultipleServiceTypesState>
 @page "/Services/ServiceTypes"
-@inject IRefreshableStore<EntityListState<ServiceType>> ServiceTypesStore
+@inject IRefreshableStore<ServiceType> ServiceTypesStore
+@inject IServiceTypeService                             ServiceTypesService
 
 <PageTitle>Service Types</PageTitle>
 
@@ -34,8 +35,12 @@
         </HeaderContent>
         <RowTemplate>
             <MudTd>
-                <MudIconButton OnClick="@(() => ShowUpdateServiceType(context))"
-                               Icon="@Icons.Material.Filled.Edit"/>
+                <MudButtonGroup Variant="Variant.Outlined">
+                    <MudIconButton OnClick="@(() => ShowUpdateServiceType(context))"
+                                   Icon="@Icons.Material.Filled.Edit"/>
+                    <MudIconButton OnClick="@(() => ShowDeleteServiceType(context))"
+                                   Icon="@Icons.Material.Filled.Delete"/>
+                </MudButtonGroup>
             </MudTd>
             <MudTd DataLabel="Label">@context.Label</MudTd>
             <MudTd DataLabel="Color">

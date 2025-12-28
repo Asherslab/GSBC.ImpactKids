@@ -1,13 +1,12 @@
 @inherits StoreComponentWithUtilities<MultipleServicesState>
 @page "/Services"
-@inject IRefreshableStore<EntityListState<ServiceType>> ServiceTypesStore
-@inject ISchoolTermsService                             SchoolTermsService
-@inject IServicesService                                ServicesService
+@inject IRefreshableStore<SchoolTerm>  SchoolTermsStore
+@inject IRefreshableStore<ServiceType> ServiceTypesStore
 
 <PageTitle>Services</PageTitle>
 
-<MudPaper Elevation="6" Class="mt-4 px-6 pb-6">
-    <MudGrid>
+<MudPaper Elevation="6" Class="mt-4 pt-1 px-6 pb-6">
+    <MudGrid> @*Class="mt-0"*@
         <MudItem xs="4" md="3">
             <MudGrid Spacing="1">
                 <MudItem xs="12" md="6">
@@ -57,11 +56,16 @@
         </MudItem>
         <MudItem xs="4" md="3">
             <MudGrid Spacing="1">
-                <MudItem xs="12" md="2">
+                <MudItem xs="12" md="4" Class="d-flex justify-end">
+                    @if (State.Display == ServiceDisplayOptions.SchoolTerms)
+                    {
+                        <MudIconButton OnClick="@(() => _showCreateSchoolTermDialog = true)"
+                                       Icon="@Icons.Material.Filled.DomainAdd"/>
+                    }
                     <MudIconButton OnClick="@(() => _showCreateDialog = true)"
                                    Icon="@Icons.Material.Filled.PostAdd"/>
                 </MudItem>
-                <MudItem xs="12" md="10">
+                <MudItem xs="12" md="8">
                     <MudSelect T="ServiceDisplayOptions"
                                Value="@State.Display"
                                ValueChanged="DisplayChanged"
@@ -80,7 +84,7 @@
     <MudGrid>
         @if (State.Display == ServiceDisplayOptions.Quarters)
         {
-            foreach ((int quarter, ICollection<Service>? services) in _quarters)
+            foreach (int quarter in Enumerable.Range(1, 4))
             {
                 <MudItem xs="12" md="3">
                     <MudCard Elevation="6" Class="relative">
@@ -91,13 +95,13 @@
                             </CardHeaderContent>
                         </MudCardHeader>
                         <MudCardContent>
-                            <ServicesList Services="services"/>
+                            <ServicesList Filter="ServiceFilter" Quarter="quarter" Year="GetYear()"/>
                         </MudCardContent>
                     </MudCard>
                 </MudItem>
             }
         }
-        else if (_schoolTerms == null)
+        else if (State.FilteredSchoolTerms.Data == null)
         {
             foreach (int term in Enumerable.Range(1, 4))
             {
@@ -105,6 +109,9 @@
                     <MudCard Elevation="6" Class="relative">
                         <MudCardHeader>
                             <CardHeaderContent>
+                                <MudOverlay Visible="State.FilteredSchoolTerms.IsLoading" DarkBackground="true" Absolute="true">
+                                    <MudProgressCircular Indeterminate/>
+                                </MudOverlay>
                                 <MudText Typo="Typo.h6"
                                          Align="Align.Start">@($"Term {term} {State.Date?.Year}")</MudText>
                                 <MudText Typo="Typo.body2">
@@ -113,7 +120,7 @@
                             </CardHeaderContent>
                         </MudCardHeader>
                         <MudCardContent>
-                            <ServicesList/>
+                            <ServicesList ShowFakes/>
                         </MudCardContent>
                     </MudCard>
                 </MudItem>
@@ -121,20 +128,26 @@
         }
         else
         {
-            foreach (SchoolTerm term in _schoolTerms)
+            foreach (SchoolTerm term in State.FilteredSchoolTerms.Data)
             {
                 <MudItem xs="12" md="3">
                     <MudCard Elevation="6" Class="relative">
                         <MudCardHeader>
                             <CardHeaderContent>
-                                <MudText Typo="Typo.h6" Align="Align.Start">@term.Name</MudText>
-                                <MudText Typo="Typo.body2">
-                                    @term.LocalStartDate.ToString("dd/MM") -> @term.LocalEndDate.ToString("dd/MM")
-                                </MudText>
+                                <MudStack Row>
+                                    <MudStack Spacing="0">
+                                        <MudText Typo="Typo.h6" Align="Align.Start">@term.Name</MudText>
+                                        <MudText Typo="Typo.body2">
+                                            @term.LocalStartDate.ToString("dd/MM") -> @term.LocalEndDate.ToString("dd/MM")
+                                        </MudText>
+                                    </MudStack>
+                                    <MudSpacer/>
+                                    <MudButton Variant="Variant.Text" Href="@($"/SchoolTerms/{term.Id}")">View</MudButton>
+                                </MudStack>
                             </CardHeaderContent>
                         </MudCardHeader>
                         <MudCardContent>
-                            <ServicesList Services="GetServicesForTerm(term)"/>
+                            <ServicesList Filter="ServiceFilter" SchoolTermId="@term.Id"/>
                         </MudCardContent>
                     </MudCard>
                 </MudItem>
@@ -142,6 +155,19 @@
         }
     </MudGrid>
 </MudPaper>
+
+<MudDialog @bind-Visible="_showCreateSchoolTermDialog">
+    <TitleContent>Create School Term</TitleContent>
+    <DialogContent>
+        <SchoolTermDetails
+            @ref="_schoolTermDetails"
+            State="ModificationState.Creating"/>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _showCreateSchoolTermDialog = false)">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="@CreateSchoolTerm">Submit</MudButton>
+    </DialogActions>
+</MudDialog>
 
 <MudDialog @bind-Visible="_showCreateDialog">
     <TitleContent>Create Service</TitleContent>

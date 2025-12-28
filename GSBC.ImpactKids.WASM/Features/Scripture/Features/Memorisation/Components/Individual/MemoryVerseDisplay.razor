@@ -1,3 +1,5 @@
+@inject IRefreshableStore<MemoryVerse> MemoryVersesStore
+
 <MudLink Underline="Underline.None"
          Href="@Href">
     @if (ShowReference && !ShowOriginalText && !ShowVerseText)
@@ -5,7 +7,7 @@
         <MudPaper Elevation="Elevation"
                   Class="@ReferenceOnlyClass">
             <MudText Typo="Typo.body1" Class="ma-3">
-                @(MemoryVerse?.ReferenceName ?? "Memory Verse")
+                @(_memoryVerse.Data?.ReferenceName ?? "Memory Verse")
             </MudText>
         </MudPaper>
     }
@@ -16,19 +18,19 @@
                 <CardHeaderContent>
                     <MudPaper Elevation="0" Class="d-flex justify-space-between flex-grow-1">
                         <MudText Typo="Typo.h6" Align="Align.Start">
-                            @(MemoryVerse?.ReferenceName ?? "Memory Verse")
+                            @(_memoryVerse.Data?.ReferenceName ?? "Memory Verse")
                         </MudText>
                     </MudPaper>
                 </CardHeaderContent>
             </MudCardHeader>
             <MudCardContent>
-                <MudOverlay Visible="@(MemoryVerse == null)" DarkBackground="true" Absolute="true">
+                <MudOverlay Visible="@(_memoryVerse.IsLoading)" DarkBackground="true" Absolute="true">
                     <MudProgressCircular Indeterminate/>
                 </MudOverlay>
                 @if (ShowVerseText)
                 {
                     <MudText>
-                        @(MemoryVerse?.Verse ?? "Verse....")
+                        @(_memoryVerse.Data?.Verse ?? "Verse....")
                     </MudText>
                 }
             </MudCardContent>

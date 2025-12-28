@@ -11,7 +11,7 @@
         <PackageReference Include="Aspire4Wasm.WebAssembly" Version="6.0.1"/>
         <PackageReference Include="Blazor.WhyDidYouRender" Version="3.0.0" />
         <PackageReference Include="Blazor.WhyDidYouRender.Aspire" Version="3.0.0" />
-        <PackageReference Include="EasyAppDev.Blazor.Store" Version="2.0.3" />
+        <PackageReference Include="EasyAppDev.Blazor.Store" Version="2.0.5" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.0"/>
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="10.0.0"/>
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.0" PrivateAssets="all"/>
@@ -28,6 +28,7 @@
         <PackageReference Include="Grpc.Net.Client.Web" Version="2.71.0"/>
         <PackageReference Include="Grpc.Net.ClientFactory" Version="2.71.0"/>
         <PackageReference Include="protobuf-net.Grpc.ClientFactory" Version="1.2.2"/>
+        <PackageReference Include="System.Net.ServerSentEvents" Version="10.0.1" />
     </ItemGroup>
 
     <ItemGroup>
@@ -46,8 +47,6 @@
     <ItemGroup>
         <Folder Include="Features\Elvanto\Components\" />
         <Folder Include="Features\Elvanto\Pages\" />
-        <Folder Include="Features\Scheduling\Features\School\Components\"/>
-        <Folder Include="Features\Scheduling\Features\School\Pages\"/>
         <Folder Include="Features\Scheduling\Features\Services\Features\"/>
         <Folder Include="Features\Scheduling\Features\Services\Models\"/>
     </ItemGroup>

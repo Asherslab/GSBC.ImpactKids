@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using GSBC.ImpactKids.Grpc.Data.Models;
 using GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses;
 using GSBC.ImpactKids.Grpc.Data.Models.People;
@@ -171,11 +172,11 @@ public partial class MemoryVerseConverter(
     [MapProperty(nameof(DbMemoryVerse.Services), nameof(MemoryVerse.ServiceIds), Use = nameof(MapServiceIds))]
     public partial MemoryVerse Convert(DbMemoryVerse input);
 
-    List<Guid> MapBibleVerseIds(List<DbBibleVerse> bibleVerses)
-        => bibleVerses.Select(x => x.Id).ToList();
+    ImmutableList<Guid> MapBibleVerseIds(List<DbBibleVerse> bibleVerses)
+        => bibleVerses.Select(x => x.Id).ToImmutableList();
 
-    List<Guid> MapServiceIds(List<DbService> services)
-        => services.Select(x => x.Id).ToList();
+    ImmutableList<Guid> MapServiceIds(List<DbService> services)
+        => services.Select(x => x.Id).ToImmutableList();
 }
 
 [Mapper]

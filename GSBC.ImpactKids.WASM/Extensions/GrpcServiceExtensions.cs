@@ -32,7 +32,7 @@ public static class GrpcServiceExtensions
                 .AddInterceptor<ExceptionInterceptor>()
                 .AddHttpMessageHandler<UnauthorizedMessageHandler>();
 
-            Type? readMultipleServiceBase = serviceType.IsAssignableToGenericType(typeof(IReadMultipleServiceBase<>));
+            Type? readMultipleServiceBase = serviceType.IsAssignableToGenericType(typeof(IBasicReadMultipleService<>));
             if (readMultipleServiceBase != null)
                 services.AddScoped(readMultipleServiceBase, sp => sp.GetRequiredService<T>());
 
@@ -79,7 +79,7 @@ public static class GrpcServiceExtensions
                     return;
 
                 AccessTokenResult result = await authTokenProvider.RequestAccessToken();
-
+                
                 if (!result.TryGetToken(out AccessToken? token))
                     return;
 

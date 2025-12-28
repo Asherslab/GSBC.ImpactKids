@@ -1,8 +1,8 @@
+using System.Collections.Immutable;
+using EasyAppDev.Blazor.Store.AsyncActions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School;
-using GSBC.ImpactKids.Shared.Contracts.Entities.Pagination;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.School.SchoolTerms;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.Services;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using GSBC.ImpactKids.WASM.Components.Common.Inputs;
@@ -14,123 +14,82 @@ namespace GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services.Components.
 public partial class ServiceDetails
 {
     [Parameter]
-    public Service? Service { get; set; }
+    public Guid? Id { get; set; }
 
     [Parameter]
     public ModificationState State { get; set; }
 
-    [Parameter]
-    public ICollection<SchoolTerm>? SchoolTerms { get; set; }
-
-    [Parameter]
-    public EventCallback<ICollection<SchoolTerm>?> SchoolTermsChanged { get; set; }
-
-    [Parameter]
-    public ICollection<ServiceType>? ServiceTypes { get; set; }
-
-    [Parameter]
-    public EventCallback<ICollection<ServiceType>?> ServiceTypesChanged { get; set; }
-
+    private          AsyncData<Service>   _service       = AsyncData<Service>.NotAsked();
     private readonly CreateServiceRequest _createRequest = new();
     private          UpdateServiceRequest _updateRequest = new();
 
-    private bool _waitingForRefresh;
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        ServicesStore.Subscribe(_ => RetrieveService());
+        ServiceTypesStore.Subscribe(_ => StateHasChanged());
+        SchoolTermsStore.Subscribe(_ => StateHasChanged());
+
+        await Task.WhenAll(
+            ServicesStore.RefreshAll(),
+            ServiceTypesStore.RefreshAll(),
+            SchoolTermsStore.RefreshAll()
+        );
+    }
 
     protected override async Task OnParametersSetAsync()
     {
         await base.OnParametersSetAsync();
 
-        if (State == ModificationState.Reading && Service != null)
-            _waitingForRefresh = false;
-        
-        if (Service != null && !_waitingForRefresh)
-        {
-            _updateRequest = new UpdateServiceRequest
-            {
-                Guid = Service.Id
-            };
-
-            _updateRequest.Name.SetInitialValue(Service.Name);
-            _updateRequest.LocalDate.SetInitialValue(Service.LocalDate); // Set Date for LocalDate usage
-
-            _updateRequest.SchoolTermId.SetInitialValue(Service.SchoolTerm?.Id);
-            _updateRequest.SchoolTerm = Service.SchoolTerm;
-            
-            _updateRequest.ServiceTypeId.SetInitialValue(Service.ServiceType?.Id);
-            _updateRequest.ServiceType = Service.ServiceType;
-        }
-        else if (State != ModificationState.Creating)
-        {
-            _waitingForRefresh = true;
-        }
-
-        if (State != ModificationState.Reading)
-        {
-            List<Task> tasks = [];
-
-            if (SchoolTerms == null)
-                tasks.Add(RefreshSchoolTerms());
-
-            if (ServiceTypes == null)
-                tasks.Add(RefreshServiceTypes());
-
-            await Task.WhenAll(tasks);
-        }
+        RetrieveService();
     }
 
-    private CancellationTokenSource _refreshSchoolTermsTokenSource = new();
-
-    private async Task RefreshSchoolTerms()
+    private void RetrieveService()
     {
-        await _refreshSchoolTermsTokenSource.CancelAsync();
-        _refreshSchoolTermsTokenSource = new CancellationTokenSource();
+        if (State == ModificationState.Creating)
+            return;
 
-        BasicReadMultipleResponse<SchoolTerm>? response = await SchoolTermsService.ReadMultiple(
-            new SchoolTermsRequest
-            {
-                Pagination = PaginationRequest.All(),
-            },
-            _refreshSchoolTermsTokenSource.Token
-        );
+        AsyncData<ImmutableList<Service>> services = ServicesStore.GetState().Entities;
 
-        if (response.HasErrorOrNull())
+        if (!services.HasData)
         {
-            Snackbar.AddErrorResponse(response);
+            _service = _service.CopyStatus(services);
+            StateHasChanged();
             return;
         }
 
-        SchoolTerms = response.Entities;
-        await SchoolTermsChanged.InvokeAsync(SchoolTerms);
-    }
+        Service? service = services.Data!
+            .FirstOrDefault(x => x.Id == Id);
 
-    private CancellationTokenSource _refreshServiceTypesTokenSource = new();
-
-    private async Task RefreshServiceTypes()
-    {
-        await _refreshServiceTypesTokenSource.CancelAsync();
-        _refreshServiceTypesTokenSource = new CancellationTokenSource();
-
-        BasicReadMultipleResponse<ServiceType>? response = await ServiceTypeService.ReadMultiple(
-            new BasicReadMultipleRequest
-            {
-                Pagination = PaginationRequest.All(),
-            },
-            _refreshServiceTypesTokenSource.Token
-        );
-
-        if (response.HasErrorOrNull())
+        if (service == null)
         {
-            Snackbar.AddErrorResponse(response);
+            _service = _service.ToFailure("Failed to find Service");
+            _updateRequest = new UpdateServiceRequest();
+            StateHasChanged();
             return;
         }
 
-        ServiceTypes = response.Entities;
-        await ServiceTypesChanged.InvokeAsync(ServiceTypes);
+        _service = _service.ToSuccess(service);
+
+        _updateRequest = new UpdateServiceRequest
+        {
+            Guid = service.Id,
+        };
+
+        _updateRequest.Name.SetInitialValue(service.Name);
+        _updateRequest.LocalDate.SetInitialValue(service.LocalDate); // Set Date for LocalDate usage
+
+        _updateRequest.SchoolTermId.SetInitialValue(service.SchoolTermId);
+        _updateRequest.ServiceTypeId.SetInitialValue(service.ServiceTypeId);
+
+        StateHasChanged();
     }
 
     private ICollection<SchoolTerm> GetSchoolTermsForDropdown()
     {
-        if (SchoolTerms == null)
+        ImmutableList<SchoolTerm>? schoolTerms = SchoolTermsStore.GetState().Entities.Data;
+        if (schoolTerms == null)
             return [];
 
         switch (State)
@@ -139,33 +98,33 @@ public partial class ServiceDetails
             {
                 int year = _createRequest.LocalDate.Year;
 
-                return SchoolTerms
+                return schoolTerms
                     .Where(x => x.LocalStartDate.Year == year)
                     .ToList();
             }
             case ModificationState.Updating:
             {
-                int year = _updateRequest.LocalDate.Value.Year;
+                int? year = _updateRequest.LocalDate.Value.Year;
 
-                return SchoolTerms
+                return schoolTerms
                     .Where(x => x.LocalStartDate.Year == year)
                     .ToList();
             }
             case ModificationState.Reading:
             default:
-                return SchoolTerms;
+                return schoolTerms;
         }
     }
 
     public async Task<bool> CreateService()
     {
-        _waitingForRefresh = true;
+        _service = _service.ToLoading();
         StateHasChanged();
-        BasicResponse? resp = await ServicesService.Create(_createRequest);
+        BasicResponse resp = await ServicesService.Create(_createRequest);
 
         if (resp.HasErrorOrNull())
         {
-            _waitingForRefresh = false;
+            RetrieveService();
             Snackbar.AddErrorResponse(resp);
             return false;
         }
@@ -178,17 +137,43 @@ public partial class ServiceDetails
         if (_updateRequest.Guid == Guid.Empty)
             return false;
 
-        _waitingForRefresh = true;
+        _service = _service.ToLoading();
         StateHasChanged();
-        BasicResponse? resp = await ServicesService.Update(_updateRequest);
+        BasicResponse resp = await ServicesService.Update(_updateRequest);
 
         if (resp.HasErrorOrNull())
         {
-            _waitingForRefresh = false;
+            RetrieveService();
             Snackbar.AddErrorResponse(resp);
             return false;
         }
 
         return true;
+    }
+
+    public async Task DeleteService()
+    {
+        if (_service.Data == null)
+            return;
+        Guid id = _service.Data.Id;
+
+        bool? result = await DialogService.ShowMessageBox(
+            "Warning",
+            "Deleting can not be undone!",
+            yesText: "Delete!", cancelText: "Cancel");
+
+        if (result == null)
+            return;
+
+        _service = _service.ToLoading();
+        StateHasChanged();
+        BasicReadRequest request = new() { Guid = id };
+        BasicResponse    resp    = await ServicesService.Delete(request);
+
+        if (!resp.HasErrorOrNull())
+            return;
+
+        RetrieveService();
+        Snackbar.AddErrorResponse(resp);
     }
 }

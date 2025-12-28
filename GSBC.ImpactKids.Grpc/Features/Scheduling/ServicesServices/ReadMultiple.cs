@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling;
 using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.Services;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +11,20 @@ namespace GSBC.ImpactKids.Grpc.Features.Scheduling.ServicesServices;
 
 public partial class ServicesService
 {
-    public async Task<BasicReadMultipleResponse<Service>?> ReadMultiple(
+    public Task<BasicReadMultipleResponse<Service>> BasicReadMultiple(
+        BasicReadMultipleRequest request,
+        CallContext              context = default
+    )
+    {
+        return ReadMultiple(new ServicesRequest
+            {
+                Pagination = request.Pagination,
+                SearchString = request.SearchString
+            }
+        );
+    }
+
+    public async Task<BasicReadMultipleResponse<Service>> ReadMultiple(
         ServicesRequest request,
         CallContext     context = default
     )
@@ -18,8 +32,6 @@ public partial class ServicesService
         CancellationToken token = context.CancellationToken;
 
         IQueryable<DbService> query = db.Services
-            .Include(x => x.SchoolTerm)
-            .Include(x => x.ServiceType)
             .Include(x => x.DollarStoreEntry);
 
         if (request.SearchString != null)
@@ -53,7 +65,7 @@ public partial class ServicesService
         }
 
         query = query.OrderBy(x => x.Date);
-        
+
         query = query.Paginate(request);
 
         List<DbService> terms = await query.ToListAsync(token);
