@@ -1,4 +1,4 @@
-using GSBC.ImpactKids.WASM.Features.Calendar.Models;
+using System.Collections.Immutable;
 using Microsoft.AspNetCore.Components;
 
 namespace GSBC.ImpactKids.WASM.Features.Calendar.Components;
@@ -9,10 +9,10 @@ public partial class Calendar : ComponentBase
     public DateTime Date { get; set; } = DateTime.Now;
 
     [Parameter]
-    public ICollection<CalendarEvent>? Events { get; set; } = [];
+    public ImmutableList<CalendarEvent>? Events { get; set; } = [];
 
     [Parameter]
-    public ICollection<CalendarTerm>? Terms { get; set; } = [];
+    public ImmutableList<CalendarTerm>? Terms { get; set; } = [];
 
     private int                     _numberOfWeeks;
     private List<CalendarDayRecord> _calendarDays = [];

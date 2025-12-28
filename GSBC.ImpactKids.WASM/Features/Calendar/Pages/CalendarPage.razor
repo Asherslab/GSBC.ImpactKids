@@ -1,27 +1,26 @@
-@using GSBC.ImpactKids.Shared.Contracts.Services.Features.Scheduling
-@using GSBC.ImpactKids.Shared.Contracts.Services.Features.Scheduling.School
-@inherits EventListeningComponent
+@inherits StoreComponent<CalendarState>
 @page "/Calendar"
-@inject ISchoolTermsService SchoolTermsService
-@inject IServicesService    ServicesService
+@inject IRefreshableStore<SchoolTerm>  SchoolTermsStore
+@inject IRefreshableStore<Service>     ServicesStore
+@inject IRefreshableStore<ServiceType> ServiceTypesStore
 
 <PageTitle>Calendar</PageTitle>
 
 <MudPaper Elevation="6" Class="pt-4 px-3 pb-6 d-flex flex-column" Style="height: 90vh">
     <MudToolBar>
         <MudButtonGroup Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" Class="mr-3">
-            <MudButton OnClick="@(() => DateChanged(CalendarDate.AddMonths(-1)))">@("<")</MudButton>
-            <MudButton OnClick="@(() => DateChanged(CalendarDate.AddMonths(1)))">@(">")</MudButton>
+            <MudButton OnClick="@(() => Update(s => s.PreviousMonth()))">@("<")</MudButton>
+            <MudButton OnClick="@(() => Update(s => s.NextMonth()))">@(">")</MudButton>
             <MudDatePickerButton
-                Date="_dateTime"
-                OnDateChanged="DateChanged"
+                Date="State.Date"
+                OnDateChanged="@(d => Update(s => s.SetDate(d)))"
                 OpenTo="@OpenTo.Month"
                 Variant="@Variant.Filled"
                 FixDay="@(1)"/>
         </MudButtonGroup>
     </MudToolBar>
     <Calendar
-        Terms="_calendarTerms"
-        Events="_events"
-        Date="CalendarDate"/>
+        Terms="State.Terms.Data"
+        Events="State.Events.Data"
+        Date="State.Date"/>
 </MudPaper>
