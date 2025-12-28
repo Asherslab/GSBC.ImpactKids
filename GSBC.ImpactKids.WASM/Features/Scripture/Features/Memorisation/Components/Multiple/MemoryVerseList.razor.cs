@@ -1,4 +1,8 @@
+using System.Collections.Immutable;
+using System.Text.Json;
+using EasyAppDev.Blazor.Store.AsyncActions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
+using GSBC.ImpactKids.WASM.Extensions;
 using Microsoft.AspNetCore.Components;
 
 namespace GSBC.ImpactKids.WASM.Features.Scripture.Features.Memorisation.Components.Multiple;
@@ -6,26 +10,65 @@ namespace GSBC.ImpactKids.WASM.Features.Scripture.Features.Memorisation.Componen
 public partial class MemoryVerseList : ComponentBase
 {
     [Parameter]
-    public ICollection<MemoryVerse>? MemoryVerses { get; set; }
-    
+    public Func<MemoryVerse, bool>? Filter { get; set; }
+
     [Parameter]
     public Guid? ServiceId { get; set; }
-    
-    // used to keep existing entities visible while they are updating in background
-    private ICollection<MemoryVerse>? _memoryVerses;
-    private bool                      _waitingForUpdate;
-    
-    protected override void OnParametersSet()
+
+    private AsyncData<ImmutableList<Guid>> _memoryVerseIds = AsyncData<ImmutableList<Guid>>.NotAsked();
+
+    protected override async Task OnInitializedAsync()
     {
-        base.OnParametersSet();
-        if (MemoryVerses != null)
+        await base.OnInitializedAsync();
+
+        MemoryVersesStore.Subscribe(_ => FilterMemoryVerses());
+
+        await Task.WhenAll(
+            MemoryVersesStore.RefreshAll()
+        );
+        FilterMemoryVerses();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+
+        FilterMemoryVerses();
+    }
+
+    private void FilterMemoryVerses()
+    {
+        AsyncData<ImmutableList<MemoryVerse>> memoryVerses = MemoryVersesStore.GetState().Entities;
+
+        if (memoryVerses.Data == null)
         {
-            _memoryVerses = MemoryVerses;
-            _waitingForUpdate = false;
+            _memoryVerseIds = _memoryVerseIds.CopyStatus(memoryVerses);
+            return;
         }
-        else
+
+        List<MemoryVerse> filteredMemoryVerses = memoryVerses.Data.ToList();
+
+        Console.WriteLine($"Test 1: {JsonSerializer.Serialize(filteredMemoryVerses)}");
+        if (Filter != null)
         {
-            _waitingForUpdate = true;
+            filteredMemoryVerses = filteredMemoryVerses
+                .Where(Filter)
+                .ToList();
         }
+
+        if (ServiceId != null)
+        {
+            filteredMemoryVerses = filteredMemoryVerses
+                .Where(x => x.ServiceIds.Contains(ServiceId.Value))
+                .ToList();
+        }
+
+        Console.WriteLine($"Test 2: {JsonSerializer.Serialize(filteredMemoryVerses)}");
+        _memoryVerseIds = _memoryVerseIds.ToSuccess(filteredMemoryVerses
+            .Select(x => x.Id)
+            .ToImmutableList()
+        );
+
+        StateHasChanged();
     }
 }

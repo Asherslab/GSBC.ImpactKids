@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
 
@@ -11,12 +10,9 @@ public record MemoryVerse
 
     public required string Verse { get; init; }
 
-    public required Guid                 MemoryVerseListId { get; init; }
+    public required Guid                MemoryVerseListId { get; init; }
     public required ImmutableList<Guid> ServiceIds        { get; init; } = [];
     public required ImmutableList<Guid> BibleVerseIds     { get; init; } = [];
-
-    public required ImmutableList<Service>?    Services    { get; init; }
-    public required ImmutableList<BibleVerse>? BibleVerses { get; init; }
 
     public static string BuildSubscription(
         Guid? memoryVerseListId = null,

@@ -1,0 +1,23 @@
+@page "/SchoolTerms/{Id:guid}"
+@using GSBC.ImpactKids.WASM.Features.Scheduling.Features.School.Components.Individual
+@inject IRefreshableStore<SchoolTerm> SchoolTermsStore
+
+<PageTitle>@(_schoolTerm.Data?.Name ?? "School Term")</PageTitle>
+
+<MudPaper Elevation="6" Class="mt-4 pt-1 px-6 pb-6">
+    @if (_schoolTerm.Data != null)
+    {
+        <MudText Align="Align.Center" Typo="Typo.h5" Class="py-3">@_schoolTerm.Data.Name</MudText>
+    }
+    else
+    {
+        <MudText Align="Align.Center" Typo="Typo.h5" Class="py-3">School Term</MudText>
+    }
+    @if (_schoolTerm.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">
+            @(_schoolTerm.Error ?? "An Unexpected error occured")
+        </MudAlert>
+    }
+    <SchoolTermOverview SchoolTermId="Id"/>
+</MudPaper>

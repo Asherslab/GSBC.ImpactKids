@@ -1,9 +1,10 @@
-using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
-using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
+using System.Collections.Immutable;
+using EasyAppDev.Blazor.Store.AsyncActions;
+using GSBC.ImpactKids.Shared.Contracts.Entities;
 using GSBC.ImpactKids.WASM.Components.Common.Inputs;
+using GSBC.ImpactKids.WASM.Extensions;
 using GSBC.ImpactKids.WASM.Features.DollarStore.Components.Individual;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 
 namespace GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services.Components.Individual;
@@ -11,27 +12,18 @@ namespace GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services.Components.
 public partial class ServiceOverview
 {
     [Parameter]
-    public required Service? Service { get; set; }
+    public required Guid? ServiceId { get; set; }
 
-    [Parameter]
-    public required ICollection<MemoryVerse>? MemoryVerses { get; set; }
+    private AsyncData<DollarStoreEntry> _dollarStoreEntry = AsyncData<DollarStoreEntry>.NotAsked();
 
-    [Parameter]
-    public EventCallback<MouseEventArgs> DeleteService { get; set; }
-
-    [Parameter]
-    public EventCallback<MouseEventArgs> DeleteDollarStore { get; set; }
-
-    protected override void OnParametersSet()
+    protected override async Task OnInitializedAsync()
     {
-        base.OnParametersSet();
-        if (Service == null)
-        {
-            if (
-                _detailsState == ModificationState.Updating ||
-                _dollarStoreState == ModificationState.Updating
-            )
+        await base.OnInitializedAsync();
+
+        ServicesStore.Subscribe(_ =>
             {
+                if (_detailsSent || _detailsState != ModificationState.Updating) return;
+
                 Snackbar.Add(
                     "Somebody else has made modifications to this service, your edit has been cancelled",
                     Severity.Warning,
@@ -40,13 +32,64 @@ public partial class ServiceOverview
                         x.CloseAfterNavigation = true;
                         x.VisibleStateDuration = int.MaxValue;
                     });
+                _detailsState = ModificationState.Reading;
+                StateHasChanged();
             }
+        );
+        DollarStoreEntriesStore.Subscribe(_ => RetrieveDollarStoreEntry());
 
-            _detailsState = ModificationState.Reading;
-            _dollarStoreState = ModificationState.Reading;
-        }
+        await Task.WhenAll(DollarStoreEntriesStore.RefreshAll());
     }
 
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+
+        RetrieveDollarStoreEntry();
+    }
+
+    private void RetrieveDollarStoreEntry()
+    {
+        if (
+            !_dollarStoreDetailsSent &&
+            _dollarStoreState is ModificationState.Updating or ModificationState.Creating
+        )
+        {
+            Snackbar.Add(
+                "Somebody else has made modifications to the dollar store entry, your edit has been cancelled",
+                Severity.Warning,
+                x =>
+                {
+                    x.CloseAfterNavigation = true;
+                    x.VisibleStateDuration = int.MaxValue;
+                });
+            _dollarStoreState = ModificationState.Reading;
+        }
+
+        AsyncData<ImmutableList<DollarStoreEntry>> entries = DollarStoreEntriesStore.GetState().Entities;
+
+        if (!entries.HasData)
+        {
+            _dollarStoreEntry = _dollarStoreEntry.CopyStatus(entries);
+            StateHasChanged();
+            return;
+        }
+
+        DollarStoreEntry? entry = entries.Data!
+            .FirstOrDefault(x => x.ServiceId == ServiceId);
+
+        if (entry == null)
+        {
+            _dollarStoreEntry = _dollarStoreEntry.ToFailure("No Dollar Store Entry Found");
+            StateHasChanged();
+            return;
+        }
+
+        _dollarStoreEntry = _dollarStoreEntry.ToSuccess(entry);
+        StateHasChanged();
+    }
+
+    private bool              _detailsSent;
     private ModificationState _detailsState = ModificationState.Reading;
     private ServiceDetails?   _serviceDetailsComponent;
 
@@ -54,15 +97,29 @@ public partial class ServiceOverview
     {
         if (_detailsState == ModificationState.Updating && _serviceDetailsComponent != null)
         {
-            bool success = await _serviceDetailsComponent.UpdateService();
-            if (success)
+            _detailsSent = true;
+            try
             {
-                Service = null;
-                _detailsState = ModificationState.Reading;
+                bool success = await _serviceDetailsComponent.UpdateService();
+                if (success)
+                    _detailsState = ModificationState.Reading;
+            }
+            finally
+            {
+                _detailsSent = false;
             }
         }
     }
 
+    private async Task DeleteService()
+    {
+        if (_serviceDetailsComponent != null)
+        {
+            await _serviceDetailsComponent.DeleteService();
+        }
+    }
+
+    private bool                     _dollarStoreDetailsSent;
     private ModificationState        _dollarStoreState = ModificationState.Reading;
     private DollarStoreEntryDetails? _dollarStoreDetailsComponent;
 
@@ -70,33 +127,43 @@ public partial class ServiceOverview
     {
         if (_dollarStoreState == ModificationState.Creating && _dollarStoreDetailsComponent != null)
         {
-            bool success = await _dollarStoreDetailsComponent.CreateDollarStoreEntry();
-            if (success)
+            _dollarStoreDetailsSent = true;
+            try
             {
-                if (Service != null)
-                    Service = Service with
-                    {
-                        DollarStoreEntry = null
-                    };
-                _dollarStoreState = ModificationState.Reading;
+                bool success = await _dollarStoreDetailsComponent.CreateDollarStoreEntry();
+                if (success)
+                    _dollarStoreState = ModificationState.Reading;
+            }
+            finally
+            {
+                _dollarStoreDetailsSent = false;
             }
         }
     }
-    
+
     private async Task UpdateDollarStoreEntry()
     {
         if (_dollarStoreState == ModificationState.Updating && _dollarStoreDetailsComponent != null)
         {
-            bool success = await _dollarStoreDetailsComponent.UpdateDollarStoreEntry();
-            if (success)
+            _dollarStoreDetailsSent = true;
+            try
             {
-                if (Service != null)
-                    Service = Service with
-                    {
-                        DollarStoreEntry = null
-                    };
-                _dollarStoreState = ModificationState.Reading;
+                bool success = await _dollarStoreDetailsComponent.UpdateDollarStoreEntry();
+                if (success)
+                    _dollarStoreState = ModificationState.Reading;
             }
+            finally
+            {
+                _dollarStoreDetailsSent = false;
+            }
+        }
+    }
+
+    private async Task DeleteDollarStoreEntry()
+    {
+        if (_dollarStoreDetailsComponent != null)
+        {
+            await _dollarStoreDetailsComponent.DeleteDollarStoreEntry();
         }
     }
 }

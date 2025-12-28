@@ -1,7 +1,9 @@
 using GSBC.ImpactKids.Grpc;
 using GSBC.ImpactKids.Grpc.Data;
-using GSBC.ImpactKids.Grpc.Data.Interceptors;
 using GSBC.ImpactKids.Grpc.Extensions;
+using GSBC.ImpactKids.Grpc.Features.Eventing;
+using GSBC.ImpactKids.Grpc.Features.Eventing.Api.EventingServices;
+using GSBC.ImpactKids.Grpc.Features.Eventing.Services;
 using GSBC.ImpactKids.Grpc.Features.People.AllergenServices;
 using GSBC.ImpactKids.Grpc.Features.People.AllergyServices;
 using GSBC.ImpactKids.Grpc.Features.People.MedicalNoteServices;
@@ -31,6 +33,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 builder.AddRabbitMQClient("rabbitmq");
+builder.AddRedisDistributedCache("redis");
 
 builder.Services.AddTransient(typeof(IEventService<>), typeof(EventService<>));
 
@@ -57,12 +60,15 @@ builder.Services.AddConverters();
 builder.Services.AddTransient<ElvantoService>();
 builder.Services.AddSingleton<EventServicesService>();
 builder.Services.AddTransient<KeyedEventService>();
+builder.Services.AddSingleton<EventingChannelsService>();
+builder.Services.AddHostedService<RabbitWorker>();
+builder.Services.AddHybridCache();
 
 builder.AddNpgsqlDbContext<GsbcDbContext>(
     "impact-kids",
     null,
     // null
-    x => x.AddInterceptors(new LatencyInterceptor(TimeSpan.FromSeconds(1.5)))
+    x => x.AddInterceptors(new GSBC.ImpactKids.Grpc.Data.Interceptors.LatencyInterceptor(TimeSpan.FromSeconds(1.5)))
 );
 
 ElvantoConfig? elvantoConfig = builder.Configuration.GetSection("Elvanto").Get<ElvantoConfig>();
@@ -98,6 +104,7 @@ app.UseAuthorization();
 
 // Configure the HTTP request pipeline.
 app.MapGrpcService<LoginService>();
+app.MapGrpcService<EventingService>();
 app.MapGrpcService<EventService>();
 app.MapGrpcService<MetabaseService>();
 app.MapGrpcService<UsersService>();
@@ -120,11 +127,14 @@ app.MapGet("/",
     () =>
         "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");
 
+app.AddEventEndpoints();
+
 using (IServiceScope scope = app.Services.CreateScope())
 {
     IConnection          connection = scope.ServiceProvider.GetRequiredService<IConnection>();
     await using IChannel channel    = await connection.CreateChannelAsync();
     await channel.ExchangeDeclareAsync("data-events", ExchangeType.Topic);
+    await channel.ExchangeDeclareAsync("events", ExchangeType.Fanout);
 }
 
 app.Run();

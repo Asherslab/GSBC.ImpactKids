@@ -5,7 +5,6 @@ using GSBC.ImpactKids.Shared.Contracts.Services;
 using GSBC.ImpactKids.WASM.Extensions;
 using GSBC.ImpactKids.WASM.Services;
 using Microsoft.AspNetCore.Components;
-using MudBlazor;
 
 namespace GSBC.ImpactKids.WASM.Components.Base;
 
@@ -16,9 +15,6 @@ public abstract partial class EventListeningComponent : IAsyncDisposable
 
     [Inject]
     public required IEventService EventService { get; set; }
-
-    [Inject]
-    public required IDialogService DialogService { get; set; }
 
     protected override async Task OnInitializedAsync()
     {

@@ -1,4 +1,7 @@
+using System.Collections.Immutable;
+using EasyAppDev.Blazor.Store.AsyncActions;
 using GSBC.ImpactKids.Shared.Contracts.Entities;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.DollarStoreEntries;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using GSBC.ImpactKids.WASM.Components.Common.Inputs;
@@ -10,7 +13,7 @@ namespace GSBC.ImpactKids.WASM.Features.DollarStore.Components.Individual;
 public partial class DollarStoreEntryDetails
 {
     [Parameter]
-    public DollarStoreEntry? DollarStoreEntry { get; set; }
+    public Guid? Id { get; set; }
 
     [Parameter]
     public Guid? ServiceId { get; set; }
@@ -18,48 +21,84 @@ public partial class DollarStoreEntryDetails
     [Parameter]
     public ModificationState State { get; set; }
 
-    [Parameter]
-    public bool DisableOverlay { get; set; }
+    private          AsyncData<DollarStoreEntry>   _dollarStoreEntry = AsyncData<DollarStoreEntry>.NotAsked();
+    private readonly CreateDollarStoreEntryRequest _createRequest    = new();
+    private          UpdateDollarStoreEntryRequest _updateRequest    = new();
 
-    private readonly CreateDollarStoreEntryRequest _createRequest = new();
-    private          UpdateDollarStoreEntryRequest _updateRequest = new();
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
 
-    private bool _waitingForRefresh;
+        DollarStoreEntriesStore.Subscribe(_ => RetrieveDollarStoreEntry());
+        
+        await Task.WhenAll(DollarStoreEntriesStore.RefreshAll());
+    }
 
     protected override async Task OnParametersSetAsync()
     {
         await base.OnParametersSetAsync();
 
-        if (State == ModificationState.Reading && DollarStoreEntry != null)
-            _waitingForRefresh = false;
+        RetrieveDollarStoreEntry();
+    }
 
+    private void RetrieveDollarStoreEntry()
+    {
         _createRequest.ServiceId = ServiceId ?? Guid.Empty;
-        
-        if (DollarStoreEntry != null && !_waitingForRefresh)
-        {
-            _updateRequest = new UpdateDollarStoreEntryRequest
-            {
-                Guid = DollarStoreEntry.Id
-            };
+        if (State == ModificationState.Creating)
+            return;
 
-            _updateRequest.DollarDoosMade.SetInitialValue(DollarStoreEntry.DollarDoosMade);
-            _updateRequest.Notes.SetInitialValue(DollarStoreEntry.Notes);
-        }
-        else if (State != ModificationState.Creating)
+        AsyncData<ImmutableList<DollarStoreEntry>> entries = DollarStoreEntriesStore.GetState().Entities;
+
+        if (!entries.HasData)
         {
-            _waitingForRefresh = true;
+            _dollarStoreEntry = _dollarStoreEntry.CopyStatus(entries);
+            StateHasChanged();
+            return;
         }
+
+        DollarStoreEntry? entry = null;
+
+        if (Id != null)
+        {
+            entry = entries.Data!
+                .FirstOrDefault(x => x.Id == Id);
+        }
+        else if (ServiceId != null)
+        {
+            entry = entries.Data!
+                .FirstOrDefault(x => x.ServiceId == ServiceId);
+        }
+
+        if (entry == null)
+        {
+            _dollarStoreEntry = _dollarStoreEntry.ToFailure("No Dollar Store Entry Found");
+            _updateRequest = new UpdateDollarStoreEntryRequest();
+            StateHasChanged();
+            return;
+        }
+
+        _dollarStoreEntry = _dollarStoreEntry.ToSuccess(entry);
+
+        _updateRequest = new UpdateDollarStoreEntryRequest
+        {
+            Guid = entry.Id
+        };
+
+        _updateRequest.DollarDoosMade.SetInitialValue(entry.DollarDoosMade);
+        _updateRequest.Notes.SetInitialValue(entry.Notes);
+
+        StateHasChanged();
     }
 
     public async Task<bool> CreateDollarStoreEntry()
     {
-        _waitingForRefresh = true;
+        _dollarStoreEntry = _dollarStoreEntry.ToLoading();
         StateHasChanged();
-        BasicResponse? resp = await DollarStoreEntryService.Create(_createRequest);
+        BasicResponse resp = await DollarStoreEntryService.Create(_createRequest);
 
         if (resp.HasErrorOrNull())
         {
-            _waitingForRefresh = false;
+            RetrieveDollarStoreEntry();
             Snackbar.AddErrorResponse(resp);
             return false;
         }
@@ -72,17 +111,41 @@ public partial class DollarStoreEntryDetails
         if (_updateRequest.Guid == Guid.Empty)
             return false;
 
-        _waitingForRefresh = true;
+        _dollarStoreEntry = _dollarStoreEntry.ToLoading();
         StateHasChanged();
-        BasicResponse? resp = await DollarStoreEntryService.Update(_updateRequest);
+        BasicResponse resp = await DollarStoreEntryService.Update(_updateRequest);
 
-        if (resp.HasErrorOrNull())
-        {
-            _waitingForRefresh = false;
-            Snackbar.AddErrorResponse(resp);
-            return false;
-        }
+        if (!resp.HasErrorOrNull())
+            return true;
 
-        return true;
+        RetrieveDollarStoreEntry();
+        Snackbar.AddErrorResponse(resp);
+        return false;
+    }
+
+    public async Task DeleteDollarStoreEntry()
+    {
+        if (_dollarStoreEntry.Data == null)
+            return;
+        Guid id = _dollarStoreEntry.Data.Id;
+
+        bool? result = await DialogService.ShowMessageBox(
+            "Warning",
+            "Deleting can not be undone!",
+            yesText: "Delete!", cancelText: "Cancel");
+
+        if (result == null)
+            return;
+
+        _dollarStoreEntry = _dollarStoreEntry.ToLoading();
+        StateHasChanged();
+        BasicReadRequest request = new() { Guid = id };
+        BasicResponse    resp    = await DollarStoreEntryService.Delete(request);
+
+        if (!resp.HasErrorOrNull())
+            return;
+
+        RetrieveDollarStoreEntry();
+        Snackbar.AddErrorResponse(resp);
     }
 }

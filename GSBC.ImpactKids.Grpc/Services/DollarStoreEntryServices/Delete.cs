@@ -7,7 +7,7 @@ namespace GSBC.ImpactKids.Grpc.Services.DollarStoreEntryServices;
 
 public partial class DollarStoreEntryService
 {
-    public async Task<BasicResponse?> Delete(BasicReadRequest request, CallContext context = default)
+    public async Task<BasicResponse> Delete(BasicReadRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 

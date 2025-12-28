@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses;
 using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scripture.Memorisation.MemoryVerses;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using Microsoft.EntityFrameworkCore;
@@ -10,18 +11,30 @@ namespace GSBC.ImpactKids.Grpc.Features.Scripture.Memorisation.MemoryVersesServi
 
 public partial class MemoryVersesService
 {
-    public async Task<BasicReadMultipleResponse<MemoryVerse>?> ReadMultiple(
+    public Task<BasicReadMultipleResponse<MemoryVerse>> BasicReadMultiple(
+        BasicReadMultipleRequest request,
+        CallContext              context = default
+    )
+    {
+        return ReadMultiple(new MemoryVersesRequest
+            {
+                Pagination = request.Pagination,
+                SearchString = request.SearchString
+            }
+        );
+    }
+
+    public async Task<BasicReadMultipleResponse<MemoryVerse>> ReadMultiple(
         MemoryVersesRequest request,
         CallContext         context = default
     )
     {
         CancellationToken token = context.CancellationToken;
 
-        IQueryable<DbMemoryVerse> query = db.MemoryVerses;
+        IQueryable<DbMemoryVerse> query = db.MemoryVerses
+            .Include(x => x.Services)
+            .Include(x => x.BibleVerses);
 
-        if (request.IncludeBibleVerses)
-            query = query.Include(x => x.BibleVerses);
-        
         if (request.SearchString != null)
         {
             query = query.Where(x =>
@@ -44,7 +57,7 @@ public partial class MemoryVersesService
         }
 
         query = query.OrderBy(x => x.Services.OrderBy(y => y.Date).First());
-        
+
         query = query.Paginate(request);
 
         List<DbMemoryVerse> verses = await query.ToListAsync(token);

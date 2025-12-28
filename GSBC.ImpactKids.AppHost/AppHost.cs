@@ -7,8 +7,10 @@ builder.AddKubernetesEnvironment("k8s")
         x.DefaultStorageType = "pvc";
     });
 
-IResourceBuilder<RedisResource> cache = builder.AddRedis("cache")
-    .WithLifetime(ContainerLifetime.Persistent);
+IResourceBuilder<RedisResource> redis = builder.AddRedis("redis")
+    .WithHostPort(60535)
+    .WithLifetime(ContainerLifetime.Persistent)
+    .WithRedisInsight();
 
 IResourceBuilder<RabbitMQServerResource> rabbitmq = builder.AddRabbitMQ("rabbitmq")
     .WithDataVolume()
@@ -28,6 +30,8 @@ IResourceBuilder<ProjectResource> migrations =
         .WaitFor(db);
 
 IResourceBuilder<ProjectResource> grpcService = builder.AddProject<Projects.GSBC_ImpactKids_Grpc>("grpc")
+    .WithReference(redis)
+    .WaitFor(redis)
     .WithReference(rabbitmq)
     .WaitFor(rabbitmq)
     .WithReference(db)

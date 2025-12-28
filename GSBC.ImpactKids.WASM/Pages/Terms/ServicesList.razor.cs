@@ -1,7 +1,7 @@
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.Services;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base.Interfaces;
 using GSBC.ImpactKids.WASM.Components.Base;
 using GSBC.ImpactKids.WASM.Components.Dialogs.Create;
 using GSBC.ImpactKids.WASM.Extensions;
@@ -29,7 +29,7 @@ public partial class ServicesList : EventListeningComponent
 
     private async Task RefreshServices()
     {
-        BasicReadMultipleResponse<Service>? response = await ServicesService.ReadMultiple(
+        IReadMultipleResponse<Service> response = await ServicesService.ReadMultiple(
             new ServicesRequest
             {
                 SchoolTermId = SchoolTerm.Id

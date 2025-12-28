@@ -4,39 +4,6 @@ namespace GSBC.ImpactKids.WASM.Services.RefreshableStore;
 
 public partial class RefreshableStore<T>
 {
-    public async Task ExecuteAsync<TResult>(
-        Func<Task<TResult>>                                      asyncAction,
-        Func<EntityListState<T>, EntityListState<T>>             loading,
-        Func<EntityListState<T>, TResult, EntityListState<T>>    success,
-        Func<EntityListState<T>, Exception, EntityListState<T>>? error  = null,
-        string?                                                  action = null
-    )
-    {
-        await executor.ExecuteAsync(asyncAction, loading, success, error, action);
-    }
-
-    public async Task ExecuteAsync(
-        Func<Task>                                               asyncAction,
-        Func<EntityListState<T>, EntityListState<T>>             loading,
-        Func<EntityListState<T>, EntityListState<T>>             success,
-        Func<EntityListState<T>, Exception, EntityListState<T>>? error  = null,
-        string?                                                  action = null
-    )
-    {
-        await executor.ExecuteAsync(asyncAction, loading, success, error, action);
-    }
-
-    public async Task ExecuteAsync<TResult>(
-        Func<Task<TResult>>                                      asyncAction,
-        Func<EntityListState<T>, EntityListState<T>>             loading,
-        Func<EntityListState<T>, EntityListState<T>>             success,
-        Func<EntityListState<T>, Exception, EntityListState<T>>? error  = null,
-        string?                                                  action = null
-    )
-    {
-        await executor.ExecuteAsync(asyncAction, loading, success, error, action);
-    }
-
     public EntityListState<T> GetState()
     {
         return store.GetState();

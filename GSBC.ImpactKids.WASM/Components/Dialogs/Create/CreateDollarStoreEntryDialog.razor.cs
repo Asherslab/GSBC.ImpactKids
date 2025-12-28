@@ -3,6 +3,7 @@ using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.DollarStoreEntries;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.Services;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base.Interfaces;
 using GSBC.ImpactKids.WASM.Extensions;
 using Microsoft.AspNetCore.Components;
 
@@ -29,7 +30,7 @@ public partial class CreateDollarStoreEntryDialog : ComponentBase
         CancellationToken token
     )
     {
-        BasicReadMultipleResponse<Service>? response;
+        IReadMultipleResponse<Service>? response;
         try
         {
             response = await ServicesService.ReadMultiple(

@@ -24,23 +24,23 @@ public partial class UpdateServiceDialog
     {
         await base.OnInitializedAsync();
 
-        if (SchoolTerm == null && Service.SchoolTerm?.Id != null)
+        if (SchoolTerm == null && Service.SchoolTermId != null)
         {
             BasicReadResponse<SchoolTerm>? resp = await SchoolTermsService.Read(new SchoolTermRequest
             {
-                Guid = Service.SchoolTerm.Id
+                Guid = Service.SchoolTermId.Value
             });
 
             if (resp.HasErrorOrNull())
                 Snackbar.AddErrorResponse(resp);
 
-            SchoolTerm = resp?.Entity;
+            SchoolTerm = resp.Entity;
         }
 
         _request.Guid = Service.Id;
         _request.Name.SetInitialValue(Service.Name);
         _request.LocalDate.SetInitialValue(Service.LocalDate);
-        _request.SchoolTermId.SetInitialValue(Service.SchoolTerm?.Id);
+        _request.SchoolTermId.SetInitialValue(Service.SchoolTermId);
     }
 
     private async Task Submit()

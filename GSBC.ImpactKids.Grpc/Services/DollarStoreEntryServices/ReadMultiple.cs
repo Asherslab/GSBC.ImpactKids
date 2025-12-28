@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using GSBC.ImpactKids.Grpc.Data.Models;
 using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Shared.Contracts.Entities;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.DollarStoreEntries;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +11,19 @@ namespace GSBC.ImpactKids.Grpc.Services.DollarStoreEntryServices;
 
 public partial class DollarStoreEntryService
 {
-    public async Task<BasicReadMultipleResponse<DollarStoreEntry>?> ReadMultiple(
+    public Task<BasicReadMultipleResponse<DollarStoreEntry>> BasicReadMultiple(
+        BasicReadMultipleRequest request,
+        CallContext              context = default
+    )
+    {
+        return ReadMultiple(new DollarStoreEntriesRequest
+        {
+            Pagination = request.Pagination,
+            SearchString = request.SearchString
+        });
+    }
+
+    public async Task<BasicReadMultipleResponse<DollarStoreEntry>> ReadMultiple(
         DollarStoreEntriesRequest request,
         CallContext               context = default
     )

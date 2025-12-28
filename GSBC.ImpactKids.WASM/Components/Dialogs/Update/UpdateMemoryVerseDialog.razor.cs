@@ -9,6 +9,7 @@ using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.Ser
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scripture.Memorisation.MemoryVerseLists;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scripture.Memorisation.MemoryVerses;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base.Interfaces;
 using GSBC.ImpactKids.WASM.Extensions;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
@@ -33,7 +34,7 @@ public partial class UpdateMemoryVerseDialog : ComponentBase
     {
         await base.OnInitializedAsync();
 
-        if (Verse.BibleVerses == null || Verse.Services == null)
+        /* TODO :if (Verse.BibleVerses == null || Verse.Services == null)
         {
             BasicReadResponse<MemoryVerse>? resp = await MemoryVersesService.Read(
                 new BasicReadRequest
@@ -47,7 +48,7 @@ public partial class UpdateMemoryVerseDialog : ComponentBase
 
             if (resp?.Entity != null)
                 Verse = resp.Entity;
-        }
+        }*/
         
         if (List == null)
         {
@@ -76,8 +77,8 @@ public partial class UpdateMemoryVerseDialog : ComponentBase
         _request.ServiceIds.SetInitialValue(Verse.ServiceIds.ToArray());
         _request.BibleVerseIds.SetInitialValue(Verse.BibleVerseIds.ToArray());
 
-        _selectedServices = Verse.Services?.ToList() ?? [];
-        _selectedVerses = Verse.BibleVerses?.ToList() ?? [];
+        // _selectedServices = Verse.Services?.ToList() ?? [];
+        // _selectedVerses = Verse.BibleVerses?.ToList() ?? [];
     }
 
     private async Task Submit()
@@ -310,7 +311,7 @@ public partial class UpdateMemoryVerseDialog : ComponentBase
 
     private async Task RefreshServices()
     {
-        BasicReadMultipleResponse<Service>? response = await
+        IReadMultipleResponse<Service>? response = await
             ServicesService.ReadMultiple(new ServicesRequest
             {
                 SearchString = _serviceSearch,

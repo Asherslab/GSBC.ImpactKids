@@ -10,8 +10,8 @@ namespace GSBC.ImpactKids.Grpc.Features.Scheduling.ServiceTypeServices;
 
 public partial class ServiceTypeService
 {
-    public async Task<BasicReadMultipleResponse<ServiceType>?>
-        ReadMultiple(BasicReadMultipleRequest request, CallContext context = default)
+    public async Task<BasicReadMultipleResponse<ServiceType>>
+        BasicReadMultiple(BasicReadMultipleRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 

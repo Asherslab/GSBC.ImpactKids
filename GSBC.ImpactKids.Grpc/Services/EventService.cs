@@ -16,7 +16,7 @@ public class EventService<T>(
     public async Task SendUpdatedEvent(Guid id, CancellationToken token = default, params Guid[] topicParentIds)
     {
         await using IChannel channel = await connection.CreateChannelAsync(cancellationToken: token);
-        await channel.ExchangeDeclareAsync("data-events", ExchangeType.Topic, cancellationToken: token);
+        // await channel.ExchangeDeclareAsync("data-events", ExchangeType.Topic, cancellationToken: token);
 
         StringBuilder topic = new();
         topic.Append(typeof(T).Name);
@@ -31,6 +31,8 @@ public class EventService<T>(
         topic.Append($".{id}");
 
         await channel.BasicPublishAsync(exchange: "data-events", topic.ToString(), "event"u8.ToArray(),
+            cancellationToken: token);
+        await channel.BasicPublishAsync(exchange: "events", string.Empty, Encoding.UTF8.GetBytes(typeof(T).FullName!),
             cancellationToken: token);
     }
 }

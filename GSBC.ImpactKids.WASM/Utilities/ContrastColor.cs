@@ -11,7 +11,6 @@ public static class ContrastColor
     /// </summary>
     public static string GetAccessibleTextHex(string backgroundHex)
     {
-        Console.WriteLine(backgroundHex);
         (byte r, byte g, byte b) = ParseHex(backgroundHex);
 
         // Relative luminance per WCAG 2.1

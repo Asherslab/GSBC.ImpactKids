@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling.School;
 using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.School.SchoolTerms;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +11,19 @@ namespace GSBC.ImpactKids.Grpc.Features.Scheduling.School.SchoolTermServices;
 
 public partial class SchoolTermService
 {
-    public async Task<BasicReadMultipleResponse<SchoolTerm>?> ReadMultiple(
+    public Task<BasicReadMultipleResponse<SchoolTerm>> BasicReadMultiple(
+        BasicReadMultipleRequest request,
+        CallContext              context = default
+    )
+    {
+        return ReadMultiple(new SchoolTermsRequest
+        {
+            Pagination = request.Pagination,
+            SearchString = request.SearchString
+        });
+    }
+
+    public async Task<BasicReadMultipleResponse<SchoolTerm>> ReadMultiple(
         SchoolTermsRequest request,
         CallContext        context = default
     )
@@ -33,7 +46,7 @@ public partial class SchoolTermService
         }
 
         query = query.OrderBy(x => x.StartDate);
-        
+
         query = query.Paginate(request);
 
         List<DbSchoolTerm> terms = await query.ToListAsync(token);
