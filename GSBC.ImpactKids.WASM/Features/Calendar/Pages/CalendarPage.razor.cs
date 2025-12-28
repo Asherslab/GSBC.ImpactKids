@@ -1,143 +1,83 @@
-using System.Globalization;
+using System.Collections.Immutable;
+using EasyAppDev.Blazor.Store.AsyncActions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School;
-using GSBC.ImpactKids.Shared.Contracts.Entities.Pagination;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.School.SchoolTerms;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.Services;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base.Interfaces;
-using GSBC.ImpactKids.WASM.Components.Base;
 using GSBC.ImpactKids.WASM.Extensions;
-using GSBC.ImpactKids.WASM.Features.Calendar.Models;
-using Microsoft.AspNetCore.Components;
 
 namespace GSBC.ImpactKids.WASM.Features.Calendar.Pages;
 
-public partial class CalendarPage : EventListeningComponent
+public partial class CalendarPage
 {
-    [SupplyParameterFromQuery]
-    public string? Date { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
 
-    private DateTime? _dateTime = DateTime.Now;
-    private DateTime  CalendarDate => _dateTime ?? DateTime.Now;
+        SchoolTermsStore.Subscribe(_ => UpdateCalendarTerms());
+        ServicesStore.Subscribe(_ => UpdateCalendarEvents());
+        ServiceTypesStore.Subscribe(_ => UpdateCalendarEvents());
 
-    private ICollection<CalendarTerm>?  _calendarTerms;
-    private ICollection<CalendarEvent>? _events;
+        await Task.WhenAll(
+            SchoolTermsStore.RefreshAll(),
+            ServicesStore.RefreshAll(),
+            ServiceTypesStore.RefreshAll()
+        );
+    }
 
     protected override async Task OnParametersSetAsync()
     {
         await base.OnParametersSetAsync();
 
-        if (Date != null && DateTime.TryParseExact(
-                Date,
-                "MM-yyyy",
-                CultureInfo.InvariantCulture,
-                DateTimeStyles.None,
-                out DateTime date)
-           )
-            _dateTime = date;
-
-        await Task.WhenAll(
-            RefreshSchoolTerms(),
-            RefreshServices(),
-            SubscribeToEvent(SchoolTerm.BuildSubscription(), RefreshSchoolTerms),
-            SubscribeToEvent(Service.BuildSubscription(), RefreshServices),
-            SubscribeToEvent(ServiceType.BuildSubscription(), RefreshServices)
-        );
+        UpdateCalendarTerms();
+        UpdateCalendarEvents();
     }
 
-    private CancellationTokenSource _refreshSchoolTermsTokenSource = new();
-
-    private async Task RefreshSchoolTerms()
+    private void UpdateCalendarTerms()
     {
-        await _refreshSchoolTermsTokenSource.CancelAsync();
-        _refreshSchoolTermsTokenSource = new CancellationTokenSource();
+        AsyncData<ImmutableList<SchoolTerm>> terms = SchoolTermsStore.GetState().Entities;
 
-        BasicReadMultipleResponse<SchoolTerm>? response = await SchoolTermsService.ReadMultiple(
-            new SchoolTermsRequest
+        if (!terms.HasData)
+        {
+            Update(s => s with { Terms = s.Terms.CopyStatus(terms) });
+            return;
+        }
+
+        ImmutableList<CalendarTerm> calendarTerms = terms.Data!
+            .Select(x => new CalendarTerm(
+                    x.LocalStartDate,
+                    x.LocalEndDate,
+                    x.Name,
+                    null
+                )
+            ).ToImmutableList();
+
+        Update(s => s with { Terms = s.Terms.ToSuccess(calendarTerms) });
+    }
+
+    private void UpdateCalendarEvents()
+    {
+        AsyncData<ImmutableList<Service>>     services     = ServicesStore.GetState().Entities;
+        AsyncData<ImmutableList<ServiceType>> serviceTypes = ServiceTypesStore.GetState().Entities;
+
+        if (!services.HasData)
+        {
+            Update(s => s with { Events = s.Events.CopyStatus(services) });
+            return;
+        }
+
+        ImmutableList<CalendarEvent> calendarEvents = services.Data!
+            .Select(x => new
             {
-                Pagination = PaginationRequest.All(),
-                Year = CalendarDate.Year
-            },
-            _refreshSchoolTermsTokenSource.Token
-        );
+                Service = x,
+                ServiceType = serviceTypes.Data?.FirstOrDefault(y => y.Id == x.ServiceTypeId)
+            })
+            .Select(x => new CalendarEvent(
+                    x.Service.LocalDate,
+                    x.Service.Name ?? x.ServiceType?.Label ?? "Service",
+                    x.ServiceType?.Color,
+                    $"/Services/{x.Service.Id}"
+                )
+            ).ToImmutableList();
 
-        _calendarTerms = response?.Entities
-            .Select(x => new CalendarTerm
-                {
-                    StartDate = x.LocalStartDate,
-                    EndDate = x.LocalEndDate,
-                    Name = x.Name,
-                    Color = null
-                }
-            )
-            .ToList();
-
-        StateHasChanged();
-
-        if (response.HasErrorOrNull())
-        {
-            Snackbar.AddErrorResponse(response);
-        }
-    }
-
-    private CancellationTokenSource _refreshServicesTokenSource = new();
-
-    private async Task RefreshServices()
-    {
-        await _refreshServicesTokenSource.CancelAsync();
-        _refreshServicesTokenSource = new CancellationTokenSource();
-
-        IReadMultipleResponse<Service>? response = await ServicesService.ReadMultiple(
-            new ServicesRequest
-            {
-                Pagination = PaginationRequest.All(),
-                Year = CalendarDate.Year
-            },
-            _refreshServicesTokenSource.Token
-        );
-
-        _events = response?.Entities
-            .Select(x => new CalendarEvent
-                {
-                    Date = x.LocalDate,
-                    Name = x.Name ?? "Service", // TODO: x.ServiceType?.Label ?? "Service",
-                    Color = null, //TODO: x.ServiceType?.Color,
-                    Href = $"/Services/{x.Id}"
-                }
-            )
-            .ToList();
-
-        StateHasChanged();
-
-        if (response.HasErrorOrNull())
-        {
-            Snackbar.AddErrorResponse(response);
-        }
-    }
-
-    private async Task DateChanged(DateTime? dateTime)
-    {
-        if (dateTime?.Year != CalendarDate.Year)
-        {
-            _dateTime = dateTime;
-            await Task.WhenAll(RefreshSchoolTerms(), RefreshServices());
-        }
-
-        _dateTime = dateTime;
-        SetQueryParameters();
-    }
-
-    private void SetQueryParameters()
-    {
-        Navigation.NavigateTo(GetQueryParameters());
-    }
-
-    private string GetQueryParameters()
-    {
-        return Navigation.GetUriWithQueryParameters(new Dictionary<string, object?>
-        {
-            [nameof(Date)] = $"{_dateTime:MM-yyyy}"
-        });
+        Update(s => s with { Events = s.Events.ToSuccess(calendarEvents) });
     }
 }

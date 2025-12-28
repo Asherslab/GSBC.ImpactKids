@@ -7,6 +7,7 @@ using GSBC.ImpactKids.Shared.Contracts.Entities;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
+using GSBC.ImpactKids.WASM.Features.Calendar;
 using GSBC.ImpactKids.WASM.Features.Eventing;
 using GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services;
 using GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services.Features.ServiceTypes;
@@ -55,7 +56,8 @@ public static class StateStoreExtensions
             return services
                 .AddPageStore<MultipleServicesState>()
                 .AddPageStore<MultipleServiceTypesState>()
-                .AddPageStore<EventsStreamState>();
+                .AddPageStore<EventsStreamState>()
+                .AddPageStore<CalendarState>();
         }
 
         private IServiceCollection AddEntityStore<T>() where T : notnull
