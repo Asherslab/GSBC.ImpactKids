@@ -1,36 +1,37 @@
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People;
+using GSBC.ImpactKids.Shared.Contracts.Services.Base;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Services.Features.People;
 
 [Service("GSBC.ImpactKids.Person")]
-public interface IPersonService
+public interface IPersonService : IBasicReadMultipleService<Person>
 {
-    Task<BasicResponse?> Create(
+    Task<BasicResponse> Create(
         CreatePersonRequest request,
         CallContext         context = default
     );
 
-    Task<BasicResponse?> SyncWithElvanto(
+    Task<BasicResponse> SyncWithElvanto(
         CallContext context = default
     );
 
-    Task<BasicReadResponse<Person>?> Read(
+    Task<BasicReadResponse<Person>> Read(
         BasicReadRequest request,
         CallContext      context = default
     );
 
-    Task<BasicReadMultipleResponse<Person>?> ReadMultiple(
+    Task<BasicReadMultipleResponse<Person>> ReadMultiple(
         PeopleRequest request,
         CallContext   context = default
     );
 
-    Task<BasicResponse?> Update(
+    Task<BasicResponse> Update(
         UpdatePersonRequest request,
         CallContext         context = default
     );
 
-    Task<BasicResponse?> Delete(
+    Task<BasicResponse> Delete(
         BasicReadRequest request,
         CallContext      context = default
     );

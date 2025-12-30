@@ -1,0 +1,24 @@
+@inject IRefreshableStore<Person> PeopleStore
+
+<MudOverlay Visible="_peopleIds.IsLoading" DarkBackground="true" Absolute="true">
+    <MudProgressCircular Indeterminate/>
+</MudOverlay>
+@if (_peopleIds.Data != null)
+{
+    <MudGrid Spacing="6" Justify="Justify.Center">
+        @foreach (Guid personId in _peopleIds.Data)
+        {
+            <MudItem md="12" lg="6">
+                <PersonDisplay Id="personId"/>
+            </MudItem>
+        }
+    </MudGrid>
+}
+else
+{
+    <MudGrid Spacing="6" Justify="Justify.FlexStart">
+        <MudItem xs="12">
+            <PersonDisplay/>
+        </MudItem>
+    </MudGrid>
+}

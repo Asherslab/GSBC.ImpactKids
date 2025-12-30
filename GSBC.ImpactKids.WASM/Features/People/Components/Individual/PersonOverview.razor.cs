@@ -1,11 +1,10 @@
-using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.Allergies;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.MedicalNotes;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
-using GSBC.ImpactKids.WASM.Features.People.Features.Allergies.Components;
-using GSBC.ImpactKids.WASM.Features.People.Features.MedicalNotes.Components;
+using GSBC.ImpactKids.WASM.Components.Common.Inputs;
+using GSBC.ImpactKids.WASM.Features.People.Features.Allergies.Components.Individual;
+using GSBC.ImpactKids.WASM.Features.People.Features.MedicalNotes.Components.Individual;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 
 namespace GSBC.ImpactKids.WASM.Features.People.Components.Individual;
@@ -13,24 +12,18 @@ namespace GSBC.ImpactKids.WASM.Features.People.Components.Individual;
 public partial class PersonOverview : ComponentBase
 {
     [Parameter]
-    public required Person? Person { get; set; }
-
-    [Parameter]
-    public ICollection<Person>? FamilyMembers { get; set; }
+    public required Guid? Id { get; set; }
 
     [Parameter]
     public ICollection<MemorisationEntry>? MemorisationEntries { get; set; }
 
-    [Parameter]
-    public EventCallback<MouseEventArgs> DeletePerson { get; set; }
-
     protected override void OnParametersSet()
     {
         base.OnParametersSet();
-        if (Person == null)
-        {
-            if (_editingDetails)
+        PeopleStore.Subscribe(_ =>
             {
+                if (_detailsSent || _detailsState != ModificationState.Updating) return;
+
                 Snackbar.Add(
                     "Somebody else has made modifications to this family, your edit has been cancelled",
                     Severity.Warning,
@@ -39,24 +32,39 @@ public partial class PersonOverview : ComponentBase
                         x.CloseAfterNavigation = true;
                         x.VisibleStateDuration = int.MaxValue;
                     });
+                _detailsState = ModificationState.Reading;
+                StateHasChanged();
             }
-
-            _editingDetails = false;
-        }
+        );
     }
 
-    private PersonDetails? _personDetailsComponent;
-    private bool           _editingDetails;
+    private bool              _detailsSent;
+    private ModificationState _detailsState = ModificationState.Reading;
+    private PersonDetails?    _personDetailsComponent;
 
     private async Task UpdatePerson()
     {
-        if (_editingDetails && _personDetailsComponent != null)
+        if (_detailsState == ModificationState.Updating && _personDetailsComponent != null)
         {
-            bool success = await _personDetailsComponent.UpdatePersonDetails();
-            if (success)
+            _detailsSent = true;
+            try
             {
-                _editingDetails = false;
+                bool success = await _personDetailsComponent.UpdatePerson();
+                if (success)
+                    _detailsState = ModificationState.Reading;
             }
+            finally
+            {
+                _detailsSent = false;
+            }
+        }
+    }
+
+    private async Task DeletePerson()
+    {
+        if (_personDetailsComponent != null)
+        {
+            await _personDetailsComponent.DeletePerson();
         }
     }
 

@@ -41,6 +41,7 @@ public partial class ServiceDisplay
         if (!services.HasData)
         {
             _service = _service.CopyStatus(services);
+            StateHasChanged();
             return;
         }
 

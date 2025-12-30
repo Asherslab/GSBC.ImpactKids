@@ -1,0 +1,24 @@
+@inject IRefreshableStore<MedicalNote> MedicalNotesStore
+
+<MudOverlay Visible="_medicalNoteIds.IsLoading" DarkBackground="true" Absolute="true">
+    <MudProgressCircular Indeterminate/>
+</MudOverlay>
+@if (_medicalNoteIds.Data != null && _medicalNoteIds.Data.Count != 0)
+{
+    <MudGrid Spacing="6" Justify="Justify.Center">
+        @foreach (Guid noteId in _medicalNoteIds.Data)
+        {
+            <MudItem md="12" lg="6">
+                <MedicalNoteDisplay Id="noteId" AllowDeleting/>
+            </MudItem>
+        }
+    </MudGrid>
+}
+else
+{
+    <MudGrid Spacing="6" Justify="Justify.FlexStart">
+        <MudItem xs="12">
+            <MedicalNoteDisplay None/>
+        </MudItem>
+    </MudGrid>
+}

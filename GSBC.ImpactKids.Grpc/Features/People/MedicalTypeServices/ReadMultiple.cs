@@ -10,7 +10,7 @@ namespace GSBC.ImpactKids.Grpc.Features.People.MedicalTypeServices;
 
 public partial class MedicalTypeService
 {
-    public async Task<BasicReadMultipleResponse<MedicalType>?> ReadMultiple(
+    public async Task<BasicReadMultipleResponse<MedicalType>> BasicReadMultiple(
         BasicReadMultipleRequest request,
         CallContext              context = default
     )

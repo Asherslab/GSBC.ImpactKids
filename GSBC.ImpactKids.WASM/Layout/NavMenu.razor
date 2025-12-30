@@ -5,7 +5,7 @@
 <MudNavMenu>
     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
     <MudNavLink Href="/roster" Icon="@Icons.Material.Filled.Schedule">Roster</MudNavLink>
-    
+
     <MudNavLink Href="/calendar" Icon="@Icons.Material.Filled.CalendarMonth">Calendar</MudNavLink>
 
     <MudNavPopout Icon="@Icons.Material.Filled.School"
@@ -28,14 +28,6 @@
         <MudMenuItem Icon="@Icons.Material.Filled.Redo"
                      Label="Upcoming"
                      Href="/Services/Rel?Upcoming=true"/>
-        <MudMenu Label="School Terms">
-            <MudMenuItem Icon="@Icons.Material.Filled.CalendarViewMonth"
-                         Label="All"
-                         Href="/terms"/>
-            <MudMenuItem Icon="@Icons.Material.Filled.CalendarMonth"
-                         Label="This Term"
-                         Href="/term"/>
-        </MudMenu>
     </MudNavPopout>
     @if (MetabaseConfig.DashboardMappings.Any())
     {

@@ -22,25 +22,25 @@ public partial class MudSelectCreateOrUpdate<T>
     [Parameter]
     public T? Read { get; set; }
     
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
         base.OnParametersSet();
         
         switch (State)
         {
             case ModificationState.Creating:
-                SelectOption(Create);
+                await SelectOption(Create);
                 ValueChanged = CreateChanged;
                 ReadOnly = false;
                 break;
             case ModificationState.Reading:
-                Value = default; // makes sure the select updates text when switched to read
-                SelectOption(Read);
+                await ClearAsync();
+                await SelectOption(Read);
                 ValueChanged = new EventCallback<T>();
                 ReadOnly = true;
                 break;
             case ModificationState.Updating:
-                SelectOption(Update);
+                await SelectOption(Update);
                 ValueChanged = UpdateChanged;
                 ReadOnly = false;
                 break;

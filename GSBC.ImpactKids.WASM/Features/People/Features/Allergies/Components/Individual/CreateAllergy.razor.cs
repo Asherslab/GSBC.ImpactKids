@@ -6,7 +6,7 @@ using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using GSBC.ImpactKids.WASM.Extensions;
 using Microsoft.AspNetCore.Components;
 
-namespace GSBC.ImpactKids.WASM.Features.People.Features.Allergies.Components;
+namespace GSBC.ImpactKids.WASM.Features.People.Features.Allergies.Components.Individual;
 
 public partial class CreateAllergy : ComponentBase
 {
@@ -33,7 +33,7 @@ public partial class CreateAllergy : ComponentBase
 
     private async Task RefreshAllergens()
     {
-        BasicReadMultipleResponse<Allergen>? resp = await AllergenService.ReadMultiple(
+        BasicReadMultipleResponse<Allergen>? resp = await AllergenService.BasicReadMultiple(
             new BasicReadMultipleRequest
             {
                 Pagination = PaginationRequest.All()

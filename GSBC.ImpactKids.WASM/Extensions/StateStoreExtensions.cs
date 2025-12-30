@@ -4,11 +4,15 @@ using EasyAppDev.Blazor.Store.Persistence;
 using EasyAppDev.Blazor.Store.Query;
 using EasyAppDev.Blazor.Store.Utilities;
 using GSBC.ImpactKids.Shared.Contracts.Entities;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.Allergies;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.MedicalNotes;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
 using GSBC.ImpactKids.WASM.Features.Calendar;
 using GSBC.ImpactKids.WASM.Features.Eventing;
+using GSBC.ImpactKids.WASM.Features.People;
 using GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services;
 using GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services.Features.ServiceTypes;
 using GSBC.ImpactKids.WASM.Services.RefreshableStore;
@@ -41,7 +45,13 @@ public static class StateStoreExtensions
                 .AddEntityStore<ServiceType>()
                 .AddEntityStore<SchoolTerm>()
                 .AddEntityStore<DollarStoreEntry>()
-                .AddEntityStore<MemoryVerse>();
+                .AddEntityStore<MemoryVerse>()
+                .AddEntityStore<Person>()
+                .AddEntityStore<Allergen>()
+                .AddEntityStore<Allergy>()
+                .AddEntityStore<MedicalNote>()
+                .AddEntityStore<MedicalType>()
+                .AddEntityStore<SchoolGrade>();
         }
 
         private IServiceCollection AddComponentStores()
@@ -57,7 +67,8 @@ public static class StateStoreExtensions
                 .AddPageStore<MultipleServicesState>()
                 .AddPageStore<MultipleServiceTypesState>()
                 .AddPageStore<EventsStreamState>()
-                .AddPageStore<CalendarState>();
+                .AddPageStore<CalendarState>()
+                .AddPageStore<MultiplePeopleState>();
         }
 
         private IServiceCollection AddEntityStore<T>() where T : notnull

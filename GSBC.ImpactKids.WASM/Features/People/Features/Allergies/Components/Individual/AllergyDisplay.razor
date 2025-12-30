@@ -1,28 +1,30 @@
-@inject IAllergyService AllergyService
-@inject ISnackbar       Snackbar
+@inject IRefreshableStore<Allergy>  AllergiesStore
+@inject IRefreshableStore<Allergen> AllergensStore
+@inject IAllergyService             AllergyService
+@inject ISnackbar                   Snackbar
 
-<MudOverlay Visible="@_hasBeenDeleted" DarkBackground="true" Absolute="true">
+<MudOverlay Visible="_allergy.IsLoading" DarkBackground="true" Absolute="true">
     <MudProgressCircular Indeterminate/>
 </MudOverlay>
 <MudPaper Elevation="6" Class="d-flex justify-start flex-row flex-grow-1">
-    <MudAvatar Rounded Color="@AvatarColor()" Class="ma-3">
-        @if (AvatarDisplay() == null)
+    <MudAvatar Rounded Color="_avatarColor" Class="ma-3">
+        @if (_avatarDisplay == null)
         {
             <MudProgressCircular Indeterminate/>
         }
         else
         {
-            @AvatarDisplay()
+            @_avatarDisplay
         }
     </MudAvatar>
     <MudPaper Elevation="0" Class="d-flex justify-center flex-column flex-grow-1">
         <MudText>
-            @DisplayText()
+            @_displayText
         </MudText>
-        @if (Allergy?.Notes != null)
+        @if (_allergy.Data?.Notes != null)
         {
             <MudText Typo="Typo.caption">
-                @(Allergy.Notes)
+                @(_allergy.Data.Notes)
             </MudText>
         }
     </MudPaper>

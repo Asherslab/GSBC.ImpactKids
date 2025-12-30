@@ -54,8 +54,7 @@ public partial class Multiple
     }
 
     private ServiceTypeDetails? _serviceTypeDetails;
-
-    private bool _showCreateDialog;
+    private bool                _showCreateDialog;
 
     private async Task CreateServiceType()
     {
