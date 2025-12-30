@@ -5,7 +5,7 @@ namespace GSBC.ImpactKids.Grpc.Features.People.PersonServices;
 
 public partial class PersonService
 {
-    public async Task<BasicResponse?> SyncWithElvanto(CallContext context = default)
+    public async Task<BasicResponse> SyncWithElvanto(CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 
@@ -15,10 +15,7 @@ public partial class PersonService
         ICollection<string> existingPeopleElvantoIds = await UpdateExistingPeople(resp, token);
         await CreateNewPeople(resp, existingPeopleElvantoIds, token);
 
-        foreach (DbPerson person in resp.Entities)
-        {
-            await SendEvent(person.Id, person.FamilyId, token);
-        }
+        await eventService.SendUpdatedEvent(Guid.Empty, token: token);
 
         return new BasicResponse
         {
@@ -48,12 +45,12 @@ public partial class PersonService
                 dbPerson.SchoolGradeId = elvantoPerson.SchoolGradeId;
             if (dbPerson.MediaConsent != elvantoPerson.MediaConsent)
                 dbPerson.MediaConsent = elvantoPerson.MediaConsent;
-            
+
             if (elvantoPerson.DateOfBirth != null && dbPerson.DateOfBirth != elvantoPerson.DateOfBirth)
                 dbPerson.DateOfBirth = elvantoPerson.DateOfBirth;
             if (elvantoPerson.FirstTime != null && dbPerson.FirstTime != elvantoPerson.FirstTime)
                 dbPerson.FirstTime = elvantoPerson.FirstTime;
-            
+
             if (dbPerson.FamilyId != elvantoPerson.FamilyId)
                 dbPerson.FamilyId = elvantoPerson.FamilyId;
             if (dbPerson.FamilyGuardian != elvantoPerson.FamilyGuardian)

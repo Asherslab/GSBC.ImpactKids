@@ -1,12 +1,7 @@
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
+using GSBC.ImpactKids.Shared.Contracts.Services.Base;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Services.Features.People;
 
 [Service("GSBC.ImpactKids.Person.SchoolGrade")]
-public interface ISchoolGradeService
-{
-    Task<BasicReadMultipleResponse<SchoolGrade>?> ReadMultiple(
-        BasicReadMultipleRequest request,
-        CallContext              context = default
-    );
-}
+public interface ISchoolGradeService : IBasicReadMultipleService<SchoolGrade>;

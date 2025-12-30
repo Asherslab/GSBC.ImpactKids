@@ -1,11 +1,16 @@
-@inherits EventListeningComponent
+@inherits StoreComponentWithUtilities<MultiplePeopleState>
 @page "/People"
-
-@inject IPersonService PersonService
+@inject IRefreshableStore<Person> PeopleStore
+@inject IPersonService            PersonService
 
 <PageTitle>People</PageTitle>
 
-<MudPaper Elevation="6" Class="mt-4">
+<MudPaper Elevation="6" Class="mt-4 relative">
+    <MudOverlay Visible="@(State.FilteredPeople.IsLoading)"
+                DarkBackground
+                Absolute>
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
     <MudButton FullWidth
                Class="py-5"
                OnClick="@SyncElvantoPeople"
@@ -14,16 +19,17 @@
     </MudButton>
     <MudTextField
         T="string"
-        Value="Search"
+        Value="State.Search"
         ValueChanged="@(OnSearch)"
         Placeholder="Search"
         Adornment="Adornment.Start"
         AdornmentIcon="@Icons.Material.Filled.Search"
-        DebounceInterval="100"
         IconSize="Size.Medium"
         Clearable="true"
-        Class="py-6 px-6"/>
-    <MudTable Items="_people" Hover="true" Breakpoint="Breakpoint.None">
+        Class="py-6 px-6"
+        Immediate/>
+    <MudTable Items="State.FilteredPeople.Data"
+              Hover="true" Breakpoint="Breakpoint.None">
         <HeaderContent>
             <MudTh>
                 <MudIconButton OnClick="@CreatePerson"

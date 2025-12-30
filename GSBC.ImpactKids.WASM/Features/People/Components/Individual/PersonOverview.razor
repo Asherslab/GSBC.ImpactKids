@@ -1,4 +1,4 @@
-@using GSBC.ImpactKids.WASM.Features.Scripture.Features.Memorisation.Components.Multiple
+@inject IRefreshableStore<Person> PeopleStore
 
 <MudGrid Spacing="6" Justify="Justify.Center">
     <MudItem xs="12" md="4">
@@ -10,41 +10,20 @@
                             <MudPaper Elevation="0" Class="d-flex justify-space-between flex-grow-1">
                                 <MudText Typo="Typo.h6" Align="Align.Start">Details</MudText>
                                 <MudPaper Elevation="0" Class="d-flex justify-end flex-grow-0">
-                                    @if (!_editingDetails)
-                                    {
-                                        if (DeletePerson.HasDelegate)
-                                        {
-                                            <MudButton Size="Size.Small" Color="Color.Error"
-                                                       OnClick="@DeletePerson">
-                                                <MudIcon Icon="@Icons.Material.Filled.Delete"/>
-                                            </MudButton>
-                                        }
-
-                                        <MudButton Size="Size.Small" Color="Color.Default"
-                                                   OnClick="@(_ => _editingDetails = true)">
-                                            <MudIcon Icon="@Icons.Material.Filled.Edit"/>
-                                        </MudButton>
-                                    }
-                                    else
-                                    {
-                                        <MudButton Size="Size.Small" Color="Color.Error"
-                                                   OnClick="@(_ => _editingDetails = false)">
-                                            Cancel
-                                        </MudButton>
-                                        <MudButton Size="Size.Small" Color="Color.Success" OnClick="@UpdatePerson">
-                                            Submit
-                                        </MudButton>
-                                    }
+                                    <ModificationStateSwitcher
+                                        @bind-State="_detailsState"
+                                        OnUpdate="UpdatePerson"
+                                        OnDelete="DeletePerson"/>
                                 </MudPaper>
                             </MudPaper>
                         </CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent>
-                        <PersonDetails @ref="_personDetailsComponent" Person="Person" Editing="_editingDetails"/>
+                        <PersonDetails @ref="_personDetailsComponent" Id="Id" State="_detailsState"/>
                     </MudCardContent>
                 </MudCard>
             </MudItem>
-            @if (Person?.FamilyGuardian != true)
+            @*if (Person?.FamilyGuardian != true)
             {
                 <MudItem xs="12">
                     <MudCard Elevation="6" Class="relative">
@@ -62,7 +41,7 @@
                         </MudCardContent>
                     </MudCard>
                 </MudItem>
-            }
+            }*@
         </MudGrid>
     </MudItem>
     <MudItem xs="12" md="8">
@@ -96,14 +75,14 @@
                         </CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent>
-                        @if (_creatingMedicalNote && Person?.Id != null)
+                        @if (_creatingMedicalNote && Id != null)
                         {
                             <CreateMedicalNote @ref="_createMedicalNoteComponent"
                                                @bind-MedicalTypes="_medicalTypes"
-                                               PersonId="Person.Id"/>
+                                               PersonId="Id.Value"/>
                             <MudDivider Class="my-6"/>
                         }
-                        <MedicalNotesDetails MedicalNotes="Person?.MedicalNotes"/>
+                        <MedicalNotesList PersonId="Id"/>
                     </MudCardContent>
                 </MudCard>
             </MudItem>
@@ -136,14 +115,14 @@
                         </CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent>
-                        @if (_creatingAllergy && Person?.Id != null)
+                        @if (_creatingAllergy && Id != null)
                         {
                             <CreateAllergy @ref="_createAllergyComponent"
                                            @bind-Allergens="_allergens"
-                                           PersonId="Person.Id"/>
+                                           PersonId="Id.Value"/>
                             <MudDivider Class="my-6"/>
                         }
-                        <AllergiesDetails Allergies="Person?.Allergies"/>
+                        <AllergiesList PersonId="Id"/>
                     </MudCardContent>
                 </MudCard>
             </MudItem>
@@ -155,7 +134,7 @@
                         </CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent>
-                        <FamilyMembers Members="@FamilyMembers"/>
+                        <PeopleList FamilyOfId="Id"/>
                     </MudCardContent>
                 </MudCard>
             </MudItem>

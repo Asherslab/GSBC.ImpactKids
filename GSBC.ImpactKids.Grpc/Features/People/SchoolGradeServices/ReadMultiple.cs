@@ -10,7 +10,7 @@ namespace GSBC.ImpactKids.Grpc.Features.People.SchoolGradeServices;
 
 public partial class SchoolGradeService
 {
-    public async Task<BasicReadMultipleResponse<SchoolGrade>?> ReadMultiple(
+    public async Task<BasicReadMultipleResponse<SchoolGrade>> BasicReadMultiple(
         BasicReadMultipleRequest request,
         CallContext              context = default
     )
@@ -28,7 +28,7 @@ public partial class SchoolGradeService
                 );
             }
         }
-        
+
         query = query.OrderBy(x => x.OrderNumber);
 
         query = query.Paginate(request);

@@ -71,6 +71,7 @@ public partial class ElvantoService
             if (DateTime.TryParseExact(elvantoPerson.Birthday, "yyyy-MM-dd", CultureInfo.InvariantCulture,
                     DateTimeStyles.None, out DateTime dob))
             {
+                dob = DateTime.SpecifyKind(dob, DateTimeKind.Utc);
                 if (matchedPerson?.DbPerson.DateOfBirth == null)
                     dateOfBirth = dob;
             }
@@ -78,6 +79,7 @@ public partial class ElvantoService
             if (DateTime.TryParseExact(elvantoPerson.FirstTimeAtImpactKids, "yyyy-MM-dd", CultureInfo.InvariantCulture,
                     DateTimeStyles.None, out DateTime first))
             {
+                first = DateTime.SpecifyKind(first, DateTimeKind.Utc);
                 if (matchedPerson?.DbPerson.FirstTime == null)
                     firstTime = first;
             }

@@ -1,12 +1,12 @@
 @inherits StoreComponentWithUtilities<MultipleServiceTypesState>
 @page "/Services/ServiceTypes"
 @inject IRefreshableStore<ServiceType> ServiceTypesStore
-@inject IServiceTypeService                             ServiceTypesService
+@inject IServiceTypeService            ServiceTypesService
 
 <PageTitle>Service Types</PageTitle>
 
 <MudPaper Elevation="6" Class="mt-4 relative">
-    <MudOverlay Visible="@(State.FilteredServiceTypes.IsLoading || State.FilteredServiceTypes.IsNotAsked)"
+    <MudOverlay Visible="@(State.FilteredServiceTypes.IsLoading)"
                 DarkBackground
                 Absolute>
         <MudProgressCircular Indeterminate/>

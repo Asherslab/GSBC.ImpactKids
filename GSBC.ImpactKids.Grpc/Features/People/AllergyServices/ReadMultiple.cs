@@ -6,36 +6,37 @@ using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using Microsoft.EntityFrameworkCore;
 
-namespace GSBC.ImpactKids.Grpc.Features.People.AllergenServices;
+namespace GSBC.ImpactKids.Grpc.Features.People.AllergyServices;
 
-public partial class AllergenService
+public partial class AllergyService
 {
-    public async Task<BasicReadMultipleResponse<Allergen>> BasicReadMultiple(
+    public async Task<BasicReadMultipleResponse<Allergy>> BasicReadMultiple(
         BasicReadMultipleRequest request,
         CallContext              context = default
     )
     {
         CancellationToken token = context.CancellationToken;
 
-        IQueryable<DbAllergen> query = db.Allergens;
+        IQueryable<DbAllergy> query = db.Allergies;
 
         if (request.SearchString != null)
         {
             foreach (string search in request.SearchString.Split(" "))
             {
                 query = query.Where(x =>
-                    x.Label.ToLower().Contains(search.ToLower())
+                    x.Allergen!.Label.ToLower().Contains(search.ToLower()) ||
+                    x.Notes!.ToLower().Contains(search.ToLower())
                 );
             }
         }
 
-        query = query.OrderBy(x => x.Label);
+        query = query.OrderBy(x => x.Person!.Id);
 
         query = query.Paginate(request);
 
-        List<DbAllergen> types = await query.ToListAsync(token);
+        List<DbAllergy> types = await query.ToListAsync(token);
 
-        return new BasicReadMultipleResponse<Allergen>
+        return new BasicReadMultipleResponse<Allergy>
         {
             Success = true,
             Entities = types.Select(converter.Convert).ToImmutableList()
