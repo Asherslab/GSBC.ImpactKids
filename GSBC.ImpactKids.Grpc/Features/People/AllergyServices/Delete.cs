@@ -7,7 +7,7 @@ namespace GSBC.ImpactKids.Grpc.Features.People.AllergyServices;
 
 public partial class AllergyService
 {
-    public async Task<BasicResponse?> Delete(BasicReadRequest request, CallContext context = default)
+    public async Task<BasicResponse> BasicDelete(BasicReadRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 

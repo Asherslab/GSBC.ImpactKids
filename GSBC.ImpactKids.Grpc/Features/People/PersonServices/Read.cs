@@ -8,7 +8,7 @@ namespace GSBC.ImpactKids.Grpc.Features.People.PersonServices;
 
 public partial class PersonService
 {
-    public async Task<BasicReadResponse<Person>?> Read(BasicReadRequest request, CallContext context = default)
+    public async Task<BasicReadResponse<Person>> Read(BasicReadRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
         

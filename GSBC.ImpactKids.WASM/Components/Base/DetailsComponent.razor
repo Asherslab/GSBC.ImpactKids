@@ -1,0 +1,9 @@
+@inherits EntityUtilityComponent
+
+@typeparam TEntity
+@typeparam TCreateRequest
+@typeparam TUpdateRequest
+
+@inject ICreateService<TCreateRequest> CreateService
+@inject IUpdateService<TUpdateRequest> UpdateService
+@inject IBasicDeleteService<TEntity>   DeleteService

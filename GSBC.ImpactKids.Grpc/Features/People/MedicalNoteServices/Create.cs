@@ -7,7 +7,7 @@ namespace GSBC.ImpactKids.Grpc.Features.People.MedicalNoteServices;
 
 public partial class MedicalNoteService
 {
-    public async Task<BasicResponse?> Create(CreateMedicalNoteRequest request, CallContext context = default)
+    public async Task<BasicResponse> Create(CreateMedicalNoteRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 

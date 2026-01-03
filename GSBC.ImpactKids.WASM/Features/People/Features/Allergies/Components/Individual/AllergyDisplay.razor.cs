@@ -1,21 +1,24 @@
 using System.Collections.Immutable;
 using EasyAppDev.Blazor.Store.AsyncActions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.Allergies;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
+using GSBC.ImpactKids.WASM.Components.Common;
+using GSBC.ImpactKids.WASM.Components.Common.Inputs;
 using GSBC.ImpactKids.WASM.Extensions;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
 namespace GSBC.ImpactKids.WASM.Features.People.Features.Allergies.Components.Individual;
 
-public partial class AllergyDisplay : ComponentBase
+public partial class AllergyDisplay
 {
     [Parameter]
     public required Guid? Id { get; set; }
 
     [Parameter]
     public bool None { get; set; }
+
+    [Parameter]
+    public bool AllowUpdating { get; set; }
 
     [Parameter]
     public bool AllowDeleting { get; set; }
@@ -47,7 +50,7 @@ public partial class AllergyDisplay : ComponentBase
 
     private void RetrieveAllergy()
     {
-        AsyncData<ImmutableList<Allergy>> allergies = AllergiesStore.GetState().Entities;
+        AsyncData<ImmutableList<Allergy>>  allergies = AllergiesStore.GetState().Entities;
         AsyncData<ImmutableList<Allergen>> allergens = AllergensStore.GetState().Entities;
 
         if (!allergies.HasData)
@@ -78,12 +81,14 @@ public partial class AllergyDisplay : ComponentBase
 
         _avatarDisplay = None
             ? "N"
-            : allergen?.Label[0].ToString();
+            : allergen != null
+                ? allergen.Label[0].ToString()
+                : "O";
 
         _displayText = None
             ? "Allergies not requested"
             : _allergy.Data == null
-                ? "Type"
+                ? "Allergen"
                 : allergen?.Label ?? "Other";
 
         _avatarColor = None
@@ -99,32 +104,19 @@ public partial class AllergyDisplay : ComponentBase
         StateHasChanged();
     }
 
-    private async Task OnDelete()
-    {
-        if (Id == null)
-            return;
-
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning",
-            "Deleting can not be undone!",
-            yesText: "Delete!", cancelText: "Cancel");
-
-        if (result == null)
-            return;
-        _allergy = _allergy.ToLoading();
-        StateHasChanged();
-
-        BasicResponse? resp = await AllergyService.Delete(
-            new BasicReadRequest
-            {
-                Guid = Id.Value
-            }
+    private async Task OnUpdate() =>
+        await DetailsComponentDialog.Open<AllergyDetails>(
+            DialogService,
+            "Update Allergy",
+            ModificationState.Updating,
+            Id
         );
 
-        if (resp.HasErrorOrNull())
-        {
-            Snackbar.AddErrorResponse(resp);
-            RetrieveAllergy();
-        }
-    }
+    private async Task OnDelete() =>
+        await DeleteWithDialog(
+            AllergyService,
+            _allergy.Data?.Id,
+            () => _allergy = _allergy.ToLoading(),
+            RetrieveAllergy
+        );
 }

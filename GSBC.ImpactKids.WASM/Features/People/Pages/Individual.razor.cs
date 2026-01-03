@@ -1,7 +1,5 @@
-using System.Collections.Immutable;
 using EasyAppDev.Blazor.Store.AsyncActions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
-using GSBC.ImpactKids.WASM.Extensions;
 using Microsoft.AspNetCore.Components;
 
 namespace GSBC.ImpactKids.WASM.Features.People.Pages;
@@ -33,23 +31,10 @@ public partial class Individual
 
     private void RetrievePerson()
     {
-        AsyncData<ImmutableList<Person>> people = PeopleStore.GetState().Entities;
-
-        if (!people.HasData)
-        {
-            _person = _person.CopyStatus(people);
-            StateHasChanged();
-            return;
-        }
-
-        Person? person = people.Data!
-                .FirstOrDefault(x => x.Id == Id);
-
-        _person = person == null
-            ? _person.ToFailure("Failed to find Person")
-            : _person.ToSuccess(person);
+        _person = PeopleStore.GetState().First(x => x.Id == Id);
+        StateHasChanged();
     }
-    
+
     // private CancellationTokenSource _refreshMemorisationEntriesTokenSource = new();
     //
     // private async Task RefreshMemorisationEntries()

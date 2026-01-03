@@ -3,6 +3,8 @@ using EasyAppDev.Blazor.Store.AsyncActions;
 using EasyAppDev.Blazor.Store.Blazor;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School;
+using GSBC.ImpactKids.WASM.Components.Common;
+using GSBC.ImpactKids.WASM.Components.Common.Inputs;
 using GSBC.ImpactKids.WASM.Extensions;
 using GSBC.ImpactKids.WASM.Features.Scheduling.Features.School.Components.Individual;
 using GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services.Components.Individual;
@@ -11,9 +13,6 @@ namespace GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services.Pages;
 
 public partial class Multiple : StoreComponentWithUtilities<MultipleServicesState>
 {
-    // filter services by selected service type
-    private Func<Service, bool> ServiceFilter => x => State.ServiceType == null || x.ServiceTypeId == State.ServiceType;
-
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
@@ -52,6 +51,18 @@ public partial class Multiple : StoreComponentWithUtilities<MultipleServicesStat
         });
     }
 
+    private Func<Service, bool> ServiceFilterForQuarters(int quarter) =>
+        x => x.LocalDate >= GetStartDateForQuarter(GetYear(), quarter) &&
+             x.LocalDate <= GetEndDateForQuarter(GetYear(), quarter) && (
+                 State.ServiceType == null ||
+                 x.ServiceTypeId == State.ServiceType
+             );
+
+    private Func<Service, bool> ServiceFilterForSchoolTerm(Guid schoolTermId) =>
+        x => x.SchoolTermId == schoolTermId && (
+            State.ServiceType == null ||
+            x.ServiceTypeId == State.ServiceType
+        );
 
     private int GetYear() => State.Date?.Year ?? DateTime.Now.Year;
 
@@ -69,30 +80,25 @@ public partial class Multiple : StoreComponentWithUtilities<MultipleServicesStat
     {
         Update(x => x.SetServiceType(serviceTypeId));
     }
+
+    private async Task CreateSchoolTerm() =>
+        await DetailsComponentDialog.Open<SchoolTermDetails>(DialogService, "Create School Term", ModificationState.Creating);
     
-    private SchoolTermDetails? _schoolTermDetails;
-    private bool               _showCreateSchoolTermDialog;
+    private async Task CreateService() =>
+        await DetailsComponentDialog.Open<ServiceDetails>(DialogService, "Create Service", ModificationState.Creating);
 
-    private async Task CreateSchoolTerm()
-    {
-        if (_schoolTermDetails != null)
-        {
-            bool success = await _schoolTermDetails.CreateSchoolTerm();
-            _showCreateSchoolTermDialog = !success;
-        }
-    }
+    private static DateTime GetStartDateForQuarter(int year, int quarter) =>
+        new(year, (quarter - 1) * 3 + 1, 1);
 
-    private ServiceDetails? _serviceDetails;
-    private bool            _showCreateDialog;
-
-    private async Task CreateService()
-    {
-        if (_serviceDetails != null)
-        {
-            bool success = await _serviceDetails.CreateService();
-            _showCreateDialog = !success;
-        }
-    }
+    private static DateTime GetEndDateForQuarter(int year, int quarter) =>
+        new(
+            year,
+            quarter * 3,
+            DateTime.DaysInMonth(year, quarter * 3),
+            23,
+            59,
+            59
+        );
 }
 
 public enum ServiceDisplayOptions

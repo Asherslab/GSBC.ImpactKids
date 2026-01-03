@@ -4,9 +4,9 @@ namespace GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling
 public class CreateSchoolTermRequest
 {
     public string Name { get; set; } = null!;
-    
-    public DateTime StartDate { get; set; } = DateTime.Now;
-    public DateTime EndDate   { get; set; } = DateTime.Now;
+
+    public DateTime StartDate { get; set; } = DateTime.Now.Date.ToUniversalTime();
+    public DateTime EndDate   { get; set; } = DateTime.Now.Date.ToUniversalTime();
 
     [ProtoIgnore]
     public DateTime LocalStartDate

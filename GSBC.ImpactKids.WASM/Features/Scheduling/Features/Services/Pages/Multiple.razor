@@ -59,10 +59,10 @@
                 <MudItem xs="12" md="4" Class="d-flex justify-end">
                     @if (State.Display == ServiceDisplayOptions.SchoolTerms)
                     {
-                        <MudIconButton OnClick="@(() => _showCreateSchoolTermDialog = true)"
+                        <MudIconButton OnClick="@CreateSchoolTerm"
                                        Icon="@Icons.Material.Filled.DomainAdd"/>
                     }
-                    <MudIconButton OnClick="@(() => _showCreateDialog = true)"
+                    <MudIconButton OnClick="@CreateService"
                                    Icon="@Icons.Material.Filled.PostAdd"/>
                 </MudItem>
                 <MudItem xs="12" md="8">
@@ -95,7 +95,15 @@
                             </CardHeaderContent>
                         </MudCardHeader>
                         <MudCardContent>
-                            <ServicesList Filter="ServiceFilter" Quarter="quarter" Year="GetYear()"/>
+                            <ListComponent T="Service"
+                                           Filter="@(ServiceFilterForQuarters(quarter))"
+                                           Ordering="@(l => l.OrderBy(x => x.LocalDate))"
+                                           Spacing="3"
+                                           Context="quarterServiceId">
+                                <MudItem xs="12">
+                                    <ServiceDisplay Id="quarterServiceId"/>
+                                </MudItem>
+                            </ListComponent>
                         </MudCardContent>
                     </MudCard>
                 </MudItem>
@@ -109,7 +117,8 @@
                     <MudCard Elevation="6" Class="relative">
                         <MudCardHeader>
                             <CardHeaderContent>
-                                <MudOverlay Visible="State.FilteredSchoolTerms.IsLoading" DarkBackground="true" Absolute="true">
+                                <MudOverlay Visible="State.FilteredSchoolTerms.IsLoading" DarkBackground="true"
+                                            Absolute="true">
                                     <MudProgressCircular Indeterminate/>
                                 </MudOverlay>
                                 <MudText Typo="Typo.h6"
@@ -120,7 +129,11 @@
                             </CardHeaderContent>
                         </MudCardHeader>
                         <MudCardContent>
-                            <ServicesList ShowFakes/>
+                            <ListComponent T="Service" FakeEntries="5">
+                                <MudItem xs="12">
+                                    <ServiceDisplay/>
+                                </MudItem>
+                            </ListComponent>
                         </MudCardContent>
                     </MudCard>
                 </MudItem>
@@ -142,12 +155,21 @@
                                         </MudText>
                                     </MudStack>
                                     <MudSpacer/>
-                                    <MudButton Variant="Variant.Text" Href="@($"/SchoolTerms/{term.Id}")">View</MudButton>
+                                    <MudButton Variant="Variant.Text" Href="@($"/SchoolTerms/{term.Id}")">View
+                                    </MudButton>
                                 </MudStack>
                             </CardHeaderContent>
                         </MudCardHeader>
                         <MudCardContent>
-                            <ServicesList Filter="ServiceFilter" SchoolTermId="@term.Id"/>
+                            <ListComponent T="Service"
+                                           Filter="@(ServiceFilterForSchoolTerm(term.Id))"
+                                           Ordering="@(l => l.OrderBy(x => x.LocalDate))"
+                                           Spacing="3"
+                                           Context="schoolTermServiceId">
+                                <MudItem xs="12">
+                                    <ServiceDisplay Id="schoolTermServiceId"/>
+                                </MudItem>
+                            </ListComponent>
                         </MudCardContent>
                     </MudCard>
                 </MudItem>
@@ -155,29 +177,3 @@
         }
     </MudGrid>
 </MudPaper>
-
-<MudDialog @bind-Visible="_showCreateSchoolTermDialog">
-    <TitleContent>Create School Term</TitleContent>
-    <DialogContent>
-        <SchoolTermDetails
-            @ref="_schoolTermDetails"
-            State="ModificationState.Creating"/>
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="@(() => _showCreateSchoolTermDialog = false)">Cancel</MudButton>
-        <MudButton Color="Color.Primary" OnClick="@CreateSchoolTerm">Submit</MudButton>
-    </DialogActions>
-</MudDialog>
-
-<MudDialog @bind-Visible="_showCreateDialog">
-    <TitleContent>Create Service</TitleContent>
-    <DialogContent>
-        <ServiceDetails
-            @ref="_serviceDetails"
-            State="ModificationState.Creating"/>
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="@(() => _showCreateDialog = false)">Cancel</MudButton>
-        <MudButton Color="Color.Primary" OnClick="@CreateService">Submit</MudButton>
-    </DialogActions>
-</MudDialog>

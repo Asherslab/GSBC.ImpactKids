@@ -1,7 +1,7 @@
 namespace GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
-public record MemoryVerseList
+public record MemoryVerseList : IIdentifiable
 {
     public required Guid   Id   { get; init; }
     public required string Name { get; init; }

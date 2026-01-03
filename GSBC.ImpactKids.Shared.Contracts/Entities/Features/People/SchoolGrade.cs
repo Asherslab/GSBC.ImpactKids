@@ -1,7 +1,7 @@
 namespace GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
-public record SchoolGrade
+public record SchoolGrade : IIdentifiable
 {
     public required Guid Id          { get; init; }
     public          int  OrderNumber { get; init; }

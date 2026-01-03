@@ -61,8 +61,10 @@ public partial class Individual
                 .OrderBy(x => x.LocalDate)
                 .FirstOrDefault(x => x.LocalDate.Date >= DateTime.Now.Date);
 
+        Id = service?.Id;
         _service = service == null
             ? _service.ToFailure("Failed to find Service")
             : _service.ToSuccess(service);
+        StateHasChanged();
     }
 }

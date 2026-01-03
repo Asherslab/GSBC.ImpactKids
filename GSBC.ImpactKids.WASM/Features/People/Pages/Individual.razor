@@ -1,10 +1,15 @@
 @page "/People/{Id:guid}"
-@inject IRefreshableStore<Person>   PeopleStore
+@inject IRefreshableStore<Person> PeopleStore
 
 <PageTitle>@(_person.Data?.GetDisplayName() ?? "Person")</PageTitle>
 
 <MudPaper Elevation="6" Class="mt-4 px-6 pb-6">
     <MudText Align="Align.Center" Typo="Typo.h5" Class="py-3">@(_person.Data?.GetDisplayName() ?? "Person")</MudText>
-    <PersonOverview
-        Id="Id"/>
+    @if (_person.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">
+            @(_person.Error ?? "An Unexpected error occured")
+        </MudAlert>
+    }
+    <PersonOverview Id="Id"/>
 </MudPaper>

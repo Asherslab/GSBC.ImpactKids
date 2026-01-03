@@ -6,6 +6,7 @@ namespace GSBC.ImpactKids.Shared.Contracts.Entities;
 public class DeltaUpdate<T>
 {
     private T _updatedValue = default!;
+
     public T Value
     {
         get => _updatedValue;
@@ -23,7 +24,11 @@ public class DeltaUpdate<T>
 }
 
 // This should always be ProtoIgnored
-public class DelegatingDeltaUpdate<T>(DeltaUpdate<T> delegatedDelta, Func<T, T> getter, Func<T, T> setter)
+public class DelegatingDeltaUpdate<T>(
+    DeltaUpdate<T> delegatedDelta,
+    Func<T, T>     getter,
+    Func<T, T>     setter
+)
 {
     public T Value
     {

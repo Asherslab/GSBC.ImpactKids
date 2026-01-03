@@ -1,4 +1,4 @@
-@inherits StoreComponentWithUtilities<MultipleServiceTypesState>
+@inherits StoreEntityUtilityComponent<MultipleServiceTypesState>
 @page "/Services/ServiceTypes"
 @inject IRefreshableStore<ServiceType> ServiceTypesStore
 @inject IServiceTypeService            ServiceTypesService
@@ -27,7 +27,7 @@
         Hover="true" Breakpoint="Breakpoint.None">
         <HeaderContent>
             <MudTh>
-                <MudIconButton OnClick="@(() => _showCreateDialog = true)"
+                <MudIconButton OnClick="@CreateServiceType"
                                Icon="@Icons.Material.Filled.PostAdd"/>
             </MudTh>
             <MudTh>Label</MudTh>
@@ -36,7 +36,7 @@
         <RowTemplate>
             <MudTd>
                 <MudButtonGroup Variant="Variant.Outlined">
-                    <MudIconButton OnClick="@(() => ShowUpdateServiceType(context))"
+                    <MudIconButton OnClick="@(() => UpdateServiceType(context))"
                                    Icon="@Icons.Material.Filled.Edit"/>
                     <MudIconButton OnClick="@(() => ShowDeleteServiceType(context))"
                                    Icon="@Icons.Material.Filled.Delete"/>
@@ -49,30 +49,3 @@
         </RowTemplate>
     </MudTable>
 </MudPaper>
-
-<MudDialog @bind-Visible="_showCreateDialog">
-    <TitleContent>Create Service Type</TitleContent>
-    <DialogContent>
-        <ServiceTypeDetails
-            @ref="_serviceTypeDetails"
-            State="ModificationState.Creating"/>
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="@(() => _showCreateDialog = false)">Cancel</MudButton>
-        <MudButton Color="Color.Primary" OnClick="@CreateServiceType">Submit</MudButton>
-    </DialogActions>
-</MudDialog>
-
-<MudDialog @bind-Visible="_showUpdateDialog">
-    <TitleContent>Update Service Type</TitleContent>
-    <DialogContent>
-        <ServiceTypeDetails
-            @ref="_serviceTypeDetails"
-            ServiceType="_updatingServiceType"
-            State="ModificationState.Updating"/>
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="@(() => _showUpdateDialog = false)">Cancel</MudButton>
-        <MudButton Color="Color.Primary" OnClick="@UpdateServiceType">Submit</MudButton>
-    </DialogActions>
-</MudDialog>

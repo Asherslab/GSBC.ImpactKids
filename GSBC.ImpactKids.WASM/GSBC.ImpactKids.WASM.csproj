@@ -11,7 +11,7 @@
         <PackageReference Include="Aspire4Wasm.WebAssembly" Version="6.0.1"/>
         <PackageReference Include="Blazor.WhyDidYouRender" Version="3.0.0" />
         <PackageReference Include="Blazor.WhyDidYouRender.Aspire" Version="3.0.0" />
-        <PackageReference Include="EasyAppDev.Blazor.Store" Version="2.0.5" />
+        <PackageReference Include="EasyAppDev.Blazor.Store" Version="2.0.6" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.0"/>
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="10.0.0"/>
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.0" PrivateAssets="all"/>
@@ -48,6 +48,18 @@
         <Folder Include="Features\Elvanto\Components\" />
         <Folder Include="Features\Elvanto\Pages\" />
         <Folder Include="Features\Scheduling\Features\Services\Features\"/>
-        <Folder Include="Features\Scheduling\Features\Services\Models\"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="Components\Base\Multiple\BaseListComponent.razor" />
+      <_ContentIncludedByDefault Remove="Features\People\Components\Multiple\PeopleList.razor" />
+      <_ContentIncludedByDefault Remove="Features\People\Features\Allergies\Components\Multiple\AllergiesList.razor" />
+      <_ContentIncludedByDefault Remove="Features\People\Features\MedicalNotes\Components\Multiple\MedicalNotesList.razor" />
+      <_ContentIncludedByDefault Remove="Pages\Terms\Index.razor" />
+      <_ContentIncludedByDefault Remove="Pages\Terms\IndexHeader.razor" />
+      <_ContentIncludedByDefault Remove="Pages\Terms\ServicesList.razor" />
+      <_ContentIncludedByDefault Remove="Pages\Terms\Term.razor" />
+      <_ContentIncludedByDefault Remove="Pages\Services\ServicePage.razor" />
+      <_ContentIncludedByDefault Remove="Features\Scheduling\Features\Services\Components\Multiple\ServicesList.razor" />
     </ItemGroup>
 </Project>

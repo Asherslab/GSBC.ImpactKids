@@ -31,4 +31,8 @@
       <ProjectReference Include="..\GSBC.ImpactKids.Shared.Contracts\GSBC.ImpactKids.Shared.Contracts.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Features\DollarStore\" />
+    </ItemGroup>
+
 </Project>

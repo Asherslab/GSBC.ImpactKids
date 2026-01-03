@@ -1,7 +1,5 @@
-using System.Collections.Immutable;
 using EasyAppDev.Blazor.Store.AsyncActions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
-using GSBC.ImpactKids.WASM.Extensions;
 using Microsoft.AspNetCore.Components;
 
 namespace GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services.Components.Individual;
@@ -36,21 +34,8 @@ public partial class ServiceDisplay
 
     private void RetrieveService()
     {
-        AsyncData<ImmutableList<Service>> services = ServicesStore.GetState().Entities;
-
-        if (!services.HasData)
-        {
-            _service = _service.CopyStatus(services);
-            StateHasChanged();
-            return;
-        }
-
-        Service? service = services.Data!
-            .FirstOrDefault(x => x.Id == Id);
-
-        _service = service == null
-            ? _service.ToFailure("Failed to find Service")
-            : _service.ToSuccess(service);
+        _service = ServicesStore.GetState().First(x => x.Id == Id);
+        StateHasChanged();
 
         RetrieveServiceType();
     }
@@ -67,22 +52,7 @@ public partial class ServiceDisplay
             return;
         }
 
-        AsyncData<ImmutableList<ServiceType>> serviceTypes = ServiceTypesStore.GetState().Entities;
-
-        if (!serviceTypes.HasData)
-        {
-            _serviceType = _serviceType.CopyStatus(serviceTypes);
-            StateHasChanged();
-            return;
-        }
-
-        ServiceType? serviceType = serviceTypes.Data!
-            .FirstOrDefault(x => x.Id == _service.Data!.ServiceTypeId);
-
-        _serviceType = serviceType == null
-            ? _serviceType.ToFailure("Failed to find Service Type")
-            : _serviceType.ToSuccess(serviceType);
-
+        _serviceType = ServiceTypesStore.GetState().First(x => x.Id == _service.Data!.ServiceTypeId);
         StateHasChanged();
     }
 }

@@ -36,6 +36,18 @@ public static class GrpcServiceExtensions
             if (readMultipleServiceBase != null)
                 services.AddScoped(readMultipleServiceBase, sp => sp.GetRequiredService<T>());
 
+            Type? createServiceBase = serviceType.IsAssignableToGenericType(typeof(ICreateService<>));
+            if (createServiceBase != null)
+                services.AddScoped(createServiceBase, sp => sp.GetRequiredService<T>());
+
+            Type? updateServiceBase = serviceType.IsAssignableToGenericType(typeof(IUpdateService<>));
+            if (updateServiceBase != null)
+                services.AddScoped(updateServiceBase, sp => sp.GetRequiredService<T>());
+
+            Type? deleteServiceBase = serviceType.IsAssignableToGenericType(typeof(IBasicDeleteService<>));
+            if (deleteServiceBase != null)
+                services.AddScoped(deleteServiceBase, sp => sp.GetRequiredService<T>());
+
             return services;
         }
     }
@@ -79,7 +91,7 @@ public static class GrpcServiceExtensions
                     return;
 
                 AccessTokenResult result = await authTokenProvider.RequestAccessToken();
-                
+
                 if (!result.TryGetToken(out AccessToken? token))
                     return;
 

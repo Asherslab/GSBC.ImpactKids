@@ -1,6 +1,7 @@
 using GSBC.ImpactKids.Grpc;
 using GSBC.ImpactKids.Grpc.Data;
 using GSBC.ImpactKids.Grpc.Extensions;
+using GSBC.ImpactKids.Grpc.Features.DollarStore.DollarStoreEntryServices;
 using GSBC.ImpactKids.Grpc.Features.Eventing;
 using GSBC.ImpactKids.Grpc.Features.Eventing.Api.EventingServices;
 using GSBC.ImpactKids.Grpc.Features.Eventing.Services;
@@ -8,15 +9,16 @@ using GSBC.ImpactKids.Grpc.Features.People.AllergenServices;
 using GSBC.ImpactKids.Grpc.Features.People.AllergyServices;
 using GSBC.ImpactKids.Grpc.Features.People.MedicalNoteServices;
 using GSBC.ImpactKids.Grpc.Features.People.MedicalTypeServices;
+using GSBC.ImpactKids.Grpc.Features.People.PersonServices;
 using GSBC.ImpactKids.Grpc.Features.People.SchoolGradeServices;
 using GSBC.ImpactKids.Grpc.Features.Scheduling.School.SchoolTermServices;
 using GSBC.ImpactKids.Grpc.Features.Scheduling.ServicesServices;
 using GSBC.ImpactKids.Grpc.Features.Scheduling.ServiceTypeServices;
+using GSBC.ImpactKids.Grpc.Features.Scripture.BibleServices;
 using GSBC.ImpactKids.Grpc.Features.Scripture.Memorisation.MemorisationEntriesServices;
 using GSBC.ImpactKids.Grpc.Features.Scripture.Memorisation.MemoryVerseListsServices;
 using GSBC.ImpactKids.Grpc.Features.Scripture.Memorisation.MemoryVersesServices;
 using GSBC.ImpactKids.Grpc.Services;
-using GSBC.ImpactKids.Grpc.Services.DollarStoreEntryServices;
 using GSBC.ImpactKids.Grpc.Services.ElvantoServices;
 using GSBC.ImpactKids.Grpc.Services.ElvantoServices.Models;
 using GSBC.ImpactKids.Grpc.Services.EventServices;
@@ -26,8 +28,6 @@ using GSBC.ImpactKids.ServiceDefaults;
 using Microsoft.AspNetCore.Authentication;
 using ProtoBuf.Grpc.Server;
 using RabbitMQ.Client;
-using BibleService = GSBC.ImpactKids.Grpc.Features.Scripture.BibleServices.BibleService;
-using PersonService = GSBC.ImpactKids.Grpc.Features.People.PersonServices.PersonService;
 
 var builder = WebApplication.CreateBuilder(args);
 

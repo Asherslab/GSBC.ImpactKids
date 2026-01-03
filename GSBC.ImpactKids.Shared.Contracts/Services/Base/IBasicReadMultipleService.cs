@@ -1,8 +1,7 @@
 namespace GSBC.ImpactKids.Shared.Contracts.Services.Base;
 
 [SubService]
-public interface IBasicReadMultipleService
-    <TEntity>
+public interface IBasicReadMultipleService<TEntity>
 {
     Task<BasicReadMultipleResponse<TEntity>> BasicReadMultiple(
         BasicReadMultipleRequest request,

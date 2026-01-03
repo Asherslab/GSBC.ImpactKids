@@ -12,7 +12,7 @@ namespace GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services.Components.
 public partial class ServiceOverview
 {
     [Parameter]
-    public required Guid? ServiceId { get; set; }
+    public required Guid? Id { get; set; }
 
     private AsyncData<DollarStoreEntry> _dollarStoreEntry = AsyncData<DollarStoreEntry>.NotAsked();
 
@@ -76,7 +76,7 @@ public partial class ServiceOverview
         }
 
         DollarStoreEntry? entry = entries.Data!
-            .FirstOrDefault(x => x.ServiceId == ServiceId);
+            .FirstOrDefault(x => x.ServiceId == Id);
 
         if (entry == null)
         {
@@ -100,7 +100,7 @@ public partial class ServiceOverview
             _detailsSent = true;
             try
             {
-                bool success = await _serviceDetailsComponent.UpdateService();
+                bool success = await _serviceDetailsComponent.UpdateEntity();
                 if (success)
                     _detailsState = ModificationState.Reading;
             }
@@ -115,7 +115,7 @@ public partial class ServiceOverview
     {
         if (_serviceDetailsComponent != null)
         {
-            await _serviceDetailsComponent.DeleteService();
+            await _serviceDetailsComponent.DeleteEntity();
         }
     }
 
@@ -130,7 +130,7 @@ public partial class ServiceOverview
             _dollarStoreDetailsSent = true;
             try
             {
-                bool success = await _dollarStoreDetailsComponent.CreateDollarStoreEntry();
+                bool success = await _dollarStoreDetailsComponent.CreateEntity();
                 if (success)
                     _dollarStoreState = ModificationState.Reading;
             }
@@ -148,7 +148,7 @@ public partial class ServiceOverview
             _dollarStoreDetailsSent = true;
             try
             {
-                bool success = await _dollarStoreDetailsComponent.UpdateDollarStoreEntry();
+                bool success = await _dollarStoreDetailsComponent.UpdateEntity();
                 if (success)
                     _dollarStoreState = ModificationState.Reading;
             }
@@ -163,7 +163,7 @@ public partial class ServiceOverview
     {
         if (_dollarStoreDetailsComponent != null)
         {
-            await _dollarStoreDetailsComponent.DeleteDollarStoreEntry();
+            await _dollarStoreDetailsComponent.DeleteEntity();
         }
     }
 }

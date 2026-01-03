@@ -1,3 +1,4 @@
+@using GSBC.ImpactKids.WASM.Pages.VerseMemorisation
 @inject IRefreshableStore<Service>          ServicesStore
 @inject IRefreshableStore<DollarStoreEntry> DollarStoreEntriesStore
 
@@ -5,27 +6,9 @@
     <MudItem xs="12" md="4">
         <MudGrid Spacing="6" Justify="Justify.Center">
             <MudItem xs="12">
-                <MudCard Elevation="6" Class="relative">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudPaper Elevation="0" Class="d-flex justify-space-between flex-grow-1">
-                                <MudText Typo="Typo.h6" Align="Align.Start">Details</MudText>
-                                <MudPaper Elevation="0" Class="d-flex justify-end flex-grow-0">
-                                    <ModificationStateSwitcher
-                                        @bind-State="_detailsState"
-                                        OnUpdate="UpdateService"
-                                        OnDelete="DeleteService"/>
-                                </MudPaper>
-                            </MudPaper>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        <ServiceDetails
-                            @ref="_serviceDetailsComponent"
-                            Id="@ServiceId"
-                            State="_detailsState"/>
-                    </MudCardContent>
-                </MudCard>
+                <DetailsModificationCard
+                    Id="Id"
+                    DetailsComponentType="@(typeof(ServiceDetails))"/>
             </MudItem>
         </MudGrid>
     </MudItem>
@@ -41,35 +24,24 @@
                         </CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent>
-                        <MemoryVerseList
-                            ServiceId="@ServiceId"/>
+                        <ListComponent T="MemoryVerse"
+                                       Filter="@(x => x.ServiceIds.Contains(Id ?? Guid.Empty))"
+                                       Spacing="3"
+                                       Context="memoryVerseId">
+                            <MudItem xs="12">
+                                <MemoryVerseDisplay Id="memoryVerseId"
+                                                    ShowReference
+                                                    Href="@(Id == null ? null : $"/VerseMemorisation/{Id}?{nameof(MemorisationComponent.SelectedMemoryVerse)}={memoryVerseId}")"/>
+                            </MudItem>
+                        </ListComponent>
                     </MudCardContent>
                 </MudCard>
             </MudItem>
-            <MudItem xs="12" md="6">
-                <MudCard Elevation="6" Class="relative">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudPaper Elevation="0" Class="d-flex justify-space-between flex-grow-1">
-                                <MudText Typo="Typo.h6" Align="Align.Start">Dollar Store</MudText>
-                                <MudPaper Elevation="0" Class="d-flex justify-end flex-grow-0">
-                                    <ModificationStateSwitcher
-                                        @bind-State="_dollarStoreState"
-                                        ShowCreate="@(_dollarStoreEntry.Data == null)"
-                                        OnCreate="CreateDollarStoreEntry"
-                                        OnUpdate="UpdateDollarStoreEntry"
-                                        OnDelete="DeleteDollarStoreEntry"/>
-                                </MudPaper>
-                            </MudPaper>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        <DollarStoreEntryDetails
-                            @ref="_dollarStoreDetailsComponent"
-                            ServiceId="ServiceId"
-                            State="_dollarStoreState"/>
-                    </MudCardContent>
-                </MudCard>
+            <MudItem xs="12" md="6" Class="relative">
+                <DetailsModificationCard
+                    ShowCreate="@(_dollarStoreEntry.Data == null)"
+                    ExtraParameters="@(new Dictionary<string, object?> { { nameof(DollarStoreEntryDetails.ServiceId), Id } })"
+                    DetailsComponentType="@(typeof(DollarStoreEntryDetails))"/>
             </MudItem>
             @*<MudItem xs="12" md="6">
                 <MudCard Elevation="6" Class="relative">

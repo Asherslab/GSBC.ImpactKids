@@ -1,5 +1,4 @@
 @page "/SchoolTerms/{Id:guid}"
-@using GSBC.ImpactKids.WASM.Features.Scheduling.Features.School.Components.Individual
 @inject IRefreshableStore<SchoolTerm> SchoolTermsStore
 
 <PageTitle>@(_schoolTerm.Data?.Name ?? "School Term")</PageTitle>
@@ -19,5 +18,5 @@
             @(_schoolTerm.Error ?? "An Unexpected error occured")
         </MudAlert>
     }
-    <SchoolTermOverview SchoolTermId="Id"/>
+    <SchoolTermOverview Id="Id"/>
 </MudPaper>

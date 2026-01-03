@@ -1,7 +1,7 @@
 namespace GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
-public record ServiceType
+public record ServiceType : IIdentifiable
 {
     public required Guid Id { get; init; }
 
