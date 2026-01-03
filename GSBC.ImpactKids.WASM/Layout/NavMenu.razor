@@ -29,6 +29,9 @@
                      Label="Upcoming"
                      Href="/Services/Rel?Upcoming=true"/>
     </MudNavPopout>
+    <MudMenuItem Icon="@Icons.Material.Filled.Person"
+                 Label="People"
+                 Href="/people"/>
     @if (MetabaseConfig.DashboardMappings.Any())
     {
         <MudNavPopout Icon="@Icons.Material.Filled.BarChart"
@@ -67,9 +70,6 @@
         <MudMenuItem Icon="@Icons.Material.Filled.Book"
                      Label="Bible"
                      Href="/bible"/>
-        <MudMenuItem Icon="@Icons.Material.Filled.Person"
-                     Label="People"
-                     Href="/people"/>
         <MudMenuItem Icon="@Icons.Material.Filled.List"
                      Label="Service Types"
                      Href="/Services/ServiceTypes"/>

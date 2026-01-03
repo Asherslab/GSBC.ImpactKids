@@ -95,6 +95,7 @@
                     </MudCardHeader>
                     <MudCardContent>
                         <ListComponent T="Person"
+                                       EnableLoading
                                        Filter="@(x => x.Id == Id)"
                                        SecondaryFilter="@((person, x) => x.FamilyId == person.FamilyId)"
                                        Ordering="@(list => list.OrderByDescending(x => x.FamilyGuardian).ThenBy(x => x.LocalDateOfBirth).ThenBy(x => x.FirstName))"

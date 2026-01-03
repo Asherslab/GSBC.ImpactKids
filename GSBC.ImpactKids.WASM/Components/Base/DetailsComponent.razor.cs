@@ -1,35 +1,26 @@
-using EasyAppDev.Blazor.Store.AsyncActions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Interfaces;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base.Interfaces;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using GSBC.ImpactKids.WASM.Components.Common.Inputs;
 using GSBC.ImpactKids.WASM.Extensions;
-using GSBC.ImpactKids.WASM.Services.RefreshableStore;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
 namespace GSBC.ImpactKids.WASM.Components.Base;
 
-public partial class DetailsComponent<TEntity, TCreateRequest, TUpdateRequest> : IDetailsComponent, IDisposable
+public partial class DetailsComponent<TEntity, TCreateRequest, TUpdateRequest> : IDetailsComponent
     where TEntity : IIdentifiable
     where TCreateRequest : new()
     where TUpdateRequest : IUpdateRequest<TEntity, TUpdateRequest>, new()
 {
-    [Parameter]
-    public Guid? Id { get; set; }
-
     [Parameter]
     public ModificationState State { get; set; } = ModificationState.Reading;
 
     [Parameter]
     public Action<ModificationState>? OnStateChanged { get; set; }
 
-    [Inject]
-    public required IRefreshableStore<TEntity> EntityStore { get; set; }
-
-    protected          AsyncData<TEntity> Entity        = AsyncData<TEntity>.NotAsked();
-    protected readonly TCreateRequest     CreateRequest = new();
-    protected          TUpdateRequest     UpdateRequest = new();
+    protected readonly TCreateRequest CreateRequest = new();
+    protected          TUpdateRequest UpdateRequest = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -50,45 +41,20 @@ public partial class DetailsComponent<TEntity, TCreateRequest, TUpdateRequest> :
                 State = ModificationState.Reading;
                 OnStateChanged?.Invoke(State);
             }
-
-            RetrieveEntity();
         });
-        RetrieveEntity();
-    }
-
-    protected override async Task OnParametersSetAsync()
-    {
-        await base.OnParametersSetAsync();
-        RetrieveEntity();
     }
 
     protected virtual void UpdateRequestUpdated()
     {
     }
 
-    protected virtual bool AlternativeFilter(TEntity entity) => false;
+    protected override bool ShouldRetrieve()        => State != ModificationState.Creating && !_awaitingModification;
+    protected override void OnRetrievedEntityNull() => UpdateRequest = new TUpdateRequest();
 
-    // ReSharper disable once MemberCanBePrivate.Global
-    protected void RetrieveEntity()
+    protected override void OnRetrievedEntity()
     {
-        if (State == ModificationState.Creating || _awaitingModification)
-            return;
-
-        Entity = EntityStore.GetState().First(x => x.Id == Id);
-
-        if (Entity.HasError && Id == null)
-            Entity = EntityStore.GetState().First(AlternativeFilter);
-
-        if (Entity.Data == null)
-        {
-            UpdateRequest = new TUpdateRequest();
-            StateHasChanged();
-            return;
-        }
-
-        UpdateRequest = TUpdateRequest.FromEntity(Entity.Data);
+        UpdateRequest = TUpdateRequest.FromEntity(Entity.Data!);
         UpdateRequestUpdated();
-        StateHasChanged();
     }
 
     private bool _awaitingModification;

@@ -1,7 +1,7 @@
 @typeparam T
 @inject IRefreshableStore<T> Store
 
-<MudOverlay Visible="_ids.IsLoading"
+<MudOverlay Visible="@(EnableLoading && _ids.IsLoading)"
             DarkBackground="true"
             Absolute="true">
     <MudProgressCircular Indeterminate/>

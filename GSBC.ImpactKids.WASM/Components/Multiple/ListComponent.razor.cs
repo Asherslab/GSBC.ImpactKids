@@ -10,6 +10,9 @@ public partial class ListComponent<T> where T : IIdentifiable
 {
     [Parameter]
     public Func<T, bool>? Filter { get; set; }
+    
+    [Parameter]
+    public bool EnableLoading { get; set; }
 
     // takes the value of a FirstOrDefault from Filter and feeds it as the first value of this filter
     [Parameter]

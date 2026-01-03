@@ -34,6 +34,10 @@
             Upcoming
         </MudNavLink>
     </MudNavGroup>
+    <MudNavLink Icon="@Icons.Material.Filled.Person"
+                Href="/people">
+        People
+    </MudNavLink>
     @if (MetabaseConfig.DashboardMappings.Any())
     {
         <MudNavGroup Icon="@Icons.Material.Filled.BarChart"
@@ -75,10 +79,6 @@
         <MudNavLink Icon="@Icons.Material.Filled.Book"
                     Href="/bible">
             Bible
-        </MudNavLink>
-        <MudNavLink Icon="@Icons.Material.Filled.Person"
-                    Href="/people">
-            People
         </MudNavLink>
         <MudNavLink Icon="@Icons.Material.Filled.List"
                     Href="/Services/ServiceTypes">
