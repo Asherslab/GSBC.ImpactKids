@@ -1,34 +1,32 @@
-@inject IRefreshableStore<Person> PeopleStore
+@inherits DisplayComponent<Person>
 
-<MudPaper Elevation="6">
+<MudPaper Elevation="6" Class="relative">
+    <MudOverlay Visible="@(Entity.IsLoading)"
+                DarkBackground="true"
+                Absolute="true">
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
     <MudLink Href="@(Id == null ? null : $"/People/{Id}")">
         <MudPaper Elevation="0" Class="d-flex justify-start flex-direction-row flex-grow-0">
             <MudAvatar Rounded Color="@_avatarColor" Class="ma-3">
-                @if (_avatarDisplay == null)
-                {
-                    <MudProgressCircular Indeterminate/>
-                }
-                else
-                {
-                    @_avatarDisplay
-                }
+                @_avatarDisplay
             </MudAvatar>
             <MudPaper Elevation="0" Class="d-flex justify-center flex-column flex-grow-1">
                 <MudText>
                     @_displayText
                 </MudText>
-                @if (_person.Data != null)
+                @if (Entity.Data != null)
                 {
                     <MudText>
-                        @(_person.Data.FamilyGuardian ? "Guardian" : "Child")
+                        @(Entity.Data.FamilyGuardian ? "Guardian" : "Child")
                     </MudText>
                 }
             </MudPaper>
             <MudPaper Elevation="0" Class="d-flex justify-center flex-column flex-grow-0 mr-5">
-                @if (_person.Data?.GetAge() != null)
+                @if (Entity.Data?.GetAge() != null)
                 {
                     <MudText Typo="Typo.h6">
-                        @_person.Data?.GetAge()
+                        @Entity.Data?.GetAge()
                     </MudText>
                 }
             </MudPaper>

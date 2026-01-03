@@ -26,7 +26,7 @@ public partial class ServiceTypeService
                 );
             }
         }
-        
+
         query = query.OrderBy(x => x.Label);
 
         query = query.Paginate(request);

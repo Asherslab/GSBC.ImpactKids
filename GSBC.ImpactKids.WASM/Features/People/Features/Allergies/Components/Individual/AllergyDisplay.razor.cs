@@ -12,9 +12,6 @@ namespace GSBC.ImpactKids.WASM.Features.People.Features.Allergies.Components.Ind
 public partial class AllergyDisplay
 {
     [Parameter]
-    public required Guid? Id { get; set; }
-
-    [Parameter]
     public bool None { get; set; }
 
     [Parameter]
@@ -23,61 +20,42 @@ public partial class AllergyDisplay
     [Parameter]
     public bool AllowDeleting { get; set; }
 
-    private AsyncData<Allergy> _allergy = AsyncData<Allergy>.NotAsked();
+    private AsyncData<Allergen> _allergen = AsyncData<Allergen>.NotAsked();
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
 
-        AllergiesStore.Subscribe(_ => RetrieveAllergy());
-
         await Task.WhenAll(
-            AllergiesStore.RefreshAll(),
+            EntityStore.RefreshAll(),
             AllergensStore.RefreshAll()
         );
-    }
-
-    protected override async Task OnParametersSetAsync()
-    {
-        await base.OnParametersSetAsync();
-
-        RetrieveAllergy();
     }
 
     private string? _avatarDisplay;
     private Color   _avatarColor = Color.Default;
     private string  _displayText = "Allergies not requested";
 
-    private void RetrieveAllergy()
+    protected override void OnRetrievedEntity()
     {
-        AsyncData<ImmutableList<Allergy>>  allergies = AllergiesStore.GetState().Entities;
         AsyncData<ImmutableList<Allergen>> allergens = AllergensStore.GetState().Entities;
-
-        if (!allergies.HasData)
-        {
-            _allergy = _allergy.CopyStatus(allergies);
-            StateHasChanged();
-            return;
-        }
 
         if (!allergens.HasData)
         {
-            _allergy = _allergy.CopyStatus(allergens);
+            _allergen = _allergen.CopyStatus(allergens);
             StateHasChanged();
             return;
         }
 
         _avatarDisplay = "N";
 
-        Allergy? allergy = allergies.Data!
-            .FirstOrDefault(x => x.Id == Id);
-
         Allergen? allergen = allergens.Data!
-            .FirstOrDefault(x => x.Id == allergy?.AllergenId);
+            .FirstOrDefault(x => x.Id == Entity.Data!.AllergenId);
+        
 
-        _allergy = allergy == null
-            ? _allergy.ToFailure("Failed to find Allergy")
-            : _allergy.ToSuccess(allergy);
+        _allergen = allergen == null
+            ? _allergen.ToFailure("Failed to find Allergen")
+            : _allergen.ToSuccess(allergen);
 
         _avatarDisplay = None
             ? "N"
@@ -87,21 +65,19 @@ public partial class AllergyDisplay
 
         _displayText = None
             ? "Allergies not requested"
-            : _allergy.Data == null
+            : Entity.Data == null
                 ? "Allergen"
                 : allergen?.Label ?? "Other";
 
         _avatarColor = None
             ? Color.Error
-            : _allergy.Data == null
+            : Entity.Data == null
                 ? Color.Default
-                : _allergy.Data.Severe
+                : Entity.Data.Severe
                     ? Color.Error
                     : allergen?.Label == "None"
                         ? Color.Success
                         : Color.Primary;
-
-        StateHasChanged();
     }
 
     private async Task OnUpdate() =>
@@ -115,8 +91,8 @@ public partial class AllergyDisplay
     private async Task OnDelete() =>
         await DeleteWithDialog(
             AllergyService,
-            _allergy.Data?.Id,
-            () => _allergy = _allergy.ToLoading(),
-            RetrieveAllergy
+            Entity.Data?.Id,
+            () => Entity = Entity.ToLoading(),
+            RetrieveEntity
         );
 }

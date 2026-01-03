@@ -12,9 +12,6 @@ namespace GSBC.ImpactKids.WASM.Features.People.Features.MedicalNotes.Components.
 public partial class MedicalNoteDisplay
 {
     [Parameter]
-    public required Guid? Id { get; set; }
-
-    [Parameter]
     public bool None { get; set; }
 
     [Parameter]
@@ -23,85 +20,63 @@ public partial class MedicalNoteDisplay
     [Parameter]
     public bool AllowDeleting { get; set; }
 
-    private AsyncData<MedicalNote> _medicalNote = AsyncData<MedicalNote>.NotAsked();
+    private AsyncData<MedicalType> _medicalType = AsyncData<MedicalType>.NotAsked();
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
 
-        MedicalNotesStore.Subscribe(_ => RetrieveMedicalNote());
-
         await Task.WhenAll(
-            MedicalNotesStore.RefreshAll(),
+            EntityStore.RefreshAll(),
             MedicalTypesStore.RefreshAll()
         );
-    }
-
-    protected override async Task OnParametersSetAsync()
-    {
-        await base.OnParametersSetAsync();
-
-        RetrieveMedicalNote();
     }
 
     private string? _avatarDisplay;
     private Color   _avatarColor = Color.Default;
     private string  _displayText = "Medical not requested";
 
-    private void RetrieveMedicalNote()
+    protected override void OnRetrievedEntity()
     {
-        AsyncData<ImmutableList<MedicalNote>> medicalNotes = MedicalNotesStore.GetState().Entities;
         AsyncData<ImmutableList<MedicalType>> medicalTypes = MedicalTypesStore.GetState().Entities;
-
-        if (!medicalNotes.HasData)
-        {
-            _medicalNote = _medicalNote.CopyStatus(medicalNotes);
-            StateHasChanged();
-            return;
-        }
 
         if (!medicalTypes.HasData)
         {
-            _medicalNote = _medicalNote.CopyStatus(medicalTypes);
+            _medicalType = _medicalType.CopyStatus(medicalTypes);
             StateHasChanged();
             return;
         }
 
         _avatarDisplay = "N";
 
-        MedicalNote? medicalNote = medicalNotes.Data!
-            .FirstOrDefault(x => x.Id == Id);
+        MedicalType? medicalType = medicalTypes.Data!
+            .FirstOrDefault(x => x.Id == Entity.Data!.MedicalTypeId);
 
-        MedicalType? type = medicalTypes.Data!
-            .FirstOrDefault(x => x.Id == medicalNote?.MedicalTypeId);
-
-        _medicalNote = medicalNote == null
-            ? _medicalNote.ToFailure("Failed to find Medical Note")
-            : _medicalNote.ToSuccess(medicalNote);
+        _medicalType = medicalType == null
+            ? _medicalType.ToFailure("Failed to find Medical Type")
+            : _medicalType.ToSuccess(medicalType);
 
         _avatarDisplay = None
             ? "N"
-            : type != null
-                ? type.Label[0].ToString()
+            : medicalType != null
+                ? medicalType.Label[0].ToString()
                 : "O";
 
         _displayText = None
             ? "Medical not requested"
-            : _medicalNote.Data == null
+            : Entity.Data == null
                 ? "Type"
-                : type?.Label ?? "Other";
+                : medicalType?.Label ?? "Other";
 
         _avatarColor = None
             ? Color.Error
-            : _medicalNote.Data == null
+            : Entity.Data == null
                 ? Color.Default
-                : _medicalNote.Data.Severe
+                : Entity.Data.Severe
                     ? Color.Error
-                    : type?.Label == "None"
+                    : medicalType?.Label == "None"
                         ? Color.Success
                         : Color.Primary;
-
-        StateHasChanged();
     }
 
     private async Task OnUpdate() =>
@@ -116,9 +91,9 @@ public partial class MedicalNoteDisplay
     {
         await DeleteWithDialog(
             MedicalNoteService,
-            _medicalNote.Data?.Id,
-            () => _medicalNote = _medicalNote.ToLoading(),
-            RetrieveMedicalNote
+            Entity.Data?.Id,
+            () => Entity = Entity.ToLoading(),
+            RetrieveEntity
         );
     }
 }
