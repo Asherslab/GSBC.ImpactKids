@@ -7,7 +7,7 @@ namespace GSBC.ImpactKids.WASM.Features.Scheduling.Features.School.Components.In
 public partial class SchoolTermOverview : ComponentBase
 {
     [Parameter]
-    public required Guid? SchoolTermId { get; set; }
+    public required Guid? Id { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -42,7 +42,7 @@ public partial class SchoolTermOverview : ComponentBase
             _detailsSent = true;
             try
             {
-                bool success = await _schoolTermDetailsComponent.UpdateSchoolTerm();
+                bool success = await _schoolTermDetailsComponent.UpdateEntity();
                 if (success)
                     _detailsState = ModificationState.Reading;
             }
@@ -57,7 +57,7 @@ public partial class SchoolTermOverview : ComponentBase
     {
         if (_schoolTermDetailsComponent != null)
         {
-            await _schoolTermDetailsComponent.DeleteSchoolTerm();
+            await _schoolTermDetailsComponent.DeleteEntity();
         }
     }
 }

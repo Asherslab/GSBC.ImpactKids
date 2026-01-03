@@ -2,7 +2,7 @@ namespace GSBC.ImpactKids.WASM.Components.Common.Inputs;
 
 public enum ModificationState
 {
-    Creating,
-    Reading,
-    Updating
+    Creating = 1,
+    Reading  = 0, // default
+    Updating = 2
 }

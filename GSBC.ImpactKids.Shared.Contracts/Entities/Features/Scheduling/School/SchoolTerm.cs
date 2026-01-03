@@ -1,7 +1,7 @@
 namespace GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School;
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
-public record SchoolTerm
+public record SchoolTerm : IIdentifiable
 {
     public required Guid   Id   { get; init; }
     public required string Name { get; init; }

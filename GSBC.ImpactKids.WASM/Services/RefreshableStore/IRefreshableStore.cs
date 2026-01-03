@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using EasyAppDev.Blazor.Store.Core;
 
 namespace GSBC.ImpactKids.WASM.Services.RefreshableStore;
@@ -6,6 +7,6 @@ public interface IRefreshableStore<T> : IStore<EntityListState<T>>, IRefreshable
 
 public interface IRefreshableStore
 {
-    Task RefreshAll(bool setLoading = true);
+    Task RefreshAll(bool setLoading = true, [CallerMemberName] string? action = null);
     Task RefreshEvent();
 };

@@ -1,7 +1,9 @@
 using System.Collections.Immutable;
 using EasyAppDev.Blazor.Store.AsyncActions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
-using GSBC.ImpactKids.WASM.Components.Dialogs.Create;
+using GSBC.ImpactKids.WASM.Components.Common;
+using GSBC.ImpactKids.WASM.Components.Common.Inputs;
+using GSBC.ImpactKids.WASM.Features.People.Components.Individual;
 
 namespace GSBC.ImpactKids.WASM.Features.People.Pages;
 
@@ -62,8 +64,6 @@ public partial class Multiple
         await PersonService.SyncWithElvanto();
     }
 
-    private async Task CreatePerson()
-    {
-        await DialogService.ShowAsync<CreatePersonDialog>("Create Person");
-    }
+    private async Task CreatePerson() =>
+        await DetailsComponentDialog.Open<PersonDetails>(DialogService, "Create Person", ModificationState.Creating);
 }

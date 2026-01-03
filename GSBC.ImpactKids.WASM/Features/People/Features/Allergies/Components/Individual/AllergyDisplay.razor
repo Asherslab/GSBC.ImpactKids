@@ -1,21 +1,14 @@
+@inherits EntityUtilityComponent
 @inject IRefreshableStore<Allergy>  AllergiesStore
 @inject IRefreshableStore<Allergen> AllergensStore
 @inject IAllergyService             AllergyService
-@inject ISnackbar                   Snackbar
 
-<MudOverlay Visible="_allergy.IsLoading" DarkBackground="true" Absolute="true">
-    <MudProgressCircular Indeterminate/>
-</MudOverlay>
-<MudPaper Elevation="6" Class="d-flex justify-start flex-row flex-grow-1">
+<MudPaper Elevation="6" Class="d-flex justify-start flex-row flex-grow-1 relative">
+    <MudOverlay Visible="_allergy.IsLoading" DarkBackground="true" Absolute="true">
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
     <MudAvatar Rounded Color="_avatarColor" Class="ma-3">
-        @if (_avatarDisplay == null)
-        {
-            <MudProgressCircular Indeterminate/>
-        }
-        else
-        {
-            @_avatarDisplay
-        }
+        @_avatarDisplay
     </MudAvatar>
     <MudPaper Elevation="0" Class="d-flex justify-center flex-column flex-grow-1">
         <MudText>
@@ -28,6 +21,13 @@
             </MudText>
         }
     </MudPaper>
+    @if (AllowUpdating)
+    {
+        <MudPaper Elevation="0" Class="d-flex justify-end">
+            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                           OnClick="@OnUpdate"/>
+        </MudPaper>
+    }
     @if (AllowDeleting)
     {
         <MudPaper Elevation="0" Class="d-flex justify-end">

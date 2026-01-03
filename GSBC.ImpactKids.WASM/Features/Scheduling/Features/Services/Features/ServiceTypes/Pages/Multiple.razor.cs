@@ -1,9 +1,8 @@
 using System.Collections.Immutable;
 using EasyAppDev.Blazor.Store.AsyncActions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
-using GSBC.ImpactKids.WASM.Extensions;
+using GSBC.ImpactKids.WASM.Components.Common;
+using GSBC.ImpactKids.WASM.Components.Common.Inputs;
 using GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services.Features.ServiceTypes.Components;
 
 namespace GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services.Features.ServiceTypes.Pages;
@@ -52,67 +51,60 @@ public partial class Multiple
             TimeSpan.FromSeconds(0.25).Milliseconds
         );
     }
+    //
+    // private ServiceTypeDetails? _serviceTypeDetails;
+    // private bool                _showCreateDialog;
 
-    private ServiceTypeDetails? _serviceTypeDetails;
-    private bool                _showCreateDialog;
+    // private async Task CreateServiceType()
+    // {
+    //     if (_serviceTypeDetails != null)
+    //     {
+    //         await Update(s => s with { FilteredServiceTypes = s.FilteredServiceTypes.ToLoading() });
+    //
+    //         bool success = await _serviceTypeDetails.CreateServiceType();
+    //         _showCreateDialog = !success;
+    //
+    //         if (!success)
+    //             await UpdateFilteredServiceTypes();
+    //     }
+    // }
 
-    private async Task CreateServiceType()
-    {
-        if (_serviceTypeDetails != null)
-        {
-            await Update(s => s with { FilteredServiceTypes = s.FilteredServiceTypes.ToLoading() });
+    private async Task CreateServiceType() =>
+        await DetailsComponentDialog.Open<ServiceTypeDetails>(DialogService, "Create Service Type",
+            ModificationState.Creating);
 
-            bool success = await _serviceTypeDetails.CreateServiceType();
-            _showCreateDialog = !success;
+    private async Task UpdateServiceType(ServiceType serviceType) =>
+        await DetailsComponentDialog.Open<ServiceTypeDetails>(DialogService, "Update Service Type",
+            ModificationState.Updating, serviceType.Id);
 
-            if (!success)
-                await UpdateFilteredServiceTypes();
-        }
-    }
+    // private bool         _showUpdateDialog;
+    // private ServiceType? _updatingServiceType;
+    //
+    // private void ShowUpdateServiceType(ServiceType serviceType)
+    // {
+    //     _updatingServiceType = serviceType;
+    //     _showUpdateDialog = true;
+    // }
+    //
+    // private async Task UpdateServiceType()
+    // {
+    //     if (_serviceTypeDetails != null)
+    //     {
+    //         await Update(s => s with { FilteredServiceTypes = s.FilteredServiceTypes.ToLoading() });
+    //
+    //         bool success = await _serviceTypeDetails.UpdateServiceType();
+    //         _showUpdateDialog = !success;
+    //
+    //         if (!success)
+    //             await UpdateFilteredServiceTypes();
+    //     }
+    // }
 
-    private bool         _showUpdateDialog;
-    private ServiceType? _updatingServiceType;
-
-    private void ShowUpdateServiceType(ServiceType serviceType)
-    {
-        _updatingServiceType = serviceType;
-        _showUpdateDialog = true;
-    }
-
-    private async Task UpdateServiceType()
-    {
-        if (_serviceTypeDetails != null)
-        {
-            await Update(s => s with { FilteredServiceTypes = s.FilteredServiceTypes.ToLoading() });
-
-            bool success = await _serviceTypeDetails.UpdateServiceType();
-            _showUpdateDialog = !success;
-
-            if (!success)
-                await UpdateFilteredServiceTypes();
-        }
-    }
-
-    private async Task ShowDeleteServiceType(ServiceType serviceType)
-    {
-        bool? result = await DialogService.ShowMessageBox(
-            "Warning",
-            "Deleting can not be undone!",
-            yesText: "Delete!", cancelText: "Cancel");
-
-        if (result == null)
-            return;
-
-        BasicReadRequest request = new()
-        {
-            Guid = serviceType.Id
-        };
-
-        await Update(s => s with { FilteredServiceTypes = s.FilteredServiceTypes.ToLoading() });
-
-        BasicResponse resp = await ServiceTypesService.Delete(request);
-
-        if (resp.HasErrorOrNull())
-            await UpdateFilteredServiceTypes();
-    }
+    private async Task ShowDeleteServiceType(ServiceType serviceType) =>
+        await DeleteWithDialog(
+            ServiceTypesService,
+            serviceType.Id,
+            () => Update(s => s with { FilteredServiceTypes = s.FilteredServiceTypes.ToLoading() }),
+            () => UpdateFilteredServiceTypes()
+        );
 }

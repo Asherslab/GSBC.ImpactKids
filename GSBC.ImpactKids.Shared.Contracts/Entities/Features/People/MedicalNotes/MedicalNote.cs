@@ -1,7 +1,7 @@
 namespace GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.MedicalNotes;
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
-public record MedicalNote
+public record MedicalNote : IIdentifiable
 {
     public Guid Id { get; init; }
 

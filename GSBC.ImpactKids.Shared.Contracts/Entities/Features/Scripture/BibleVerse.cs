@@ -1,7 +1,7 @@
 namespace GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture;
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
-public record BibleVerse
+public record BibleVerse : IIdentifiable
 {
     public Guid Id { get; init; }
     

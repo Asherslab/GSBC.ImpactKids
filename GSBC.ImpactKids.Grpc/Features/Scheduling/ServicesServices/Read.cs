@@ -20,13 +20,13 @@ public partial class ServicesService
         {
             service = await query
                 .OrderByDescending(x => x.Date)
-                .FirstOrDefaultAsync(x => x.Date <= DateTime.Now.Date, token);
+                .FirstOrDefaultAsync(x => x.Date <= DateTime.UtcNow.Date, token);
         }
         else if (request.UpcomingService)
         {
             service = await query
                 .OrderBy(x => x.Date)
-                .FirstOrDefaultAsync(x => x.Date >= DateTime.Now.Date, token);
+                .FirstOrDefaultAsync(x => x.Date >= DateTime.UtcNow.Date, token);
         }
         else
         {

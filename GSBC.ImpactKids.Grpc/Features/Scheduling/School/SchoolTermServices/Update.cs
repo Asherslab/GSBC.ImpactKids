@@ -7,7 +7,7 @@ namespace GSBC.ImpactKids.Grpc.Features.Scheduling.School.SchoolTermServices;
 
 public partial class SchoolTermService
 {
-    public async Task<BasicResponse?> Update(UpdateSchoolTermRequest request, CallContext context = default)
+    public async Task<BasicResponse> Update(UpdateSchoolTermRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 

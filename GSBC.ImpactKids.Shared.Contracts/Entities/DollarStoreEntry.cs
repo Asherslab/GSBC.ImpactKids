@@ -1,7 +1,7 @@
 namespace GSBC.ImpactKids.Shared.Contracts.Entities;
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
-public record DollarStoreEntry
+public record DollarStoreEntry : IIdentifiable
 {
     public required Guid Id { get; init; }
 

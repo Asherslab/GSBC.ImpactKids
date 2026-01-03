@@ -1,22 +1,21 @@
-@inject IRefreshableStore<SchoolTerm> SchoolTermsStore
-@inject ISchoolTermsService           SchoolTermsService
+@inherits DetailsComponent<SchoolTerm, CreateSchoolTermRequest, UpdateSchoolTermRequest>
 
 <MudPaper Elevation="0" Class="d-flex flex-column flex-grow-1">
-    <MudOverlay Visible="@(_schoolTerm.IsLoading)"
+    <MudOverlay Visible="@(Entity.IsLoading)"
                 DarkBackground="true"
                 Absolute="true">
         <MudProgressCircular Indeterminate/>
     </MudOverlay>
-    @if (_schoolTerm.HasError)
+    @if (Entity.HasError)
     {
         <MudAlert Severity="Severity.Error" Class="mb-4">
-            @(_schoolTerm.Error ?? "An Unexpected error occured")
+            @(Entity.Error ?? "An Unexpected error occured")
         </MudAlert>
     }
     <MudTextFieldCreateOrUpdate
-        @bind-Create="@_createRequest.Name"
-        Read="@_updateRequest.Name.Value"
-        @bind-Update="@_updateRequest.Name.Value"
+        @bind-Create="@CreateRequest.Name"
+        Read="@UpdateRequest.Name.Value"
+        @bind-Update="@UpdateRequest.Name.Value"
         State="State"
 
         Class="mb-4"
@@ -24,9 +23,9 @@
         Variant="Variant.Filled"
         Immediate/>
     <MudRequiredDatePickerCreateOrUpdate
-        @bind-Create="@_createRequest.LocalStartDate"
-        Read="@_updateRequest.LocalStartDate.Value"
-        @bind-Update="@_updateRequest.LocalStartDate.Value"
+        @bind-Create="@CreateRequest.LocalStartDate"
+        Read="@UpdateRequest.LocalStartDate.Value"
+        @bind-Update="@UpdateRequest.LocalStartDate.Value"
         State="State"
 
         Class="mb-4"
@@ -35,9 +34,9 @@
 
         Editable/>
     <MudRequiredDatePickerCreateOrUpdate
-        @bind-Create="@_createRequest.LocalEndDate"
-        Read="@_updateRequest.LocalEndDate.Value"
-        @bind-Update="@_updateRequest.LocalEndDate.Value"
+        @bind-Create="@CreateRequest.LocalEndDate"
+        Read="@UpdateRequest.LocalEndDate.Value"
+        @bind-Update="@UpdateRequest.LocalEndDate.Value"
         State="State"
 
         Class="mb-4"

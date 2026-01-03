@@ -5,7 +5,7 @@ using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.MedicalNotes;
 namespace GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
-public record Person
+public record Person : IIdentifiable
 {
     public required Guid Id { get; init; }
 

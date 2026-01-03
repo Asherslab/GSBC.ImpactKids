@@ -1,24 +1,23 @@
-@inject IRefreshableStore<Service>     ServicesStore
+@inherits DetailsComponent<Service, CreateServiceRequest, UpdateServiceRequest>
 @inject IRefreshableStore<ServiceType> ServiceTypesStore
 @inject IRefreshableStore<SchoolTerm>  SchoolTermsStore
-@inject IServicesService               ServicesService
 
 <MudPaper Elevation="0" Class="d-flex flex-column flex-grow-1">
-    <MudOverlay Visible="@(_service.IsLoading)"
+    <MudOverlay Visible="@(Entity.IsLoading)"
                 DarkBackground="true"
                 Absolute="true">
         <MudProgressCircular Indeterminate/>
     </MudOverlay>
-    @if (_service.HasError)
+    @if (Entity.HasError)
     {
         <MudAlert Severity="Severity.Error" Class="mb-4">
-            @(_service.Error ?? "An Unexpected error occured")
+            @(Entity.Error ?? "An Unexpected error occured")
         </MudAlert>
     }
     <MudTextFieldCreateOrUpdate
-        @bind-Create="@_createRequest.Name"
-        Read="@_updateRequest.Name.Value"
-        @bind-Update="@_updateRequest.Name.Value"
+        @bind-Create="@CreateRequest.Name"
+        Read="@UpdateRequest.Name.Value"
+        @bind-Update="@UpdateRequest.Name.Value"
         State="State"
 
         Class="mb-4"
@@ -26,9 +25,9 @@
         Variant="Variant.Filled"
         Immediate/>
     <MudRequiredDatePickerCreateOrUpdate
-        @bind-Create="@_createRequest.LocalDate"
-        Read="@_updateRequest.LocalDate.Value"
-        @bind-Update="@_updateRequest.LocalDate.Value"
+        @bind-Create="@CreateRequest.LocalDate"
+        Read="@UpdateRequest.LocalDate.Value"
+        @bind-Update="@UpdateRequest.LocalDate.Value"
         State="State"
 
         Class="mb-4"
@@ -44,9 +43,9 @@
             <MudProgressCircular Indeterminate/>
         </MudOverlay>
         <MudSelectCreateOrUpdate
-            @bind-Create="@_createRequest.SchoolTermId"
-            Read="@_updateRequest.SchoolTermId.Value"
-            @bind-Update="@_updateRequest.SchoolTermId.Value"
+            @bind-Create="@CreateRequest.SchoolTermId"
+            Read="@UpdateRequest.SchoolTermId.Value"
+            @bind-Update="@UpdateRequest.SchoolTermId.Value"
             State="State"
 
             Label="School Term"
@@ -70,9 +69,9 @@
             <MudProgressCircular Indeterminate/>
         </MudOverlay>
         <MudSelectCreateOrUpdate
-            @bind-Create="@_createRequest.ServiceTypeId"
-            Read="@_updateRequest.ServiceTypeId.Value"
-            @bind-Update="@_updateRequest.ServiceTypeId.Value"
+            @bind-Create="@CreateRequest.ServiceTypeId"
+            Read="@UpdateRequest.ServiceTypeId.Value"
+            @bind-Update="@UpdateRequest.ServiceTypeId.Value"
             State="State"
 
             Label="Service Type"

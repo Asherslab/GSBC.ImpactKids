@@ -5,7 +5,7 @@ namespace GSBC.ImpactKids.WASM.Components.Common.Inputs.Utilities;
 public partial class ModificationStateSwitcher : ComponentBase
 {
     [Parameter]
-    public ModificationState State { get; set; }
+    public ModificationState State { get; set; } = ModificationState.Reading;
 
     [Parameter]
     public EventCallback<ModificationState> StateChanged { get; set; }
@@ -26,5 +26,6 @@ public partial class ModificationStateSwitcher : ComponentBase
     {
         State = state;
         await StateChanged.InvokeAsync(State);
+        StateHasChanged();
     }
 }

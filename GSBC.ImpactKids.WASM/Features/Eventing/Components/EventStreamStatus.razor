@@ -1,6 +1,29 @@
+@using GSBC.ImpactKids.WASM.Features.Eventing.Services
 @inherits StoreComponent<EventsStreamState>
+@inject ISseClientService SseClientService
 
 <MudTooltip Text="@(State.IsConnected ? "You are receiving live updates" : "You are not receiving live updates. Try refreshing or closing and opening the app")">
     <MudIcon Class="mt-1 ml-2" Icon="@Icons.Material.Filled.Wifi"
              Color="@(State.IsConnected ? Color.Success : Color.Error)"/>
 </MudTooltip>
+
+@code
+{
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        
+        if (AuthenticationStateTask != null)
+        {
+            AuthenticationState state = await AuthenticationStateTask;
+            if (state.User.Identity?.IsAuthenticated == true)
+            {
+                if (!SseClientService.Connected)
+                    await SseClientService.StartAsync();
+            }
+        }
+    }
+}

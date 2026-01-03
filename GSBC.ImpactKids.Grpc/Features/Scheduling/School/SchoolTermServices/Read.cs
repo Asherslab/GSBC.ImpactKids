@@ -8,7 +8,7 @@ namespace GSBC.ImpactKids.Grpc.Features.Scheduling.School.SchoolTermServices;
 
 public partial class SchoolTermService
 {
-    public async Task<BasicReadResponse<SchoolTerm>?> Read(SchoolTermRequest request, CallContext context = default)
+    public async Task<BasicReadResponse<SchoolTerm>> Read(SchoolTermRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
         

@@ -30,6 +30,8 @@ public sealed class SseClientService(
             SingleReader = false,
             SingleWriter = true
         });
+    
+    public bool Connected { get; private set; }
 
     // public string? LastEventId { get; private set; }
 
@@ -100,6 +102,7 @@ public sealed class SseClientService(
     [JSInvokable]
     public async Task OnOpen()
     {
+        Connected = true;
         await state.UpdateAsync(s => s.SetConnected(true));
     }
 
@@ -113,17 +116,17 @@ public sealed class SseClientService(
         Type? entityType = Assembly.GetAssembly(typeof(Module))?.GetType(data);
         if (entityType != null)
         {
-            Type finishedServiceType = typeof(IRefreshableStore<>).MakeGenericType(entityType);
-
+            MethodInfo? method  = typeof(SseClientService).GetMethod(nameof(Refresh));
+            MethodInfo? generic = method?.MakeGenericMethod(entityType);
+            
             try
             {
-                object? refreshableService = services.GetService(finishedServiceType);
-
-                if (refreshableService is IRefreshableStore refreshableStore)
+                if (generic != null)
                 {
-                    Console.WriteLine(data + "   " + $"{data.Split(".").LastOrDefault()}-list");
-                    await lazyCache.RemoveAsync($"{data.Split(".").LastOrDefault()}-list");
-                    await refreshableStore.RefreshEvent();
+                    
+                    object? obj = generic.Invoke(this, null);
+                    if (obj is Task task)
+                        await task;
                 }
             }
             catch (Exception e)
@@ -136,15 +139,26 @@ public sealed class SseClientService(
         _channel.Writer.TryWrite(new SseMessage(data, id, eventType));
     }
 
+    public async Task Refresh<T>()
+    {
+        IRefreshableStore<T>? refreshableService = services.GetService<IRefreshableStore<T>>();
+
+        await lazyCache.RemoveAsync($"{typeof(T).Name}-list");
+        if (refreshableService != null)
+            await refreshableService.RefreshEvent();
+    }
+
     [JSInvokable]
     public async Task OnError(string message)
     {
+        Connected = false;
         await state.UpdateAsync(s => s.SetConnected(false));
     }
 
     [JSInvokable]
     public async Task OnStopped()
     {
+        Connected = false;
         await state.UpdateAsync(s => s.SetConnected(false));
     }
 

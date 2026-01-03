@@ -1,5 +1,6 @@
 using Grpc.Net.Client.Web;
 using GSBC.ImpactKids.Shared.Contracts.Services;
+using GSBC.ImpactKids.Shared.Contracts.Services.Features.DollarStore;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.Eventing;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.Scheduling;
@@ -102,8 +103,8 @@ if (reportsConfig != null)
 WebAssemblyHost host = builder.Build();
 
 // Start the global subscription before rendering
-ISseClientService sse = host.Services.GetRequiredService<ISseClientService>();
-await sse.StartAsync();
+// ISseClientService sse = host.Services.GetRequiredService<ISseClientService>();
+// await sse.StartAsync();
 
 // Enable Why Did You Render
 // IJSRuntime      jsRuntime = host.Services.GetRequiredService<IJSRuntime>();
