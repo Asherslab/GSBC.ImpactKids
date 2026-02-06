@@ -22,6 +22,9 @@ public partial class RelationshipListComponent<FirstEntity, SecondEntity, Entity
     public string? EntityToAddLabel { get; set; }
 
     [Parameter]
+    public string? DialogHelperText { get; set; }
+
+    [Parameter]
     public required RenderFragment<RelationshipListEntry<FirstEntity, SecondEntity, EntityBeingAddedTo, EntityToAdd>>
         ChildContent { get; set; }
 
@@ -38,6 +41,7 @@ public partial class RelationshipListComponent<FirstEntity, SecondEntity, Entity
         DialogService,
         $"Add {EntityToAddLabel ?? "Relationship"}",
         EntityToAddLabel,
+        DialogHelperText,
         GetSearchDisplayFunc,
         SearchFunc,
         Entity

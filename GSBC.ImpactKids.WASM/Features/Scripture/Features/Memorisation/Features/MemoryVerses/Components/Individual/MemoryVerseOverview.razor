@@ -1,6 +1,7 @@
 @using GSBC.ImpactKids.WASM.Components.Relationships
 @inherits DisplayComponent<MemoryVerse>
-@inject IRefreshableStore<Service> ServicesStore
+@inject IRefreshableStore<Service>         ServicesStore
+@inject IRefreshableStore<MemoryVerseList> MemoryVerseListsStore
 
 <MudGrid Spacing="6" Justify="Justify.Center">
     <MudItem xs="12" md="4">
@@ -21,6 +22,7 @@
             ListFilter="@(x => Entity.Data?.ServiceIds.Contains(x.Id) ?? false)"
             GetSearchDisplayFunc="@(x => x?.GetSearchDisplayName())"
             SearchFunc="@ServiceSearch"
+            DialogHelperText="Services are filtered by the Memory Verse's List's School Term"
 
             Context="serviceCtx">
             <MudItem xs="12">
@@ -44,7 +46,8 @@
 
             Context="bibleVerseCtx">
             <MudItem xs="12">
-                <BibleVerseDisplay Id="bibleVerseCtx.Id" ShowDialog AllowDeleting OnDelete="bibleVerseCtx.Component.RemoveEntity"/>
+                <BibleVerseDisplay Id="bibleVerseCtx.Id" ShowDialog AllowDeleting
+                                   OnDelete="bibleVerseCtx.Component.RemoveEntity"/>
             </MudItem>
         </RelationshipListComponent>
     </MudItem>

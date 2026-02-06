@@ -16,6 +16,9 @@ public partial class RelationshipAddDialog<FirstEntity, SecondEntity, EntityToAd
     private IMudDialogInstance MudDialog { get; set; } = null!;
 
     [Parameter]
+    public string? HelperText { get; set; }
+
+    [Parameter]
     public string? DialogLabel { get; set; }
 
     [Parameter]
@@ -78,6 +81,7 @@ public partial class RelationshipAddDialog<FirstEntity, SecondEntity, EntityToAd
         IDialogService                                                    dialogService,
         string                                                            title,
         string?                                                           dialogLabel,
+        string?                                                           helperText,
         Func<EntityToAdd?, string?>                                       getSearchDisplayFunc,
         Func<string?, IEnumerable<EntityToAdd>, IEnumerable<EntityToAdd>> searchFunc,
         object?                                                           entityBeingAddedTo
@@ -89,6 +93,7 @@ public partial class RelationshipAddDialog<FirstEntity, SecondEntity, EntityToAd
             { x => x.GetSearchDisplayFunc, getSearchDisplayFunc },
             { x => x.SearchFunc, searchFunc },
             { x => x.EntityBeingAddedTo, entityBeingAddedTo },
+            { x => x.HelperText, helperText }
         };
         DialogOptions options = new()
         {

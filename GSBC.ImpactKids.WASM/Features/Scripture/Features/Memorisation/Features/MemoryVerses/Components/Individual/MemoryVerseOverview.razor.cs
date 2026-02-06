@@ -1,5 +1,7 @@
+using EasyAppDev.Blazor.Store.AsyncActions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
 using GSBC.ImpactKids.WASM.Extensions;
 
 namespace GSBC.ImpactKids.WASM.Features.Scripture.Features.Memorisation.Features.MemoryVerses.Components.Individual;
@@ -11,10 +13,12 @@ public partial class MemoryVerseOverview
         await base.OnInitializedAsync();
 
         HandleStateChangeSubscriptionDisposal(ServicesStore);
+        HandleStateChangeSubscriptionDisposal(MemoryVerseListsStore);
 
         await Task.WhenAll(
             EntityStore.RefreshAll(),
-            ServicesStore.RefreshAll()
+            ServicesStore.RefreshAll(),
+            MemoryVerseListsStore.RefreshAll()
         );
     }
 
@@ -24,7 +28,15 @@ public partial class MemoryVerseOverview
             return [];
 
         search = search?.Replace("/", " "); // makes date searching match better
-        
+
+        AsyncData<MemoryVerseList> memoryVerseList =
+            MemoryVerseListsStore.GetState().First(x => x.Id == Entity.Data.MemoryVerseListId);
+
+        if (memoryVerseList.HasData && memoryVerseList.Data!.SchoolTermId != null)
+        {
+            enumerable = enumerable.Where(x => x.SchoolTermId == memoryVerseList.Data.SchoolTermId);
+        }
+
         return enumerable
             .ExceptBy(Entity.Data.ServiceIds, x => x.Id)
             .OrderByDescending(x => x.LocalDate)
