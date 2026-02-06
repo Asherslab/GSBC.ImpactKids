@@ -85,7 +85,7 @@ public partial class MemorisationEntriesTable
             {
                 foreach (MemoryVerseRecord memoryVerse in memoryVerses)
                 {
-                    MemorisationRecord? record = CreateMemorisationRecord(records, person, service, memoryVerse);
+                    MemorisationRecord? record = CreateMemorisationRecord(person, service, memoryVerse);
                     if (record != null)
                         records.Add(record);
                 }
@@ -138,7 +138,6 @@ public partial class MemorisationEntriesTable
     }
 
     private MemorisationRecord? CreateMemorisationRecord(
-        List<MemorisationRecord> records,
         Person                   person,
         Service                  service,
         MemoryVerseRecord        memoryVerse
@@ -151,13 +150,14 @@ public partial class MemorisationEntriesTable
                 x.MemoryVerseId == memoryVerse.Id
             );
 
-        bool verseHasBeenSaidBefore = records
-            .Any(x => x.Person.Id == PersonId &&
-                      x.MemoryVerse.Id == MemoryVerseId && (
-                          x.Entry.FiveDollaryDoosGiven ||
-                          x.Entry.VerseRecited
-                      )
+        bool verseHasBeenSaidBefore = MemorisationEntriesStore.GetState().Entities.Data!
+            .Any(x => x.PersonId == person.Id &&
+                      x.MemoryVerseId == memoryVerse.Id && 
+                      x.ServiceId != service.Id &&
+                      x is { VerseRecited: true, FiveDollaryDoosGiven: true }
             );
+        if (person is { FirstName: "Noah", LastName: "Cook" })
+            Console.WriteLine($"TESTING: {verseHasBeenSaidBefore}");
 
         bool existing = memorisationEntry != null;
         if (memorisationEntry == null && OnlyExisting)
@@ -171,6 +171,9 @@ public partial class MemorisationEntriesTable
             MemoryVerseId = memoryVerse.Id,
             ServiceId = service.Id,
         };
+
+
+        // Console.WriteLine($"TESTING: {memorisationEntry.PersonId} {verseHasBeenSaidBefore}");
 
         return new MemorisationRecord(
             memorisationEntry,
