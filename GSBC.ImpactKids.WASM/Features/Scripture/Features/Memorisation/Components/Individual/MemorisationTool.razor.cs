@@ -1,5 +1,4 @@
 using EasyAppDev.Blazor.Store.AsyncActions;
-using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
 using Microsoft.AspNetCore.Components;
 
@@ -66,16 +65,5 @@ public partial class MemorisationTool
     {
         _search = search;
         _searchStrings = _search?.Split(" ");
-    }
-
-    private bool PersonFilter(Person person)
-    {
-        if (_searchStrings == null)
-            return true;
-
-        return _searchStrings.All(x =>
-            person.FirstName.Contains(x, StringComparison.InvariantCultureIgnoreCase) ||
-            person.LastName.Contains(x, StringComparison.InvariantCultureIgnoreCase)
-        );
     }
 }

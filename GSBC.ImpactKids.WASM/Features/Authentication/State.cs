@@ -1,7 +1,6 @@
 using System.Collections.Immutable;
 using EasyAppDev.Blazor.Store.AsyncActions;
 using GSBC.ImpactKids.Shared.Contracts.Entities;
-using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
 using GSBC.ImpactKids.WASM.Services.RefreshableStore;
 
 namespace GSBC.ImpactKids.WASM.Features.Authentication;
