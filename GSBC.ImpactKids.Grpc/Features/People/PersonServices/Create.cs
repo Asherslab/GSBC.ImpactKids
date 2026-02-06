@@ -33,7 +33,7 @@ public partial class PersonService
 
         await db.People.AddAsync(person, token);
         await db.SaveChangesAsync(token);
-        await SendEvent(person.Id, person.FamilyId, token);
+        await eventService.SendUpdatedEvent(token);
 
         return new BasicResponse
         {

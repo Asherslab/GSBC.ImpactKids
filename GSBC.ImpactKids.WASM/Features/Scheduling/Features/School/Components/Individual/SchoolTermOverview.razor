@@ -1,5 +1,3 @@
-@inject IRefreshableStore<SchoolTerm> SchoolTermsStore
-
 <MudGrid Spacing="6" Justify="Justify.Center">
     <MudItem xs="4">
         <DetailsModificationCard
@@ -22,7 +20,7 @@
                                Spacing="3"
                                Context="schoolTermServiceId">
                     <MudItem xs="12">
-                        <ServiceDisplay Id="schoolTermServiceId"/>
+                        <ServiceDisplay Id="schoolTermServiceId" Link/>
                     </MudItem>
                 </ListComponent>
             </MudCardContent>

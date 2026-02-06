@@ -1,16 +1,14 @@
-using System.Collections.Immutable;
 using GSBC.ImpactKids.Grpc.Data.Models.People;
 using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.MedicalNotes;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
-using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ImpactKids.Grpc.Features.People.MedicalTypeServices;
 
 public partial class MedicalTypeService
 {
-    public async Task<BasicReadMultipleResponse<MedicalType>> BasicReadMultiple(
+    public async IAsyncEnumerable<BasicReadMultipleResponse<MedicalType>> BasicReadMultiple(
         BasicReadMultipleRequest request,
         CallContext              context = default
     )
@@ -28,17 +26,14 @@ public partial class MedicalTypeService
                 );
             }
         }
-        
+
         query = query.OrderBy(x => x.Label);
 
         query = query.Paginate(request);
 
-        List<DbMedicalType> types = await query.ToListAsync(token);
-
-        return new BasicReadMultipleResponse<MedicalType>
+        await foreach (BasicReadMultipleResponse<MedicalType> response in query.ReturnInBatches(converter, token: token))
         {
-            Success = true,
-            Entities = types.Select(converter.Convert).ToImmutableList()
-        };
+            yield return response;
+        }
     }
 }

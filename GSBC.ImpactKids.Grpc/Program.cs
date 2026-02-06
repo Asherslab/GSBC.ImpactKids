@@ -1,7 +1,12 @@
 using GSBC.ImpactKids.Grpc;
 using GSBC.ImpactKids.Grpc.Data;
 using GSBC.ImpactKids.Grpc.Extensions;
+using GSBC.ImpactKids.Grpc.Features.Authentication;
+using GSBC.ImpactKids.Grpc.Features.Authentication.UsersServices;
+using GSBC.ImpactKids.Grpc.Features.DataDisplay;
 using GSBC.ImpactKids.Grpc.Features.DollarStore.DollarStoreEntryServices;
+using GSBC.ImpactKids.Grpc.Features.Elvanto.ElvantoServices;
+using GSBC.ImpactKids.Grpc.Features.Elvanto.ElvantoServices.Models;
 using GSBC.ImpactKids.Grpc.Features.Eventing;
 using GSBC.ImpactKids.Grpc.Features.Eventing.Api.EventingServices;
 using GSBC.ImpactKids.Grpc.Features.Eventing.Services;
@@ -19,13 +24,9 @@ using GSBC.ImpactKids.Grpc.Features.Scripture.Memorisation.MemorisationEntriesSe
 using GSBC.ImpactKids.Grpc.Features.Scripture.Memorisation.MemoryVerseListsServices;
 using GSBC.ImpactKids.Grpc.Features.Scripture.Memorisation.MemoryVersesServices;
 using GSBC.ImpactKids.Grpc.Services;
-using GSBC.ImpactKids.Grpc.Services.ElvantoServices;
-using GSBC.ImpactKids.Grpc.Services.ElvantoServices.Models;
-using GSBC.ImpactKids.Grpc.Services.EventServices;
-using GSBC.ImpactKids.Grpc.Services.EventServices.Internal;
-using GSBC.ImpactKids.Grpc.Services.UsersServices;
 using GSBC.ImpactKids.ServiceDefaults;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.EntityFrameworkCore;
 using ProtoBuf.Grpc.Server;
 using RabbitMQ.Client;
 
@@ -58,18 +59,15 @@ builder.Services.AddCodeFirstGrpc();
 builder.Services.AddGrpc();
 builder.Services.AddConverters();
 builder.Services.AddTransient<ElvantoService>();
-builder.Services.AddSingleton<EventServicesService>();
-builder.Services.AddTransient<KeyedEventService>();
 builder.Services.AddSingleton<EventingChannelsService>();
 builder.Services.AddHostedService<RabbitWorker>();
 builder.Services.AddHybridCache();
 
-builder.AddNpgsqlDbContext<GsbcDbContext>(
-    "impact-kids",
-    null,
-    // null
-    x => x.AddInterceptors(new GSBC.ImpactKids.Grpc.Data.Interceptors.LatencyInterceptor(TimeSpan.FromSeconds(1.5)))
-);
+builder.Services.AddPooledDbContextFactory<GsbcDbContext>(o =>
+{
+    o.UseNpgsql(builder.Configuration.GetConnectionString("impact-kids"));
+    // o.AddInterceptors(new GSBC.ImpactKids.Grpc.Data.Interceptors.LatencyInterceptor(TimeSpan.FromSeconds(1.5)));
+});
 
 ElvantoConfig? elvantoConfig = builder.Configuration.GetSection("Elvanto").Get<ElvantoConfig>();
 if (elvantoConfig != null)
@@ -105,7 +103,6 @@ app.UseAuthorization();
 // Configure the HTTP request pipeline.
 app.MapGrpcService<LoginService>();
 app.MapGrpcService<EventingService>();
-app.MapGrpcService<EventService>();
 app.MapGrpcService<MetabaseService>();
 app.MapGrpcService<UsersService>();
 app.MapGrpcService<PersonService>();

@@ -1,16 +1,14 @@
-using System.Collections.Immutable;
 using GSBC.ImpactKids.Grpc.Data.Models.People;
 using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
-using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ImpactKids.Grpc.Features.People.SchoolGradeServices;
 
 public partial class SchoolGradeService
 {
-    public async Task<BasicReadMultipleResponse<SchoolGrade>> BasicReadMultiple(
+    public async IAsyncEnumerable<BasicReadMultipleResponse<SchoolGrade>> BasicReadMultiple(
         BasicReadMultipleRequest request,
         CallContext              context = default
     )
@@ -33,12 +31,9 @@ public partial class SchoolGradeService
 
         query = query.Paginate(request);
 
-        List<DbSchoolGrade> terms = await query.ToListAsync(token);
-
-        return new BasicReadMultipleResponse<SchoolGrade>
+        await foreach (BasicReadMultipleResponse<SchoolGrade> response in query.ReturnInBatches(converter, token: token))
         {
-            Success = true,
-            Entities = terms.Select(converter.Convert).ToImmutableList()
-        };
+            yield return response;
+        }
     }
 }

@@ -1,13 +1,11 @@
 @inherits DisplayComponent<Person>
 
 <MudPaper Elevation="6" Class="relative">
-    <MudOverlay Visible="@(Entity.IsLoading)"
-                DarkBackground="true"
-                Absolute="true">
+    <MudOverlay Visible="@(Entity.IsLoading)" DarkBackground="true" Absolute="true">
         <MudProgressCircular Indeterminate/>
     </MudOverlay>
-    <MudLink Href="@(Id == null ? null : $"/People/{Id}")">
-        <MudPaper Elevation="0" Class="d-flex justify-start flex-direction-row flex-grow-0">
+    <MudLink Underline="Underline.None" Href="@Href">
+        <MudPaper Elevation="0" Class="@Class">
             <MudAvatar Rounded Color="@_avatarColor" Class="ma-3">
                 @_avatarDisplay
             </MudAvatar>

@@ -1,5 +1,3 @@
-@using GSBC.ImpactKids.WASM.Pages.VerseMemorisation
-@inject IRefreshableStore<Service>          ServicesStore
 @inject IRefreshableStore<DollarStoreEntry> DollarStoreEntriesStore
 
 <MudGrid Spacing="6" Justify="Justify.Center">
@@ -30,8 +28,7 @@
                                        Context="memoryVerseId">
                             <MudItem xs="12">
                                 <MemoryVerseDisplay Id="memoryVerseId"
-                                                    ShowReference
-                                                    Href="@(Id == null ? null : $"/VerseMemorisation/{Id}?{nameof(MemorisationComponent.SelectedMemoryVerse)}={memoryVerseId}")"/>
+                                                    Href="@(Id == null ? null : $"/Scripture/Memorisation/Tool/{Id}?{nameof(Tool.MemoryVerseId)}={memoryVerseId}")"/>
                             </MudItem>
                         </ListComponent>
                     </MudCardContent>

@@ -45,7 +45,7 @@ public partial class AllergyService
 
         db.Allergies.Update(allergy);
         await db.SaveChangesAsync(token);
-        await eventService.SendUpdatedEvent(allergy.Id, token: token);
+        await eventService.SendUpdatedEvent(token);
 
         return new BasicResponse
         {

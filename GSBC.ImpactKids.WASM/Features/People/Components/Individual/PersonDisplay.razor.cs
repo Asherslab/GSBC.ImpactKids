@@ -1,9 +1,23 @@
+using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using MudBlazor.Utilities;
 
 namespace GSBC.ImpactKids.WASM.Features.People.Components.Individual;
 
 public partial class PersonDisplay
 {
+    [Parameter]
+    public bool Link { get; set; }
+
+    private string? Href => Link
+        ? Entity.HasData ? $"/People/{Id}" : null
+        : null;
+
+    private string Class => CssBuilder.Empty()
+        .AddClass("clickable mud-ripple", Link)
+        .AddClass("d-flex justify-start flex-direction-row flex-grow-0")
+        .Build();
+
     private string? _avatarDisplay;
     private Color   _avatarColor = Color.Default;
     private string  _displayText = "Person";

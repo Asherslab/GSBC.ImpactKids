@@ -19,9 +19,4 @@ public interface IPersonService
         BasicReadRequest request,
         CallContext      context = default
     );
-
-    Task<BasicReadMultipleResponse<Person>> ReadMultiple(
-        PeopleRequest request,
-        CallContext   context = default
-    );
 }

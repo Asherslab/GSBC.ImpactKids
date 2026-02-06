@@ -9,9 +9,9 @@ public partial class ServiceDetails
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        
-        ServiceTypesStore.Subscribe(_ => StateHasChanged());
-        SchoolTermsStore.Subscribe(_ => StateHasChanged());
+
+        HandleStateChangeSubscriptionDisposal(ServiceTypesStore);
+        HandleStateChangeSubscriptionDisposal(SchoolTermsStore);
 
         await Task.WhenAll(
             EntityStore.RefreshAll(),

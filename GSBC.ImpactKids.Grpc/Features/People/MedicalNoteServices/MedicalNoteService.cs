@@ -13,10 +13,4 @@ public partial class MedicalNoteService(
     GsbcDbContext                          db,
     IEventService<MedicalNote>             eventService,
     IConverter<DbMedicalNote, MedicalNote> converter
-) : IMedicalNoteService
-{
-    private async Task SendEvent(Guid personId, Guid familyId, CancellationToken token = default)
-    {
-        await eventService.SendUpdatedEvent(personId, token: token, familyId);
-    }
-}
+) : IMedicalNoteService;

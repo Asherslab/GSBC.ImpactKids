@@ -1,4 +1,6 @@
 using GSBC.ImpactKids.Grpc.Data.Models.People;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.Allergies;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.MedicalNotes;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 
 namespace GSBC.ImpactKids.Grpc.Features.People.PersonServices;
@@ -15,7 +17,9 @@ public partial class PersonService
         ICollection<string> existingPeopleElvantoIds = await UpdateExistingPeople(resp, token);
         await CreateNewPeople(resp, existingPeopleElvantoIds, token);
 
-        await eventService.SendUpdatedEvent(Guid.Empty, token: token);
+        await eventService.SendUpdatedEvent(token);
+        await eventService.SendUpdatedEvent<Allergy>(token);
+        await eventService.SendUpdatedEvent<MedicalNote>(token);
 
         return new BasicResponse
         {

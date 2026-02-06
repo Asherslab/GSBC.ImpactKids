@@ -1,32 +1,16 @@
-using System.Collections.Immutable;
 using GSBC.ImpactKids.Grpc.Data.Models.People;
 using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
-using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ImpactKids.Grpc.Features.People.PersonServices;
 
 public partial class PersonService
 {
-    public Task<BasicReadMultipleResponse<Person>> BasicReadMultiple(
+    public async IAsyncEnumerable<BasicReadMultipleResponse<Person>> BasicReadMultiple(
         BasicReadMultipleRequest request,
         CallContext              context = default
-    )
-    {
-        return ReadMultiple(new PeopleRequest
-            {
-                Pagination = request.Pagination,
-                SearchString = request.SearchString
-            }
-        );
-    }
-
-    public async Task<BasicReadMultipleResponse<Person>> ReadMultiple(
-        PeopleRequest request,
-        CallContext   context = default
     )
     {
         CancellationToken token = context.CancellationToken;
@@ -44,26 +28,16 @@ public partial class PersonService
             }
         }
 
-        if (request.FamilyId != null)
-        {
-            query = query.Where(x => x.FamilyId == request.FamilyId)
-                .OrderByDescending(x => x.FamilyGuardian)
-                .ThenBy(x => x.DateOfBirth)
-                .ThenBy(x => x.FirstName);
-        }
-        else
-        {
-            query = query.OrderBy(x => x.SchoolGrade!.OrderNumber).ThenBy(x => x.FirstName).ThenBy(x => x.LastName);
-        }
+        query = query
+            .OrderBy(x => x.SchoolGrade!.OrderNumber)
+            .ThenBy(x => x.FirstName)
+            .ThenBy(x => x.LastName);
 
         query = query.Paginate(request);
 
-        List<DbPerson> terms = await query.ToListAsync(token);
-
-        return new BasicReadMultipleResponse<Person>
+        await foreach (BasicReadMultipleResponse<Person> response in query.ReturnInBatches(converter, token: token))
         {
-            Success = true,
-            Entities = terms.Select(converter.Convert).ToImmutableList()
-        };
+            yield return response;
+        }
     }
 }

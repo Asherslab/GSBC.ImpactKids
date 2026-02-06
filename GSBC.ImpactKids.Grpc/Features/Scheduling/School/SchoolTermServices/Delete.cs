@@ -19,7 +19,7 @@ public partial class SchoolTermService
 
         db.Terms.Remove(term);
         await db.SaveChangesAsync(token);
-        await eventService.SendUpdatedEvent(term.Id, token: token);
+        await eventService.SendUpdatedEvent(token);
 
         return new BasicResponse
         {

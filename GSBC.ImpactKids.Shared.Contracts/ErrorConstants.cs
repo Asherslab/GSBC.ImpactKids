@@ -34,8 +34,8 @@ public static class ErrorConstants
     public const string SchoolTermStartDateNull = "School Term Start Date Must Be Set";
     public const string SchoolTermEndDateNull   = "School Term End Date Must Be Set";
 
-    public const string ServiceNotFound       = "Service Not Found";
-    public const string ServiceDateNull       = "Service Date Must Be Set";
+    public const string ServiceNotFound = "Service Not Found";
+    public const string ServiceDateNull = "Service Date Must Be Set";
 
     public const string ServiceTypeNotFound  = "Service Type Not Found";
     public const string ServiceTypeLabelNull = "Service Type Label Must Be Set";
@@ -47,9 +47,13 @@ public static class ErrorConstants
     public const string MemoryVerseListNotFound = "Memory Verse List Not Found";
     public const string MemoryVerseListNameNull = "Memory Verse List Name Must Be Set";
 
-    public const string MemoryVerseNotFound          = "Memory Verse Not Found";
-    public const string MemoryVerseReferenceNameNull = "Memory Verse Reference Name Must Be Set";
-    public const string MemoryVerseVerseNull         = "Memory Verse Text Must Be Set";
+    public const string MemoryVerseNotFound           = "Memory Verse Not Found";
+    public const string MemoryVerseReferenceNameNull  = "Memory Verse Reference Name Must Be Set";
+    public const string MemoryVerseVerseNull          = "Memory Verse Text Must Be Set";
+    public const string MemoryVerseServiceExists      = "Memory Verse Already Has Service Added";
+    public const string MemoryVerseServiceNotFound    = "Memory Verse Does Not Have Service Added";
+    public const string MemoryVerseBibleVerseExists   = "Memory Verse Already Has Bible Verse Added";
+    public const string MemoryVerseBibleVerseNotFound = "Memory Verse Does Not Have Bible Verse Added";
 
     public const string BibleVerseNotFound = "Bible Verse Not Found";
 

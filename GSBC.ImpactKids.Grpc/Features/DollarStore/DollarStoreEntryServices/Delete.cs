@@ -20,7 +20,7 @@ public partial class DollarStoreEntryService
         Guid serviceId = entry.ServiceId;
         db.DollarStoreEntries.Remove(entry);
         await db.SaveChangesAsync(token);
-        await eventService.SendUpdatedEvent(entry.Id, token: token, serviceId);
+        await eventService.SendUpdatedEvent(token);
 
         return new BasicResponse
         {

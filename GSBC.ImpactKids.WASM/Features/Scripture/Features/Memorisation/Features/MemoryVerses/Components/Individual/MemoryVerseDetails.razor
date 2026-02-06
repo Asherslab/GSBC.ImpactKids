@@ -1,0 +1,64 @@
+@inherits DetailsComponent<MemoryVerse, CreateMemoryVerseRequest, UpdateMemoryVerseRequest>
+@inject IRefreshableStore<MemoryVerseList> MemoryVerseListsStore
+
+<MudPaper Elevation="0" Class="d-flex flex-column flex-grow-1">
+    <MudOverlay Visible="@(Entity.IsLoading)"
+                DarkBackground="true"
+                Absolute="true">
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+    @if (Entity.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">
+            @(Entity.Error ?? "An Unexpected error occured")
+        </MudAlert>
+    }
+    <MudTextFieldCreateOrUpdate
+        @bind-Create="@CreateRequest.ReferenceName"
+        Read="@UpdateRequest.ReferenceName.Value"
+        @bind-Update="@UpdateRequest.ReferenceName.Value"
+        State="State"
+
+        Class="mb-4"
+        Label="Reference"
+        Variant="Variant.Filled"
+        Immediate/>
+
+    <div class="relative mb-4">
+        <MudOverlay Visible="@(MemoryVerseListsStore.GetState().Entities.IsLoading)"
+                    DarkBackground
+                    Absolute>
+            <MudProgressCircular Indeterminate/>
+        </MudOverlay>
+        <MudSelectCreateOrUpdate
+            @bind-Create="@CreateRequest.MemoryVerseListId"
+            Read="@UpdateRequest.MemoryVerseListId.Value"
+            @bind-Update="@UpdateRequest.MemoryVerseListId.Value"
+            State="State"
+
+            Label="Memory Verse List"
+            Variant="Variant.Filled">
+            @if (MemoryVerseListsStore.GetState().Entities.HasData)
+            {
+                @foreach (MemoryVerseList list in MemoryVerseListsStore.GetState().Entities.Data!)
+                {
+                    <MudSelectItem T="Guid" Value="@list.Id">
+                        @(list.Name)
+                    </MudSelectItem>
+                }
+            }
+        </MudSelectCreateOrUpdate>
+    </div>
+
+    <MudTextFieldCreateOrUpdate
+        @bind-Create="@CreateRequest.Verse"
+        Read="@UpdateRequest.Verse.Value"
+        @bind-Update="@UpdateRequest.Verse.Value"
+        State="State"
+
+        AutoGrow
+        Lines="5"
+        Label="Verse Text"
+        Variant="Variant.Filled"
+        Immediate/>
+</MudPaper>

@@ -9,12 +9,16 @@ using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.Allergies;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.MedicalNotes;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
+using GSBC.ImpactKids.WASM.Features.Authentication;
 using GSBC.ImpactKids.WASM.Features.Calendar;
 using GSBC.ImpactKids.WASM.Features.Eventing;
 using GSBC.ImpactKids.WASM.Features.People;
 using GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services;
 using GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services.Features.ServiceTypes;
+using GSBC.ImpactKids.WASM.Features.Scripture.Features.Memorisation;
+using GSBC.ImpactKids.WASM.Features.Scripture.Features.Memorisation.Features.MemoryVerses;
 using GSBC.ImpactKids.WASM.Services.RefreshableStore;
 
 namespace GSBC.ImpactKids.WASM.Extensions;
@@ -45,13 +49,17 @@ public static class StateStoreExtensions
                 .AddEntityStore<ServiceType>()
                 .AddEntityStore<SchoolTerm>()
                 .AddEntityStore<DollarStoreEntry>()
+                .AddEntityStore<MemorisationEntry>()
                 .AddEntityStore<MemoryVerse>()
+                .AddEntityStore<MemoryVerseList>()
+                .AddEntityStore<BibleVerse>()
                 .AddEntityStore<Person>()
                 .AddEntityStore<Allergen>()
                 .AddEntityStore<Allergy>()
                 .AddEntityStore<MedicalNote>()
                 .AddEntityStore<MedicalType>()
-                .AddEntityStore<SchoolGrade>();
+                .AddEntityStore<SchoolGrade>()
+                .AddEntityStore<User>();
         }
 
         private IServiceCollection AddComponentStores()
@@ -68,7 +76,10 @@ public static class StateStoreExtensions
                 .AddPageStore<MultipleServiceTypesState>()
                 .AddPageStore<EventsStreamState>()
                 .AddPageStore<CalendarState>()
-                .AddPageStore<MultiplePeopleState>();
+                .AddPageStore<MultiplePeopleState>()
+                .AddPageStore<MemorisationToolState>()
+                .AddPageStore<MultipleMemoryVersesState>()
+                .AddPageStore<MultipleUsersState>();
         }
 
         private IServiceCollection AddEntityStore<T>() where T : notnull

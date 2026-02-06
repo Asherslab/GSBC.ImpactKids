@@ -19,7 +19,7 @@ public partial class ServicesService
 
         db.Services.Remove(service);
         await db.SaveChangesAsync(token);
-        await eventService.SendUpdatedEvent(service.Id, token: token, service.SchoolTermId ?? Guid.Empty);
+        await eventService.SendUpdatedEvent(token);
 
         return new BasicResponse
         {

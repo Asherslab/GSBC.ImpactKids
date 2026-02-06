@@ -1,3 +1,4 @@
+@using GSBC.ImpactKids.WASM.Features.Scripture.Features.Memorisation.Pages
 @using GSBC.ImpactKids.WASM.Services
 @inject ElvantoReportsConfig ElvantoReportsConfig
 @inject MetabaseConfig       MetabaseConfig
@@ -10,12 +11,16 @@
 
     <MudNavGroup Icon="@Icons.Material.Filled.School"
                  Title="Verse Memorisation">
+        <MudNavLink Icon="@Icons.Material.Filled.School"
+                    Href="/MemoryVerses">
+            Memory Verses
+        </MudNavLink>
         <MudNavLink Icon="@Icons.Material.Filled.Undo"
-                    Href="/verseMemorisation/Previous">
+                    Href="@($"/Scripture/Memorisation/Tool/{Guid.Empty}?{nameof(Tool.Previous)}={true}")">
             Previous
         </MudNavLink>
         <MudNavLink Icon="@Icons.Material.Filled.Redo"
-                    Href="/verseMemorisation/Upcoming">
+                    Href="@($"/Scripture/Memorisation/Tool/{Guid.Empty}?{nameof(Tool.Upcoming)}={true}")">
             Upcoming
         </MudNavLink>
     </MudNavGroup>

@@ -1,0 +1,78 @@
+@page "/Analytics/{DashboardLabel}"
+@using GSBC.ImpactKids.Shared.Contracts.Messages.Requests
+@using GSBC.ImpactKids.Shared.Contracts.Messages.Responses
+@using GSBC.ImpactKids.Shared.Contracts.Services.Features.DataDisplay
+@using GSBC.ImpactKids.WASM.Services
+@attribute [Authorize]
+@inject MetabaseConfig   MetabaseConfig
+@inject IMetabaseService MetabaseService
+
+@if (_label != null)
+{
+    <PageTitle>@_label</PageTitle>
+}
+else
+{
+    <PageTitle>Kids Dashboard</PageTitle>
+}
+
+<MudPaper Elevation="6" Class="mt-4" Style="height: 90vh">
+    @if (_token != null)
+    {
+        <iframe
+            @key="_iframeKey"
+            src="@_reportUrl"
+            width="100%"
+            height="100%"
+            allowtransparency>
+        </iframe>
+    }
+</MudPaper>
+
+@code {
+
+    [Parameter]
+    public required string DashboardLabel { get; set; }
+
+    [SupplyParameterFromQuery]
+    public int? Refresh { get; set; }
+
+    private Guid              _iframeKey = Guid.NewGuid();
+    private string?           _label;
+    private string?           _reportUrl;
+    private string?           _token;
+    private DashboardMapping? _mapping;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+        _iframeKey = Guid.NewGuid();
+        StateHasChanged();
+
+        _mapping = MetabaseConfig.DashboardMappings.FirstOrDefault(x => x.Label == DashboardLabel);
+        _label = DashboardLabel;
+        await RefreshDashboard();
+        _reportUrl = DashboardUrl();
+    }
+
+    private async Task RefreshDashboard()
+    {
+        MetabaseJwtResponse? resp = await MetabaseService.GetMetabaseJwt(new MetabaseJwtRequest
+        {
+            DashboardId = _mapping!.Id,
+            Type = _mapping.Type
+        });
+
+        _token = resp?.Jwt;
+
+        StateHasChanged();
+    }
+
+    private string DashboardUrl()
+    {
+        string refreshString = Refresh == null ? "" : $"&refresh={Refresh}";
+        return $"https://kids-metabase.baptist.com.au/embed/{_mapping?.Type}/" + _token +
+               $"#theme=night&bordered=true&titled=false{refreshString}";
+    }
+
+}

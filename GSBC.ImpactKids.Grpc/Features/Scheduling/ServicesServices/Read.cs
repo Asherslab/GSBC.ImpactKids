@@ -12,8 +12,8 @@ public partial class ServicesService
     {
         CancellationToken token = context.CancellationToken;
 
-        IQueryable<DbService> query = db.Services
-            .Include(x => x.DollarStoreEntry);
+        IQueryable<DbService> query = db.Services;
+
         DbService? service;
 
         if (request.PreviousService)

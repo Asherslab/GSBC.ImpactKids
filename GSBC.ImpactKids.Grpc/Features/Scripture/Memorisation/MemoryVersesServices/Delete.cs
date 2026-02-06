@@ -7,7 +7,7 @@ namespace GSBC.ImpactKids.Grpc.Features.Scripture.Memorisation.MemoryVersesServi
 
 public partial class MemoryVersesService
 {
-    public async Task<BasicResponse?> Delete(BasicReadRequest request, CallContext context = default)
+    public async Task<BasicResponse> BasicDelete(BasicReadRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 
@@ -19,7 +19,7 @@ public partial class MemoryVersesService
 
         db.MemoryVerses.Remove(verse);
         await db.SaveChangesAsync(token);
-        await eventService.SendUpdatedEvent(verse.Id, token: token, verse.MemoryVerseListId);
+        await eventService.SendUpdatedEvent(token);
 
         return new BasicResponse
         {

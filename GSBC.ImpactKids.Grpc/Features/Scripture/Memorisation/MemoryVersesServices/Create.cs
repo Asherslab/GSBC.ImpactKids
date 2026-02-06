@@ -9,7 +9,7 @@ namespace GSBC.ImpactKids.Grpc.Features.Scripture.Memorisation.MemoryVersesServi
 
 public partial class MemoryVersesService
 {
-    public async Task<BasicResponse?> Create(CreateMemoryVerseRequest request, CallContext context = default)
+    public async Task<BasicResponse> Create(CreateMemoryVerseRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 
@@ -48,10 +48,9 @@ public partial class MemoryVersesService
             BibleVerses = bibleVerses
         };
 
-
         await db.MemoryVerses.AddAsync(verse, token);
         await db.SaveChangesAsync(token);
-        await eventService.SendUpdatedEvent(verse.Id, token: token, verse.MemoryVerseListId);
+        await eventService.SendUpdatedEvent(token);
 
         return new BasicResponse
         {

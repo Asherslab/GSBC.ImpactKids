@@ -15,9 +15,4 @@ public interface ISchoolTermsService
         SchoolTermRequest request,
         CallContext       context = default
     );
-
-    Task<BasicReadMultipleResponse<SchoolTerm>> ReadMultiple(
-        SchoolTermsRequest request,
-        CallContext        context = default
-    );
 }

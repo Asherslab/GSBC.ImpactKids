@@ -1,4 +1,3 @@
-using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
 using GSBC.ImpactKids.WASM.Components.Common;
 using GSBC.ImpactKids.WASM.Components.Common.Inputs;
 using GSBC.ImpactKids.WASM.Features.People.Features.Allergies.Components.Individual;
@@ -7,13 +6,10 @@ using Microsoft.AspNetCore.Components;
 
 namespace GSBC.ImpactKids.WASM.Features.People.Components.Individual;
 
-public partial class PersonOverview : ComponentBase
+public partial class PersonOverview
 {
     [Parameter]
     public required Guid? Id { get; set; }
-
-    [Parameter]
-    public ICollection<MemorisationEntry>? MemorisationEntries { get; set; }
 
     private async Task CreateMedicalNote() =>
         await DetailsComponentDialog.Open<MedicalNoteDetails>(

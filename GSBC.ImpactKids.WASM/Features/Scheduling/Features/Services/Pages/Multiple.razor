@@ -6,7 +6,7 @@
 <PageTitle>Services</PageTitle>
 
 <MudPaper Elevation="6" Class="mt-4 pt-1 px-6 pb-6">
-    <MudGrid> @*Class="mt-0"*@
+    <MudGrid>
         <MudItem xs="4" md="3">
             <MudGrid Spacing="1">
                 <MudItem xs="12" md="6">
@@ -101,7 +101,7 @@
                                            Spacing="3"
                                            Context="quarterServiceId">
                                 <MudItem xs="12">
-                                    <ServiceDisplay Id="quarterServiceId"/>
+                                    <ServiceDisplay Id="quarterServiceId" Link/>
                                 </MudItem>
                             </ListComponent>
                         </MudCardContent>
@@ -167,7 +167,7 @@
                                            Spacing="3"
                                            Context="schoolTermServiceId">
                                 <MudItem xs="12">
-                                    <ServiceDisplay Id="schoolTermServiceId"/>
+                                    <ServiceDisplay Id="schoolTermServiceId" Link/>
                                 </MudItem>
                             </ListComponent>
                         </MudCardContent>

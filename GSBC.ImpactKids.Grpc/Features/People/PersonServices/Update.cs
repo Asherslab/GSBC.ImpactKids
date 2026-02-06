@@ -77,7 +77,7 @@ public partial class PersonService
 
         db.People.Update(person);
         await db.SaveChangesAsync(token);
-        await SendEvent(person.Id, person.FamilyId, token);
+        await eventService.SendUpdatedEvent(token);
 
         return new BasicResponse
         {

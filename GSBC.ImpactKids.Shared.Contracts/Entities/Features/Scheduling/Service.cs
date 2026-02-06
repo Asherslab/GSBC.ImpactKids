@@ -16,6 +16,9 @@ public record Service : IIdentifiable
     public required Guid? DollarStoreEntryId { get; init; }
 
     public string GetDisplayName() => Name ?? LocalDate.ToString("dd/MM/yyyy");
+    public string GetSearchDisplayName() => Name == null 
+        ? LocalDate.ToString("dd/MM/yyyy")
+        : $"{Name} [{LocalDate:dd/MM/yyyy}]";
 
     public static string BuildSubscription(Guid? schoolTermId = null, Guid? serviceId = null) =>
         $"{nameof(Service)}.{schoolTermId?.ToString() ?? "*"}.{serviceId?.ToString() ?? "*"}";

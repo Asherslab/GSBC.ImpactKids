@@ -12,6 +12,7 @@
         <PackageReference Include="Blazor.WhyDidYouRender" Version="3.0.0" />
         <PackageReference Include="Blazor.WhyDidYouRender.Aspire" Version="3.0.0" />
         <PackageReference Include="EasyAppDev.Blazor.Store" Version="2.0.6" />
+        <PackageReference Include="FuzzySharp" Version="2.0.2" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.0"/>
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="10.0.0"/>
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.0" PrivateAssets="all"/>
@@ -28,7 +29,7 @@
         <PackageReference Include="Grpc.Net.Client.Web" Version="2.71.0"/>
         <PackageReference Include="Grpc.Net.ClientFactory" Version="2.71.0"/>
         <PackageReference Include="protobuf-net.Grpc.ClientFactory" Version="1.2.2"/>
-        <PackageReference Include="System.Net.ServerSentEvents" Version="10.0.1" />
+<!--        <PackageReference Include="System.Net.ServerSentEvents" Version="10.0.1" />-->
     </ItemGroup>
 
     <ItemGroup>
@@ -46,8 +47,10 @@
 
     <ItemGroup>
         <Folder Include="Features\Elvanto\Components\" />
-        <Folder Include="Features\Elvanto\Pages\" />
         <Folder Include="Features\Scheduling\Features\Services\Features\"/>
+        <Folder Include="Features\Scripture\Features\Memorisation\Features\MemoryVerseLists\Components\Multiple\" />
+        <Folder Include="Features\Scripture\Features\Memorisation\Features\MemoryVerseLists\Pages\" />
+        <Folder Include="Features\Scripture\Features\Memorisation\Features\MemoryVerses\Components\Multiple\" />
     </ItemGroup>
 
     <ItemGroup>
@@ -61,5 +64,24 @@
       <_ContentIncludedByDefault Remove="Pages\Terms\Term.razor" />
       <_ContentIncludedByDefault Remove="Pages\Services\ServicePage.razor" />
       <_ContentIncludedByDefault Remove="Features\Scheduling\Features\Services\Components\Multiple\ServicesList.razor" />
+      <_ContentIncludedByDefault Remove="Pages\VerseMemorisation\MemorisationComponent.razor" />
+      <_ContentIncludedByDefault Remove="Pages\VerseMemorisation\PreviousVerseMemorisation.razor" />
+      <_ContentIncludedByDefault Remove="Pages\VerseMemorisation\UpcomingVerseMemorisation.razor" />
+      <_ContentIncludedByDefault Remove="Pages\VerseMemorisation\VerseMemorisation.razor" />
+      <_ContentIncludedByDefault Remove="Pages\Bible\Index.razor" />
+      <_ContentIncludedByDefault Remove="Components\Dialogs\Create\CreateDollarStoreEntryDialog.razor" />
+      <_ContentIncludedByDefault Remove="Components\Dialogs\Create\CreateMemoryVerseDialog.razor" />
+      <_ContentIncludedByDefault Remove="Components\Dialogs\Create\CreateMemoryVerseListDialog.razor" />
+      <_ContentIncludedByDefault Remove="Components\Dialogs\Create\CreatePersonDialog.razor" />
+      <_ContentIncludedByDefault Remove="Components\Dialogs\Create\CreateSchoolTermDialog.razor" />
+      <_ContentIncludedByDefault Remove="Components\Dialogs\Create\CreateServiceDialog.razor" />
+      <_ContentIncludedByDefault Remove="Components\Dialogs\Update\UpdateDollarStoreEntryDialog.razor" />
+      <_ContentIncludedByDefault Remove="Components\Dialogs\Update\UpdateMemoryVerseDialog.razor" />
+      <_ContentIncludedByDefault Remove="Components\Dialogs\Update\UpdateMemoryVerseListDialog.razor" />
+      <_ContentIncludedByDefault Remove="Components\Dialogs\Update\UpdatePersonDialog.razor" />
+      <_ContentIncludedByDefault Remove="Components\Dialogs\Update\UpdateSchoolTermDialog.razor" />
+      <_ContentIncludedByDefault Remove="Components\Dialogs\Update\UpdateServiceDialog.razor" />
+      <_ContentIncludedByDefault Remove="Pages\MemoryVerseLists\List.razor" />
+      <_ContentIncludedByDefault Remove="Pages\Users\Users.razor" />
     </ItemGroup>
 </Project>

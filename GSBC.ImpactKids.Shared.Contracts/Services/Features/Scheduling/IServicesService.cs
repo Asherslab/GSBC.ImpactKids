@@ -15,9 +15,4 @@ public interface IServicesService
         ServiceRequest request,
         CallContext    context = default
     );
-
-    Task<BasicReadMultipleResponse<Service>> ReadMultiple(
-        ServicesRequest request,
-        CallContext     context = default
-    );
 }
