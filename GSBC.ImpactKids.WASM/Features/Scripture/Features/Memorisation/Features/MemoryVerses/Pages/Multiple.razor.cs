@@ -4,9 +4,7 @@ using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
 using GSBC.ImpactKids.WASM.Components.Common;
 using GSBC.ImpactKids.WASM.Components.Common.Inputs;
 using GSBC.ImpactKids.WASM.Extensions;
-using GSBC.ImpactKids.WASM.Features.Scripture.Features.Memorisation.Features.MemoryVerseLists.Components;
 using GSBC.ImpactKids.WASM.Features.Scripture.Features.Memorisation.Features.MemoryVerseLists.Components.Individual;
-using GSBC.ImpactKids.WASM.Features.Scripture.Features.Memorisation.Features.MemoryVerses.Components;
 using MudBlazor;
 using CreateMemoryVerseDialog =
     GSBC.ImpactKids.WASM.Features.Scripture.Features.Memorisation.Features.MemoryVerses.Components.Individual.

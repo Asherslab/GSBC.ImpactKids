@@ -1,5 +1,4 @@
 using Grpc.Net.Client.Web;
-using GSBC.ImpactKids.Shared.Contracts.Services;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.Authentication;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.DataDisplay;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.DollarStore;

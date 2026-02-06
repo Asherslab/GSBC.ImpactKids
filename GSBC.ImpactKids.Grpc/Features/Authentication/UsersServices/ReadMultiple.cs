@@ -1,10 +1,8 @@
-using System.Collections.Immutable;
 using GSBC.ImpactKids.Grpc.Data.Models;
 using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Shared.Contracts.Entities;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
-using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ImpactKids.Grpc.Features.Authentication.UsersServices;
 
