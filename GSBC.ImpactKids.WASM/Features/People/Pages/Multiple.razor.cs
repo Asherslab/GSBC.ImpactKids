@@ -1,58 +1,62 @@
+using System.Collections.Immutable;
+using EasyAppDev.Blazor.Store.AsyncActions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
-using GSBC.ImpactKids.WASM.Components.Dialogs.Create;
-using GSBC.ImpactKids.WASM.Extensions;
+using GSBC.ImpactKids.WASM.Components.Common;
+using GSBC.ImpactKids.WASM.Components.Common.Inputs;
+using GSBC.ImpactKids.WASM.Features.People.Components.Individual;
 
 namespace GSBC.ImpactKids.WASM.Features.People.Pages;
 
 public partial class Multiple
 {
-    public string? Search { get; set; }
-
-    private ICollection<Person>? _people;
-
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
 
+        SubscribeToSelector(s => s.Search, _ => UpdateFilteredPeople());
+        PeopleStore.Subscribe(_ => UpdateFilteredPeople());
+
         await Task.WhenAll(
-            RefreshPeople(),
-            SubscribeToEvent(Person.BuildSubscription(), RefreshPeople)
+            PeopleStore.RefreshAll(),
+            UpdateFilteredPeople()
         );
     }
 
-    private CancellationTokenSource _refreshPeopleTokenSource = new();
-
-    private async Task RefreshPeople()
+    private Task UpdateFilteredPeople()
     {
-        await _refreshPeopleTokenSource.CancelAsync();
-        _refreshPeopleTokenSource = new CancellationTokenSource();
+        AsyncData<ImmutableList<Person>> people = PeopleStore.GetState().Entities;
 
-        BasicReadMultipleResponse<Person>? response = await PersonService.ReadMultiple(
-            new PeopleRequest
-            {
-                SearchString = Search
-            },
-            _refreshPeopleTokenSource.Token
-        );
+        if (!people.HasData)
+            return Update(s => s with { FilteredPeople = people });
 
-        if (response.HasErrorOrNull())
+        string[]? searchStrings = State.Search?.Split(" ");
+        return Update(s => s with
         {
-            Snackbar.AddErrorResponse(response);
-            return;
-        }
-
-        _people = response.Entities;
-        StateHasChanged();
+            FilteredPeople = s.FilteredPeople.ToSuccess(
+                people.Data!
+                    .Where(x =>
+                        searchStrings?.All(y =>
+                            x.FirstName.Contains(y, StringComparison.InvariantCultureIgnoreCase) ||
+                            x.LastName.Contains(y, StringComparison.InvariantCultureIgnoreCase)
+                        ) ?? true
+                    )
+                    .Take(10)
+                    .ToImmutableList()
+            )
+        });
     }
 
     private async Task OnSearch(string text)
     {
-        Search = text;
-        if (string.IsNullOrWhiteSpace(Search))
-            Search = null;
-        await RefreshPeople();
+        await UpdateDebounced(s =>
+            {
+                string? nullableText = text;
+                if (string.IsNullOrWhiteSpace(nullableText))
+                    nullableText = null;
+                return s.SetSearch(nullableText);
+            },
+            TimeSpan.FromSeconds(0.25).Milliseconds
+        );
     }
 
     private async Task SyncElvantoPeople()
@@ -60,8 +64,6 @@ public partial class Multiple
         await PersonService.SyncWithElvanto();
     }
 
-    private async Task CreatePerson()
-    {
-        await DialogService.ShowAsync<CreatePersonDialog>("Create Person");
-    }
+    private async Task CreatePerson() =>
+        await DetailsComponentDialog.Open<PersonDetails>(DialogService, "Create Person", ModificationState.Creating);
 }

@@ -1,0 +1,62 @@
+@inherits StoreEntityUtilityComponent<MultipleMemoryVersesState>
+@page "/MemoryVerses"
+@inject IRefreshableStore<MemoryVerseList> MemoryVerseListsStore
+
+<PageTitle>Memory Verses</PageTitle>
+
+<MudPaper Elevation="6" Class="mt-4 pt-1 px-6 pb-6 relative">
+    <MudOverlay Visible="@(State.FilteredMemoryVerseLists.IsLoading)"
+                DarkBackground
+                Absolute>
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+    <MudGrid>
+        <MudItem xs="4" md="3"/>
+        <MudItem xs="4" md="6">
+            <MudText Align="Align.Center"
+                     Typo="Typo.h5"
+                     Class="flex-grow-1 py-3">
+                Memory Verses
+            </MudText>
+        </MudItem>
+        <MudItem xs="4" md="3">
+            <MudGrid Spacing="1">
+                <MudItem xs="12" Class="d-flex justify-end">
+                    <MudIconButton OnClick="@CreateMemoryVerseList"
+                                   Icon="@Icons.Material.Filled.PostAdd"/>
+                    <MudIconButton OnClick="@CreateMemoryVerse"
+                                   Icon="@Icons.Material.Filled.AddCircle"/>
+                </MudItem>
+            </MudGrid>
+        </MudItem>
+    </MudGrid>
+    <MudGrid>
+        @if (State.FilteredMemoryVerseLists.Data != null)
+        {
+            foreach (MemoryVerseList list in State.FilteredMemoryVerseLists.Data)
+            {
+                <MudItem xs="12" md="3">
+                    <MudCard Elevation="6" Class="relative">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6"
+                                         Align="Align.Start">@list.Name</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <ListComponent T="MemoryVerse"
+                                           Filter="@(x => x.MemoryVerseListId == list.Id)"
+                                           Ordering="@(l => l.OrderBy(x => x.ServiceIds.Count))"
+                                           Spacing="3"
+                                           Context="memoryVerseId">
+                                <MudItem xs="12">
+                                    <MemoryVerseDisplay Id="memoryVerseId" Href="@($"/MemoryVerses/{memoryVerseId}")"/>
+                                </MudItem>
+                            </ListComponent>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            }
+        }
+    </MudGrid>
+</MudPaper>

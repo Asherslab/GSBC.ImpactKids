@@ -10,7 +10,9 @@ namespace GSBC.ImpactKids.Grpc.Features.Scripture.Memorisation.MemoryVersesServi
 
 [Authorize(Policy = Policies.EnabledOnly)]
 public partial class MemoryVersesService(
-    GsbcDbContext              db,
-    IEventService<MemoryVerse> eventService,
+    GsbcDbContext                          db,
+    IEventService<MemoryVerse>             eventService,
     IConverter<DbMemoryVerse, MemoryVerse> converter
-) : IMemoryVersesService;
+) : IMemoryVersesService,
+    IMemoryVersesServicesRelationshipService,
+    IMemoryVersesBibleVersesRelationshipService;

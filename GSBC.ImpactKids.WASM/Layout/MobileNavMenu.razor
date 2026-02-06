@@ -1,3 +1,4 @@
+@using GSBC.ImpactKids.WASM.Features.Scripture.Features.Memorisation.Pages
 @using GSBC.ImpactKids.WASM.Services
 @inject ElvantoReportsConfig ElvantoReportsConfig
 @inject MetabaseConfig       MetabaseConfig
@@ -5,17 +6,21 @@
 <MudNavMenu>
     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
     <MudNavLink Href="/roster" Icon="@Icons.Material.Filled.Schedule">Roster</MudNavLink>
-    
+
     <MudNavLink Href="/calendar" Icon="@Icons.Material.Filled.CalendarMonth">Calendar</MudNavLink>
-    
+
     <MudNavGroup Icon="@Icons.Material.Filled.School"
                  Title="Verse Memorisation">
+        <MudNavLink Icon="@Icons.Material.Filled.School"
+                    Href="/MemoryVerses">
+            Memory Verses
+        </MudNavLink>
         <MudNavLink Icon="@Icons.Material.Filled.Undo"
-                    Href="/verseMemorisation/Previous">
+                    Href="@($"/Scripture/Memorisation/Tool/{Guid.Empty}?{nameof(Tool.Previous)}={true}")">
             Previous
         </MudNavLink>
         <MudNavLink Icon="@Icons.Material.Filled.Redo"
-                    Href="/verseMemorisation/Upcoming">
+                    Href="@($"/Scripture/Memorisation/Tool/{Guid.Empty}?{nameof(Tool.Upcoming)}={true}")">
             Upcoming
         </MudNavLink>
     </MudNavGroup>
@@ -26,24 +31,18 @@
             Services
         </MudNavLink>
         <MudNavLink Icon="@Icons.Material.Filled.Undo"
-                    Href="/service?previous=true">
+                    Href="/Services/Rel?Previous=true">
             Previous
         </MudNavLink>
         <MudNavLink Icon="@Icons.Material.Filled.Redo"
-                    Href="/service?upcoming=true">
+                    Href="/Services/Rel?Upcoming=true">
             Upcoming
         </MudNavLink>
-        <MudNavGroup Title="School Terms">
-            <MudNavLink Icon="@Icons.Material.Filled.CalendarViewMonth"
-                        Href="/terms">
-                All
-            </MudNavLink>
-            <MudNavLink Icon="@Icons.Material.Filled.CalendarMonth"
-                        Href="/term">
-                This Term
-            </MudNavLink>
-        </MudNavGroup>
     </MudNavGroup>
+    <MudNavLink Icon="@Icons.Material.Filled.Person"
+                Href="/people">
+        People
+    </MudNavLink>
     @if (MetabaseConfig.DashboardMappings.Any())
     {
         <MudNavGroup Icon="@Icons.Material.Filled.BarChart"
@@ -85,10 +84,6 @@
         <MudNavLink Icon="@Icons.Material.Filled.Book"
                     Href="/bible">
             Bible
-        </MudNavLink>
-        <MudNavLink Icon="@Icons.Material.Filled.Person"
-                    Href="/people">
-            People
         </MudNavLink>
         <MudNavLink Icon="@Icons.Material.Filled.List"
                     Href="/Services/ServiceTypes">

@@ -5,8 +5,8 @@ namespace GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
 public class BasicResponse : ISuccessResponse, IErrorResponse
 {
-    public required bool    Success { get; set; }
-    public          string? Error   { get; set; }
+    public required bool    Success { get; init; }
+    public          string? Error   { get; init; }
 
     public static BasicResponse WithError(string error) => new BasicResponse
     {

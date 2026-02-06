@@ -1,19 +1,21 @@
 namespace GSBC.ImpactKids.Shared.Contracts.Entities.Pagination;
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
-public class PaginationRequest
+public record PaginationRequest
 {
-    public int Page { get; set; }
-    public int PerPage { get; set; } = 10;
-    public bool Disabled { get; set; }
+    public int  Page     { get; init; } = 0;
+    public int  PerPage  { get; init; } = 10;
+    public bool Disabled { get; init; }
 
+    // exists because it's more compact than obj initializers is
     public PaginationRequest(int page = 0, int perPage = 10)
     {
         Page = page;
         PerPage = perPage;
     }
 
-    protected PaginationRequest()
+    // for GRPC construction
+    public PaginationRequest()
     {
     }
 

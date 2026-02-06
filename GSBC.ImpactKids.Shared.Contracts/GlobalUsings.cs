@@ -8,3 +8,4 @@ global using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 global using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 global using GSBC.ImpactKids.Shared.Contracts.Entities.Pagination;
 global using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base.Interfaces;
+global using GSBC.ImpactKids.Shared.Contracts.Entities.Interfaces;

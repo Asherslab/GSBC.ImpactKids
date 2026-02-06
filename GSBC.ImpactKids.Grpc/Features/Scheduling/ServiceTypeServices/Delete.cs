@@ -7,7 +7,7 @@ namespace GSBC.ImpactKids.Grpc.Features.Scheduling.ServiceTypeServices;
 
 public partial class ServiceTypeService
 {
-    public async Task<BasicResponse?> Delete(BasicReadRequest request, CallContext context = default)
+    public async Task<BasicResponse> BasicDelete(BasicReadRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 
@@ -19,7 +19,7 @@ public partial class ServiceTypeService
 
         db.ServiceTypes.Remove(serviceType);
         await db.SaveChangesAsync(token);
-        await eventService.SendUpdatedEvent(serviceType.Id, token: token);
+        await eventService.SendUpdatedEvent(token);
 
         return new BasicResponse
         {

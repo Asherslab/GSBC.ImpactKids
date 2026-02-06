@@ -8,27 +8,25 @@ namespace GSBC.ImpactKids.Grpc.Features.Scheduling.ServicesServices;
 
 public partial class ServicesService
 {
-    public async Task<BasicReadResponse<Service>?> Read(ServiceRequest request, CallContext context = default)
+    public async Task<BasicReadResponse<Service>> Read(ServiceRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 
-        IQueryable<DbService> query = db.Services
-            .Include(x => x.SchoolTerm)
-            .Include(x => x.ServiceType)
-            .Include(x => x.DollarStoreEntry);
+        IQueryable<DbService> query = db.Services;
+
         DbService? service;
 
         if (request.PreviousService)
         {
             service = await query
                 .OrderByDescending(x => x.Date)
-                .FirstOrDefaultAsync(x => x.Date <= DateTime.Now.Date, token);
+                .FirstOrDefaultAsync(x => x.Date <= DateTime.UtcNow.Date, token);
         }
         else if (request.UpcomingService)
         {
             service = await query
                 .OrderBy(x => x.Date)
-                .FirstOrDefaultAsync(x => x.Date >= DateTime.Now.Date, token);
+                .FirstOrDefaultAsync(x => x.Date >= DateTime.UtcNow.Date, token);
         }
         else
         {

@@ -1,16 +1,21 @@
-@inject IServiceTypeService ServiceTypeService
-@inject ISnackbar           Snackbar
+@inherits DetailsComponent<ServiceType, CreateServiceTypeRequest, UpdateServiceTypeRequest>
 
 <MudPaper Elevation="0" Class="d-flex flex-column flex-grow-1">
-    <MudOverlay Visible="@(State != ModificationState.Creating && (ServiceType == null || _waitingForRefresh))"
+    <MudOverlay Visible="@(Entity.IsLoading)"
                 DarkBackground="true"
                 Absolute="true">
         <MudProgressCircular Indeterminate/>
     </MudOverlay>
+    @if (Entity.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">
+            @(Entity.Error ?? "An Unexpected error occured")
+        </MudAlert>
+    }
     <MudTextFieldCreateOrUpdate
-        @bind-Create="@_createRequest.Label"
-        Read="@_updateRequest.Label.Value"
-        @bind-Update="@_updateRequest.Label.Value"
+        @bind-Create="@CreateRequest.Label"
+        Read="@UpdateRequest.Label.Value"
+        @bind-Update="@UpdateRequest.Label.Value"
         State="State"
 
         Class="mb-4"
@@ -18,9 +23,9 @@
         Variant="Variant.Filled"
         Immediate/>
     <MudColorPickerCreateOrUpdate
-        @bind-Create="@_createRequest.Color"
-        Read="@_updateRequest.Color.Value"
-        @bind-Update="@_updateRequest.Color.Value"
+        @bind-Create="@CreateRequest.Color"
+        Read="@UpdateRequest.Color.Value"
+        @bind-Update="@UpdateRequest.Color.Value"
         State="State"
 
         Class="mb-4"
@@ -29,6 +34,6 @@
         ColorPickerMode="ColorPickerMode.HEX"
         ShowAlpha="false"
     
-        Style="@($"color: {_updateRequest.Color.Value ?? _createRequest.Color}")"
+        Style="@($"color: {UpdateRequest.Color.Value ?? CreateRequest.Color}")"
         ShowToolbar/>
 </MudPaper>

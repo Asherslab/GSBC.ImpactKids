@@ -1,88 +1,110 @@
+using System.Collections.Immutable;
+using EasyAppDev.Blazor.Store.AsyncActions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
-using GSBC.ImpactKids.WASM.Components.Base;
-using GSBC.ImpactKids.WASM.Extensions;
+using GSBC.ImpactKids.WASM.Components.Common;
+using GSBC.ImpactKids.WASM.Components.Common.Inputs;
 using GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services.Features.ServiceTypes.Components;
 
 namespace GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services.Features.ServiceTypes.Pages;
 
-public partial class Multiple : EventListeningComponent
+public partial class Multiple
 {
-    private string? _search;
-
-    private ICollection<ServiceType>? _serviceTypes;
-
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
 
+        SubscribeToSelector(s => s.Search, _ => UpdateFilteredServiceTypes());
+        ServiceTypesStore.Subscribe(_ => UpdateFilteredServiceTypes());
+
         await Task.WhenAll(
-            RefreshServiceTypes(),
-            SubscribeToEvent(ServiceType.BuildSubscription(), RefreshServiceTypes)
+            ServiceTypesStore.RefreshAll(),
+            UpdateFilteredServiceTypes()
         );
     }
 
-    private CancellationTokenSource _refreshServiceTypesTokenSource = new();
-
-    private async Task RefreshServiceTypes()
+    private Task UpdateFilteredServiceTypes()
     {
-        await _refreshServiceTypesTokenSource.CancelAsync();
-        _refreshServiceTypesTokenSource = new CancellationTokenSource();
+        AsyncData<ImmutableList<ServiceType>> serviceTypes = ServiceTypesStore.GetState().Entities;
 
-        BasicReadMultipleResponse<ServiceType>? response = await ServiceTypeService.ReadMultiple(
-            new BasicReadMultipleRequest
-            {
-                SearchString = _search
-            },
-            _refreshServiceTypesTokenSource.Token
-        );
+        if (!serviceTypes.HasData)
+            return Update(s => s with { FilteredServiceTypes = serviceTypes });
 
-        _serviceTypes = response?.Entities;
-        StateHasChanged();
-
-        if (response.HasErrorOrNull())
+        return Update(s => s with
         {
-            Snackbar.AddErrorResponse(response);
-        }
+            FilteredServiceTypes = s.FilteredServiceTypes.ToSuccess(
+                serviceTypes.Data!
+                    .Where(x => x.Label.Contains(State.Search ?? "", StringComparison.InvariantCultureIgnoreCase))
+                    .ToImmutableList()
+            )
+        });
     }
 
     private async Task OnSearch(string text)
     {
-        _search = text;
-        if (string.IsNullOrWhiteSpace(_search))
-            _search = null;
-        await RefreshServiceTypes();
+        await UpdateDebounced(s =>
+            {
+                string? nullableText = text;
+                if (string.IsNullOrWhiteSpace(nullableText))
+                    nullableText = null;
+                return s.SetSearch(nullableText);
+            },
+            TimeSpan.FromSeconds(0.25).Milliseconds
+        );
     }
+    //
+    // private ServiceTypeDetails? _serviceTypeDetails;
+    // private bool                _showCreateDialog;
 
-    private ServiceTypeDetails? _serviceTypeDetails;
+    // private async Task CreateServiceType()
+    // {
+    //     if (_serviceTypeDetails != null)
+    //     {
+    //         await Update(s => s with { FilteredServiceTypes = s.FilteredServiceTypes.ToLoading() });
+    //
+    //         bool success = await _serviceTypeDetails.CreateServiceType();
+    //         _showCreateDialog = !success;
+    //
+    //         if (!success)
+    //             await UpdateFilteredServiceTypes();
+    //     }
+    // }
 
-    private bool _showCreateDialog;
+    private async Task CreateServiceType() =>
+        await DetailsComponentDialog.Open<ServiceTypeDetails>(DialogService, "Create Service Type",
+            ModificationState.Creating);
 
-    private async Task CreateServiceType()
-    {
-        if (_serviceTypeDetails != null)
-        {
-            bool success = await _serviceTypeDetails.CreateServiceType();
-            _showCreateDialog = !success;
-        }
-    }
+    private async Task UpdateServiceType(ServiceType serviceType) =>
+        await DetailsComponentDialog.Open<ServiceTypeDetails>(DialogService, "Update Service Type",
+            ModificationState.Updating, serviceType.Id);
 
-    private bool         _showUpdateDialog;
-    private ServiceType? _updatingServiceType;
+    // private bool         _showUpdateDialog;
+    // private ServiceType? _updatingServiceType;
+    //
+    // private void ShowUpdateServiceType(ServiceType serviceType)
+    // {
+    //     _updatingServiceType = serviceType;
+    //     _showUpdateDialog = true;
+    // }
+    //
+    // private async Task UpdateServiceType()
+    // {
+    //     if (_serviceTypeDetails != null)
+    //     {
+    //         await Update(s => s with { FilteredServiceTypes = s.FilteredServiceTypes.ToLoading() });
+    //
+    //         bool success = await _serviceTypeDetails.UpdateServiceType();
+    //         _showUpdateDialog = !success;
+    //
+    //         if (!success)
+    //             await UpdateFilteredServiceTypes();
+    //     }
+    // }
 
-    private void ShowUpdateServiceType(ServiceType serviceType)
-    {
-        _updatingServiceType = serviceType;
-        _showUpdateDialog = true;
-    }
-
-    private async Task UpdateServiceType()
-    {
-        if (_serviceTypeDetails != null)
-        {
-            bool success = await _serviceTypeDetails.UpdateServiceType();
-            _showUpdateDialog = !success;
-        }
-    }
+    private async Task ShowDeleteServiceType(ServiceType serviceType) =>
+        await DeleteWithDialog(
+            ServiceTypesService,
+            serviceType.Id,
+            () => Update(s => s with { FilteredServiceTypes = s.FilteredServiceTypes.ToLoading() }),
+            () => UpdateFilteredServiceTypes()
+        );
 }

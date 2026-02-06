@@ -6,7 +6,7 @@ namespace GSBC.ImpactKids.Grpc.Features.Scheduling.ServiceTypeServices;
 
 public partial class ServiceTypeService
 {
-    public async Task<BasicResponse?> Create(CreateServiceTypeRequest request, CallContext context = default)
+    public async Task<BasicResponse> Create(CreateServiceTypeRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 
@@ -22,7 +22,7 @@ public partial class ServiceTypeService
         
         await db.ServiceTypes.AddAsync(type, token);
         await db.SaveChangesAsync(token);
-        await eventService.SendUpdatedEvent(type.Id, token: token);
+        await eventService.SendUpdatedEvent(token);
 
         return new BasicResponse
         {

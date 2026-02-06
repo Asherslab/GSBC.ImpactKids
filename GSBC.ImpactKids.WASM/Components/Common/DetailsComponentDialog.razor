@@ -1,0 +1,13 @@
+<MudDialog Class="relative">
+    <TitleContent>@MudDialog.Title</TitleContent>
+    <DialogContent>
+        <DynamicComponent
+            @ref="_component"
+            Type="DetailsComponentType"
+            Parameters="_parameters"/>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => MudDialog.Cancel())">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="@OnClick">@ButtonText</MudButton>
+    </DialogActions>
+</MudDialog>

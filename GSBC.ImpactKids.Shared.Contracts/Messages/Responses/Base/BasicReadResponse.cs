@@ -7,8 +7,8 @@ public class BasicReadResponse<T> : IReadResponse<T>, ISuccessResponse, IErrorRe
 {
     public required T? Entity { get; set; }
 
-    public required bool    Success { get; set; }
-    public          string? Error   { get; set; }
+    public required bool    Success { get; init; }
+    public          string? Error   { get; init; }
     
     public static BasicReadResponse<T> WithError(string error) => new()
     {

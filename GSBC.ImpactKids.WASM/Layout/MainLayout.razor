@@ -1,5 +1,4 @@
-﻿@using GSBC.ImpactKids.WASM.Services
-@inject EventSubscriptionService EventSubscriptionService
+﻿@using GSBC.ImpactKids.WASM.Features.Eventing.Components
 @inherits LayoutComponentBase
 
 <MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode"/>
@@ -9,10 +8,12 @@
 <MudLayout>
     <MudAppBar Elevation="1">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
-                       OnClick="@((e) => DrawerToggle())"/>
+                       OnClick="@(_ => DrawerToggle())"/>
         <MudText Typo="Typo.h5" Class="ml-3">Impact Kids</MudText>
         <MudSpacer/>
         <LoginDisplay/>
+        @* @key Makes the component rerender every navigation. Which allows us to reconnect stream if it's dead on new page navigation *@
+        <EventStreamStatus @key="Guid.NewGuid()"/>
         <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle"/>
     </MudAppBar>
     <MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">

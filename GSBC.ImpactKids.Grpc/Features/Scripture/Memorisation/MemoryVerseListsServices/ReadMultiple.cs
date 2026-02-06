@@ -1,17 +1,16 @@
 using GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses;
 using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scripture.Memorisation.MemoryVerseLists;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
-using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ImpactKids.Grpc.Features.Scripture.Memorisation.MemoryVerseListsServices;
 
 public partial class MemoryVerseListsService
 {
-    public async Task<BasicReadMultipleResponse<MemoryVerseList>?> ReadMultiple(
-        MemoryVerseListsRequest request,
-        CallContext             context = default
+    public async IAsyncEnumerable<BasicReadMultipleResponse<MemoryVerseList>> BasicReadMultiple(
+        BasicReadMultipleRequest request,
+        CallContext              context = default
     )
     {
         CancellationToken token = context.CancellationToken;
@@ -25,23 +24,13 @@ public partial class MemoryVerseListsService
             );
         }
 
-        if (request.SchoolTermId != null)
-        {
-            query = query.Where(x =>
-                x.SchoolTermId == request.SchoolTermId
-            );
-        }
-
         query = query.OrderBy(x => x.Name);
-        
+
         query = query.Paginate(request);
 
-        List<DbMemoryVerseList> lists = await query.ToListAsync(token);
-
-        return new BasicReadMultipleResponse<MemoryVerseList>
+        await foreach (BasicReadMultipleResponse<MemoryVerseList> response in query.ReturnInBatches(converter, token: token))
         {
-            Success = true,
-            Entities = lists.Select(converter.Convert).ToList()
-        };
+            yield return response;
+        }
     }
 }

@@ -3,13 +3,12 @@ using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.Allergies;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
-using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ImpactKids.Grpc.Features.People.AllergenServices;
 
 public partial class AllergenService
 {
-    public async Task<BasicReadMultipleResponse<Allergen>?> ReadMultiple(
+    public async IAsyncEnumerable<BasicReadMultipleResponse<Allergen>> BasicReadMultiple(
         BasicReadMultipleRequest request,
         CallContext              context = default
     )
@@ -27,17 +26,14 @@ public partial class AllergenService
                 );
             }
         }
-        
+
         query = query.OrderBy(x => x.Label);
 
         query = query.Paginate(request);
 
-        List<DbAllergen> types = await query.ToListAsync(token);
-
-        return new BasicReadMultipleResponse<Allergen>
+        await foreach (BasicReadMultipleResponse<Allergen> response in query.ReturnInBatches(converter, token: token))
         {
-            Success = true,
-            Entities = types.Select(converter.Convert).ToList()
-        };
+            yield return response;
+        }
     }
 }

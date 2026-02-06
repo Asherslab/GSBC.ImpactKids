@@ -7,7 +7,7 @@ namespace GSBC.ImpactKids.Grpc.Features.Scheduling.ServiceTypeServices;
 
 public partial class ServiceTypeService
 {
-    public async Task<BasicResponse?> Update(UpdateServiceTypeRequest request, CallContext context = default)
+    public async Task<BasicResponse> Update(UpdateServiceTypeRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 
@@ -16,7 +16,7 @@ public partial class ServiceTypeService
 
         if (serviceType == null)
             return BasicResponse.WithError(ServiceTypeNotFound);
-        
+
         if (request.Label.IsUpdated)
         {
             if (string.IsNullOrWhiteSpace(serviceType.Label))
@@ -33,7 +33,7 @@ public partial class ServiceTypeService
 
         db.ServiceTypes.Update(serviceType);
         await db.SaveChangesAsync(token);
-        await eventService.SendUpdatedEvent(serviceType.Id, token: token);
+        await eventService.SendUpdatedEvent(token);
 
         return new BasicResponse
         {

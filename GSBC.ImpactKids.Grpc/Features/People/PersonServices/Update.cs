@@ -8,7 +8,7 @@ namespace GSBC.ImpactKids.Grpc.Features.People.PersonServices;
 
 public partial class PersonService
 {
-    public async Task<BasicResponse?> Update(UpdatePersonRequest request, CallContext context = default)
+    public async Task<BasicResponse> Update(UpdatePersonRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 
@@ -17,7 +17,7 @@ public partial class PersonService
 
         if (person == null)
             return BasicResponse.WithError(PersonNotFound);
-        
+
         if (request.FirstName.IsUpdated)
         {
             if (string.IsNullOrWhiteSpace(request.FirstName.Value))
@@ -38,11 +38,11 @@ public partial class PersonService
             {
                 DbSchoolGrade? grade = await db.SchoolGrades
                     .FirstOrDefaultAsync(x => x.Id == request.SchoolGradeId.Value, token);
-                
+
                 if (grade == null)
                     return BasicResponse.WithError(SchoolGradeNotFound);
             }
-            
+
             person.SchoolGradeId = request.SchoolGradeId.Value;
         }
 
@@ -51,7 +51,7 @@ public partial class PersonService
             // convoluted but ensures that we have a legitimate value saved
             if (!Enum.TryParse(request.MediaConsent.Value.ToString(), out MediaConsent consent))
                 return BasicResponse.WithError(MediaConsentNotFound);
-            
+
             person.MediaConsent = consent.ToString();
         }
 
@@ -67,7 +67,7 @@ public partial class PersonService
 
         if (request.FamilyId.IsUpdated)
         {
-            person.FamilyId = request.FamilyId.Value;
+            person.FamilyId = request.FamilyId.Value ?? Guid.NewGuid();
         }
 
         if (request.FamilyGuardian.IsUpdated)
@@ -77,7 +77,7 @@ public partial class PersonService
 
         db.People.Update(person);
         await db.SaveChangesAsync(token);
-        await SendEvent(person.Id, person.FamilyId, token);
+        await eventService.SendUpdatedEvent(token);
 
         return new BasicResponse
         {

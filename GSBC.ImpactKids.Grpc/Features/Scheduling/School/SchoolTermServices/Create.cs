@@ -6,7 +6,7 @@ namespace GSBC.ImpactKids.Grpc.Features.Scheduling.School.SchoolTermServices;
 
 public partial class SchoolTermService
 {
-    public async Task<BasicResponse?> Create(CreateSchoolTermRequest request, CallContext context = default)
+    public async Task<BasicResponse> Create(CreateSchoolTermRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 
@@ -28,7 +28,7 @@ public partial class SchoolTermService
 
         await db.Terms.AddAsync(term, token);
         await db.SaveChangesAsync(token);
-        await eventService.SendUpdatedEvent(term.Id, token: token);
+        await eventService.SendUpdatedEvent(token);
 
         return new BasicResponse
         {

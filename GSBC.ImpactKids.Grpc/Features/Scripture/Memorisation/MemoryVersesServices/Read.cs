@@ -8,7 +8,7 @@ namespace GSBC.ImpactKids.Grpc.Features.Scripture.Memorisation.MemoryVersesServi
 
 public partial class MemoryVersesService
 {
-    public async Task<BasicReadResponse<MemoryVerse>?> Read(BasicReadRequest request, CallContext context = default)
+    public async Task<BasicReadResponse<MemoryVerse>> Read(BasicReadRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
         

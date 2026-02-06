@@ -1,0 +1,87 @@
+@inject IRefreshableStore<MemoryVerse> MemoryVersesStore
+
+<MudGrid Spacing="3" Justify="Justify.Center">
+    <MudItem xs="12" md="6">
+        <MudGrid Spacing="3" Justify="Justify.Center">
+            <MudItem xs="12">
+                <ServiceDisplay Id="ServiceId" Link/>
+            </MudItem>
+            <MudItem xs="12">
+                <MudPaper Elevation="6" Class="relative pa-2">
+                    <MudOverlay Visible="@(MemoryVersesStore.GetState().Entities.IsLoading)"
+                                DarkBackground
+                                Absolute>
+                        <MudProgressCircular Indeterminate/>
+                    </MudOverlay>
+                    <MudSelectCreateOrUpdate
+                        T="Guid?"
+                        Update="@MemoryVerseId"
+                        UpdateChanged="OnMemoryVerseChanged"
+                        State="ModificationState.Updating"
+
+                        Label="Memory Verse"
+                        Variant="Variant.Filled">
+                        @if (MemoryVersesStore.GetState().Entities.HasData && ServiceId != null)
+                        {
+                            foreach (MemoryVerse memoryVerse in MemoryVersesStore.GetState().Entities.Data!
+                                             .Where(x => x.ServiceIds.Contains(ServiceId.Value))
+                                        )
+                            {
+                                <MudSelectItem T="Guid?"
+                                               Value="@memoryVerse.Id">
+                                    @memoryVerse.ReferenceName
+                                </MudSelectItem>
+                            }
+                        }
+                    </MudSelectCreateOrUpdate>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12">
+                <MudPaper Elevation="6" Class="pa-2 relative">
+                    <MemoryVerseFullDisplay Id="MemoryVerseId"/>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudGrid Spacing="3" Justify="Justify.Center">
+            <MudItem xs="12">
+                <MudPaper Elevation="6" Class="pa-2">
+                    <MudTextField
+                        T="string"
+                        Value="@_search"
+                        ValueChanged="@(OnSearchChanged)"
+                        Placeholder="Search"
+                        Adornment="Adornment.Start"
+                        AdornmentIcon="@Icons.Material.Filled.Search"
+                        IconSize="Size.Medium"
+                        Clearable
+                        Variant="Variant.Outlined"
+                        Immediate/>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12">
+                <MudCard Elevation="6" Class="relative">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6"
+                                     Align="Align.Start">
+                                Entries
+                            </MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent Class="pa-0">
+                        <MemorisationEntriesTable
+                            ShowPersonName
+
+                            ServiceId="ServiceId"
+                            MemoryVerseId="MemoryVerseId"
+                            SearchStrings="_searchStrings"
+                            Limit="5"/>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+    </MudItem>
+</MudGrid>
+

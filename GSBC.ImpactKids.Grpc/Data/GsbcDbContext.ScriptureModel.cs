@@ -33,7 +33,12 @@ public partial class GsbcDbContext
 
         // memorisation entries
         modelBuilder.Entity<DbMemorisationEntry>()
-            .HasKey(x => new { x.PersonId, x.ServiceId, x.MemoryVerseId });
+            .HasIndex(x => new { x.PersonId, x.ServiceId, x.MemoryVerseId })
+            .IsUnique();
+
+        modelBuilder.Entity<DbMemorisationEntry>()
+            .Property(x => x.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
 
         modelBuilder.Entity<DbMemorisationEntry>()
             .HasOne(x => x.Person)
@@ -52,7 +57,7 @@ public partial class GsbcDbContext
 
         modelBuilder.Entity<DbVirtualMemorisationEntry>()
             .ToView("VirtualMemorisationEntries");
-        
+
         modelBuilder.Entity<DbVirtualMemorisationEntry>()
             .HasKey(x => new { x.PersonId, x.ServiceId, x.MemoryVerseId });
     }

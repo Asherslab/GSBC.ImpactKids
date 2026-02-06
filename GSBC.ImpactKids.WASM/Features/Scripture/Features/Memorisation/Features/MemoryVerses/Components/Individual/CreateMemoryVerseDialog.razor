@@ -1,0 +1,66 @@
+@inherits EntityUtilityComponent
+@inject IRefreshableStore<MemoryVerseList>       MemoryVerseListsStore
+@inject IRefreshableStore<BibleVerse>            BibleVersesStore
+@inject ICreateService<CreateMemoryVerseRequest> CreateService
+
+<MudDialog Class="relative">
+    <TitleContent>Create Memory Verse</TitleContent>
+    <DialogContent>
+        <div class="relative mb-4">
+            <MudOverlay Visible="@(MemoryVerseListsStore.GetState().Entities.IsLoading)"
+                        DarkBackground
+                        Absolute>
+                <MudProgressCircular Indeterminate/>
+            </MudOverlay>
+            @if (MemoryVerseListsStore.GetState().Entities.HasData && MemoryVerseListsStore.GetState().Entities.Data!.Count == 0)
+            {
+                <MudAlert Severity="Severity.Error">
+                    No Memory Verse Lists Found.
+                    Please create a list first
+                </MudAlert>
+            }
+            @if (!MemoryVerseListsStore.GetState().Entities.HasData || MemoryVerseListsStore.GetState().Entities.Data!.Count > 0)
+            {
+                <MudSelectCreateOrUpdate
+                    @bind-Create="@_createMemoryVerseRequest.MemoryVerseListId"
+                    State="ModificationState.Creating"
+
+                    Label="Memory Verse List"
+                    Variant="Variant.Filled">
+                    @if (MemoryVerseListsStore.GetState().Entities.HasData)
+                    {
+                        foreach (MemoryVerseList list in MemoryVerseListsStore.GetState().Entities.Data!)
+                        {
+                            <MudSelectItem T="Guid"
+                                           Value="@list.Id">
+                                @(list.Name)
+                            </MudSelectItem>
+                        }
+                    }
+                </MudSelectCreateOrUpdate>
+            }
+        </div>
+
+        <div class="relative">
+            <MudOverlay Visible="@(BibleVersesStore.GetState().Entities.IsLoading)"
+                        DarkBackground
+                        Absolute>
+                <MudProgressCircular Indeterminate/>
+            </MudOverlay>
+            <MudAutocompleteCreateOrUpdate
+                T="BibleVerse"
+                Create="_bibleVerse"
+                CreateChanged="BibleVerseChanged"
+                State="ModificationState.Creating"
+                SearchFunc="BibleVerseSearch"
+
+                Label="Bible Verse"
+                Variant="Variant.Filled"
+                ToStringFunc="@(b => b?.Reference())"/>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => MudDialog.Cancel())">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="@OnClick">Create</MudButton>
+    </DialogActions>
+</MudDialog>

@@ -1,21 +1,18 @@
-using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
+using System.Collections.Immutable;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
-public class MemoryVerse
+public record MemoryVerse : IIdentifiable
 {
-    public required Guid   Id            { get; set; }
-    public required string ReferenceName { get; set; }
+    public required Guid   Id            { get; init; }
+    public required string ReferenceName { get; init; }
 
-    public required string Verse { get; set; }
+    public required string Verse { get; init; }
 
-    public required Guid       MemoryVerseListId { get; set; }
-    public required List<Guid> ServiceIds        { get; set; } = [];
-    public required List<Guid> BibleVerseIds     { get; set; } = [];
-
-    public required List<Service>?    Services    { get; set; }
-    public required List<BibleVerse>? BibleVerses { get; set; }
+    public required Guid                MemoryVerseListId { get; init; }
+    public required ImmutableList<Guid> ServiceIds        { get; init; } = [];
+    public required ImmutableList<Guid> BibleVerseIds     { get; init; } = [];
 
     public static string BuildSubscription(
         Guid? memoryVerseListId = null,

@@ -7,7 +7,7 @@ public static class ServiceExtensions
 {
     public static IServiceCollection AddConverters(this IServiceCollection services)
     {
-        List<Type> converters = new();
+        List<Type> converters = [];
         foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
         {
             converters.AddRange(

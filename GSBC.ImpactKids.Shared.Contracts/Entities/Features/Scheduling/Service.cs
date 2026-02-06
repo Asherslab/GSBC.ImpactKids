@@ -1,29 +1,24 @@
-using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School;
-
 namespace GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
-public class Service
+public record Service : IIdentifiable
 {
-    public required Guid    Id   { get; set; }
-    public          string? Name { get; set; }
+    public required Guid    Id   { get; init; }
+    public          string? Name { get; init; }
 
-    public required DateTime Date { get; set; }
+    public required DateTime Date { get; init; }
 
     [ProtoIgnore]
-    public DateTime LocalDate
-    {
-        get => Date.ToLocalTime();
-        set => Date = value.ToUniversalTime();
-    }
+    public DateTime LocalDate => Date.ToLocalTime();
 
-    public required SchoolTerm? SchoolTerm { get; set; }
-
-    public required ServiceType? ServiceType { get; set; }
-
-    public required DollarStoreEntry? DollarStoreEntry { get; set; }
+    public required Guid? SchoolTermId       { get; init; }
+    public required Guid? ServiceTypeId      { get; init; }
+    public required Guid? DollarStoreEntryId { get; init; }
 
     public string GetDisplayName() => Name ?? LocalDate.ToString("dd/MM/yyyy");
+    public string GetSearchDisplayName() => Name == null 
+        ? LocalDate.ToString("dd/MM/yyyy")
+        : $"{Name} [{LocalDate:dd/MM/yyyy}]";
 
     public static string BuildSubscription(Guid? schoolTermId = null, Guid? serviceId = null) =>
         $"{nameof(Service)}.{schoolTermId?.ToString() ?? "*"}.{serviceId?.ToString() ?? "*"}";

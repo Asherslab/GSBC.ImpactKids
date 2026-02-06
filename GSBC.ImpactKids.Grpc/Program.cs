@@ -1,36 +1,40 @@
 using GSBC.ImpactKids.Grpc;
 using GSBC.ImpactKids.Grpc.Data;
-using GSBC.ImpactKids.Grpc.Data.Interceptors;
 using GSBC.ImpactKids.Grpc.Extensions;
+using GSBC.ImpactKids.Grpc.Features.Authentication;
+using GSBC.ImpactKids.Grpc.Features.Authentication.UsersServices;
+using GSBC.ImpactKids.Grpc.Features.DataDisplay;
+using GSBC.ImpactKids.Grpc.Features.DollarStore.DollarStoreEntryServices;
+using GSBC.ImpactKids.Grpc.Features.Elvanto.ElvantoServices;
+using GSBC.ImpactKids.Grpc.Features.Elvanto.ElvantoServices.Models;
+using GSBC.ImpactKids.Grpc.Features.Eventing;
+using GSBC.ImpactKids.Grpc.Features.Eventing.Api.EventingServices;
+using GSBC.ImpactKids.Grpc.Features.Eventing.Services;
 using GSBC.ImpactKids.Grpc.Features.People.AllergenServices;
 using GSBC.ImpactKids.Grpc.Features.People.AllergyServices;
 using GSBC.ImpactKids.Grpc.Features.People.MedicalNoteServices;
 using GSBC.ImpactKids.Grpc.Features.People.MedicalTypeServices;
+using GSBC.ImpactKids.Grpc.Features.People.PersonServices;
 using GSBC.ImpactKids.Grpc.Features.People.SchoolGradeServices;
 using GSBC.ImpactKids.Grpc.Features.Scheduling.School.SchoolTermServices;
 using GSBC.ImpactKids.Grpc.Features.Scheduling.ServicesServices;
 using GSBC.ImpactKids.Grpc.Features.Scheduling.ServiceTypeServices;
+using GSBC.ImpactKids.Grpc.Features.Scripture.BibleServices;
 using GSBC.ImpactKids.Grpc.Features.Scripture.Memorisation.MemorisationEntriesServices;
 using GSBC.ImpactKids.Grpc.Features.Scripture.Memorisation.MemoryVerseListsServices;
 using GSBC.ImpactKids.Grpc.Features.Scripture.Memorisation.MemoryVersesServices;
 using GSBC.ImpactKids.Grpc.Services;
-using GSBC.ImpactKids.Grpc.Services.DollarStoreEntryServices;
-using GSBC.ImpactKids.Grpc.Services.ElvantoServices;
-using GSBC.ImpactKids.Grpc.Services.ElvantoServices.Models;
-using GSBC.ImpactKids.Grpc.Services.EventServices;
-using GSBC.ImpactKids.Grpc.Services.EventServices.Internal;
-using GSBC.ImpactKids.Grpc.Services.UsersServices;
 using GSBC.ImpactKids.ServiceDefaults;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.EntityFrameworkCore;
 using ProtoBuf.Grpc.Server;
 using RabbitMQ.Client;
-using BibleService = GSBC.ImpactKids.Grpc.Features.Scripture.BibleServices.BibleService;
-using PersonService = GSBC.ImpactKids.Grpc.Features.People.PersonServices.PersonService;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 builder.AddRabbitMQClient("rabbitmq");
+builder.AddRedisDistributedCache("redis");
 
 builder.Services.AddTransient(typeof(IEventService<>), typeof(EventService<>));
 
@@ -55,15 +59,15 @@ builder.Services.AddCodeFirstGrpc();
 builder.Services.AddGrpc();
 builder.Services.AddConverters();
 builder.Services.AddTransient<ElvantoService>();
-builder.Services.AddSingleton<EventServicesService>();
-builder.Services.AddTransient<KeyedEventService>();
+builder.Services.AddSingleton<EventingChannelsService>();
+builder.Services.AddHostedService<RabbitWorker>();
+builder.Services.AddHybridCache();
 
-builder.AddNpgsqlDbContext<GsbcDbContext>(
-    "impact-kids",
-    null,
-    null
-    // x => x.AddInterceptors(new LatencyInterceptor(TimeSpan.FromSeconds(1.5)))
-);
+builder.Services.AddPooledDbContextFactory<GsbcDbContext>(o =>
+{
+    o.UseNpgsql(builder.Configuration.GetConnectionString("impact-kids"));
+    // o.AddInterceptors(new GSBC.ImpactKids.Grpc.Data.Interceptors.LatencyInterceptor(TimeSpan.FromSeconds(1.5)));
+});
 
 ElvantoConfig? elvantoConfig = builder.Configuration.GetSection("Elvanto").Get<ElvantoConfig>();
 if (elvantoConfig != null)
@@ -98,7 +102,7 @@ app.UseAuthorization();
 
 // Configure the HTTP request pipeline.
 app.MapGrpcService<LoginService>();
-app.MapGrpcService<EventService>();
+app.MapGrpcService<EventingService>();
 app.MapGrpcService<MetabaseService>();
 app.MapGrpcService<UsersService>();
 app.MapGrpcService<PersonService>();
@@ -120,11 +124,14 @@ app.MapGet("/",
     () =>
         "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");
 
+app.AddEventEndpoints();
+
 using (IServiceScope scope = app.Services.CreateScope())
 {
     IConnection          connection = scope.ServiceProvider.GetRequiredService<IConnection>();
     await using IChannel channel    = await connection.CreateChannelAsync();
     await channel.ExchangeDeclareAsync("data-events", ExchangeType.Topic);
+    await channel.ExchangeDeclareAsync("events", ExchangeType.Fanout);
 }
 
 app.Run();
