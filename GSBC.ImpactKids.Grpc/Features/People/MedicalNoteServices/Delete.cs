@@ -12,15 +12,14 @@ public partial class MedicalNoteService
         CancellationToken token = context.CancellationToken;
 
         DbMedicalNote? note = await db.MedicalNotes
-            .Include(x => x.Person)
             .FirstOrDefaultAsync(x => x.Id == request.Guid, token);
 
-        if (note?.Person == null)
+        if (note == null)
             return BasicResponse.WithError(MedicalNoteNotFound);
 
         db.MedicalNotes.Remove(note);
         await db.SaveChangesAsync(token);
-        await SendEvent(note.Person.Id, note.Person.FamilyId, token);
+        await eventService.SendUpdatedEvent(token);
 
         return new BasicResponse
         {

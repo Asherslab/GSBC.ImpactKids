@@ -6,7 +6,6 @@ using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.Eventing;
 using GSBC.ImpactKids.WASM.Extensions;
 using GSBC.ImpactKids.WASM.Services.RefreshableStore;
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.JSInterop;
 using Module = GSBC.ImpactKids.Shared.Contracts.Module;
 
@@ -30,8 +29,9 @@ public sealed class SseClientService(
             SingleReader = false,
             SingleWriter = true
         });
-    
+
     public bool Connected { get; private set; }
+    public bool Started   { get; private set; }
 
     // public string? LastEventId { get; private set; }
 
@@ -39,6 +39,8 @@ public sealed class SseClientService(
 
     public async Task StartAsync()
     {
+        Started = true;
+
         if (!_tokenSource.IsCancellationRequested)
             await _tokenSource.CancelAsync();
 
@@ -47,46 +49,38 @@ public sealed class SseClientService(
 
         _ = Task.Run(async () =>
             {
-                AuthenticationState authState;
-                do
+                try
                 {
-                    using IServiceScope authScope = services.CreateScope();
+                    BasicReadResponse<Guid>? resp;
+                    do
+                    {
+                        using IServiceScope serviceScope = services.CreateScope();
 
-                    AuthenticationStateProvider authStateProvider =
-                        authScope.ServiceProvider.GetRequiredService<AuthenticationStateProvider>();
-                    authState = await authStateProvider.GetAuthenticationStateAsync();
+                        IEventingService eventingService =
+                            serviceScope.ServiceProvider.GetRequiredService<IEventingService>();
+                        resp = await eventingService.GetStreamId();
 
-                    if (authState.User.Identity?.IsAuthenticated != true)
-                        await Task.Delay(TimeSpan.FromSeconds(1), token);
-                } while (authState.User.Identity?.IsAuthenticated != true && !token.IsCancellationRequested);
+                        if (resp.HasErrorOrNull())
+                            await Task.Delay(TimeSpan.FromSeconds(1), token);
+                    } while (resp.HasErrorOrNull() && !token.IsCancellationRequested);
 
-                if (token.IsCancellationRequested)
-                    return;
+                    if (token.IsCancellationRequested)
+                        return;
 
-                BasicReadResponse<Guid> resp;
-                do
+                    _module ??= await js.InvokeAsync<IJSObjectReference>("import", token, "./js/sseEventSource.js");
+                    _selfRef ??= DotNetObjectReference.Create(this);
+                    await _module.InvokeVoidAsync(
+                        "start",
+                        token,
+                        configuration["Services:grpc:https:0"] + "/stream?StreamId=" + resp.Entity,
+                        _selfRef
+                    );
+                }
+                finally
                 {
-                    using IServiceScope serviceScope = services.CreateScope();
-
-                    IEventingService eventingService =
-                        serviceScope.ServiceProvider.GetRequiredService<IEventingService>();
-                    resp = await eventingService.GetStreamId();
-
-                    if (resp.HasErrorOrNull())
-                        await Task.Delay(TimeSpan.FromSeconds(1), token);
-                } while (resp.HasErrorOrNull() && !token.IsCancellationRequested);
-
-                if (token.IsCancellationRequested)
-                    return;
-
-                _module ??= await js.InvokeAsync<IJSObjectReference>("import", token, "./js/sseEventSource.js");
-                _selfRef ??= DotNetObjectReference.Create(this);
-                await _module.InvokeVoidAsync(
-                    "start",
-                    token,
-                    configuration["Services:grpc:https:0"] + "/stream?StreamId=" + resp.Entity,
-                    _selfRef
-                );
+                    await Task.Delay(TimeSpan.FromSeconds(10), token);
+                    Started = false;
+                }
             },
             token
         );
@@ -118,12 +112,11 @@ public sealed class SseClientService(
         {
             MethodInfo? method  = typeof(SseClientService).GetMethod(nameof(Refresh));
             MethodInfo? generic = method?.MakeGenericMethod(entityType);
-            
+
             try
             {
                 if (generic != null)
                 {
-                    
                     object? obj = generic.Invoke(this, null);
                     if (obj is Task task)
                         await task;

@@ -1,0 +1,51 @@
+@using GSBC.ImpactKids.WASM.Components.Relationships
+@inherits DisplayComponent<MemoryVerse>
+@inject IRefreshableStore<Service> ServicesStore
+
+<MudGrid Spacing="6" Justify="Justify.Center">
+    <MudItem xs="12" md="4">
+        <DetailsModificationCard
+            Id="Id"
+            DetailsComponentType="@(typeof(MemoryVerseDetails))"/>
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <RelationshipListComponent
+            FirstEntity="MemoryVerse"
+            SecondEntity="Service"
+            EntityBeingAddedTo="MemoryVerse"
+            EntityToAdd="Service"
+
+            Entity="Entity.Data"
+            Title="Services"
+            EntityToAddLabel="Service"
+            ListFilter="@(x => Entity.Data?.ServiceIds.Contains(x.Id) ?? false)"
+            GetSearchDisplayFunc="@(x => x?.GetSearchDisplayName())"
+            SearchFunc="@ServiceSearch"
+
+            Context="serviceCtx">
+            <MudItem xs="12">
+                <ServiceDisplay Id="serviceCtx.Id" AllowDeleting OnDelete="serviceCtx.Component.RemoveEntity"/>
+            </MudItem>
+        </RelationshipListComponent>
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <RelationshipListComponent
+            FirstEntity="MemoryVerse"
+            SecondEntity="BibleVerse"
+            EntityBeingAddedTo="MemoryVerse"
+            EntityToAdd="BibleVerse"
+
+            Entity="Entity.Data"
+            Title="Bible Verses"
+            EntityToAddLabel="Bible Verse"
+            ListFilter="@(x => Entity.Data?.BibleVerseIds.Contains(x.Id) ?? false)"
+            GetSearchDisplayFunc="@(x => x?.Reference())"
+            SearchFunc="@BibleVerseSearch"
+
+            Context="bibleVerseCtx">
+            <MudItem xs="12">
+                <BibleVerseDisplay Id="bibleVerseCtx.Id" ShowDialog AllowDeleting OnDelete="bibleVerseCtx.Component.RemoveEntity"/>
+            </MudItem>
+        </RelationshipListComponent>
+    </MudItem>
+</MudGrid>

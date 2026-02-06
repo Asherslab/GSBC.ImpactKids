@@ -1,4 +1,5 @@
 @inherits StoreComponent<GSBC.ImpactKids.WASM.Features.Eventing.EventsStreamState>
+@implements IDisposable
 @page "/stream-status"
 @using GSBC.ImpactKids.WASM.Features.Eventing.Services
 @inject ISseClientService Sse
@@ -65,9 +66,11 @@
         // NOTE: For demo simplicity, we don't have access here; you can extend the service with RestartAsync.
     }
 
-    public void Dispose()
+    public new void Dispose()
     {
         _cts?.Cancel();
         _cts?.Dispose();
+        base.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

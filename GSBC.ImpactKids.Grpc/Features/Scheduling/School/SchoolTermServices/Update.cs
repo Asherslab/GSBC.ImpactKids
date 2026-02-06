@@ -40,7 +40,7 @@ public partial class SchoolTermService
 
         db.Terms.Update(term);
         await db.SaveChangesAsync(token);
-        await eventService.SendUpdatedEvent(term.Id, token: token);
+        await eventService.SendUpdatedEvent(token);
 
         return new BasicResponse
         {

@@ -46,7 +46,7 @@ public partial class MedicalNoteService
 
         db.MedicalNotes.Update(medicalNote);
         await db.SaveChangesAsync(token);
-        await eventService.SendUpdatedEvent(medicalNote.Id, token: token);
+        await eventService.SendUpdatedEvent(token);
 
         return new BasicResponse
         {

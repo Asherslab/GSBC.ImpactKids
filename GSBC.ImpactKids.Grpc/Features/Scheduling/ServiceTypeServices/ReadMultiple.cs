@@ -1,16 +1,14 @@
-using System.Collections.Immutable;
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling;
 using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
-using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ImpactKids.Grpc.Features.Scheduling.ServiceTypeServices;
 
 public partial class ServiceTypeService
 {
-    public async Task<BasicReadMultipleResponse<ServiceType>>
+    public async IAsyncEnumerable<BasicReadMultipleResponse<ServiceType>>
         BasicReadMultiple(BasicReadMultipleRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
@@ -31,12 +29,10 @@ public partial class ServiceTypeService
 
         query = query.Paginate(request);
 
-        List<DbServiceType> types = await query.ToListAsync(token);
-
-        return new BasicReadMultipleResponse<ServiceType>
+        await foreach (BasicReadMultipleResponse<ServiceType> response in
+                       query.ReturnInBatches(converter, token: token))
         {
-            Success = true,
-            Entities = types.Select(converter.Convert).ToImmutableList()
-        };
+            yield return response;
+        }
     }
 }

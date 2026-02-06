@@ -101,22 +101,9 @@ public partial class SchoolTermConverter(
 
 [Mapper]
 public partial class ServiceConverter(
-    IConverter<DbSchoolTerm, SchoolTerm>             schoolTermConverter,
-    IConverter<DbServiceType, ServiceType>           serviceTypeConverter,
-    IConverter<DbDollarStoreEntry, DollarStoreEntry> dollarStoreEntryConverter,
-    IConverter<DateTimeOffset, DateTime>             dateTimeConverter
+    IConverter<DateTimeOffset, DateTime> dateTimeConverter
 ) : IConverter<DbService, Service>
 {
-    [UseMapper]
-    private readonly IConverter<DbSchoolTerm, SchoolTerm> _schoolTermConverter = schoolTermConverter;
-
-    [UseMapper]
-    private readonly IConverter<DbServiceType, ServiceType> _serviceTypeConverter = serviceTypeConverter;
-
-    [UseMapper]
-    private readonly IConverter<DbDollarStoreEntry, DollarStoreEntry> _dollarStoreEntryConverter =
-        dollarStoreEntryConverter;
-
     [UseMapper]
     private readonly IConverter<DateTimeOffset, DateTime> _dateTimeConverter = dateTimeConverter;
 
@@ -149,17 +136,8 @@ public partial class MemoryVerseListConverter : IConverter<DbMemoryVerseList, Me
 }
 
 [Mapper]
-public partial class MemoryVerseConverter(
-    IConverter<DbBibleVerse, BibleVerse> bibleVerseConverter,
-    IConverter<DbService, Service>       serviceConverter
-) : IConverter<DbMemoryVerse, MemoryVerse>
+public partial class MemoryVerseConverter : IConverter<DbMemoryVerse, MemoryVerse>
 {
-    [UseMapper]
-    private readonly IConverter<DbBibleVerse, BibleVerse> _bibleVerseConverter = bibleVerseConverter;
-
-    [UseMapper]
-    private readonly IConverter<DbService, Service> _serviceConverter = serviceConverter;
-
     [MapProperty(nameof(DbMemoryVerse.BibleVerses), nameof(MemoryVerse.BibleVerseIds), Use = nameof(MapBibleVerseIds))]
     [MapProperty(nameof(DbMemoryVerse.Services), nameof(MemoryVerse.ServiceIds), Use = nameof(MapServiceIds))]
     public partial MemoryVerse Convert(DbMemoryVerse input);
@@ -172,20 +150,7 @@ public partial class MemoryVerseConverter(
 }
 
 [Mapper]
-public partial class VirtualMemorisationEntryConverter(
-    IConverter<DbPerson, Person>           personConverter,
-    IConverter<DbMemoryVerse, MemoryVerse> memoryVerseConverter,
-    IConverter<DbService, Service>         serviceConverter
-) : IConverter<DbVirtualMemorisationEntry, MemorisationEntry>
+public partial class MemorisationEntryConverter : IConverter<DbMemorisationEntry, MemorisationEntry>
 {
-    [UseMapper]
-    private readonly IConverter<DbPerson, Person> _personConverter = personConverter;
-
-    [UseMapper]
-    private readonly IConverter<DbMemoryVerse, MemoryVerse> _memoryVerseConverter = memoryVerseConverter;
-
-    [UseMapper]
-    private readonly IConverter<DbService, Service> _serviceConverter = serviceConverter;
-
-    public partial MemorisationEntry Convert(DbVirtualMemorisationEntry input);
+    public partial MemorisationEntry Convert(DbMemorisationEntry input);
 }

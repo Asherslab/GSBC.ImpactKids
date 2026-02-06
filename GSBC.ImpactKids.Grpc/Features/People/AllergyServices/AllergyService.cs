@@ -11,12 +11,6 @@ namespace GSBC.ImpactKids.Grpc.Features.People.AllergyServices;
 [Authorize(Policy = Policies.EnabledOnly)]
 public partial class AllergyService(
     GsbcDbContext                  db,
-    IEventService<Allergy>          eventService,
+    IEventService<Allergy>         eventService,
     IConverter<DbAllergy, Allergy> converter
-) : IAllergyService
-{
-    private async Task SendEvent(Guid personId, Guid familyId, CancellationToken token = default)
-    {
-        await eventService.SendUpdatedEvent(personId, token: token, familyId);
-    }
-}
+) : IAllergyService;

@@ -36,7 +36,7 @@ public partial class DollarStoreEntryService
         
         await db.DollarStoreEntries.AddAsync(entry, token);
         await db.SaveChangesAsync(token);
-        await eventService.SendUpdatedEvent(entry.Id, token: token, service.Id);
+        await eventService.SendUpdatedEvent(token);
 
         return new BasicResponse
         {

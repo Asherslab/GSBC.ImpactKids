@@ -18,6 +18,14 @@ public partial class EntityUtilityComponent : IDisposable
     {
         _subscriptions.Add(store.Subscribe(selector, callback));
     }
+    
+    protected void HandleSubscriptionDisposal<T>(
+        IStore<T> store,
+        Action    callback
+    ) where T : notnull
+    {
+        _subscriptions.Add(store.Subscribe(_ => callback()));
+    }
 
     protected void HandleSubscriptionDisposal<T>(
         IStore<T> store,

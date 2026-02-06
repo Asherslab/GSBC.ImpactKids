@@ -1,6 +1,9 @@
 using Grpc.Net.Client.Web;
 using GSBC.ImpactKids.Shared.Contracts.Services;
+using GSBC.ImpactKids.Shared.Contracts.Services.Features.Authentication;
+using GSBC.ImpactKids.Shared.Contracts.Services.Features.DataDisplay;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.DollarStore;
+using GSBC.ImpactKids.Shared.Contracts.Services.Features.Elvanto;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.Eventing;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.Scheduling;
@@ -38,14 +41,14 @@ builder.Logging.AddConfiguration(
 
 builder.AddServiceDefaults();
 builder.Services.AddMudServices();
-builder.Services.AddSingleton<EventSubscriptionService>();
 builder.Services.AddScoped<ExceptionInterceptor>();
 
 builder.Services.AddOidcAuthentication<RemoteAuthenticationState, RemoteUserAccount>(options =>
     {
         builder.Configuration.Bind("Auth0", options.ProviderOptions);
+        options.ProviderOptions.DefaultScopes.Add("offline_access");
         options.ProviderOptions.ResponseType = "code";
-        options.ProviderOptions.AdditionalProviderParameters.Add("audience", builder.Configuration["Auth0:Audience"]!);
+        options.ProviderOptions.AdditionalProviderParameters.Add("audience", "https://kids.baptist.com.au");
     })
     .AddAccountClaimsPrincipalFactory<RemoteAuthenticationState, RemoteUserAccount, CustomAccountFactory>();
 
@@ -69,7 +72,6 @@ builder.Services.AddSingleton<ISseClientService, SseClientService>();
 
 builder.Services.AddScoped<UnauthorizedMessageHandler>();
 builder.Services.AddAuthenticatedGrpcClient<IEventingService>();
-builder.Services.AddAuthenticatedGrpcClient<IEventService>();
 builder.Services.AddAuthenticatedGrpcClient<IMetabaseService>();
 builder.Services.AddAuthenticatedGrpcClient<IUsersService>();
 builder.Services.AddAuthenticatedGrpcClient<IPersonService>();
@@ -85,6 +87,8 @@ builder.Services.AddAuthenticatedGrpcClient<IServiceTypeService>();
 builder.Services.AddAuthenticatedGrpcClient<IDollarStoreEntryService>();
 builder.Services.AddAuthenticatedGrpcClient<IBibleService>();
 builder.Services.AddAuthenticatedGrpcClient<IMemoryVersesService>();
+builder.Services.AddAuthenticatedGrpcClient<IMemoryVersesServicesRelationshipService>();
+builder.Services.AddAuthenticatedGrpcClient<IMemoryVersesBibleVersesRelationshipService>();
 builder.Services.AddAuthenticatedGrpcClient<IMemoryVerseListsService>();
 builder.Services.AddAuthenticatedGrpcClient<IMemorisationEntriesService>();
 

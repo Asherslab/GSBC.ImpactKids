@@ -1,16 +1,14 @@
-using System.Collections.Immutable;
 using GSBC.ImpactKids.Grpc.Data.Models.People;
 using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.Allergies;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
-using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ImpactKids.Grpc.Features.People.AllergyServices;
 
 public partial class AllergyService
 {
-    public async Task<BasicReadMultipleResponse<Allergy>> BasicReadMultiple(
+    public async IAsyncEnumerable<BasicReadMultipleResponse<Allergy>> BasicReadMultiple(
         BasicReadMultipleRequest request,
         CallContext              context = default
     )
@@ -34,12 +32,9 @@ public partial class AllergyService
 
         query = query.Paginate(request);
 
-        List<DbAllergy> types = await query.ToListAsync(token);
-
-        return new BasicReadMultipleResponse<Allergy>
+        await foreach (BasicReadMultipleResponse<Allergy> response in query.ReturnInBatches(converter, token: token))
         {
-            Success = true,
-            Entities = types.Select(converter.Convert).ToImmutableList()
-        };
+            yield return response;
+        }
     }
 }

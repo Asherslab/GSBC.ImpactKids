@@ -1,4 +1,5 @@
-﻿@using GSBC.ImpactKids.WASM.Services
+﻿@using GSBC.ImpactKids.WASM.Features.Scripture.Features.Memorisation.Pages
+@using GSBC.ImpactKids.WASM.Services
 @inject ElvantoReportsConfig ElvantoReportsConfig
 @inject MetabaseConfig       MetabaseConfig
 
@@ -10,12 +11,15 @@
 
     <MudNavPopout Icon="@Icons.Material.Filled.School"
                   Title="Verse Memorisation">
+        <MudMenuItem Icon="@Icons.Material.Filled.School"
+                     Label="Memory Verses"
+                     Href="/MemoryVerses"/>
         <MudMenuItem Icon="@Icons.Material.Filled.Undo"
                      Label="Previous"
-                     Href="/verseMemorisation/Previous"/>
+                     Href="@($"/Scripture/Memorisation/Tool/{Guid.Empty}?{nameof(Tool.Previous)}={true}")"/>
         <MudMenuItem Icon="@Icons.Material.Filled.Redo"
                      Label="Upcoming"
-                     Href="/verseMemorisation/Upcoming"/>
+                     Href="@($"/Scripture/Memorisation/Tool/{Guid.Empty}?{nameof(Tool.Upcoming)}={true}")"/>
     </MudNavPopout>
     <MudNavPopout Icon="@Icons.Material.Filled.Schedule"
                   Title="Services">
@@ -29,9 +33,10 @@
                      Label="Upcoming"
                      Href="/Services/Rel?Upcoming=true"/>
     </MudNavPopout>
-    <MudMenuItem Icon="@Icons.Material.Filled.Person"
-                 Label="People"
-                 Href="/people"/>
+    <MudNavLink Icon="@Icons.Material.Filled.Person"
+                Href="/people">
+        People
+    </MudNavLink>
     @if (MetabaseConfig.DashboardMappings.Any())
     {
         <MudNavPopout Icon="@Icons.Material.Filled.BarChart"
@@ -67,9 +72,6 @@
     }
     <MudNavPopout Icon="@Icons.Material.Filled.Settings"
                   Title="Admin">
-        <MudMenuItem Icon="@Icons.Material.Filled.Book"
-                     Label="Bible"
-                     Href="/bible"/>
         <MudMenuItem Icon="@Icons.Material.Filled.List"
                      Label="Service Types"
                      Href="/Services/ServiceTypes"/>
@@ -78,15 +80,3 @@
                      Href="/users"/>
     </MudNavPopout>
 </MudNavMenu>
-
-@code {
-
-    private bool _menuOpen;
-
-    private void MenuOpenChanged(bool b)
-    {
-        _menuOpen = b;
-        StateHasChanged();
-    }
-
-}

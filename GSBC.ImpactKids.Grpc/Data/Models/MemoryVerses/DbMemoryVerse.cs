@@ -14,10 +14,10 @@ public class DbMemoryVerse
 
     [MapperIgnore]
     public List<DbMemorisationEntry>? MemorisationEntries { get; set; }
-    
+
     [MapperIgnore]
     public DbMemoryVerseList? MemoryVerseList { get; set; }
 
     public List<DbBibleVerse> BibleVerses { get; set; } = [];
-    public List<DbService> Services { get; set; } = [];
+    public List<DbService>    Services    { get; set; } = [];
 }

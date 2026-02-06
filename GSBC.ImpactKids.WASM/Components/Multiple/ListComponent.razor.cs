@@ -10,7 +10,7 @@ public partial class ListComponent<T> where T : IIdentifiable
 {
     [Parameter]
     public Func<T, bool>? Filter { get; set; }
-    
+
     [Parameter]
     public bool EnableLoading { get; set; }
 
@@ -32,9 +32,12 @@ public partial class ListComponent<T> where T : IIdentifiable
 
     [Parameter]
     public int Spacing { get; set; } = 6;
-    
+
     [Parameter]
     public int? FakeEntries { get; set; }
+
+    [Parameter]
+    public int? Limit { get; set; }
 
     private AsyncData<ImmutableList<Guid>> _ids = AsyncData<ImmutableList<Guid>>.NotAsked();
 
@@ -97,6 +100,11 @@ public partial class ListComponent<T> where T : IIdentifiable
         if (Ordering != null)
         {
             filteredList = Ordering(filteredList);
+        }
+
+        if (Limit != null)
+        {
+            filteredList = filteredList.Take(Limit.Value);
         }
 
         _ids = _ids.ToSuccess(filteredList

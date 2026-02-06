@@ -1,3 +1,4 @@
+@using GSBC.ImpactKids.WASM.Features.Scripture.Features.Memorisation.Components.Multiple
 <MudGrid Spacing="6" Justify="Justify.Center">
     <MudItem xs="12" md="4">
         <MudGrid Spacing="6" Justify="Justify.Center">
@@ -5,6 +6,26 @@
                 <DetailsModificationCard
                     Id="Id"
                     DetailsComponentType="@(typeof(PersonDetails))"/>
+            </MudItem>
+            <MudItem xs="12">
+                <MudCard Elevation="6" Class="relative">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6"
+                                     Align="Align.Start">
+                                Memorisation Entries
+                            </MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent Class="pa-0">
+                        <MemorisationEntriesTable
+                            ShowService
+                            ShowMemoryVerse
+                            OnlyExisting
+
+                            PersonId="Id"/>
+                    </MudCardContent>
+                </MudCard>
             </MudItem>
         </MudGrid>
     </MudItem>
@@ -101,7 +122,7 @@
                                        Ordering="@(list => list.OrderByDescending(x => x.FamilyGuardian).ThenBy(x => x.LocalDateOfBirth).ThenBy(x => x.FirstName))"
                                        Context="personId">
                             <MudItem xs="12" lg="6">
-                                <PersonDisplay Id="personId"/>
+                                <PersonDisplay Id="personId" Link/>
                             </MudItem>
                         </ListComponent>
                     </MudCardContent>

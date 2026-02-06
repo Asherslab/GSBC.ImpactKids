@@ -1,9 +1,7 @@
-using System.Collections.Immutable;
 using GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses;
 using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scripture.Memorisation.MemoryVerses;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,22 +9,9 @@ namespace GSBC.ImpactKids.Grpc.Features.Scripture.Memorisation.MemoryVersesServi
 
 public partial class MemoryVersesService
 {
-    public Task<BasicReadMultipleResponse<MemoryVerse>> BasicReadMultiple(
+    public async IAsyncEnumerable<BasicReadMultipleResponse<MemoryVerse>> BasicReadMultiple(
         BasicReadMultipleRequest request,
         CallContext              context = default
-    )
-    {
-        return ReadMultiple(new MemoryVersesRequest
-            {
-                Pagination = request.Pagination,
-                SearchString = request.SearchString
-            }
-        );
-    }
-
-    public async Task<BasicReadMultipleResponse<MemoryVerse>> ReadMultiple(
-        MemoryVersesRequest request,
-        CallContext         context = default
     )
     {
         CancellationToken token = context.CancellationToken;
@@ -42,30 +27,13 @@ public partial class MemoryVersesService
             );
         }
 
-        if (request.ServiceId != null)
-        {
-            query = query.Where(x =>
-                x.Services.Any(y => y.Id == request.ServiceId)
-            );
-        }
-
-        if (request.MemoryVerseListId != null)
-        {
-            query = query.Where(x =>
-                x.MemoryVerseListId == request.MemoryVerseListId
-            );
-        }
-
         query = query.OrderBy(x => x.Services.OrderBy(y => y.Date).First());
 
         query = query.Paginate(request);
 
-        List<DbMemoryVerse> verses = await query.ToListAsync(token);
-
-        return new BasicReadMultipleResponse<MemoryVerse>
+        await foreach (BasicReadMultipleResponse<MemoryVerse> response in query.ReturnInBatches(converter, token: token))
         {
-            Success = true,
-            Entities = verses.Select(converter.Convert).ToImmutableList()
-        };
+            yield return response;
+        }
     }
 }

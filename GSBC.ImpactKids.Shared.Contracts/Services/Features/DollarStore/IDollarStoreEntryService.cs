@@ -15,9 +15,4 @@ public interface IDollarStoreEntryService
         BasicReadRequest request,
         CallContext      context = default
     );
-
-    Task<BasicReadMultipleResponse<DollarStoreEntry>> ReadMultiple(
-        DollarStoreEntriesRequest request,
-        CallContext               context = default
-    );
 }

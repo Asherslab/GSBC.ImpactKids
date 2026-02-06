@@ -1,0 +1,118 @@
+@inherits EntityUtilityComponent
+@inject IRefreshableStore<MemorisationEntry> MemorisationEntriesStore
+@inject IRefreshableStore<Person>            PeopleStore
+@inject IRefreshableStore<MemoryVerse>       MemoryVersesStore
+@inject IRefreshableStore<Service>           ServicesStore
+@inject IMemorisationEntriesService          MemorisationEntriesService
+
+<MudPaper Elevation="0">
+    <MudOverlay Visible="@(_asyncState.IsLoading)"
+                DarkBackground="true"
+                Absolute="true">
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+    @if (_asyncState.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">
+            @(_asyncState.Error ?? "An Unexpected error occured")
+        </MudAlert>
+    }
+    <MudTable Elevation="0"
+              Items="_records"
+              Hover="true"
+              Breakpoint="Breakpoint.None">
+        <HeaderContent>
+            @if (ShowPersonName)
+            {
+                <MudTh>Name</MudTh>
+            }
+            @if (ShowMemoryVerse)
+            {
+                <MudTh>Memory Verse</MudTh>
+            }
+            @if (ShowService)
+            {
+                <MudTh>Service</MudTh>
+            }
+            <MudTh Style="width: 100px">Recited</MudTh>
+            <MudTh Style="width: 25px">$5</MudTh>
+            <MudTh Style="width: 25px">$1</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            @if (ShowPersonName)
+            {
+                <MudTd DataLabel="Name">@context.Person.GetDisplayName() (@context.Person.SchoolGrade?.Label)</MudTd>
+            }
+            @if (ShowMemoryVerse)
+            {
+                <MudTd DataLabel="Memory Verse">@context.MemoryVerse.ReferenceName</MudTd>
+            }
+            @if (ShowService)
+            {
+                <MudTd DataLabel="Service">@context.Service.GetDisplayName()</MudTd>
+            }
+            <MudTd DataLabel="Recited">
+                <MudStack Row>
+                    <MudCheckBox T="bool"
+                                 Value="@context.Entry.VerseRecited"
+                                 ValueChanged="@(() => CheckboxPressed(context, recited: !context.Entry.VerseRecited))"/>
+                    @if (context is { VerseHasBeenRecitedBefore: false, Entry.VerseRecited: true })
+                    {
+                        <MudTooltip
+                            RootStyle="display: flex !important"
+                            ShowOnClick
+                            ShowOnHover
+                            ShowOnFocus
+                            Text="This is the first time this verse has been recited by this child!">
+                            <MudIcon tabindex="0" Icon="@Icons.Material.Filled.NewReleases"/>
+                        </MudTooltip>
+                    }
+                </MudStack>
+            </MudTd>
+            <MudTd DataLabel="$5">
+                @if (context.VerseHasBeenRecitedBefore || !context.Entry.VerseRecited)
+                {
+                    <MudTooltip
+                        RootStyle="display: flex !important"
+                        ShowOnClick
+                        ShowOnHover
+                        ShowOnFocus
+                        Text="This verse has been recited before, give 1 dollary doo instead">
+                        <MudCheckBox T="bool"
+                                     Disabled
+                                     tabindex="0"
+                                     Value="false"/>
+                    </MudTooltip>
+                }
+                else
+                {
+                    <MudCheckBox T="bool"
+                                 Value="@context.Entry.FiveDollaryDoosGiven"
+                                 ValueChanged="@(() => CheckboxPressed(context, fiveDollaryDoos: !context.Entry.FiveDollaryDoosGiven))"/>
+                }
+            </MudTd>
+            <MudTd DataLabel="$1">
+                @if (!context.VerseHasBeenRecitedBefore || !context.Entry.VerseRecited)
+                {
+                    <MudTooltip
+                        RootStyle="display: flex !important"
+                        ShowOnClick
+                        ShowOnHover
+                        ShowOnFocus
+                        Text="This verse has not been recited before, give 5 dollary doo instead">
+                        <MudCheckBox T="bool"
+                                     Disabled
+                                     tabindex="0"
+                                     Value="false"/>
+                    </MudTooltip>
+                }
+                else
+                {
+                    <MudCheckBox T="bool"
+                                 Value="@context.Entry.OneDollaryDooGiven"
+                                 ValueChanged="@(() => CheckboxPressed(context, oneDollaryDoo: !context.Entry.OneDollaryDooGiven))"/>
+                }
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+</MudPaper>

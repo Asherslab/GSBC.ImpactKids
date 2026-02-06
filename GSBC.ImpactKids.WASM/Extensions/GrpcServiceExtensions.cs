@@ -47,27 +47,34 @@ public static class GrpcServiceExtensions
             Type? deleteServiceBase = serviceType.IsAssignableToGenericType(typeof(IBasicDeleteService<>));
             if (deleteServiceBase != null)
                 services.AddScoped(deleteServiceBase, sp => sp.GetRequiredService<T>());
+            
+            Type? multipleRelationshipsBase = serviceType.IsAssignableToGenericType(typeof(IBasicMultipleRelationshipService<,>));
+            if (multipleRelationshipsBase != null)
+                services.AddScoped(multipleRelationshipsBase, sp => sp.GetRequiredService<T>());
 
             return services;
         }
     }
 
-    public static Type? IsAssignableToGenericType(this Type givenType, Type genericType)
+    extension(Type givenType)
     {
-        Type[] interfaceTypes = givenType.GetInterfaces();
-
-        Type? interfaceType =
-            interfaceTypes.FirstOrDefault(it => it.IsGenericType && it.GetGenericTypeDefinition() == genericType);
-        if (interfaceType != null)
+        private Type? IsAssignableToGenericType(Type genericType)
         {
-            return interfaceType;
+            Type[] interfaceTypes = givenType.GetInterfaces();
+
+            Type? interfaceType =
+                interfaceTypes.FirstOrDefault(it => it.IsGenericType && it.GetGenericTypeDefinition() == genericType);
+            if (interfaceType != null)
+            {
+                return interfaceType;
+            }
+
+            if (givenType.IsGenericType && givenType.GetGenericTypeDefinition() == genericType)
+                return givenType;
+
+            Type? baseType = givenType.BaseType;
+            return baseType?.IsAssignableToGenericType(genericType);
         }
-
-        if (givenType.IsGenericType && givenType.GetGenericTypeDefinition() == genericType)
-            return givenType;
-
-        Type? baseType = givenType.BaseType;
-        return baseType == null ? null : IsAssignableToGenericType(baseType, genericType);
     }
 
     private static IHttpClientBuilder AddCallCredentials(

@@ -33,7 +33,7 @@ public partial class ServiceTypeService
 
         db.ServiceTypes.Update(serviceType);
         await db.SaveChangesAsync(token);
-        await eventService.SendUpdatedEvent(serviceType.Id, token: token);
+        await eventService.SendUpdatedEvent(token);
 
         return new BasicResponse
         {

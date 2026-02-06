@@ -1,0 +1,27 @@
+@typeparam FirstEntity
+@typeparam SecondEntity
+@typeparam EntityToAdd
+@inject IRefreshableStore<EntityToAdd>                               EntityToAddStore
+@inject IBasicMultipleRelationshipService<FirstEntity, SecondEntity> RelationshipService
+
+<MudDialog>
+    <TitleContent>@MudDialog.Title</TitleContent>
+    <DialogContent>
+        <MudAutocompleteCreateOrUpdate
+            T="EntityToAdd"
+            Create="_entityToAdd"
+            CreateChanged="EntitySelected"
+            State="ModificationState.Creating"
+
+            SearchFunc="EntitySearch"
+            ToStringFunc="@(x => GetSearchDisplayFunc(x))"
+
+            Clearable
+            Label="@(DialogLabel ?? "Entity To Add Relationship For")"
+        />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => MudDialog.Cancel())">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="@AddRelationship">Add</MudButton>
+    </DialogActions>
+</MudDialog>

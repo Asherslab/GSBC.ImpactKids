@@ -1,0 +1,34 @@
+@inherits DisplayComponent<MemoryVerse>
+
+<MudPaper Elevation="0" Class="d-flex flex-column flex-grow-1">
+    <MudOverlay Visible="@(Entity.IsLoading)"
+                DarkBackground="true"
+                Absolute="true">
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+    @if (Entity.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">
+            @(Entity.Error ?? "An Unexpected error occured")
+        </MudAlert>
+    }
+    @if (ShowReference)
+    {
+        <MudTextFieldCreateOrUpdate
+            Read="@Entity.Data?.ReferenceName"
+            State="ModificationState.Reading"
+
+            Class="mb-4"
+            Label="Reference"
+            Variant="Variant.Filled"
+            Immediate/>
+    }
+
+    <MudTextFieldCreateOrUpdate
+        Read="@Entity.Data?.Verse"
+        State="ModificationState.Reading"
+
+        AutoGrow
+        Label="Verse"
+        Variant="Variant.Filled"/>
+</MudPaper>

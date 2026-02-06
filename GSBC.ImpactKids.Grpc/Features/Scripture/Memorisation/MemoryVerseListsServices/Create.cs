@@ -8,7 +8,7 @@ namespace GSBC.ImpactKids.Grpc.Features.Scripture.Memorisation.MemoryVerseListsS
 
 public partial class MemoryVerseListsService
 {
-    public async Task<BasicResponse?> Create(CreateMemoryVerseListRequest request, CallContext context = default)
+    public async Task<BasicResponse> Create(CreateMemoryVerseListRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 
@@ -32,7 +32,7 @@ public partial class MemoryVerseListsService
 
         await db.MemoryVerseLists.AddAsync(list, token);
         await db.SaveChangesAsync(token);
-        await eventService.SendUpdatedEvent(list.Id, token: token, list.SchoolTermId ?? Guid.Empty);
+        await eventService.SendUpdatedEvent(token);
 
         return new BasicResponse
         {
