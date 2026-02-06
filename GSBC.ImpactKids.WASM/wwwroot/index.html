@@ -73,19 +73,9 @@
 </script>
 <!-- Important: Increment the version parameter whenever you update MudBlazor to prevent caching issues -->
 <script src="_content/MudBlazor/MudBlazor.min.js?v=1"></script>
-<script>
-    function getOidToken(key) {
-        var strJson = sessionStorage.getItem(key);
-        if (strJson != null) {
-            var json = JSON.parse(strJson);
-            return json.id_token;
-        }
-
-        return null;
-    }
-
-    window.scrollTo = undefined; // required for our query usage until .net 10, which has fixed the scroll to top on query change
-</script>
+<!--<script>-->
+<!--    window.scrollTo = undefined; // required for our query usage until .net 10, which has fixed the scroll to top on query change-->
+<!--</script>-->
 </body>
 
 </html>

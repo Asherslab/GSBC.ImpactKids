@@ -1,0 +1,52 @@
+@inherits DetailsComponent<MemoryVerseList, CreateMemoryVerseListRequest, UpdateMemoryVerseListRequest>
+@inject IRefreshableStore<SchoolTerm> SchoolTermsStore
+
+<MudPaper Elevation="0" Class="d-flex flex-column flex-grow-1">
+    <MudOverlay Visible="@(Entity.IsLoading)"
+                DarkBackground="true"
+                Absolute="true">
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+    @if (Entity.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">
+            @(Entity.Error ?? "An Unexpected error occured")
+        </MudAlert>
+    }
+    <MudTextFieldCreateOrUpdate
+        @bind-Create="@CreateRequest.Name"
+        Read="@UpdateRequest.Name.Value"
+        @bind-Update="@UpdateRequest.Name.Value"
+        State="State"
+
+        Class="mb-4"
+        Label="Name"
+        Variant="Variant.Filled"
+        Immediate/>
+    
+    <div class="relative">
+        <MudOverlay Visible="@(SchoolTermsStore.GetState().Entities.IsLoading)"
+                    DarkBackground
+                    Absolute>
+            <MudProgressCircular Indeterminate/>
+        </MudOverlay>
+        <MudSelectCreateOrUpdate
+            @bind-Create="@CreateRequest.SchoolTermId"
+            Read="@UpdateRequest.SchoolTermId.Value"
+            @bind-Update="@UpdateRequest.SchoolTermId.Value"
+            State="State"
+
+            Label="School Term"
+            Variant="Variant.Filled"
+
+            Clearable>
+            @foreach (SchoolTerm schoolTerm in GetSchoolTermsForDropdown())
+            {
+                <MudSelectItem T="Guid?"
+                               Value="@schoolTerm.Id">
+                    @(schoolTerm.Name)
+                </MudSelectItem>
+            }
+        </MudSelectCreateOrUpdate>
+    </div>
+</MudPaper>

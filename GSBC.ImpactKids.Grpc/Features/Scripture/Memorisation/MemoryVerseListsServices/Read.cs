@@ -8,12 +8,12 @@ namespace GSBC.ImpactKids.Grpc.Features.Scripture.Memorisation.MemoryVerseListsS
 
 public partial class MemoryVerseListsService
 {
-    public async Task<BasicReadResponse<MemoryVerseList>?> Read(BasicReadRequest request, CallContext context = default)
+    public async Task<BasicReadResponse<MemoryVerseList>> Read(BasicReadRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
-        
+
         DbMemoryVerseList? list = await db.MemoryVerseLists
-                .FirstOrDefaultAsync(x => x.Id == request.Guid, token);
+            .FirstOrDefaultAsync(x => x.Id == request.Guid, token);
 
         if (list == null)
             return BasicReadResponse<MemoryVerseList>.WithError(MemoryVerseListNotFound);

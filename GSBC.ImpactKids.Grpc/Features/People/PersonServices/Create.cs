@@ -6,7 +6,7 @@ namespace GSBC.ImpactKids.Grpc.Features.People.PersonServices;
 
 public partial class PersonService
 {
-    public async Task<BasicResponse?> Create(CreatePersonRequest request, CallContext context = default)
+    public async Task<BasicResponse> Create(CreatePersonRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 
@@ -33,7 +33,7 @@ public partial class PersonService
 
         await db.People.AddAsync(person, token);
         await db.SaveChangesAsync(token);
-        await SendEvent(person.Id, person.FamilyId, token);
+        await eventService.SendUpdatedEvent(token);
 
         return new BasicResponse
         {

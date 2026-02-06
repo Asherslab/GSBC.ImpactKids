@@ -6,13 +6,14 @@ public class DbMedicalNote
 {
     public required Guid Id { get; set; }
 
-    public required Guid?          MedicalTypeId { get; set; }
-    public          DbMedicalType? MedicalType   { get; set; }
+    public required Guid? MedicalTypeId { get; set; }
+
+    [MapperIgnore]
+    public DbMedicalType? MedicalType { get; set; }
 
     public string? Notes  { get; set; }
     public bool    Severe { get; set; }
 
-    [MapperIgnore]
     public required Guid PersonId { get; set; }
 
     [MapperIgnore]

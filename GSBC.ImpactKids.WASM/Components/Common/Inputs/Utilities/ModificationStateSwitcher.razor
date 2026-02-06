@@ -1,0 +1,46 @@
+@if (State == ModificationState.Reading)
+{
+    <MudButton Size="Size.Small" Color="Color.Error"
+               OnClick="@OnDelete">
+        <MudIcon Icon="@Icons.Material.Filled.Delete"/>
+    </MudButton>
+    
+    if (ShowCreate)
+    {
+        <MudButton Size="Size.Small" Color="Color.Default"
+                   OnClick="@(_ => UpdateState(ModificationState.Creating))">
+            <MudIcon Icon="@Icons.Material.Filled.Edit"/>
+        </MudButton>
+    }
+    else
+    {
+        
+        <MudButton Size="Size.Small" Color="Color.Default"
+                   OnClick="@(_ => UpdateState(ModificationState.Updating))">
+            <MudIcon Icon="@Icons.Material.Filled.Edit"/>
+        </MudButton>
+    }
+}
+else
+{
+    <MudButton Size="Size.Small" Color="Color.Error"
+               OnClick="@(_ => UpdateState(ModificationState.Reading))">
+        Cancel
+    </MudButton>
+    
+    
+    if (ShowCreate)
+    {
+        <MudButton Size="Size.Small" Color="Color.Success"
+                   OnClick="@OnCreate">
+            Create
+        </MudButton>
+    }
+    else
+    {
+        <MudButton Size="Size.Small" Color="Color.Success"
+                   OnClick="@OnUpdate">
+            Update
+        </MudButton>
+    }
+}

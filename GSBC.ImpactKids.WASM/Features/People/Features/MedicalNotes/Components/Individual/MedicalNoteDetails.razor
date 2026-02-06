@@ -1,0 +1,66 @@
+@inherits DetailsComponent<MedicalNote, CreateMedicalNoteRequest, UpdateMedicalNoteRequest>
+@inject IRefreshableStore<MedicalType> MedicalTypesStore
+
+<MudPaper Elevation="0" Class="d-flex flex-column flex-grow-1">
+    <MudOverlay Visible="@(Entity.IsLoading)"
+                DarkBackground="true"
+                Absolute="true">
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+    @if (Entity.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">
+            @(Entity.Error ?? "An Unexpected error occured")
+        </MudAlert>
+    }
+    <MudPaper Elevation="0" Class="d-flex flex-row flex-grow-1 mb-4">
+        <div class="relative" style="width: 100%">
+            <MudOverlay Visible="@(MedicalTypesStore.GetState().Entities.IsLoading)"
+                        DarkBackground
+                        Absolute>
+                <MudProgressCircular Indeterminate/>
+            </MudOverlay>
+            <MudSelectCreateOrUpdate
+                @bind-Create="@CreateRequest.MedicalTypeId"
+                Read="@UpdateRequest.MedicalTypeId.Value"
+                @bind-Update="@UpdateRequest.MedicalTypeId.Value"
+                State="State"
+
+                Label="Type"
+                Variant="Variant.Filled"
+
+                Clearable
+                FullWidth>
+                @if (MedicalTypesStore.GetState().Entities.HasData)
+                {
+                    @foreach (MedicalType medicalType in MedicalTypesStore.GetState().Entities.Data!)
+                    {
+                        <MudSelectItem T="Guid?"
+                                       Value="@medicalType.Id">
+                            @(medicalType.Label)
+                        </MudSelectItem>
+                    }
+                }
+            </MudSelectCreateOrUpdate>
+        </div>
+        <MudCheckBoxCreateOrUpdate
+            @bind-Create="@CreateRequest.Severe"
+            Read="@UpdateRequest.Severe.Value"
+            @bind-Update="@UpdateRequest.Severe.Value"
+            State="State"
+
+            Label="Severe"/>
+    </MudPaper>
+
+    <MudTextFieldCreateOrUpdate
+        @bind-Create="@CreateRequest.Notes"
+        Read="@UpdateRequest.Notes.Value"
+        @bind-Update="@UpdateRequest.Notes.Value"
+        State="State"
+
+        Label="Optional Notes"
+        Variant="Variant.Filled"
+        Lines="3"
+
+        Immediate/>
+</MudPaper>

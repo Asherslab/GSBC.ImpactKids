@@ -7,7 +7,7 @@ namespace GSBC.ImpactKids.Grpc.Features.People.MedicalNoteServices;
 
 public partial class MedicalNoteService
 {
-    public async Task<BasicResponse?> Create(CreateMedicalNoteRequest request, CallContext context = default)
+    public async Task<BasicResponse> Create(CreateMedicalNoteRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 
@@ -38,7 +38,7 @@ public partial class MedicalNoteService
 
         await db.MedicalNotes.AddAsync(medicalNote, token);
         await db.SaveChangesAsync(token);
-        await SendEvent(person.Id, person.FamilyId, token);
+        await eventService.SendUpdatedEvent(token);
 
         return new BasicResponse
         {

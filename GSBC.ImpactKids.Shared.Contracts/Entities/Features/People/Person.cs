@@ -1,41 +1,34 @@
+using System.Collections.Immutable;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.Allergies;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.MedicalNotes;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
-public class Person
+public record Person : IIdentifiable
 {
-    public required Guid Id { get; set; }
+    public required Guid Id { get; init; }
 
-    public required string FirstName { get; set; }
-    public required string LastName  { get; set; }
+    public required string FirstName { get; init; }
+    public required string LastName  { get; init; }
 
-    public required SchoolGrade? SchoolGrade  { get; set; }
-    public required MediaConsent MediaConsent { get; set; }
-    public required DateTime?    DateOfBirth  { get; set; }
-    public required DateTime?    FirstTime    { get; set; }
-    
+    public required SchoolGrade? SchoolGrade  { get; init; }
+    public required MediaConsent MediaConsent { get; init; }
+    public required DateTime?    DateOfBirth  { get; init; }
+    public required DateTime?    FirstTime    { get; init; }
+
     [ProtoIgnore]
-    public DateTime? LocalDateOfBirth
-    {
-        get => DateOfBirth?.ToLocalTime();
-        set => DateOfBirth = value?.ToUniversalTime();
-    }
-    
-    [ProtoIgnore]
-    public DateTime? LocalFirstTime
-    {
-        get => FirstTime?.ToLocalTime();
-        set => FirstTime = value?.ToUniversalTime();
-    }
+    public DateTime? LocalDateOfBirth => DateOfBirth?.ToLocalTime();
 
-    public required List<Allergy>     Allergies    { get; set; } = [];
-    public required List<MedicalNote> MedicalNotes { get; set; } = [];
+    [ProtoIgnore]
+    public DateTime? LocalFirstTime => FirstTime?.ToLocalTime();
+
+    public required ImmutableList<Allergy>     Allergies    { get; init; } = [];
+    public required ImmutableList<MedicalNote> MedicalNotes { get; init; } = [];
 
     // family stuff
-    public required Guid FamilyId       { get; set; }
-    public required bool FamilyGuardian { get; set; }
+    public required Guid FamilyId       { get; init; }
+    public required bool FamilyGuardian { get; init; }
 
     public int? GetAge() => LocalDateOfBirth == null
         ? null

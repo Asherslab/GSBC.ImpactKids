@@ -1,52 +1,12 @@
-@using GSBC.ImpactKids.WASM.Features.DollarStore.Components.Individual
-@using GSBC.ImpactKids.WASM.Features.Scripture.Features.Memorisation.Components.Multiple
-@inject ISnackbar Snackbar
+@inject IRefreshableStore<DollarStoreEntry> DollarStoreEntriesStore
 
 <MudGrid Spacing="6" Justify="Justify.Center">
     <MudItem xs="12" md="4">
         <MudGrid Spacing="6" Justify="Justify.Center">
             <MudItem xs="12">
-                <MudCard Elevation="6" Class="relative">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudPaper Elevation="0" Class="d-flex justify-space-between flex-grow-1">
-                                <MudText Typo="Typo.h6" Align="Align.Start">Details</MudText>
-                                <MudPaper Elevation="0" Class="d-flex justify-end flex-grow-0">
-                                    @if (_detailsState == ModificationState.Reading)
-                                    {
-                                        if (DeleteService.HasDelegate)
-                                        {
-                                            <MudButton Size="Size.Small" Color="Color.Error"
-                                                       OnClick="@DeleteService">
-                                                <MudIcon Icon="@Icons.Material.Filled.Delete"/>
-                                            </MudButton>
-                                        }
-
-                                        <MudButton Size="Size.Small" Color="Color.Default"
-                                                   OnClick="@(_ => _detailsState = ModificationState.Updating)">
-                                            <MudIcon Icon="@Icons.Material.Filled.Edit"/>
-                                        </MudButton>
-                                    }
-                                    else
-                                    {
-                                        <MudButton Size="Size.Small" Color="Color.Error"
-                                                   OnClick="@(_ => _detailsState = ModificationState.Reading)">
-                                            Cancel
-                                        </MudButton>
-                                        <MudButton Size="Size.Small" Color="Color.Success" OnClick="@UpdateService">
-                                            Submit
-                                        </MudButton>
-                                    }
-                                </MudPaper>
-                            </MudPaper>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        <ServiceDetails @ref="_serviceDetailsComponent"
-                                        Service="Service"
-                                        State="_detailsState"/>
-                    </MudCardContent>
-                </MudCard>
+                <DetailsModificationCard
+                    Id="Id"
+                    DetailsComponentType="@(typeof(ServiceDetails))"/>
             </MudItem>
         </MudGrid>
     </MudItem>
@@ -62,78 +22,23 @@
                         </CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent>
-                        <MemoryVerseList
-                            ServiceId="@Service?.Id"
-                            MemoryVerses="MemoryVerses"/>
+                        <ListComponent T="MemoryVerse"
+                                       Filter="@(x => x.ServiceIds.Contains(Id ?? Guid.Empty))"
+                                       Spacing="3"
+                                       Context="memoryVerseId">
+                            <MudItem xs="12">
+                                <MemoryVerseDisplay Id="memoryVerseId"
+                                                    Href="@(Id == null ? null : $"/Scripture/Memorisation/Tool/{Id}?{nameof(Tool.MemoryVerseId)}={memoryVerseId}")"/>
+                            </MudItem>
+                        </ListComponent>
                     </MudCardContent>
                 </MudCard>
             </MudItem>
-            <MudItem xs="12" md="6">
-                <MudCard Elevation="6" Class="relative">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudPaper Elevation="0" Class="d-flex justify-space-between flex-grow-1">
-                                <MudText Typo="Typo.h6" Align="Align.Start">Dollar Store</MudText>
-                                <MudPaper Elevation="0" Class="d-flex justify-end flex-grow-0">
-                                    @if (_dollarStoreState == ModificationState.Reading)
-                                    {
-                                        if (DeleteDollarStore.HasDelegate)
-                                        {
-                                            <MudButton Size="Size.Small" Color="Color.Error"
-                                                       OnClick="@DeleteDollarStore">
-                                                <MudIcon Icon="@Icons.Material.Filled.Delete"/>
-                                            </MudButton>
-                                        }
-
-                                        if (Service?.DollarStoreEntry != null)
-                                        {
-                                            <MudButton Size="Size.Small" Color="Color.Default"
-                                                       OnClick="@(_ => _dollarStoreState = ModificationState.Updating)">
-                                                <MudIcon Icon="@Icons.Material.Filled.Edit"/>
-                                            </MudButton>
-                                        }
-                                        else
-                                        {
-                                            <MudButton Size="Size.Small" Color="Color.Default"
-                                                       OnClick="@(_ => _dollarStoreState = ModificationState.Creating)">
-                                                <MudIcon Icon="@Icons.Material.Filled.Edit"/>
-                                            </MudButton>
-                                        }
-                                    }
-                                    else
-                                    {
-                                        <MudButton Size="Size.Small" Color="Color.Error"
-                                                   OnClick="@(_ => _dollarStoreState = ModificationState.Reading)">
-                                            Cancel
-                                        </MudButton>
-                                        if (_dollarStoreState == ModificationState.Creating)
-                                        {
-                                            <MudButton Size="Size.Small" Color="Color.Success"
-                                                       OnClick="@CreateDollarStoreEntry">
-                                                Submit
-                                            </MudButton>
-                                        }
-                                        else
-                                        {
-                                            <MudButton Size="Size.Small" Color="Color.Success"
-                                                       OnClick="@UpdateDollarStoreEntry">
-                                                Submit
-                                            </MudButton>
-                                        }
-                                    }
-                                </MudPaper>
-                            </MudPaper>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        <DollarStoreEntryDetails
-                            @ref="_dollarStoreDetailsComponent"
-                            ServiceId="Service?.Id"
-                            DisableOverlay="@(Service != null)"
-                            DollarStoreEntry="Service?.DollarStoreEntry"
-                            State="_dollarStoreState"/>
-                    </MudCardContent>
-                </MudCard>
+            <MudItem xs="12" md="6" Class="relative">
+                <DetailsModificationCard
+                    ShowCreate="@(_dollarStoreEntry.Data == null)"
+                    ExtraParameters="@(new Dictionary<string, object?> { { nameof(DollarStoreEntryDetails.ServiceId), Id } })"
+                    DetailsComponentType="@(typeof(DollarStoreEntryDetails))"/>
             </MudItem>
             @*<MudItem xs="12" md="6">
                 <MudCard Elevation="6" Class="relative">

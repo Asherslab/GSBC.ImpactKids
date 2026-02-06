@@ -1,0 +1,76 @@
+@inherits StoreComponent<GSBC.ImpactKids.WASM.Features.Eventing.EventsStreamState>
+@implements IDisposable
+@page "/stream-status"
+@using GSBC.ImpactKids.WASM.Features.Eventing.Services
+@inject ISseClientService Sse
+
+<MudPaper Class="pa-4">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h6">Global SSE Status</MudText>
+        <MudChip T="string" Color="@(State.IsConnected ? Color.Success : Color.Error)" Variant="Variant.Outlined">
+            @(State.IsConnected  ? "Connected" : "Disconnected")
+        </MudChip>
+        @* <MudText Typo="Typo.subtitle2">LastEventId: @(Sse.LastEventId ?? "(none)")</MudText> *@
+
+        <MudDivider />
+
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Restart">Restart</MudButton>
+        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" OnClick="Stop">Stop</MudButton>
+
+        <MudDivider />
+
+        <MudList T="string" Dense="true">
+            @foreach (SseMessage item in _items)
+            {
+                <MudListItem T="string">
+                    <MudText Typo="Typo.body2">@item.EventType</MudText>
+                    <MudText Typo="Typo.caption">@item.Id</MudText>
+                    <MudText Typo="Typo.body1">@item.Data</MudText>
+                </MudListItem>
+            }
+        </MudList>
+    </MudStack>
+</MudPaper>
+
+@code {
+    private CancellationTokenSource? _cts;
+    private readonly List<SseMessage> _items = new();
+
+    protected override void OnInitialized()
+    {
+        _cts = new CancellationTokenSource();
+
+        _ = Task.Run(async () =>
+        {
+            await foreach (var msg in Sse.GetMessagesAsync(_cts.Token))
+            {
+                await InvokeAsync(() =>
+                {
+                    _items.Insert(0, msg);
+                    if (_items.Count > 200) _items.RemoveRange(200, _items.Count - 200);
+                    StateHasChanged();
+                });
+            }
+        });
+    }
+
+    private async Task Stop() => await Sse.StopAsync();
+
+    private async Task Restart()
+    {
+        await Sse.StopAsync();
+        await Sse.StartAsync();
+        // Restart using the same URL/scopes configured at startup:
+        // In this simple sample we restart via Program.cs settings, so just call StartAsync again.
+        // If you keep URL/scopes somewhere central, inject and pass them here.
+        // NOTE: For demo simplicity, we don't have access here; you can extend the service with RestartAsync.
+    }
+
+    public new void Dispose()
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+        base.Dispose();
+        GC.SuppressFinalize(this);
+    }
+}

@@ -100,29 +100,37 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
 
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses.DbMemorisationEntry", b =>
                 {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<bool>("FiveDollaryDoosGiven")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("MemoryVerseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("OneDollaryDooGiven")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid>("PersonId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("ServiceId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("MemoryVerseId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("FiveDollaryDoosGiven")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("OneDollaryDooGiven")
-                        .HasColumnType("boolean");
-
                     b.Property<bool>("VerseRecited")
                         .HasColumnType("boolean");
 
-                    b.HasKey("PersonId", "ServiceId", "MemoryVerseId");
+                    b.HasKey("Id");
 
                     b.HasIndex("MemoryVerseId");
 
                     b.HasIndex("ServiceId");
+
+                    b.HasIndex("PersonId", "ServiceId", "MemoryVerseId")
+                        .IsUnique();
 
                     b.ToTable("MemorisationEntries");
                 });
@@ -214,6 +222,9 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
 
                     b.Property<bool>("FiveDollaryDoosGiven")
                         .HasColumnType("boolean");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("OneDollaryDooGiven")
                         .HasColumnType("boolean");

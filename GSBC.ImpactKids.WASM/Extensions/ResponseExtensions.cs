@@ -6,6 +6,11 @@ namespace GSBC.ImpactKids.WASM.Extensions;
 
 public static class ResponseExtensions
 {
+    public static bool HasError(this ISuccessResponse successResponse)
+    {
+        return successResponse is not { Success: true };
+    }
+    
     public static bool HasErrorOrNull([NotNullWhen(false)] this ISuccessResponse? successResponse)
     {
         return successResponse is not { Success: true };

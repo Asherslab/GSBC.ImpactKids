@@ -7,7 +7,7 @@ namespace GSBC.ImpactKids.Grpc.Features.People.AllergyServices;
 
 public partial class AllergyService
 {
-    public async Task<BasicResponse?> Create(CreateAllergyRequest request, CallContext context = default)
+    public async Task<BasicResponse> Create(CreateAllergyRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 
@@ -38,7 +38,7 @@ public partial class AllergyService
 
         await db.Allergies.AddAsync(allergy, token);
         await db.SaveChangesAsync(token);
-        await SendEvent(person.Id, person.FamilyId, token);
+        await eventService.SendUpdatedEvent(token);
 
         return new BasicResponse
         {

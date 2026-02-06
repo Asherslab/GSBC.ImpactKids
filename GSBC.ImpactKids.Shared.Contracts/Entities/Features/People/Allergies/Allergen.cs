@@ -1,8 +1,8 @@
 namespace GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.Allergies;
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
-public class Allergen
+public record Allergen : IIdentifiable
 {
-    public required Guid   Id    { get; set; }
-    public required string Label { get; set; }
+    public required Guid   Id    { get; init; }
+    public required string Label { get; init; }
 }

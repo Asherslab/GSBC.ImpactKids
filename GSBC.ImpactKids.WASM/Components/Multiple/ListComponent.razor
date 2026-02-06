@@ -1,0 +1,67 @@
+@typeparam T
+@inject IRefreshableStore<T> Store
+
+<MudOverlay Visible="@(EnableLoading && _ids.IsLoading)"
+            DarkBackground="true"
+            Absolute="true">
+    <MudProgressCircular Indeterminate/>
+</MudOverlay>
+
+<MudGrid Spacing="@Spacing" Justify="Justify.Center">
+    @if (FakeEntries != null)
+    {
+        foreach (int fake in Enumerable.Range(1, FakeEntries.Value))
+        {
+            if (ChildContent == null)
+            {
+                <MudItem xs="12">
+                    <MudText>Fake @fake</MudText>
+                </MudItem>
+            }
+            else
+            {
+                @ChildContent(null)
+            }
+        }
+    }
+    else if (_ids.Data != null)
+    {
+        if (NoIds != null && _ids.Data.Count == 0)
+        {
+            @NoIds
+        }
+        else
+        {
+            foreach (Guid id in _ids.Data)
+            {
+                if (ChildContent == null)
+                {
+                    <MudItem xs="12">
+                        <MudText>@id</MudText>
+                    </MudItem>
+                }
+                else
+                {
+                    @ChildContent(id)
+                }
+            }
+        }
+    }
+    else
+    {
+        if (NoData != null)
+        {
+            @NoData
+        }
+        else if (ChildContent != null)
+        {
+            @ChildContent(null)
+        }
+        else
+        {
+            <MudItem xs="12">
+                <MudText>Data is Null</MudText>
+            </MudItem>
+        }
+    }
+</MudGrid>

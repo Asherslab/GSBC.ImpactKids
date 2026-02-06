@@ -1,27 +1,20 @@
 namespace GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School;
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
-public class SchoolTerm
+public record SchoolTerm : IIdentifiable
 {
-    public required Guid   Id   { get; set; }
-    public required string Name { get; set; }
+    public required Guid   Id   { get; init; }
+    public required string Name { get; init; }
 
-    public required DateTime StartDate { get; set; }
-    public required DateTime EndDate   { get; set; }
-
-    [ProtoIgnore]
-    public DateTime LocalStartDate
-    {
-        get => StartDate.ToLocalTime();
-        set => StartDate = value.ToUniversalTime();
-    }
+    public required DateTime StartDate { get; init; }
+    public required DateTime EndDate   { get; init; }
 
     [ProtoIgnore]
-    public DateTime LocalEndDate
-    {
-        get => EndDate.ToLocalTime();
-        set => EndDate = value.ToUniversalTime();
-    }
-    
-    public static string BuildSubscription(Guid? schoolTermId = null) => $"{nameof(SchoolTerm)}.{schoolTermId?.ToString() ?? "*"}";
+    public DateTime LocalStartDate => StartDate.ToLocalTime();
+
+    [ProtoIgnore]
+    public DateTime LocalEndDate => EndDate.ToLocalTime();
+
+    public static string BuildSubscription(Guid? schoolTermId = null) =>
+        $"{nameof(SchoolTerm)}.{schoolTermId?.ToString() ?? "*"}";
 }

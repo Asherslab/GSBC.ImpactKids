@@ -1,150 +1,109 @@
 @using GSBC.ImpactKids.WASM.Features.Scripture.Features.Memorisation.Components.Multiple
-@inject ISnackbar Snackbar
-
 <MudGrid Spacing="6" Justify="Justify.Center">
     <MudItem xs="12" md="4">
         <MudGrid Spacing="6" Justify="Justify.Center">
             <MudItem xs="12">
+                <DetailsModificationCard
+                    Id="Id"
+                    DetailsComponentType="@(typeof(PersonDetails))"/>
+            </MudItem>
+            <MudItem xs="12">
                 <MudCard Elevation="6" Class="relative">
                     <MudCardHeader>
                         <CardHeaderContent>
-                            <MudPaper Elevation="0" Class="d-flex justify-space-between flex-grow-1">
-                                <MudText Typo="Typo.h6" Align="Align.Start">Details</MudText>
-                                <MudPaper Elevation="0" Class="d-flex justify-end flex-grow-0">
-                                    @if (!_editingDetails)
-                                    {
-                                        if (DeletePerson.HasDelegate)
-                                        {
-                                            <MudButton Size="Size.Small" Color="Color.Error"
-                                                       OnClick="@DeletePerson">
-                                                <MudIcon Icon="@Icons.Material.Filled.Delete"/>
-                                            </MudButton>
-                                        }
-
-                                        <MudButton Size="Size.Small" Color="Color.Default"
-                                                   OnClick="@(_ => _editingDetails = true)">
-                                            <MudIcon Icon="@Icons.Material.Filled.Edit"/>
-                                        </MudButton>
-                                    }
-                                    else
-                                    {
-                                        <MudButton Size="Size.Small" Color="Color.Error"
-                                                   OnClick="@(_ => _editingDetails = false)">
-                                            Cancel
-                                        </MudButton>
-                                        <MudButton Size="Size.Small" Color="Color.Success" OnClick="@UpdatePerson">
-                                            Submit
-                                        </MudButton>
-                                    }
-                                </MudPaper>
-                            </MudPaper>
+                            <MudText Typo="Typo.h6"
+                                     Align="Align.Start">
+                                Memorisation Entries
+                            </MudText>
                         </CardHeaderContent>
                     </MudCardHeader>
-                    <MudCardContent>
-                        <PersonDetails @ref="_personDetailsComponent" Person="Person" Editing="_editingDetails"/>
+                    <MudCardContent Class="pa-0">
+                        <MemorisationEntriesTable
+                            ShowService
+                            ShowMemoryVerse
+                            OnlyExisting
+
+                            PersonId="Id"/>
                     </MudCardContent>
                 </MudCard>
             </MudItem>
-            @if (Person?.FamilyGuardian != true)
-            {
-                <MudItem xs="12">
-                    <MudCard Elevation="6" Class="relative">
-                        <MudCardHeader>
-                            <CardHeaderContent>
-                                <MudText Typo="Typo.h6" Align="Align.Start">Memorisation Entries</MudText>
-                                <MudText Typo="Typo.caption" Align="Align.Start">For current term</MudText>
-                            </CardHeaderContent>
-                        </MudCardHeader>
-                        <MudCardContent>
-                            <VerseMemorisationEntries
-                                ShowMemoryVerse
-                                ShowService
-                                MemorisationEntries="MemorisationEntries"/>
-                        </MudCardContent>
-                    </MudCard>
-                </MudItem>
-            }
         </MudGrid>
     </MudItem>
     <MudItem xs="12" md="8">
         <MudGrid Spacing="6" Justify="Justify.FlexStart">
-            <MudItem xs="12" md="6">
+            <MudItem xs="12" md="12">
                 <MudCard Elevation="6" Class="relative">
                     <MudCardHeader>
                         <CardHeaderContent>
                             <MudPaper Elevation="0" Class="d-flex justify-space-between flex-grow-1">
                                 <MudText Typo="Typo.h6" Align="Align.Start">Medical Notes</MudText>
                                 <MudPaper Elevation="0" Class="d-flex justify-end flex-grow-0">
-                                    @if (!_creatingMedicalNote)
-                                    {
-                                        <MudButton Size="Size.Small" Color="Color.Default"
-                                                   OnClick="@(_ => _creatingMedicalNote = true)">
-                                            <MudIcon Icon="@Icons.Material.Filled.PostAdd"/>
-                                        </MudButton>
-                                    }
-                                    else
-                                    {
-                                        <MudButton Size="Size.Small" Color="Color.Error"
-                                                   OnClick="@(_ => _creatingMedicalNote = false)">
-                                            Cancel
-                                        </MudButton>
-                                        <MudButton Size="Size.Small" Color="Color.Success" OnClick="@CreateMedicalNote">
-                                            Submit
-                                        </MudButton>
-                                    }
+                                    <MudButton Size="Size.Small" Color="Color.Default"
+                                               OnClick="@CreateMedicalNote">
+                                        <MudIcon Icon="@Icons.Material.Filled.PostAdd"/>
+                                    </MudButton>
                                 </MudPaper>
                             </MudPaper>
                         </CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent>
-                        @if (_creatingMedicalNote && Person?.Id != null)
-                        {
-                            <CreateMedicalNote @ref="_createMedicalNoteComponent"
-                                               @bind-MedicalTypes="_medicalTypes"
-                                               PersonId="Person.Id"/>
-                            <MudDivider Class="my-6"/>
-                        }
-                        <MedicalNotesDetails MedicalNotes="Person?.MedicalNotes"/>
+                        <ListComponent T="MedicalNote"
+                                       Filter="@(x => x.PersonId == Id)"
+                                       Context="medicalId">
+                            <ChildContent>
+                                <MudItem xs="12" lg="6">
+                                    <MedicalNoteDisplay AllowUpdating AllowDeleting Id="medicalId"/>
+                                </MudItem>
+                            </ChildContent>
+                            <NoIds>
+                                <MudItem xs="12">
+                                    <MedicalNoteDisplay None/>
+                                </MudItem>
+                            </NoIds>
+                            <NoData>
+                                <MudItem xs="12">
+                                    <MedicalNoteDisplay None/>
+                                </MudItem>
+                            </NoData>
+                        </ListComponent>
                     </MudCardContent>
                 </MudCard>
             </MudItem>
-            <MudItem xs="12" md="6">
+            <MudItem xs="12" md="12">
                 <MudCard Elevation="6" Class="relative">
                     <MudCardHeader>
                         <CardHeaderContent>
                             <MudPaper Elevation="0" Class="d-flex justify-space-between flex-grow-1">
                                 <MudText Typo="Typo.h6" Align="Align.Start">Allergies</MudText>
                                 <MudPaper Elevation="0" Class="d-flex justify-end flex-grow-0">
-                                    @if (!_creatingAllergy)
-                                    {
-                                        <MudButton Size="Size.Small" Color="Color.Default"
-                                                   OnClick="@(_ => _creatingAllergy = true)">
-                                            <MudIcon Icon="@Icons.Material.Filled.PostAdd"/>
-                                        </MudButton>
-                                    }
-                                    else
-                                    {
-                                        <MudButton Size="Size.Small" Color="Color.Error"
-                                                   OnClick="@(_ => _creatingAllergy = false)">
-                                            Cancel
-                                        </MudButton>
-                                        <MudButton Size="Size.Small" Color="Color.Success" OnClick="@CreateAllergy">
-                                            Submit
-                                        </MudButton>
-                                    }
+                                    <MudButton Size="Size.Small" Color="Color.Default"
+                                               OnClick="@CreateAllergy">
+                                        <MudIcon Icon="@Icons.Material.Filled.PostAdd"/>
+                                    </MudButton>
                                 </MudPaper>
                             </MudPaper>
                         </CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent>
-                        @if (_creatingAllergy && Person?.Id != null)
-                        {
-                            <CreateAllergy @ref="_createAllergyComponent"
-                                           @bind-Allergens="_allergens"
-                                           PersonId="Person.Id"/>
-                            <MudDivider Class="my-6"/>
-                        }
-                        <AllergiesDetails Allergies="Person?.Allergies"/>
+                        <ListComponent T="Allergy"
+                                       Filter="@(x => x.PersonId == Id)"
+                                       Context="allergyId">
+                            <ChildContent>
+                                <MudItem xs="12" lg="6">
+                                    <AllergyDisplay AllowUpdating AllowDeleting Id="allergyId"/>
+                                </MudItem>
+                            </ChildContent>
+                            <NoIds>
+                                <MudItem xs="12">
+                                    <AllergyDisplay None/>
+                                </MudItem>
+                            </NoIds>
+                            <NoData>
+                                <MudItem xs="12">
+                                    <AllergyDisplay None/>
+                                </MudItem>
+                            </NoData>
+                        </ListComponent>
                     </MudCardContent>
                 </MudCard>
             </MudItem>
@@ -156,7 +115,16 @@
                         </CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent>
-                        <FamilyMembers Members="@FamilyMembers"/>
+                        <ListComponent T="Person"
+                                       EnableLoading
+                                       Filter="@(x => x.Id == Id)"
+                                       SecondaryFilter="@((person, x) => x.FamilyId == person.FamilyId)"
+                                       Ordering="@(list => list.OrderByDescending(x => x.FamilyGuardian).ThenBy(x => x.LocalDateOfBirth).ThenBy(x => x.FirstName))"
+                                       Context="personId">
+                            <MudItem xs="12" lg="6">
+                                <PersonDisplay Id="personId" Link/>
+                            </MudItem>
+                        </ListComponent>
                     </MudCardContent>
                 </MudCard>
             </MudItem>

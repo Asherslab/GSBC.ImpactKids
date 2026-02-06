@@ -1,0 +1,31 @@
+<MudCard Elevation="6" Class="relative">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudPaper Elevation="0" Class="d-flex justify-space-between flex-grow-1">
+                @if (ChildContent != null)
+                {
+                    @ChildContent
+                }
+                else
+                {
+                    <MudText Typo="Typo.h6" Align="Align.Start">Details</MudText>
+                }
+                <MudPaper Elevation="0" Class="d-flex justify-end flex-grow-0">
+                    <ModificationStateSwitcher
+                        State="_state"
+                        StateChanged="StateChanged"
+                        ShowCreate="ShowCreate"
+                        OnCreate="OnCreate"
+                        OnUpdate="OnUpdate"
+                        OnDelete="OnDelete"/>
+                </MudPaper>
+            </MudPaper>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <DynamicComponent
+            @ref="_component"
+            Type="DetailsComponentType"
+            Parameters="_parameters"/>
+    </MudCardContent>
+</MudCard>

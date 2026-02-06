@@ -11,14 +11,14 @@ public class DbService
 
     public required DateTimeOffset Date { get; set; }
 
-    [MapperIgnore]
     public Guid? SchoolTermId { get; set; }
 
+    [MapperIgnore]
     public DbSchoolTerm? SchoolTerm { get; set; }
 
-    [MapperIgnore]
     public Guid? ServiceTypeId { get; set; }
 
+    [MapperIgnore]
     public DbServiceType? ServiceType { get; set; }
 
     public DbDollarStoreEntry? DollarStoreEntry { get; set; }

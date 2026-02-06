@@ -5,15 +5,17 @@ namespace GSBC.ImpactKids.Grpc.Data.Models.People;
 public class DbAllergy
 {
     public required Guid Id { get; set; }
-    
-    public required Guid?       AllergenId { get; set; }
-    public          DbAllergen? Allergen   { get; set; }
-    
+
+    public required Guid? AllergenId { get; set; }
+
+    [MapperIgnore]
+    public DbAllergen? Allergen { get; set; }
+
     public string? Notes  { get; set; }
     public bool    Severe { get; set; }
-    
+
+    public required Guid PersonId { get; set; }
+
     [MapperIgnore]
-    public required Guid    PersonId { get; set; }
-    [MapperIgnore]
-    public          DbPerson? Person   { get; set; }
+    public DbPerson? Person { get; set; }
 }

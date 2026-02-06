@@ -1,6 +1,4 @@
-﻿@inject NavigationManager NavigationManager
-
-<AuthorizeView>
+﻿<AuthorizeView>
     <Authorized>
         <MudText>Hello, @context.User.Identity?.Name!</MudText>
     </Authorized>
@@ -13,7 +11,7 @@
 {
     protected override void OnInitialized()
     {
-        NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        Navigation.ToBaseRelativePath(Navigation.Uri);
     }
 
     private void BeginSignIn(MouseEventArgs args)
@@ -21,9 +19,9 @@
         InteractiveRequestOptions requestOptions = new()
         {
             Interaction = InteractionType.SignIn,
-            ReturnUrl = NavigationManager.Uri
+            ReturnUrl = Navigation.Uri
         };
 
-        NavigationManager.NavigateToLogin("authentication/login", requestOptions);
+        Navigation.NavigateToLogin("authentication/login", requestOptions);
     }
 }

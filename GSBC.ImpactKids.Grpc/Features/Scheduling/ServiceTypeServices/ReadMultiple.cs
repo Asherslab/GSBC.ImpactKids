@@ -3,14 +3,13 @@ using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
-using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ImpactKids.Grpc.Features.Scheduling.ServiceTypeServices;
 
 public partial class ServiceTypeService
 {
-    public async Task<BasicReadMultipleResponse<ServiceType>?>
-        ReadMultiple(BasicReadMultipleRequest request, CallContext context = default)
+    public async IAsyncEnumerable<BasicReadMultipleResponse<ServiceType>>
+        BasicReadMultiple(BasicReadMultipleRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 
@@ -25,17 +24,15 @@ public partial class ServiceTypeService
                 );
             }
         }
-        
+
         query = query.OrderBy(x => x.Label);
 
         query = query.Paginate(request);
 
-        List<DbServiceType> types = await query.ToListAsync(token);
-
-        return new BasicReadMultipleResponse<ServiceType>
+        await foreach (BasicReadMultipleResponse<ServiceType> response in
+                       query.ReturnInBatches(converter, token: token))
         {
-            Success = true,
-            Entities = types.Select(converter.Convert).ToList()
-        };
+            yield return response;
+        }
     }
 }

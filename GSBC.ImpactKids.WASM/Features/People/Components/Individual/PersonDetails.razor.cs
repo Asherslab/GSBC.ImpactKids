@@ -1,92 +1,68 @@
+using System.Collections.Immutable;
+using EasyAppDev.Blazor.Store.AsyncActions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
-using GSBC.ImpactKids.Shared.Contracts.Entities.Pagination;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using GSBC.ImpactKids.WASM.Extensions;
-using Microsoft.AspNetCore.Components;
 
 namespace GSBC.ImpactKids.WASM.Features.People.Components.Individual;
 
-public partial class PersonDetails : ComponentBase
+public partial class PersonDetails
 {
-    [Parameter]
-    public required Person? Person { get; set; }
+    private AsyncData<ImmutableList<FamilyDefinition>>
+        _families = AsyncData<ImmutableList<FamilyDefinition>>.NotAsked();
 
-    [Parameter]
-    public bool Editing { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
 
-    private UpdatePersonRequest       _updateRequest = new();
-    private bool                      _readonly      = true;
-    private ICollection<SchoolGrade>? _schoolGrades;
-    private bool                      _waitingForRefresh;
-    
+        RetrieveFamilies();
+        HandleSubscriptionDisposal(EntityStore, _ => RetrieveFamilies());
+        HandleSubscriptionDisposal(SchoolGradesStore, _ => StateHasChanged());
+        HandleStateChangeSubscriptionDisposal(SchoolGradesStore);
+
+        await Task.WhenAll(
+            EntityStore.RefreshAll(),
+            SchoolGradesStore.RefreshAll()
+        );
+    }
+
     protected override async Task OnParametersSetAsync()
     {
         await base.OnParametersSetAsync();
-        if (Person != null)
-        {
-            _updateRequest = new UpdatePersonRequest
-            {
-                Guid = Person.Id
-            };
-
-            _updateRequest.FirstName.SetInitialValue(Person.FirstName);
-            _updateRequest.LastName.SetInitialValue(Person.LastName);
-
-            _updateRequest.SchoolGradeId.SetInitialValue(Person.SchoolGrade?.Id);
-            _updateRequest.MediaConsent.SetInitialValue(Person.MediaConsent);
-            _updateRequest.LocalDateOfBirth.SetInitialValue(Person.LocalDateOfBirth);
-            _updateRequest.LocalFirstTime.SetInitialValue(Person.LocalFirstTime);
-            _waitingForRefresh = false;
-        }
-        else
-        {
-            _waitingForRefresh = true;
-        }
-
-        if (_schoolGrades == null)
-            await RefreshSchoolGrades();
-
-        _readonly = !Editing;
+        RetrieveFamilies();
     }
 
-    private async Task RefreshSchoolGrades()
+    private void RetrieveFamilies()
     {
-        BasicReadMultipleResponse<SchoolGrade>? resp = await SchoolGradeService.ReadMultiple(
-            new BasicReadMultipleRequest
-            {
-                Pagination = PaginationRequest.All()
-            }
-        );
+        AsyncData<ImmutableList<Person>> people = EntityStore.GetState().Entities;
 
-        if (resp.HasErrorOrNull())
+        if (people.Data == null)
         {
-            Snackbar.AddErrorResponse(resp);
+            _families = _families.CopyStatus(people);
+            StateHasChanged();
             return;
         }
 
-        _schoolGrades = resp.Entities;
-        StateHasChanged();
-    }
+        ImmutableList<FamilyDefinition> familyDefinitions = people.Data
+            .GroupBy(x => x.FamilyId)
+            .Select(x =>
+                new FamilyDefinition(x.Key,
+                    x.GroupBy(y => y.LastName)
+                        .MaxBy(y => y.Count())!
+                        .Key, // gets the most common last name
+                    x.Count()
+                )
+            )
+            .OrderBy(x => x.FamilyName)
+            .ThenBy(x => x.FamilyCount)
+            .ToImmutableList();
 
-    public async Task<bool> UpdatePersonDetails()
-    {
-        if (_updateRequest.Guid == Guid.Empty)
-            return false;
-
-        _waitingForRefresh = true;
+        _families = _families.ToSuccess(familyDefinitions);
         StateHasChanged();
-        BasicResponse? resp = await PersonService.Update(_updateRequest);
-
-        if (resp.HasErrorOrNull())
-        {
-            _waitingForRefresh = false;
-            Snackbar.AddErrorResponse(resp);
-            return false;
-        }
-        
-        StateHasChanged();
-        return true;
     }
 }
+
+public record FamilyDefinition(
+    Guid   Id,
+    string FamilyName,
+    int    FamilyCount
+);

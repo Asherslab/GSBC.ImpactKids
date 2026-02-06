@@ -1,0 +1,13 @@
+@inherits StoreComponent<EventsStreamState>
+
+<MudTooltip
+    Text="@(State.IsConnected ? "You are receiving live updates" : "You are not receiving live updates. Try refreshing or closing and opening the app")">
+    <MudIcon Class="mt-1 ml-2" Icon="@Icons.Material.Filled.Wifi"
+             Color="@(State.IsConnected ? Color.Success : Color.Error)"/>
+</MudTooltip>
+
+@code
+{
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
+}

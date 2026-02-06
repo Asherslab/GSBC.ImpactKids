@@ -14,6 +14,9 @@ public class UnauthorizedMessageHandler(
     {
         var response = await base.SendAsync(request, cancellationToken);
 
+        if (request.RequestUri?.OriginalString.Contains("GSBC.ImpactKids.Eventing") == true)
+            return response; // don't auth redirect
+        
         if (response.StatusCode != System.Net.HttpStatusCode.Unauthorized) return response;
 
         string currentUrl = navigationManager.ToBaseRelativePath(navigationManager.Uri);

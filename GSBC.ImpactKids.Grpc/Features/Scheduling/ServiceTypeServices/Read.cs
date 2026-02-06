@@ -8,7 +8,7 @@ namespace GSBC.ImpactKids.Grpc.Features.Scheduling.ServiceTypeServices;
 
 public partial class ServiceTypeService
 {
-    public async Task<BasicReadResponse<ServiceType>?> Read(BasicReadRequest request, CallContext context = default)
+    public async Task<BasicReadResponse<ServiceType>> Read(BasicReadRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 

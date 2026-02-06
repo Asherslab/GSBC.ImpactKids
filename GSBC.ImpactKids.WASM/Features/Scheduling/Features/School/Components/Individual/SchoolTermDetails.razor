@@ -1,0 +1,47 @@
+@inherits DetailsComponent<SchoolTerm, CreateSchoolTermRequest, UpdateSchoolTermRequest>
+
+<MudPaper Elevation="0" Class="d-flex flex-column flex-grow-1">
+    <MudOverlay Visible="@(Entity.IsLoading)"
+                DarkBackground="true"
+                Absolute="true">
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+    @if (Entity.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">
+            @(Entity.Error ?? "An Unexpected error occured")
+        </MudAlert>
+    }
+    <MudTextFieldCreateOrUpdate
+        @bind-Create="@CreateRequest.Name"
+        Read="@UpdateRequest.Name.Value"
+        @bind-Update="@UpdateRequest.Name.Value"
+        State="State"
+
+        Class="mb-4"
+        Label="Name"
+        Variant="Variant.Filled"
+        Immediate/>
+    <MudRequiredDatePickerCreateOrUpdate
+        @bind-Create="@CreateRequest.LocalStartDate"
+        Read="@UpdateRequest.LocalStartDate.Value"
+        @bind-Update="@UpdateRequest.LocalStartDate.Value"
+        State="State"
+
+        Class="mb-4"
+        Label="Start Date"
+        Variant="Variant.Filled"
+
+        Editable/>
+    <MudRequiredDatePickerCreateOrUpdate
+        @bind-Create="@CreateRequest.LocalEndDate"
+        Read="@UpdateRequest.LocalEndDate.Value"
+        @bind-Update="@UpdateRequest.LocalEndDate.Value"
+        State="State"
+
+        Class="mb-4"
+        Label="End Date"
+        Variant="Variant.Filled"
+
+        Editable/>
+</MudPaper>

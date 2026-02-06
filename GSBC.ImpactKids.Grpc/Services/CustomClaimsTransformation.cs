@@ -34,7 +34,7 @@ public class CustomClaimsTransformation(
             };
             await db.Users.AddAsync(user);
             await db.SaveChangesAsync();
-            await eventService.SendUpdatedEvent(user.Id);
+            await eventService.SendUpdatedEvent();
         }
         
         const string claimType = "Enabled";

@@ -1,5 +1,4 @@
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
-using GSBC.ImpactKids.WASM.Features.Calendar.Models;
 using GSBC.ImpactKids.WASM.Utilities;
 using Microsoft.AspNetCore.Components;
 

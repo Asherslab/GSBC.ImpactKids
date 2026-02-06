@@ -1,0 +1,37 @@
+@inherits DisplayComponent<MedicalNote>
+@inject IRefreshableStore<MedicalType> MedicalTypesStore
+@inject IMedicalNoteService            MedicalNoteService
+
+<MudPaper Elevation="6" Class="d-flex justify-start flex-row flex-grow-1 relative">
+    <MudOverlay Visible="@(Entity.IsLoading || _medicalType.IsLoading)" DarkBackground="true" Absolute="true">
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+    <MudAvatar Rounded Color="_avatarColor" Class="ma-3">
+        @_avatarDisplay
+    </MudAvatar>
+    <MudPaper Elevation="0" Class="d-flex justify-center flex-column flex-grow-1">
+        <MudText>
+            @_displayText
+        </MudText>
+        @if (Entity.Data?.Notes != null)
+        {
+            <MudText Typo="Typo.caption">
+                @(Entity.Data?.Notes)
+            </MudText>
+        }
+    </MudPaper>
+    @if (AllowUpdating)
+    {
+        <MudPaper Elevation="0" Class="d-flex justify-end">
+            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                           OnClick="@OnUpdate"/>
+        </MudPaper>
+    }
+    @if (AllowDeleting)
+    {
+        <MudPaper Elevation="0" Class="d-flex justify-end">
+            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                           OnClick="@OnDelete"/>
+        </MudPaper>
+    }
+</MudPaper>

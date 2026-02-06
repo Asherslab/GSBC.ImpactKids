@@ -1,94 +1,56 @@
-using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
-using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
-using GSBC.ImpactKids.WASM.Components.Common.Inputs;
-using GSBC.ImpactKids.WASM.Features.DollarStore.Components.Individual;
+using System.Collections.Immutable;
+using EasyAppDev.Blazor.Store.AsyncActions;
+using GSBC.ImpactKids.Shared.Contracts.Entities;
+using GSBC.ImpactKids.WASM.Extensions;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
-using MudBlazor;
 
 namespace GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services.Components.Individual;
 
 public partial class ServiceOverview
 {
     [Parameter]
-    public required Service? Service { get; set; }
+    public required Guid? Id { get; set; }
 
-    [Parameter]
-    public required ICollection<MemoryVerse>? MemoryVerses { get; set; }
+    private AsyncData<DollarStoreEntry> _dollarStoreEntry = AsyncData<DollarStoreEntry>.NotAsked();
 
-    [Parameter]
-    public EventCallback<MouseEventArgs> DeleteService { get; set; }
-
-    [Parameter]
-    public EventCallback<MouseEventArgs> DeleteDollarStore { get; set; }
-
-    protected override void OnParametersSet()
+    protected override async Task OnInitializedAsync()
     {
-        base.OnParametersSet();
-        if (Service == null)
-        {
-            if (
-                _detailsState == ModificationState.Updating ||
-                _dollarStoreState == ModificationState.Updating
-            )
-            {
-                Snackbar.Add(
-                    "Somebody else has made modifications to this service, your edit has been cancelled",
-                    Severity.Warning,
-                    x =>
-                    {
-                        x.CloseAfterNavigation = true;
-                        x.VisibleStateDuration = int.MaxValue;
-                    });
-            }
+        await base.OnInitializedAsync();
 
-            _detailsState = ModificationState.Reading;
-            _dollarStoreState = ModificationState.Reading;
-        }
+        DollarStoreEntriesStore.Subscribe(_ => RetrieveDollarStoreEntry());
+
+        await Task.WhenAll(DollarStoreEntriesStore.RefreshAll());
     }
 
-    private ModificationState _detailsState = ModificationState.Reading;
-    private ServiceDetails?   _serviceDetailsComponent;
-
-    private async Task UpdateService()
+    protected override async Task OnParametersSetAsync()
     {
-        if (_detailsState == ModificationState.Updating && _serviceDetailsComponent != null)
-        {
-            bool success = await _serviceDetailsComponent.UpdateService();
-            if (success)
-            {
-                Service = null;
-                _detailsState = ModificationState.Reading;
-            }
-        }
+        await base.OnParametersSetAsync();
+
+        RetrieveDollarStoreEntry();
     }
 
-    private ModificationState        _dollarStoreState = ModificationState.Reading;
-    private DollarStoreEntryDetails? _dollarStoreDetailsComponent;
+    private void RetrieveDollarStoreEntry()
+    {
+        AsyncData<ImmutableList<DollarStoreEntry>> entries = DollarStoreEntriesStore.GetState().Entities;
 
-    private async Task CreateDollarStoreEntry()
-    {
-        if (_dollarStoreState == ModificationState.Creating && _dollarStoreDetailsComponent != null)
+        if (!entries.HasData)
         {
-            bool success = await _dollarStoreDetailsComponent.CreateDollarStoreEntry();
-            if (success)
-            {
-                Service?.DollarStoreEntry = null;
-                _dollarStoreState = ModificationState.Reading;
-            }
+            _dollarStoreEntry = _dollarStoreEntry.CopyStatus(entries);
+            StateHasChanged();
+            return;
         }
-    }
-    
-    private async Task UpdateDollarStoreEntry()
-    {
-        if (_dollarStoreState == ModificationState.Updating && _dollarStoreDetailsComponent != null)
+
+        DollarStoreEntry? entry = entries.Data!
+            .FirstOrDefault(x => x.ServiceId == Id);
+
+        if (entry == null)
         {
-            bool success = await _dollarStoreDetailsComponent.UpdateDollarStoreEntry();
-            if (success)
-            {
-                Service?.DollarStoreEntry = null;
-                _dollarStoreState = ModificationState.Reading;
-            }
+            _dollarStoreEntry = _dollarStoreEntry.ToFailure("No Dollar Store Entry Found");
+            StateHasChanged();
+            return;
         }
+
+        _dollarStoreEntry = _dollarStoreEntry.ToSuccess(entry);
+        StateHasChanged();
     }
 }

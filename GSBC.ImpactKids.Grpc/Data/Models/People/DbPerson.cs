@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations.Schema;
 using Riok.Mapperly.Abstractions;
 
 namespace GSBC.ImpactKids.Grpc.Data.Models.People;

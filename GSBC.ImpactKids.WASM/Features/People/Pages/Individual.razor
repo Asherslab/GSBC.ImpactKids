@@ -1,24 +1,15 @@
-@using GSBC.ImpactKids.Shared.Contracts.Services.Features.Scripture.Memorisation
-@inherits EventListeningComponent
 @page "/People/{Id:guid}"
-@inject NavigationManager           Navigation
-@inject IPersonService              PersonService
-@inject IMemorisationEntriesService MemorisationEntriesService
+@inject IRefreshableStore<Person> PeopleStore
 
-<PageTitle>@(_person == null ? "Person" : _person.FirstName + " " + _person.LastName)</PageTitle>
+<PageTitle>@(_person.Data?.GetDisplayName() ?? "Person")</PageTitle>
 
 <MudPaper Elevation="6" Class="mt-4 px-6 pb-6">
-    @if (_person != null)
+    <MudText Align="Align.Center" Typo="Typo.h5" Class="py-3">@(_person.Data?.GetDisplayName() ?? "Person")</MudText>
+    @if (_person.HasError)
     {
-        <MudText Align="Align.Center" Typo="Typo.h5" Class="py-3">@_person.FirstName @_person.LastName</MudText>
+        <MudAlert Severity="Severity.Error" Class="mb-4">
+            @(_person.Error ?? "An Unexpected error occured")
+        </MudAlert>
     }
-    else
-    {
-        <MudText Align="Align.Center" Typo="Typo.h5" Class="py-3">Person</MudText>
-    }
-    <PersonOverview Person="_person" 
-                    FamilyMembers="_familyMembers" 
-                    MemorisationEntries="_memorisationEntries"
-                    DeletePerson="DeletePerson"
-                    />
+    <PersonOverview Id="Id"/>
 </MudPaper>
