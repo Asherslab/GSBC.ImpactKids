@@ -8,7 +8,9 @@ using GSBC.ImpactKids.WASM.Features.Scripture.Features.Memorisation.Features.Mem
 using GSBC.ImpactKids.WASM.Features.Scripture.Features.Memorisation.Features.MemoryVerseLists.Components.Individual;
 using GSBC.ImpactKids.WASM.Features.Scripture.Features.Memorisation.Features.MemoryVerses.Components;
 using MudBlazor;
-using CreateMemoryVerseDialog = GSBC.ImpactKids.WASM.Features.Scripture.Features.Memorisation.Features.MemoryVerses.Components.Individual.CreateMemoryVerseDialog;
+using CreateMemoryVerseDialog =
+    GSBC.ImpactKids.WASM.Features.Scripture.Features.Memorisation.Features.MemoryVerses.Components.Individual.
+    CreateMemoryVerseDialog;
 
 namespace GSBC.ImpactKids.WASM.Features.Scripture.Features.Memorisation.Features.MemoryVerses.Pages;
 
@@ -18,10 +20,12 @@ public partial class Multiple
     {
         await base.OnInitializedAsync();
 
+        HandleStateChangeSubscriptionDisposal(SchoolTermsStore);
         HandleSubscriptionDisposal(MemoryVerseListsStore, UpdateFilteredMemoryVerseLists);
 
         await Task.WhenAll(
-            MemoryVerseListsStore.RefreshAll()
+            MemoryVerseListsStore.RefreshAll(),
+            SchoolTermsStore.RefreshAll()
         );
         UpdateFilteredMemoryVerseLists();
     }
@@ -36,6 +40,13 @@ public partial class Multiple
         DialogService,
         "Create Memory Verse List",
         ModificationState.Creating
+    );
+
+    private async Task EditMemoryVerseList(Guid id) => await DetailsComponentDialog.Open<MemoryVerseListDetails>(
+        DialogService,
+        "Update Memory Verse List",
+        ModificationState.Updating,
+        id
     );
 
     private async Task CreateMemoryVerse()

@@ -1,6 +1,8 @@
+@using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School
 @inherits StoreEntityUtilityComponent<MultipleMemoryVersesState>
 @page "/MemoryVerses"
 @inject IRefreshableStore<MemoryVerseList> MemoryVerseListsStore
+@inject IRefreshableStore<SchoolTerm>      SchoolTermsStore
 
 <PageTitle>Memory Verses</PageTitle>
 
@@ -39,8 +41,21 @@
                     <MudCard Elevation="6" Class="relative">
                         <MudCardHeader>
                             <CardHeaderContent>
-                                <MudText Typo="Typo.h6"
-                                         Align="Align.Start">@list.Name</MudText>
+                                <MudStack Row>
+                                    <MudStack Spacing="0">
+                                        <MudText Typo="Typo.h6" Align="Align.Start">@list.Name</MudText>
+                                        <MudText Typo="Typo.body2">
+                                            @if (SchoolTermsStore.GetState().First(x => x.Id == list.SchoolTermId).HasData)
+                                            {
+                                                @SchoolTermsStore.GetState().First(x => x.Id == list.SchoolTermId).Data!.Name
+                                            }
+                                        </MudText>
+                                    </MudStack>
+                                    <MudSpacer/>
+                                    <MudButton Variant="Variant.Text" OnClick="@(() => EditMemoryVerseList(list.Id))">
+                                        <MudIcon Icon="@Icons.Material.Filled.Edit"/>
+                                    </MudButton>
+                                </MudStack>
                             </CardHeaderContent>
                         </MudCardHeader>
                         <MudCardContent>

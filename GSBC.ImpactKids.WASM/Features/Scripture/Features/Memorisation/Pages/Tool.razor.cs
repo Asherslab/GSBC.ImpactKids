@@ -67,7 +67,7 @@ public partial class Tool : IDisposable
         else if (State.Previous)
             service = services.Data!
                 .OrderByDescending(x => x.LocalDate)
-                .FirstOrDefault(x => x.LocalDate.Date <= DateTime.Now.Date);
+                .FirstOrDefault(x => x.LocalDate.Date < DateTime.Now.Date);
         else if (State.Upcoming)
             service = services.Data!
                 .OrderBy(x => x.LocalDate)

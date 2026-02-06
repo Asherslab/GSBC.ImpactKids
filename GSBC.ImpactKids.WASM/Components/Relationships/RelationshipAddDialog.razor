@@ -7,6 +7,7 @@
 <MudDialog>
     <TitleContent>@MudDialog.Title</TitleContent>
     <DialogContent>
+        
         <MudAutocompleteCreateOrUpdate
             T="EntityToAdd"
             Create="_entityToAdd"
@@ -18,7 +19,7 @@
 
             Clearable
             Label="@(DialogLabel ?? "Entity To Add Relationship For")"
-        />
+            HelperText="@HelperText"/>
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="@(() => MudDialog.Cancel())">Cancel</MudButton>
