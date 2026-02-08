@@ -3,6 +3,7 @@
 @inject IRefreshableStore<Person>            PeopleStore
 @inject IRefreshableStore<MemoryVerse>       MemoryVersesStore
 @inject IRefreshableStore<Service>           ServicesStore
+@inject IRefreshableStore<SchoolGrade>       SchoolGradesStore
 @inject IMemorisationEntriesService          MemorisationEntriesService
 
 <MudPaper Elevation="0">
@@ -41,7 +42,7 @@
         <RowTemplate>
             @if (ShowPersonName)
             {
-                <MudTd DataLabel="Name">@context.Person.GetDisplayName() (@context.Person.SchoolGrade?.Label)</MudTd>
+                <MudTd DataLabel="Name">@context.Person.GetDisplayName()</MudTd>
             }
             @if (ShowMemoryVerse)
             {

@@ -11,7 +11,7 @@
         <PackageReference Include="Aspire4Wasm.WebAssembly" Version="6.0.1"/>
         <PackageReference Include="Blazor.WhyDidYouRender" Version="3.0.0" />
         <PackageReference Include="Blazor.WhyDidYouRender.Aspire" Version="3.0.0" />
-        <PackageReference Include="EasyAppDev.Blazor.Store" Version="2.0.6" />
+        <PackageReference Include="EasyAppDev.Blazor.Store" Version="2.0.10" />
         <PackageReference Include="FuzzySharp" Version="2.0.2" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.0"/>
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="10.0.0"/>
@@ -46,6 +46,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Folder Include="Features\Attendance\Components\" />
         <Folder Include="Features\Elvanto\Components\" />
         <Folder Include="Features\Scheduling\Features\Services\Features\"/>
         <Folder Include="Features\Scripture\Features\Memorisation\Features\MemoryVerseLists\Components\Multiple\" />

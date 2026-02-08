@@ -7,7 +7,13 @@ namespace GSBC.ImpactKids.Grpc.Data;
 
 public partial class GsbcDbContext
 {
-    public void BuildScheduleModel(ModelBuilder modelBuilder)
+    // Schedule \\
+    public required DbSet<DbService>          Services           { get; set; }
+    public required DbSet<DbServiceType>      ServiceTypes       { get; set; }
+    public required DbSet<DbDollarStoreEntry> DollarStoreEntries { get; set; }
+    public required DbSet<DbSchoolTerm>       Terms              { get; set; }
+
+    private static void BuildScheduleModel(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<DbSchoolTerm>()
             .HasMany(x => x.Services)
@@ -18,7 +24,7 @@ public partial class GsbcDbContext
             .HasOne(x => x.DollarStoreEntry)
             .WithOne(x => x.Service)
             .HasForeignKey<DbDollarStoreEntry>(x => x.ServiceId);
-        
+
         modelBuilder.Entity<DbService>()
             .HasOne(x => x.ServiceType)
             .WithMany()

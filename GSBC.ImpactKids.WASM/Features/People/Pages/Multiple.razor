@@ -1,7 +1,8 @@
-@inherits StoreComponentWithUtilities<MultiplePeopleState>
+@inherits StoreEntityUtilityComponent<MultiplePeopleState>
 @page "/People"
-@inject IRefreshableStore<Person> PeopleStore
-@inject IPersonService            PersonService
+@inject IRefreshableStore<Person>      PeopleStore
+@inject IRefreshableStore<SchoolGrade> SchoolGradeStore
+@inject IPersonService                 PersonService
 
 <PageTitle>People</PageTitle>
 
@@ -46,7 +47,7 @@
             </MudTd>
             <MudTd DataLabel="First Name">@context.FirstName</MudTd>
             <MudTd DataLabel="Last Name">@context.LastName</MudTd>
-            <MudTd DataLabel="Grade">@(context.SchoolGrade?.Label ?? "")</MudTd>
+            <MudTd DataLabel="Grade">@(SchoolGradeStore.GetState().First(x => x.Id == context.SchoolGradeId).Data?.Label ?? "")</MudTd>
             <MudTd DataLabel="Guardian">@context.FamilyGuardian</MudTd>
         </RowTemplate>
     </MudTable>

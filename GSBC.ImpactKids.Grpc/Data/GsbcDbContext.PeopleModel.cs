@@ -6,7 +6,17 @@ namespace GSBC.ImpactKids.Grpc.Data;
 
 public partial class GsbcDbContext
 {
-    public void BuildPeopleModel(ModelBuilder modelBuilder)
+    // People \\
+    public required DbSet<DbPerson>      People       { get; set; }
+    public required DbSet<DbAllergy>     Allergies    { get; set; }
+    public required DbSet<DbMedicalNote> MedicalNotes { get; set; }
+
+    // People Data \\
+    public required DbSet<DbSchoolGrade> SchoolGrades { get; set; }
+    public required DbSet<DbAllergen>    Allergens    { get; set; }
+    public required DbSet<DbMedicalType> MedicalTypes { get; set; }
+
+    private static void BuildPeopleModel(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<DbPerson>()
             .Property(x => x.MediaConsent)
@@ -14,25 +24,25 @@ public partial class GsbcDbContext
         
         //  auto includes \\
         
-        modelBuilder.Entity<DbPerson>()
-            .Navigation(x => x.SchoolGrade)
-            .AutoInclude();
-        
-        modelBuilder.Entity<DbPerson>()
-            .Navigation(x => x.Allergies)
-            .AutoInclude();
-        
-        modelBuilder.Entity<DbAllergy>()
-            .Navigation(x => x.Allergen)
-            .AutoInclude();
-        
-        modelBuilder.Entity<DbPerson>()
-            .Navigation(x => x.MedicalNotes)
-            .AutoInclude();
-        
-        modelBuilder.Entity<DbMedicalNote>()
-            .Navigation(x => x.MedicalType)
-            .AutoInclude();
+        // modelBuilder.Entity<DbPerson>()
+        //     .Navigation(x => x.SchoolGrade)
+        //     .AutoInclude();
+        //
+        // modelBuilder.Entity<DbPerson>()
+        //     .Navigation(x => x.Allergies)
+        //     .AutoInclude();
+        //
+        // modelBuilder.Entity<DbAllergy>()
+        //     .Navigation(x => x.Allergen)
+        //     .AutoInclude();
+        //
+        // modelBuilder.Entity<DbPerson>()
+        //     .Navigation(x => x.MedicalNotes)
+        //     .AutoInclude();
+        //
+        // modelBuilder.Entity<DbMedicalNote>()
+        //     .Navigation(x => x.MedicalType)
+        //     .AutoInclude();
         
         // person indexes \\
         modelBuilder.Entity<DbPerson>()

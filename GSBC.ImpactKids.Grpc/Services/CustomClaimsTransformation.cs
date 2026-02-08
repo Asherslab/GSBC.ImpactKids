@@ -37,10 +37,16 @@ public class CustomClaimsTransformation(
             await eventService.SendUpdatedEvent();
         }
         
-        const string claimType = "Enabled";
-        if (!principal.HasClaim(claim => claim.Type == claimType))
+        const string userIdClaimType = "UserId";
+        if (!principal.HasClaim(claim => claim.Type == userIdClaimType))
         {
-            claimsIdentity.AddClaim(new Claim(claimType, user.Enabled.ToString()));
+            claimsIdentity.AddClaim(new Claim(userIdClaimType, user.Id.ToString()));
+        }
+        
+        const string enabledClaimType = "Enabled";
+        if (!principal.HasClaim(claim => claim.Type == enabledClaimType))
+        {
+            claimsIdentity.AddClaim(new Claim(enabledClaimType, user.Enabled.ToString()));
         }
 
         principal.AddIdentity(claimsIdentity);

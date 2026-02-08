@@ -1,4 +1,4 @@
-namespace GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Analyitcs;
+namespace GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Analytics;
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
 public class MemorisationEntriesAnalyticsRequest
