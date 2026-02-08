@@ -1,10 +1,12 @@
 using System.Collections.Immutable;
 using GSBC.ImpactKids.Grpc.Data.Models;
+using GSBC.ImpactKids.Grpc.Data.Models.Attendance;
 using GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses;
 using GSBC.ImpactKids.Grpc.Data.Models.People;
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling;
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling.School;
 using GSBC.ImpactKids.Shared.Contracts.Entities;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Attendance;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.Allergies;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.MedicalNotes;
@@ -33,21 +35,9 @@ public partial class UserConverter : IConverter<DbUser, User>
 
 [Mapper]
 public partial class PersonConverter(
-    IConverter<DbSchoolGrade, SchoolGrade> schoolGradeConverter,
-    IConverter<DbMedicalNote, MedicalNote> medicalNoteConverter,
-    IConverter<DbAllergy, Allergy>         allergyConverter,
-    IConverter<DateTimeOffset, DateTime>   dateTimeConverter
+    IConverter<DateTimeOffset, DateTime> dateTimeConverter
 ) : IConverter<DbPerson, Person>
 {
-    [UseMapper]
-    private readonly IConverter<DbSchoolGrade, SchoolGrade> _schoolGradeConverter = schoolGradeConverter;
-
-    [UseMapper]
-    private readonly IConverter<DbMedicalNote, MedicalNote> _medicalNoteConverter = medicalNoteConverter;
-
-    [UseMapper]
-    private readonly IConverter<DbAllergy, Allergy> _allergyConverter = allergyConverter;
-
     [UseMapper]
     private readonly IConverter<DateTimeOffset, DateTime> _dateTimeConverter = dateTimeConverter;
 
@@ -153,4 +143,27 @@ public partial class MemoryVerseConverter : IConverter<DbMemoryVerse, MemoryVers
 public partial class MemorisationEntryConverter : IConverter<DbMemorisationEntry, MemorisationEntry>
 {
     public partial MemorisationEntry Convert(DbMemorisationEntry input);
+}
+
+[Mapper]
+public partial class AttendanceRecordConverter(
+    IConverter<DateTimeOffset, DateTime> dateTimeConverter
+) : IConverter<DbAttendanceRecord, AttendanceRecord>
+{
+    [UseMapper]
+    private readonly IConverter<DateTimeOffset, DateTime> _dateTimeConverter = dateTimeConverter;
+
+    public partial AttendanceRecord Convert(DbAttendanceRecord input);
+}
+
+[Mapper]
+public partial class AttendanceItemTypeConverter : IConverter<DbAttendanceItemType, AttendanceItemType>
+{
+    public partial AttendanceItemType Convert(DbAttendanceItemType input);
+}
+
+[Mapper]
+public partial class AttendanceItemRecordConverter : IConverter<DbAttendanceItemRecord, AttendanceItemRecord>
+{
+    public partial AttendanceItemRecord Convert(DbAttendanceItemRecord input);
 }

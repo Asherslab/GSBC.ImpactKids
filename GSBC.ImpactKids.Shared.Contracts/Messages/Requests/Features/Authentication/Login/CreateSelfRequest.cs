@@ -1,4 +1,4 @@
-namespace GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Login;
+namespace GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Authentication.Login;
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
 public class CreateSelfRequest

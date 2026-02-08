@@ -1,4 +1,4 @@
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Elvanto;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Elvanto;
 using Microsoft.AspNetCore.Authorization;
 
 namespace GSBC.ImpactKids.Grpc.Features.Elvanto.ElvantoServices;

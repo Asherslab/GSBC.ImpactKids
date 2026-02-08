@@ -1,4 +1,4 @@
-namespace GSBC.ImpactKids.Shared.Contracts.Messages.Requests.DollarStoreEntries;
+namespace GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.DollarStore;
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
 public class CreateDollarStoreEntryRequest

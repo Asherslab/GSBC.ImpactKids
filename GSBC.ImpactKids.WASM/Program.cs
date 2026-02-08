@@ -1,4 +1,5 @@
 using Grpc.Net.Client.Web;
+using GSBC.ImpactKids.Shared.Contracts.Services.Features.Attendance;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.Authentication;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.DataDisplay;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.DollarStore;
@@ -93,6 +94,9 @@ builder.Services.AddAuthenticatedGrpcClient<IMemoryVersesServicesRelationshipSer
 builder.Services.AddAuthenticatedGrpcClient<IMemoryVersesBibleVersesRelationshipService>();
 builder.Services.AddAuthenticatedGrpcClient<IMemoryVerseListsService>();
 builder.Services.AddAuthenticatedGrpcClient<IMemorisationEntriesService>();
+builder.Services.AddAuthenticatedGrpcClient<IAttendanceRecordService>();
+builder.Services.AddAuthenticatedGrpcClient<IAttendanceItemTypeService>();
+builder.Services.AddAuthenticatedGrpcClient<IAttendanceItemRecordService>();
 
 MetabaseConfig? metabaseConfig = builder.Configuration.GetSection("metabase").Get<MetabaseConfig>();
 if (metabaseConfig != null)

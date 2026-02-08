@@ -49,7 +49,7 @@ public class UpdatePersonRequest : ReadRequestBase, IUpdateRequest<Person, Updat
         request.FirstName.SetInitialValue(entity.FirstName);
         request.LastName.SetInitialValue(entity.LastName);
 
-        request.SchoolGradeId.SetInitialValue(entity.SchoolGrade?.Id);
+        request.SchoolGradeId.SetInitialValue(entity.SchoolGradeId);
         request.MediaConsent.SetInitialValue(entity.MediaConsent);
         request.LocalDateOfBirth.SetInitialValue(entity.LocalDateOfBirth);
         request.LocalFirstTime.SetInitialValue(entity.LocalFirstTime);

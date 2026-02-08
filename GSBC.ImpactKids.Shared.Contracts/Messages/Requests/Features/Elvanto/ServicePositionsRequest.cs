@@ -1,4 +1,4 @@
-namespace GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Elvanto;
+namespace GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Elvanto;
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
 public class ServicePositionsRequest
