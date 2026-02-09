@@ -1,0 +1,16 @@
+**/bin/
+**/obj/
+**/*.user
+**/*.suo
+**/*.swp
+**/*.tmp
+**/.vs/
+**/.vscode/
+**/node_modules/
+**/*.Secrets.json
+**/*.Local.json
+# Docker
+Dockerfile*
+nginx.conf
+# Keep project files:
+!YourBlazorWasmProject/**

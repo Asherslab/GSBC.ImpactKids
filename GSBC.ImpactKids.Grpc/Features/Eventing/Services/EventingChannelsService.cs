@@ -10,6 +10,15 @@ public class EventingChannelsService(
 {
     private readonly Dictionary<Guid, Channel<SseItem<string>>> _channels = new();
 
+    public async Task SendHeartbeat()
+    {
+        foreach ((Guid key, Channel<SseItem<string>> value) in _channels)
+        {
+            await value.Writer.WaitToWriteAsync();
+            await value.Writer.WriteAsync(new SseItem<string>("", "heartbeat"));
+        }
+    }
+
     public async Task<Channel<SseItem<string>>?> GetChannel(
         Guid              streamId,
         CancellationToken token = default

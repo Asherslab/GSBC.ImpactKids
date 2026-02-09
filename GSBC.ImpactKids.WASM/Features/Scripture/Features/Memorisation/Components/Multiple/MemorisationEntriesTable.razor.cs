@@ -156,8 +156,6 @@ public partial class MemorisationEntriesTable
                       x.ServiceId != service.Id &&
                       x is { VerseRecited: true, FiveDollaryDoosGiven: true }
             );
-        if (person is { FirstName: "Noah", LastName: "Cook" })
-            Console.WriteLine($"TESTING: {verseHasBeenSaidBefore}");
 
         bool existing = memorisationEntry != null;
         if (memorisationEntry == null && OnlyExisting)
@@ -171,9 +169,6 @@ public partial class MemorisationEntriesTable
             MemoryVerseId = memoryVerse.Id,
             ServiceId = service.Id,
         };
-
-
-        // Console.WriteLine($"TESTING: {memorisationEntry.PersonId} {verseHasBeenSaidBefore}");
 
         return new MemorisationRecord(
             memorisationEntry,

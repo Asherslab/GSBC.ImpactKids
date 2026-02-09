@@ -9,22 +9,15 @@ builder.AddServiceDefaults();
 builder.AddReverseProxy();
 builder.AddAuthenticationSchemes();
 
-builder.AddRedisDistributedCache("redis");
 builder.Services.AddOpenIdConnectAccessTokenManagement();
-
-builder.Services.AddCors(options =>
+builder.Services.AddAntiforgery(options =>
 {
-    options.AddPolicy("allow-all", x =>
-    {
-        x.AllowAnyOrigin()
-            .AllowAnyHeader()
-            .AllowAnyMethod();
-    });
+    options.HeaderName = "X-XSRF-TOKEN";
+    options.Cookie.SameSite = SameSiteMode.Strict;
 });
+builder.Services.AddProblemDetails();
 
 var app = builder.Build();
-
-app.UseCors();
 
 app.UseAuthentication();
 app.UseAuthorization();

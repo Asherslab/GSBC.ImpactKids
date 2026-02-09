@@ -16,7 +16,7 @@ using GSBC.ImpactKids.WASM.Authentication;
 using GSBC.ImpactKids.WASM.Extensions;
 using GSBC.ImpactKids.WASM.Features.Eventing.Services;
 using GSBC.ImpactKids.WASM.Services;
-using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
+using Microsoft.AspNetCore.Components.Authorization;
 using MudBlazor.Services;
 using ProtoBuf.Grpc.ClientFactory;
 
@@ -42,20 +42,25 @@ builder.AddServiceDefaults();
 builder.Services.AddMudServices();
 builder.Services.AddScoped<ExceptionInterceptor>();
 
-builder.Services.AddOidcAuthentication<RemoteAuthenticationState, RemoteUserAccount>(options =>
-    {
-        builder.Configuration.Bind("Auth0", options.ProviderOptions);
-        options.ProviderOptions.DefaultScopes.Add("offline_access");
-        options.ProviderOptions.ResponseType = "code";
-        options.ProviderOptions.AdditionalProviderParameters.Add("audience", "https://kids.baptist.com.au");
-    })
-    .AddAccountClaimsPrincipalFactory<RemoteAuthenticationState, RemoteUserAccount, CustomAccountFactory>();
+// builder.Services.AddOidcAuthentication<RemoteAuthenticationState, RemoteUserAccount>(options =>
+//     {
+//         builder.Configuration.Bind("Auth0", options.ProviderOptions);
+//         options.ProviderOptions.DefaultScopes.Add("offline_access");
+//         options.ProviderOptions.ResponseType = "code";
+//         options.ProviderOptions.AdditionalProviderParameters.Add("audience", "https://kids.baptist.com.au");
+//     })
+//     .AddAccountClaimsPrincipalFactory<RemoteAuthenticationState, RemoteUserAccount, CustomAccountFactory>();
 
 builder.Services.AddAuthorizationCore(opts =>
     {
-        opts.AddPolicy(Policies.EnabledOnly, policy => policy.RequireClaim("Enabled", true.ToString()));
+        opts.AddPolicy(Policies.EnabledOnly, policy => policy.RequireClaim("permissions", "user:enabled"));
     }
 );
+builder.Services.AddScoped<AuthenticationStateProvider, BffAuthenticationStateProvider>();
+builder.Services.AddScoped(_ => new HttpClient
+{
+    BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) // used for /bff/user info
+});
 builder.Services.AddCascadingAuthenticationState();
 
 builder.Services
@@ -69,7 +74,7 @@ builder.Services
 
 builder.Services.AddSingleton<ISseClientService, SseClientService>();
 
-builder.Services.AddScoped<UnauthorizedMessageHandler>();
+// builder.Services.AddScoped<UnauthorizedMessageHandler>();
 builder.Services.AddAuthenticatedGrpcClient<IEventingService>();
 builder.Services.AddAuthenticatedGrpcClient<IMetabaseService>();
 builder.Services.AddAuthenticatedGrpcClient<IUsersService>();
