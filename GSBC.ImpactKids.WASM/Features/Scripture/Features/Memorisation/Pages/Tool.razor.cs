@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using EasyAppDev.Blazor.Store.AsyncActions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
 using GSBC.ImpactKids.WASM.Extensions;
 using Microsoft.AspNetCore.Components;
 
@@ -30,7 +31,8 @@ public partial class Tool : IDisposable
         _subscription = Store.Subscribe(_ => { SetQueryParametersIfNecessary(); });
 
         await Task.WhenAll(
-            ServicesStore.RefreshAll()
+            ServicesStore.RefreshAll(),
+            MemoryVersesStore.RefreshAll()
         );
     }
 
@@ -51,11 +53,19 @@ public partial class Tool : IDisposable
 
     private void RetrieveService()
     {
-        AsyncData<ImmutableList<Service>> services = ServicesStore.GetState().Entities;
+        AsyncData<ImmutableList<Service>>     services     = ServicesStore.GetState().Entities;
+        AsyncData<ImmutableList<MemoryVerse>> memoryVerses = MemoryVersesStore.GetState().Entities;
 
         if (!services.HasData)
         {
             _service = _service.CopyStatus(services);
+            StateHasChanged();
+            return;
+        }
+
+        if (!memoryVerses.HasData && State.ServiceId == Guid.Empty)
+        {
+            _service = _service.CopyStatus(memoryVerses);
             StateHasChanged();
             return;
         }
@@ -67,11 +77,11 @@ public partial class Tool : IDisposable
         else if (State.Previous)
             service = services.Data!
                 .OrderByDescending(x => x.LocalDate)
-                .FirstOrDefault(x => x.LocalDate.Date < DateTime.Now.Date);
+                .FirstOrDefault(x => x.LocalDate.Date < DateTime.Now.Date && memoryVerses.Data!.Any(y => y.ServiceIds.Contains(x.Id)));
         else if (State.Upcoming)
             service = services.Data!
                 .OrderBy(x => x.LocalDate)
-                .FirstOrDefault(x => x.LocalDate.Date >= DateTime.Now.Date);
+                .FirstOrDefault(x => x.LocalDate.Date >= DateTime.Now.Date && memoryVerses.Data!.Any(y => y.ServiceIds.Contains(x.Id)));
 
         _service = service == null
             ? _service.ToFailure("Failed to find Service")

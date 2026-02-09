@@ -3,7 +3,6 @@ using GSBC.ImpactKids.Shared.Contracts.Services.Features.Authentication;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.DataDisplay;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.DollarStore;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.Elvanto;
-using GSBC.ImpactKids.Shared.Contracts.Services.Features.Eventing;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.Scheduling;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.Scheduling.School;
@@ -75,7 +74,6 @@ builder.Services
 builder.Services.AddSingleton<ISseClientService, SseClientService>();
 
 // builder.Services.AddScoped<UnauthorizedMessageHandler>();
-builder.Services.AddAuthenticatedGrpcClient<IEventingService>();
 builder.Services.AddAuthenticatedGrpcClient<IMetabaseService>();
 builder.Services.AddAuthenticatedGrpcClient<IUsersService>();
 builder.Services.AddAuthenticatedGrpcClient<IPersonService>();

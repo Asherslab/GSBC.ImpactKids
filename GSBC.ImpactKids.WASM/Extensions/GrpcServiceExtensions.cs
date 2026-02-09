@@ -1,6 +1,5 @@
 using Grpc.Net.Client.Web;
 using GSBC.ImpactKids.Shared.Contracts.Services.Base;
-using GSBC.ImpactKids.WASM.Authentication;
 using GSBC.ImpactKids.WASM.Services;
 using ProtoBuf.Grpc.ClientFactory;
 

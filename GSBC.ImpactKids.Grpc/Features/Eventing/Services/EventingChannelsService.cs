@@ -1,58 +1,138 @@
 using System.Net.ServerSentEvents;
 using System.Threading.Channels;
-using Microsoft.Extensions.Caching.Distributed;
 
 namespace GSBC.ImpactKids.Grpc.Features.Eventing.Services;
 
-public class EventingChannelsService(
-    IDistributedCache distributedCache
+public partial class EventingChannelsService(
+    ILogger<EventingChannelsService> logger
 )
 {
-    private readonly Dictionary<Guid, Channel<SseItem<string>>> _channels = new();
+    private readonly SemaphoreSlim                     _semaphore = new(1);
+    private readonly Dictionary<Guid, EventingChannel> _channels  = new();
 
     public async Task SendHeartbeat()
     {
-        foreach ((Guid key, Channel<SseItem<string>> value) in _channels)
+        logger.LogInformation("Fanning Out Heartbeat");
+        await _semaphore.WaitAsync();
+        try
         {
-            await value.Writer.WaitToWriteAsync();
-            await value.Writer.WriteAsync(new SseItem<string>("", "heartbeat"));
+            foreach ((Guid streamId, EventingChannel value) in _channels)
+            {
+                LogHeartbeatSending(logger, streamId);
+                await value.Channel.Writer.WaitToWriteAsync();
+                await value.Channel.Writer.WriteAsync(new SseItem<string>("", "heartbeat"));
+                LogHeartbeatSent(logger, streamId);
+            }
+        }
+        finally
+        {
+            _semaphore.Release();
         }
     }
 
-    public async Task<Channel<SseItem<string>>?> GetChannel(
+    public async Task<EventingChannel?> GetChannel(
         Guid              streamId,
         CancellationToken token = default
     )
     {
-        byte[]? streamIdEntry = await distributedCache.GetAsync(
-            $"stream-id-{streamId}",
-            token
-        );
+        await _semaphore.WaitAsync(token);
+        try
+        {
+            _channels[streamId] = new EventingChannel(
+                streamId,
+                this,
+                Channel.CreateBounded<SseItem<string>>(32)
+            );
 
-        bool streamIdExists = streamIdEntry != null;
+            await _channels[streamId].Channel.Writer
+                .WriteAsync(new SseItem<string>("", eventType: "heartbeat"), token);
 
-        if (!streamIdExists)
-            return null;
+            await _channels[streamId].Channel.Writer
+                .WriteAsync(new SseItem<string>(streamId.ToString(), eventType: "message"), token);
 
-        _channels[streamId] = Channel.CreateBounded<SseItem<string>>(32); // doesn't need many
-        await _channels[streamId].Writer.WriteAsync(new SseItem<string>("", eventType: "heartbeat"), token);
-        return _channels[streamId];
+            return _channels[streamId];
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
     }
 
     public async Task FanoutEvent(
         string data
     )
     {
-        List<Task> tasks = [];
-        foreach ((Guid _, Channel<SseItem<string>> channel) in _channels)
+        await _semaphore.WaitAsync();
+        try
         {
-            tasks.Add(Task.Run(async () =>
+            LogFanoutBeginningForEventData(logger, data);
+            List<Task> tasks = [];
+            foreach ((Guid streamId, EventingChannel channel) in _channels)
             {
-                await channel.Writer.WaitToWriteAsync();
-                await channel.Writer.WriteAsync(new SseItem<string>(data));
-            }));
-        }
+                tasks.Add(Task.Run(async () =>
+                {
+                    LogMessageSending(logger, streamId);
+                    await channel.Channel.Writer.WaitToWriteAsync();
+                    await channel.Channel.Writer.WriteAsync(new SseItem<string>(data, "message"));
+                    LogMessageSent(logger, streamId);
+                }));
+            }
 
-        await Task.WhenAll(tasks);
+            await Task.WhenAll(tasks);
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+
+    public async Task RemoveChannel(Guid streamId)
+    {
+        await _semaphore.WaitAsync();
+        try
+        {
+            LogChannelClosedRemovingFromListStreamId(logger, streamId);
+            _channels.Remove(streamId);
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+
+    [LoggerMessage(LogLevel.Debug, "Heartbeat Sending To {StreamId}")]
+    static partial void LogHeartbeatSending(ILogger<EventingChannelsService> logger, Guid streamId);
+
+    [LoggerMessage(LogLevel.Debug, "Heartbeat Sent To {StreamId}")]
+    static partial void LogHeartbeatSent(ILogger<EventingChannelsService> logger, Guid streamId);
+
+    [LoggerMessage(LogLevel.Debug, "Message Sending To {StreamId}")]
+    static partial void LogMessageSending(ILogger<EventingChannelsService> logger, Guid streamId);
+
+    [LoggerMessage(LogLevel.Debug, "Message Sent To {StreamId}")]
+    static partial void LogMessageSent(ILogger<EventingChannelsService> logger, Guid streamId);
+
+    [LoggerMessage(LogLevel.Debug, "Fanout Beginning for event: {Data}")]
+    static partial void LogFanoutBeginningForEventData(ILogger<EventingChannelsService> logger, string data);
+
+    [LoggerMessage(LogLevel.Debug, "Channel closed, removing from list: {StreamId}")]
+    static partial void LogChannelClosedRemovingFromListStreamId(
+        ILogger<EventingChannelsService> logger,
+        Guid                             streamId
+    );
+}
+
+public class EventingChannel(
+    Guid                     streamId,
+    EventingChannelsService  eventingChannelsService,
+    Channel<SseItem<string>> channel
+) : IAsyncDisposable
+{
+    public Channel<SseItem<string>> Channel { get; set; } = channel;
+
+    public async ValueTask DisposeAsync()
+    {
+        await eventingChannelsService.RemoveChannel(streamId);
+        GC.SuppressFinalize(this);
     }
 }

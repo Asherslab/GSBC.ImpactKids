@@ -1,10 +1,6 @@
 using System.Reflection;
-using System.Threading.Channels;
 using EasyAppDev.Blazor.Store.Core;
 using EasyAppDev.Blazor.Store.Utilities;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
-using GSBC.ImpactKids.Shared.Contracts.Services.Features.Eventing;
-using GSBC.ImpactKids.WASM.Extensions;
 using GSBC.ImpactKids.WASM.Services.RefreshableStore;
 using Microsoft.JSInterop;
 using Module = GSBC.ImpactKids.Shared.Contracts.Module;
@@ -21,14 +17,6 @@ public sealed class SseClientService(
 {
     private IJSObjectReference?                      _module;
     private DotNetObjectReference<SseClientService>? _selfRef;
-
-    private readonly Channel<SseMessage> _channel = Channel.CreateBounded<SseMessage>(
-        new BoundedChannelOptions(capacity: 1024)
-        {
-            FullMode = BoundedChannelFullMode.DropOldest,
-            SingleReader = false,
-            SingleWriter = true
-        });
 
     public bool Connected { get; private set; }
     public bool Started   { get; private set; }
@@ -51,29 +39,12 @@ public sealed class SseClientService(
             {
                 try
                 {
-                    BasicReadResponse<Guid>? resp;
-                    do
-                    {
-                        using IServiceScope serviceScope = services.CreateScope();
-
-                        IEventingService eventingService =
-                            serviceScope.ServiceProvider.GetRequiredService<IEventingService>();
-                        resp = await eventingService.GetStreamId();
-
-                        if (resp.HasErrorOrNull())
-                            await Task.Delay(TimeSpan.FromSeconds(1), token);
-                    } while (resp.HasErrorOrNull() && !token.IsCancellationRequested);
-
-                    if (token.IsCancellationRequested)
-                        return;
-
                     _module ??= await js.InvokeAsync<IJSObjectReference>("import", token, "./js/sseEventSource.js");
                     _selfRef ??= DotNetObjectReference.Create(this);
                     await _module.InvokeVoidAsync(
                         "start",
                         token,
-                        configuration["Services:yarp:https:0"] + "/api/stream?StreamId=" +
-                        resp.Entity,
+                        configuration["Services:yarp:https:0"] + "/api/stream",
                         _selfRef
                     );
                 }
@@ -104,10 +75,6 @@ public sealed class SseClientService(
     [JSInvokable]
     public async Task OnMessage(string data, string? id, string? eventType)
     {
-        // LastEventId = string.IsNullOrWhiteSpace(id) ? LastEventId : id;
-
-        // using IServiceScope scope = services.CreateScope();
-
         Type? entityType = Assembly.GetAssembly(typeof(Module))?.GetType(data);
         if (entityType != null)
         {
@@ -129,8 +96,6 @@ public sealed class SseClientService(
                 throw;
             }
         }
-
-        _channel.Writer.TryWrite(new SseMessage(data, id, eventType));
     }
 
     public async Task Refresh<T>()
@@ -156,20 +121,6 @@ public sealed class SseClientService(
         await state.UpdateAsync(s => s.SetConnected(false));
     }
 
-    public async IAsyncEnumerable<SseMessage> GetMessagesAsync(
-        [System.Runtime.CompilerServices.EnumeratorCancellation]
-        CancellationToken ct = default
-    )
-    {
-        while (await _channel.Reader.WaitToReadAsync(ct))
-        {
-            while (_channel.Reader.TryRead(out SseMessage? msg))
-            {
-                yield return msg;
-            }
-        }
-    }
-
     public async ValueTask DisposeAsync()
     {
         await StopAsync();
@@ -189,6 +140,5 @@ public sealed class SseClientService(
 
         _selfRef?.Dispose();
         _selfRef = null;
-        _channel.Writer.TryComplete();
     }
 }

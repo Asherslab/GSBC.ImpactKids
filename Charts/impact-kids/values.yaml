@@ -7,10 +7,10 @@ parameters:
     grpc_image: "docker.io/asherslab/gsbc-kids-grpc"
   wasm:
     port_http: 80
-    grpc_image: "docker.io/asherslab/gsbc-kids-wasm"
+    wasm_image: "docker.io/asherslab/gsbc-kids-wasm"
   yarp:
     port_http: 80
-    grpc_image: "docker.io/asherslab/gsbc-kids-yarp"
+    yarp_image: "docker.io/asherslab/gsbc-kids-yarp"
 config:
   rabbitmq:
     RABBITMQ_DEFAULT_USER: "guest"
