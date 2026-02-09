@@ -14,7 +14,7 @@ public static class GrpcServiceExtensions
         public IServiceCollection AddAuthenticatedGrpcClient<T>() where T : class
         {
             return services.AddAuthenticatedGrpcClient<T>(
-                new Uri("https://grpc")
+                new Uri("https://yarp")
             );
         }
 

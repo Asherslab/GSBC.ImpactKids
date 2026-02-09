@@ -61,7 +61,7 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services
     .AddCodeFirstGrpcClient<ILoginService>(
         typeof(ILoginService).FullName!,
-        x => { x.Address = new Uri("https://grpc"); }
+        x => { x.Address = new Uri("https://yarp"); }
     )
     .ConfigureChannel(x => { x.UnsafeUseInsecureChannelCallCredentials = true; })
     .ConfigurePrimaryHttpMessageHandler(() =>

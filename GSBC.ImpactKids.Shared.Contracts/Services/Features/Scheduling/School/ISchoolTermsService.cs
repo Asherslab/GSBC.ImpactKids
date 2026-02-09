@@ -4,7 +4,7 @@ using GSBC.ImpactKids.Shared.Contracts.Services.Base;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Services.Features.Scheduling.School;
 
-[Service("GSBC.ImpactKids.SchoolTerms")]
+[Service("gRPC/GSBC.ImpactKids.SchoolTerms")]
 public interface ISchoolTermsService
     : IBasicReadMultipleService<SchoolTerm>,
         ICreateService<CreateSchoolTermRequest>,

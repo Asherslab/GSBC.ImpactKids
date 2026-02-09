@@ -6,7 +6,7 @@ using GSBC.ImpactKids.Shared.Contracts.Services.Base;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Services.Features.Scripture.Memorisation;
 
-[Service("GSBC.ImpactKids.MemoryVerses")]
+[Service("gRPC/GSBC.ImpactKids.MemoryVerses")]
 public interface IMemoryVersesService
     : IBasicReadMultipleService<MemoryVerse>,
         ICreateService<CreateMemoryVerseRequest>,
@@ -19,11 +19,11 @@ public interface IMemoryVersesService
     );
 }
 
-[Service("GSBC.ImpactKids.MemoryVerses.Services")]
+[Service("gRPC/GSBC.ImpactKids.MemoryVerses.Services")]
 public interface IMemoryVersesServicesRelationshipService
     : IBasicMultipleRelationshipService<MemoryVerse, Service>;
     
     
-[Service("GSBC.ImpactKids.MemoryVerses.BibleVerses")]
+[Service("gRPC/GSBC.ImpactKids.MemoryVerses.BibleVerses")]
 public interface IMemoryVersesBibleVersesRelationshipService
     : IBasicMultipleRelationshipService<MemoryVerse, BibleVerse>;
