@@ -4,7 +4,7 @@ using GSBC.ImpactKids.Shared.Contracts.Services.Base;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Services.Features.Scripture.Memorisation;
 
-[Service("GSBC.ImpactKids.MemoryVerseLists")]
+[Service("gRPC/GSBC.ImpactKids.MemoryVerseLists")]
 public interface IMemoryVerseListsService
     : IBasicReadMultipleService<MemoryVerseList>,
         ICreateService<CreateMemoryVerseListRequest>,

@@ -4,7 +4,7 @@ using GSBC.ImpactKids.Shared.Contracts.Services.Base;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Services.Features.Scheduling;
 
-[Service("GSBC.ImpactKids.Services.ServiceTypes")]
+[Service("gRPC/GSBC.ImpactKids.Services.ServiceTypes")]
 public interface IServiceTypeService
     : IBasicReadMultipleService<ServiceType>,
         ICreateService<CreateServiceTypeRequest>,
