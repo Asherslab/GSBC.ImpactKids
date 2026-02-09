@@ -32,5 +32,11 @@ public static class DbExtensions
                 Entities = batch
             };
         }
+        
+        if (total == 0) // if we don't send any responses, that constitutes an error
+            yield return new BasicReadMultipleResponse<T>
+            {
+                Success = true
+            };
     }
 }

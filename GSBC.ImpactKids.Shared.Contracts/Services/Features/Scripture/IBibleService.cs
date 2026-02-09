@@ -3,5 +3,5 @@ using GSBC.ImpactKids.Shared.Contracts.Services.Base;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Services.Features.Scripture;
 
-[Service("GSBC.ImpactKids.Bible")]
+[Service("gRPC/GSBC.ImpactKids.Bible")]
 public interface IBibleService : IBasicReadMultipleService<BibleVerse>;

@@ -9,7 +9,7 @@ public static class EventEndoints
 {
     public static IEndpointRouteBuilder AddEventEndpoints(this IEndpointRouteBuilder group)
     {
-        group.MapGet("stream", Stream);
+        group.MapGet("api/stream", Stream);
 
         return group;
     }

@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 
 namespace GSBC.ImpactKids.WASM.Authentication;
 
@@ -16,19 +15,16 @@ public class UnauthorizedMessageHandler(
 
         if (request.RequestUri?.OriginalString.Contains("GSBC.ImpactKids.Eventing") == true)
             return response; // don't auth redirect
-        
+
         if (response.StatusCode != System.Net.HttpStatusCode.Unauthorized) return response;
 
-        string currentUrl = navigationManager.ToBaseRelativePath(navigationManager.Uri);
-        // string loginUrl   = $"authentication/Login?ReturnUrl={currentUrl}";
-        
-        InteractiveRequestOptions requestOptions = new()
-        {
-            Interaction = InteractionType.SignIn,
-            ReturnUrl = currentUrl
-        };
-        
-        navigationManager.NavigateToLogin("authentication/Login", requestOptions);
+        string loginUri = navigationManager.GetUriWithQueryParameters("/bff/login", new Dictionary<string, object?>
+            {
+                { "ReturnUrl", navigationManager.Uri },
+            }
+        );
+
+        navigationManager.NavigateTo(loginUri, forceLoad: true);
 
         return response;
     }

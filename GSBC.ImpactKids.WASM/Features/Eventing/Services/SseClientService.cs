@@ -72,7 +72,8 @@ public sealed class SseClientService(
                     await _module.InvokeVoidAsync(
                         "start",
                         token,
-                        configuration["Services:grpc:https:0"] + "/stream?StreamId=" + resp.Entity,
+                        configuration["Services:yarp:https:0"] + "/api/stream?StreamId=" +
+                        resp.Entity,
                         _selfRef
                     );
                 }

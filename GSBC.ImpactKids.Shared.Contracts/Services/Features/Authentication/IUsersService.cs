@@ -3,7 +3,7 @@ using GSBC.ImpactKids.Shared.Contracts.Services.Base;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Services.Features.Authentication;
 
-[Service("GSBC.ImpactKids.Users")]
+[Service("gRPC/GSBC.ImpactKids.Users")]
 public interface IUsersService : IBasicReadMultipleService<User>
 {
     Task<BasicResponse?> ToggleEnabled(

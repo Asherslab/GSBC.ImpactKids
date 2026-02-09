@@ -38,10 +38,20 @@ IResourceBuilder<ProjectResource> grpcService = builder.AddProject<Projects.GSBC
     .WithReference(migrations)
     .WaitForCompletion(migrations);
 
-IResourceBuilder<ProjectResource> wasm = builder
-    .AddStandaloneBlazorWebAssemblyProject<Projects.GSBC_ImpactKids_WASM>("wasm")
+IResourceBuilder<ProjectResource> wasm =
+    builder.AddStandaloneBlazorWebAssemblyProject<Projects.GSBC_ImpactKids_WASM>("wasm");
+
+IResourceBuilder<ProjectResource> yarp =
+    builder.AddProject<Projects.GSBC_ImpactKids_YARP>("yarp");
+
+yarp = yarp
     .WithReference(grpcService)
-    .WaitFor(grpcService);
+    .WaitFor(grpcService)
+    .WithReference(wasm)
+    .WaitFor(wasm)
+    .WithExternalHttpEndpoints();
+
+wasm = wasm.WithReference(yarp);
 
 grpcService.WithReference(wasm);
 

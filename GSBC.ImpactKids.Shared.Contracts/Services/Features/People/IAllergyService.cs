@@ -4,7 +4,7 @@ using GSBC.ImpactKids.Shared.Contracts.Services.Base;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Services.Features.People;
 
-[Service("GSBC.ImpactKids.Person.Allergies")]
+[Service("gRPC/GSBC.ImpactKids.Person.Allergies")]
 public interface IAllergyService
     : IBasicReadMultipleService<Allergy>,
         ICreateService<CreateAllergyRequest>,
