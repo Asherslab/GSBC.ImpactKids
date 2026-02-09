@@ -14,3 +14,5 @@ data:
   OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "{{ .Values.config.yarp.OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY }}"
   ASPNETCORE_FORWARDEDHEADERS_ENABLED: "{{ .Values.config.yarp.ASPNETCORE_FORWARDEDHEADERS_ENABLED }}"
   HTTP_PORTS: "{{ .Values.config.yarp.HTTP_PORTS }}"
+  services__grpc__http__0: "{{ .Values.config.yarp.services__grpc__http__0 }}"
+  services__wasm__http__0: "{{ .Values.config.yarp.services__wasm__http__0 }}"

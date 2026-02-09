@@ -65,7 +65,7 @@ internal static class HostExtensions
                     options.GetClaimsFromUserInfoEndpoint = true;
                     options.SaveTokens = true;
                     options.MapInboundClaims = false;
-                    options.CallbackPath = "/signin-oidc";
+                    options.CallbackPath = "/bff/signin-oidc";
 
                     options.TokenValidationParameters = new TokenValidationParameters
                     {

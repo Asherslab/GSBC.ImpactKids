@@ -8,7 +8,6 @@ using GSBC.ImpactKids.Grpc.Features.DollarStore.DollarStoreEntryServices;
 using GSBC.ImpactKids.Grpc.Features.Elvanto.ElvantoServices;
 using GSBC.ImpactKids.Grpc.Features.Elvanto.ElvantoServices.Models;
 using GSBC.ImpactKids.Grpc.Features.Eventing;
-using GSBC.ImpactKids.Grpc.Features.Eventing.Api.EventingServices;
 using GSBC.ImpactKids.Grpc.Features.Eventing.Services;
 using GSBC.ImpactKids.Grpc.Features.People.AllergenServices;
 using GSBC.ImpactKids.Grpc.Features.People.AllergyServices;
@@ -54,6 +53,12 @@ builder.Services.AddAuthorization(opts =>
         opts.AddPolicy(Policies.EnabledOnly, policy => policy.RequireClaim("Enabled", true.ToString()));
     }
 );
+builder.Services.AddTransient<ILogger>(p =>
+{
+    var loggerFactory = p.GetRequiredService<ILoggerFactory>();
+    // You could also use the HttpContext to make the name dynamic for example
+    return loggerFactory.CreateLogger("Static Logger");
+});
 builder.Services.AddTransient<IClaimsTransformation, CustomClaimsTransformation>();
 builder.Services.AddCodeFirstGrpc();
 builder.Services.AddGrpc();
@@ -103,7 +108,6 @@ app.UseAuthorization();
 
 // Configure the HTTP request pipeline.
 app.MapGrpcService<LoginService>();
-app.MapGrpcService<EventingService>();
 app.MapGrpcService<MetabaseService>();
 app.MapGrpcService<UsersService>();
 app.MapGrpcService<PersonService>();

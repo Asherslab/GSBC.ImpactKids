@@ -6,7 +6,8 @@ namespace GSBC.ImpactKids.Grpc.Features.Eventing.Services;
 
 public class RabbitWorker(
     IConnection             connection,
-    EventingChannelsService eventingChannelsService
+    EventingChannelsService eventingChannelsService,
+    ILogger<RabbitWorker>   logger
 ) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken token)
@@ -28,6 +29,7 @@ public class RabbitWorker(
 
     private async Task HandleEvent(object obj, BasicDeliverEventArgs args)
     {
+        logger.LogDebug("RabbitMQ Event Received");
         await eventingChannelsService.FanoutEvent(Encoding.UTF8.GetString(args.Body.ToArray()));
     }
 }
