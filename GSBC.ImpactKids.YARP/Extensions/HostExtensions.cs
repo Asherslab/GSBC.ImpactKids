@@ -30,14 +30,15 @@ internal static class HostExtensions
 
                     if (!string.IsNullOrEmpty(builderContext.Route.AuthorizationPolicy))
                     {
-                        builderContext.RequestTransforms.Add(builderContext.Services.GetRequiredService<AddBearerTokenToHeadersTransform>());
+                        builderContext.RequestTransforms.Add(builderContext.Services
+                            .GetRequiredService<AddBearerTokenToHeadersTransform>());
                     }
                 })
                 .AddServiceDiscoveryDestinationResolver();
 
             return builder;
         }
-        
+
         public IHostApplicationBuilder AddAuthenticationSchemes()
         {
             builder.Services.AddAuthentication(options =>
@@ -50,6 +51,7 @@ internal static class HostExtensions
                     options.Cookie.Name = "__gsbc_yarp";
                     options.Cookie.SameSite = SameSiteMode.Strict;
                     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                    options.Cookie.HttpOnly = true;
                 })
                 .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, configureOptions: options =>
                 {
@@ -63,6 +65,7 @@ internal static class HostExtensions
                     options.GetClaimsFromUserInfoEndpoint = true;
                     options.SaveTokens = true;
                     options.MapInboundClaims = false;
+                    options.CallbackPath = "/signin-oidc";
 
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
@@ -73,6 +76,7 @@ internal static class HostExtensions
                     options.Scope.Clear();
                     options.Scope.Add("openid");
                     options.Scope.Add("profile");
+                    options.Scope.Add("permissions");
                     options.Scope.Add("offline_access");
 
                     options.Events = new OpenIdConnectEvents
@@ -80,7 +84,7 @@ internal static class HostExtensions
                         OnRedirectToIdentityProviderForSignOut = (context) =>
                         {
                             string logoutUri =
-                                $"{builder.Configuration.GetValue<string>("OpenIDConnectSettings:Domain")}/oidc/logout?client_id={builder.Configuration.GetValue<string>("OpenIDConnectSettings:ClientId")}";
+                                $"{builder.Configuration.GetValue<string>("OpenIDConnectSettings:Authority")}/oidc/logout?client_id={builder.Configuration.GetValue<string>("OpenIDConnectSettings:ClientId")}";
                             string redirectUrl = context.HttpContext.BuildRedirectUrl(context.Properties.RedirectUri);
                             logoutUri += $"&post_logout_redirect_uri={redirectUrl}";
 
@@ -98,13 +102,12 @@ internal static class HostExtensions
                     };
                 });
 
-            builder.Services.AddAuthorization(options =>
-            {
-                options.DefaultPolicy =
-                    new AuthorizationPolicyBuilder(CookieAuthenticationDefaults.AuthenticationScheme)
-                        .RequireAuthenticatedUser()
-                        .Build();
-            });
+            builder.Services
+                .AddAuthorizationBuilder()
+                .SetDefaultPolicy(new AuthorizationPolicyBuilder(CookieAuthenticationDefaults.AuthenticationScheme)
+                    .RequireAuthenticatedUser()
+                    .Build()
+                );
 
             return builder;
         }

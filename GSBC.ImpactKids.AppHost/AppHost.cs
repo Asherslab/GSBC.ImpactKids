@@ -47,8 +47,6 @@ IResourceBuilder<ProjectResource> yarp =
 yarp = yarp
     .WithReference(grpcService)
     .WaitFor(grpcService)
-    .WithReference(redis)
-    .WaitFor(redis)
     .WithReference(wasm)
     .WaitFor(wasm)
     .WithExternalHttpEndpoints();

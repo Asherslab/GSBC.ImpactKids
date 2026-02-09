@@ -61,6 +61,7 @@ builder.Services.AddConverters();
 builder.Services.AddTransient<ElvantoService>();
 builder.Services.AddSingleton<EventingChannelsService>();
 builder.Services.AddHostedService<RabbitWorker>();
+builder.Services.AddHostedService<HeartbeatService>();
 builder.Services.AddHybridCache();
 
 builder.Services.AddPooledDbContextFactory<GsbcDbContext>(o =>

@@ -97,7 +97,6 @@ public partial class Tool : IDisposable
         if (!ParametersDifferFromState())
             return;
 
-        Console.WriteLine($"GET QUERY PARAMS: {ServiceId} | {State.ServiceId}");
         Navigation.NavigateTo(GetQueryParameters());
     }
 
