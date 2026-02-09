@@ -3,5 +3,5 @@ using GSBC.ImpactKids.Shared.Contracts.Services.Base;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Services.Features.People;
 
-[Service("GSBC.ImpactKids.Person.SchoolGrade")]
+[Service("gRPC/GSBC.ImpactKids.Person.SchoolGrade")]
 public interface ISchoolGradeService : IBasicReadMultipleService<SchoolGrade>;

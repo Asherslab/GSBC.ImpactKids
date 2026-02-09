@@ -4,7 +4,7 @@ using GSBC.ImpactKids.Shared.Contracts.Services.Base;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Services.Features.People;
 
-[Service("GSBC.ImpactKids.Person")]
+[Service("gRPC/GSBC.ImpactKids.Person")]
 public interface IPersonService
     : IBasicReadMultipleService<Person>,
         ICreateService<CreatePersonRequest>,

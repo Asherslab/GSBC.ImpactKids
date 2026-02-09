@@ -4,7 +4,7 @@ using GSBC.ImpactKids.Shared.Contracts.Services.Base;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Services.Features.People;
 
-[Service("GSBC.ImpactKids.Person.MedicalNotes")]
+[Service("gRPC/GSBC.ImpactKids.Person.MedicalNotes")]
 public interface IMedicalNoteService
     : IBasicReadMultipleService<MedicalNote>,
         ICreateService<CreateMedicalNoteRequest>,

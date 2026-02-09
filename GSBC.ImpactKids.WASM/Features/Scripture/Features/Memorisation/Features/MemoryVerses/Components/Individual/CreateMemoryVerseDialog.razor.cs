@@ -39,7 +39,7 @@ public partial class CreateMemoryVerseDialog
             if (MemoryVerseListsStore.GetState().Entities.HasData)
             {
                 _createMemoryVerseRequest.MemoryVerseListId =
-                    MemoryVerseListsStore.GetState().Entities.Data!.First().Id;
+                    MemoryVerseListsStore.GetState().Entities.Data!.FirstOrDefault()?.Id ?? Guid.Empty;
             }
         }
 

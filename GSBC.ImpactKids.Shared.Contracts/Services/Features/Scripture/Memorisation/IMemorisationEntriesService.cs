@@ -4,7 +4,7 @@ using GSBC.ImpactKids.Shared.Contracts.Services.Base;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Services.Features.Scripture.Memorisation;
 
-[Service("GSBC.ImpactKids.MemorisationEntries")]
+[Service("gRPC/GSBC.ImpactKids.MemorisationEntries")]
 public interface IMemorisationEntriesService
     : IBasicReadMultipleService<MemorisationEntry>,
         ICreateService<CreateMemorisationEntryRequest>,

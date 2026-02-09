@@ -61,6 +61,7 @@ builder.Services.AddConverters();
 builder.Services.AddTransient<ElvantoService>();
 builder.Services.AddSingleton<EventingChannelsService>();
 builder.Services.AddHostedService<RabbitWorker>();
+builder.Services.AddHostedService<HeartbeatService>();
 builder.Services.AddHybridCache();
 
 builder.Services.AddPooledDbContextFactory<GsbcDbContext>(o =>
@@ -73,26 +74,26 @@ ElvantoConfig? elvantoConfig = builder.Configuration.GetSection("Elvanto").Get<E
 if (elvantoConfig != null)
     builder.Services.AddSingleton(elvantoConfig);
 
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(policy =>
-    {
-        string[] clients = builder.Configuration.GetServiceEndpoints("wasm");
-
-        policy.WithOrigins(clients); // Add the clients as allowed origins for cross origin resource sharing.
-        policy.AllowAnyMethod()
-            .AllowAnyHeader()
-            .WithExposedHeaders("Grpc-Status", "Grpc-Message",
-                "Grpc-Encoding", "Grpc-Accept-Encoding",
-                "Grpc-Status-Details-Bin")
-            .AllowCredentials();
-        // policy.WithHeaders("X-Requested-With");
-    });
-});
+// builder.Services.AddCors(options =>
+// {
+//     options.AddDefaultPolicy(policy =>
+//     {
+//         string[] clients = builder.Configuration.GetServiceEndpoints("wasm");
+//
+//         policy.WithOrigins(clients); // Add the clients as allowed origins for cross origin resource sharing.
+//         policy.AllowAnyMethod()
+//             .AllowAnyHeader()
+//             .WithExposedHeaders("Grpc-Status", "Grpc-Message",
+//                 "Grpc-Encoding", "Grpc-Accept-Encoding",
+//                 "Grpc-Status-Details-Bin")
+//             .AllowCredentials();
+//         // policy.WithHeaders("X-Requested-With");
+//     });
+// });
 
 var app = builder.Build();
 
-app.UseCors();
+// app.UseCors();
 app.MapDefaultEndpoints();
 
 app.UseGrpcWeb(new GrpcWebOptions { DefaultEnabled = true });

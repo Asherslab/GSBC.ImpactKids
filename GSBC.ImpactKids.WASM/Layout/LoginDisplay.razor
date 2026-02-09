@@ -1,6 +1,6 @@
 ﻿<AuthorizeView>
     <Authorized>
-        <MudText>Hello, @context.User.Identity?.Name!</MudText>
+        <MudLink OnClick="@BeginSignOut">Hello, @context.User.FindFirst("name")?.Value</MudLink>
     </Authorized>
     <NotAuthorized>
         <MudLink OnClick="@BeginSignIn">Log in</MudLink>
@@ -16,12 +16,23 @@
 
     private void BeginSignIn(MouseEventArgs args)
     {
-        InteractiveRequestOptions requestOptions = new()
-        {
-            Interaction = InteractionType.SignIn,
-            ReturnUrl = Navigation.Uri
-        };
+        string loginUri = Navigation.GetUriWithQueryParameters("/bff/login", new Dictionary<string, object?>
+            {
+                { "ReturnUrl", Navigation.Uri },
+            }
+        );
 
-        Navigation.NavigateToLogin("authentication/login", requestOptions);
+        Navigation.NavigateTo(loginUri, forceLoad: true);
+    }
+
+    private void BeginSignOut(MouseEventArgs args)
+    {
+        string logoutUri = Navigation.GetUriWithQueryParameters("/bff/logout", new Dictionary<string, object?>
+            {
+                { "ReturnUrl", Navigation.Uri },
+            }
+        );
+
+        Navigation.NavigateTo(logoutUri, forceLoad: true);
     }
 }

@@ -3,7 +3,7 @@ using GSBC.ImpactKids.Shared.Contracts.Messages.Responses;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Services.Features.DataDisplay;
 
-[Service("GSBC.ImpactKids.Metabase")]
+[Service("gRPC/GSBC.ImpactKids.Metabase")]
 public interface IMetabaseService
 {
     Task<MetabaseJwtResponse?> GetMetabaseJwt(
