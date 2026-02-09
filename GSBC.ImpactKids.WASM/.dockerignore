@@ -11,6 +11,5 @@
 **/*.Local.json
 # Docker
 Dockerfile*
-nginx.conf
 # Keep project files:
-!YourBlazorWasmProject/**
+!GSBC.ImpactKids.WASM/**
