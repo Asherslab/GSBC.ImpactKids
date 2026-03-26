@@ -4,8 +4,9 @@ using GSBC.ImpactKids.Shared.Contracts.Services.Base;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Services.Features.Attendance;
 
-[Service("GSBC.ImpactKids.Attendance.ItemRecords")]
+[Service("gRPC/GSBC.ImpactKids.Attendance.ItemRecords")]
 public interface IAttendanceItemRecordService
     : IBasicReadMultipleService<AttendanceItemRecord>,
         ICreateService<CreateAttendanceItemRecordRequest>,
-        IUpdateService<UpdateAttendanceItemRecordRequest>;
+        IUpdateService<UpdateAttendanceItemRecordRequest>,
+        IBasicDeleteService<AttendanceItemRecord>;

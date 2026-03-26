@@ -3,6 +3,7 @@ using System.Globalization;
 using CsvHelper;
 using GSBC.ImpactKids.Grpc.Data;
 using GSBC.ImpactKids.Grpc.Data.Models;
+using GSBC.ImpactKids.Grpc.Data.Models.Attendance;
 using GSBC.ImpactKids.Grpc.Data.Models.People;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,6 +30,7 @@ public class Worker(
             await RunMigrationAsync(dbContext, cancellationToken);
             await SeedMedicalAsync(dbContext, cancellationToken);
             await SeedAllergensAsync(dbContext, cancellationToken);
+            await SeedAttendanceItemTypesAsync(dbContext, cancellationToken);
             await SeedBibleAsync(dbContext, cancellationToken);
         }
         catch (Exception ex)
@@ -120,6 +122,52 @@ public class Worker(
                     },
                     token
                 );
+            }
+
+            await dbContext.SaveChangesAsync(token);
+            await transaction.CommitAsync(token);
+        });
+    }
+    
+    private static readonly DbAttendanceItemType[] AttendanceItemTypes =
+    [
+        new()
+        {
+            Id = Guid.Empty,
+            Label = "Came Early",
+            Reward = 1,
+            RequiresReturning = false
+        },
+        new()
+        {
+            Id = Guid.Empty,
+            Label = "Bible",
+            Reward = 2,
+            RequiresReturning = false
+        },
+        new()
+        {
+            Id = Guid.Empty,
+            Label = "Phone",
+            Reward = null,
+            RequiresReturning = true
+        }
+    ];
+    
+    private static async Task SeedAttendanceItemTypesAsync(GsbcDbContext dbContext, CancellationToken token)
+    {
+        var strategy = dbContext.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
+        {
+            // Seed the database
+            await using var transaction = await dbContext.Database.BeginTransactionAsync(token);
+
+            foreach (DbAttendanceItemType itemType in AttendanceItemTypes)
+            {
+                if (await dbContext.AttendanceItemTypes.AnyAsync(x => x.Label == itemType.Label, token))
+                    continue;
+
+                await dbContext.AttendanceItemTypes.AddAsync(itemType, token);
             }
 
             await dbContext.SaveChangesAsync(token);

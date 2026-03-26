@@ -5,12 +5,11 @@ public record AttendanceItemRecord : IIdentifiable
 {
     public required Guid Id { get; init; }
 
-    public required bool  ItemBrought  { get; init; }
     public required bool  RewardGiven  { get; init; }
     public required bool? ItemReturned { get; init; }
 
     public string? Notes { get; init; }
 
-    public required Guid AttendanceRecordId   { get; init; }
-    public required Guid AttendanceItemTypeId { get; init; }
+    public required Guid  AttendanceRecordId   { get; init; }
+    public required Guid? AttendanceItemTypeId { get; init; }
 }

@@ -77,7 +77,7 @@ public partial class Multiple
 
     private async Task DeleteUser(User user)
     {
-        bool? result = await DialogService.ShowMessageBox(
+        bool? result = await DialogService.ShowMessageBoxAsync(
             "Warning",
             "Deleting can not be undone!",
             yesText: "Delete!", cancelText: "Cancel"

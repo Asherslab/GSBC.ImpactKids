@@ -1,4 +1,5 @@
 using GSBC.ImpactKids.Grpc.Data.Models.People;
+using GSBC.ImpactKids.Grpc.Data.Models.Scheduling;
 using GSBC.ImpactKids.Shared.Contracts.Entities;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
 using Riok.Mapperly.Abstractions;
@@ -24,15 +25,15 @@ public class DbAttendanceRecord
     public required Guid SignedInUserId { get; set; }
 
     [MapperIgnore]
-    public User? SignedInUser { get; set; }
+    public DbUser? SignedInUser { get; set; }
 
     public Guid? SignedOutUserId { get; set; }
 
     [MapperIgnore]
-    public User? SignedOutUser { get; set; }
+    public DbUser? SignedOutUser { get; set; }
 
     public Guid ServiceId { get; set; }
 
     [MapperIgnore]
-    public Service? Service { get; set; }
+    public DbService? Service { get; set; }
 }

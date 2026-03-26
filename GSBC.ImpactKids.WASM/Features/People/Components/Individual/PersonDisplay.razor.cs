@@ -1,3 +1,4 @@
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using MudBlazor.Utilities;
@@ -7,15 +8,28 @@ namespace GSBC.ImpactKids.WASM.Features.People.Components.Individual;
 public partial class PersonDisplay
 {
     [Parameter]
-    public bool Link { get; set; }
+    public bool ShowPersonLink { get; set; }
 
-    private string? Href => Link
+    [Parameter]
+    public string? Link { get; set; }
+
+    [Parameter]
+    public bool ShowGrade { get; set; }
+
+    [Parameter]
+    public RenderFragment<Person?>? SuffixContent { get; set; }
+
+    [Parameter]
+    public string? Class { get; set; }
+    
+    private string? Href => ShowPersonLink
         ? Entity.HasData ? $"/People/{Id}" : null
-        : null;
+        : Link;
 
-    private string Class => CssBuilder.Empty()
-        .AddClass("clickable mud-ripple", Link)
+    private string Css => CssBuilder.Empty()
+        .AddClass("clickable mud-ripple", Href != null)
         .AddClass("d-flex justify-start flex-direction-row flex-grow-0")
+        .AddClass(Class)
         .Build();
 
     private string? _avatarDisplay;
@@ -25,8 +39,19 @@ public partial class PersonDisplay
     protected override async Task OnInitializedAsync()
     {
         await Task.WhenAll(
-            EntityStore.RefreshAll()
+            EntityStore.RefreshAll(),
+            SchoolGradesStore.RefreshAll()
         );
+    }
+
+    private string? GetSchoolGrade()
+    {
+        if (Entity.Data?.SchoolGradeId == null)
+            return null;
+
+        return SchoolGradesStore.GetState().Entities.Data?
+            .First(x => x.Id == Entity.Data.SchoolGradeId)
+            .Label;
     }
 
     protected override void OnRetrievedEntity()

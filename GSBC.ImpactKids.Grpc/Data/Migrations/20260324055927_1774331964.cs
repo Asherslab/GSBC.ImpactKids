@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace GSBC.ImpactKids.Grpc.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class _1770440075 : Migration
+    public partial class _1774331964 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -17,24 +17,12 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Label = table.Column<string>(type: "text", nullable: false),
-                    Reward = table.Column<int>(type: "integer", nullable: true)
+                    Reward = table.Column<int>(type: "integer", nullable: true),
+                    RequiresReturning = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AttendanceItemTypes", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "User",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Name = table.Column<string>(type: "text", nullable: false),
-                    Enabled = table.Column<bool>(type: "boolean", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_User", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -47,7 +35,8 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     Deleted = table.Column<bool>(type: "boolean", nullable: false),
                     PersonId = table.Column<Guid>(type: "uuid", nullable: false),
                     SignedInUserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    SignedOutUserId = table.Column<Guid>(type: "uuid", nullable: true)
+                    SignedOutUserId = table.Column<Guid>(type: "uuid", nullable: true),
+                    ServiceId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -59,15 +48,21 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_AttendanceRecords_User_SignedInUserId",
-                        column: x => x.SignedInUserId,
-                        principalTable: "User",
+                        name: "FK_AttendanceRecords_Services_ServiceId",
+                        column: x => x.ServiceId,
+                        principalTable: "Services",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_AttendanceRecords_User_SignedOutUserId",
+                        name: "FK_AttendanceRecords_Users_SignedInUserId",
+                        column: x => x.SignedInUserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AttendanceRecords_Users_SignedOutUserId",
                         column: x => x.SignedOutUserId,
-                        principalTable: "User",
+                        principalTable: "Users",
                         principalColumn: "Id");
                 });
 
@@ -78,8 +73,10 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     ItemBrought = table.Column<bool>(type: "boolean", nullable: false),
                     RewardGiven = table.Column<bool>(type: "boolean", nullable: false),
+                    ItemReturned = table.Column<bool>(type: "boolean", nullable: true),
+                    Notes = table.Column<string>(type: "text", nullable: true),
                     AttendanceRecordId = table.Column<Guid>(type: "uuid", nullable: false),
-                    AttendanceItemTypeId = table.Column<Guid>(type: "uuid", nullable: false)
+                    AttendanceItemTypeId = table.Column<Guid>(type: "uuid", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -88,8 +85,7 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                         name: "FK_AttendanceItemRecords_AttendanceItemTypes_AttendanceItemTyp~",
                         column: x => x.AttendanceItemTypeId,
                         principalTable: "AttendanceItemTypes",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_AttendanceItemRecords_AttendanceRecords_AttendanceRecordId",
                         column: x => x.AttendanceRecordId,
@@ -114,6 +110,11 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                 column: "PersonId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_AttendanceRecords_ServiceId",
+                table: "AttendanceRecords",
+                column: "ServiceId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_AttendanceRecords_SignedInUserId",
                 table: "AttendanceRecords",
                 column: "SignedInUserId");
@@ -135,9 +136,6 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "AttendanceRecords");
-
-            migrationBuilder.DropTable(
-                name: "User");
         }
     }
 }

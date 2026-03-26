@@ -9,32 +9,32 @@ namespace GSBC.ImpactKids.Grpc.Features.Scripture.Memorisation.MemoryVersesServi
 
 public partial class MemoryVersesService
 {
-    public async Task<BasicResponse> Create(CreateMemoryVerseRequest request, CallContext context = default)
+    public async Task<BasicReadResponse<Guid?>> Create(CreateMemoryVerseRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 
         if (string.IsNullOrWhiteSpace(request.ReferenceName))
-            return BasicResponse.WithError(MemoryVerseReferenceNameNull);
+            return BasicReadResponse<Guid?>.WithError(MemoryVerseReferenceNameNull);
 
         if (string.IsNullOrWhiteSpace(request.Verse))
-            return BasicResponse.WithError(MemoryVerseVerseNull);
+            return BasicReadResponse<Guid?>.WithError(MemoryVerseVerseNull);
 
         DbMemoryVerseList? list = await db.MemoryVerseLists
             .FirstOrDefaultAsync(x => x.Id == request.MemoryVerseListId, token);
         if (list == null)
-            return BasicResponse.WithError(MemoryVerseListNotFound);
+            return BasicReadResponse<Guid?>.WithError(MemoryVerseListNotFound);
 
         List<DbService> services = await db.Services
             .Where(x => request.ServiceIds.Contains(x.Id))
             .ToListAsync(token);
         if (services.Count != request.ServiceIds.Count)
-            return BasicResponse.WithError(ServiceNotFound);
+            return BasicReadResponse<Guid?>.WithError(ServiceNotFound);
 
         List<DbBibleVerse> bibleVerses = await db.BibleVerses
             .Where(x => request.BibleVerseIds.Contains(x.Id))
             .ToListAsync(token);
         if (bibleVerses.Count != request.BibleVerseIds.Count)
-            return BasicResponse.WithError(BibleVerseNotFound);
+            return BasicReadResponse<Guid?>.WithError(BibleVerseNotFound);
 
         DbMemoryVerse verse = new()
         {
@@ -52,8 +52,9 @@ public partial class MemoryVersesService
         await db.SaveChangesAsync(token);
         await eventService.SendUpdatedEvent(token);
 
-        return new BasicResponse
+        return new BasicReadResponse<Guid?>
         {
+            Entity = verse.Id,
             Success = true
         };
     }

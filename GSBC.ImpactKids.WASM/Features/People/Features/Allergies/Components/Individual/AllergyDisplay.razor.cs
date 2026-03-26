@@ -6,6 +6,7 @@ using GSBC.ImpactKids.WASM.Components.Common.Inputs;
 using GSBC.ImpactKids.WASM.Extensions;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using MudBlazor.Utilities;
 
 namespace GSBC.ImpactKids.WASM.Features.People.Features.Allergies.Components.Individual;
 
@@ -19,6 +20,11 @@ public partial class AllergyDisplay
 
     [Parameter]
     public bool AllowDeleting { get; set; }
+
+    private string Css => CssBuilder.Empty()
+        .AddClass("d-flex justify-start flex-row flex-grow-1 relative")
+        .AddClass("error-highlight", None)
+        .Build();
 
     private AsyncData<Allergen> _allergen = AsyncData<Allergen>.NotAsked();
 

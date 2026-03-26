@@ -28,11 +28,27 @@ public static class FuzzyLinq
             var scored = source
                 .Select(item =>
                 {
-                    string joined = JoinFields(item, fields, normalize);
-                    int    score  = Fuzz.TokenSetRatio(q, joined);
-                    return new { item, score };
+                    int    highestScore = 0;
+                    string matched      = "";
+                    foreach (Func<T, object?> sel in fields)
+                    {
+                        string text = ToInvariantString(sel(item));
+                        if (text.Length < query.Length)
+                            continue;
+                        
+                        text = normalize(text);
+                        int score = string.IsNullOrEmpty(text) ? 0 : Fuzz.PartialRatio(q, text);
+                        if (score > highestScore)
+                        {
+                            matched = text;
+                            highestScore = score;
+                        }
+                    }
+                    
+                    return new { item, matched, score = highestScore };
                 })
-                .Where(x => x.score >= threshold);
+                .Where(x => x.score >= threshold).ToList();
+            // Console.WriteLine($"Threshold: {threshold}, Scores: {JsonSerializer.Serialize(scored.Select(x => new { x.matched, x.score}))}");
 
             return orderByBest
                 ? scored.OrderByDescending(x => x.score).Select(x => x.item)

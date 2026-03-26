@@ -1,0 +1,37 @@
+<MudCard Elevation="6" Class="relative">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudPaper Elevation="0" Class="d-flex justify-space-between flex-grow-1">
+                <MudText Typo="Typo.h6" Align="Align.Start">Medical Notes</MudText>
+                <MudPaper Elevation="0" Class="d-flex justify-end flex-grow-0">
+                    <MudButton Size="Size.Small" Color="Color.Default"
+                               OnClick="@CreateMedicalNote">
+                        <MudIcon Icon="@Icons.Material.Filled.PostAdd"/>
+                    </MudButton>
+                </MudPaper>
+            </MudPaper>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <ListComponent T="MedicalNote"
+                       Filter="@(x => x.PersonId == PersonId)"
+                       NoIdsChanged="@NoIdsChanged"
+                       Context="medicalId">
+            <ChildContent>
+                <MudItem xs="12" lg="6">
+                    <MedicalNoteDisplay AllowUpdating AllowDeleting Id="medicalId"/>
+                </MudItem>
+            </ChildContent>
+            <NoIds>
+                <MudItem xs="12">
+                    <MedicalNoteDisplay None/>
+                </MudItem>
+            </NoIds>
+            <NoData>
+                <MudItem xs="12">
+                    <MedicalNoteDisplay None/>
+                </MudItem>
+            </NoData>
+        </ListComponent>
+    </MudCardContent>
+</MudCard>

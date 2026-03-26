@@ -8,7 +8,7 @@ namespace GSBC.ImpactKids.Grpc.Features.Scheduling.ServicesServices;
 
 public partial class ServicesService
 {
-    public async Task<BasicResponse> Create(CreateServiceRequest request, CallContext context = default)
+    public async Task<BasicReadResponse<Guid?>> Create(CreateServiceRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 
@@ -18,7 +18,7 @@ public partial class ServicesService
                 await db.Terms.FirstOrDefaultAsync(x => x.Id == request.SchoolTermId, cancellationToken: token);
 
             if (term == null)
-                return BasicResponse.WithError(SchoolTermNotFound);
+                return BasicReadResponse<Guid?>.WithError(SchoolTermNotFound);
         }
 
         if (request.ServiceTypeId != null)
@@ -27,11 +27,11 @@ public partial class ServicesService
                 await db.ServiceTypes.FirstOrDefaultAsync(x => x.Id == request.ServiceTypeId, cancellationToken: token);
 
             if (serviceType == null)
-                return BasicResponse.WithError(ServiceTypeNotFound);
+                return BasicReadResponse<Guid?>.WithError(ServiceTypeNotFound);
         }
 
         if (request.Date == default)
-            return BasicResponse.WithError(ServiceDateNull);
+            return BasicReadResponse<Guid?>.WithError(ServiceDateNull);
 
         if (string.IsNullOrWhiteSpace(request.Name))
             request.Name = null;
@@ -50,8 +50,9 @@ public partial class ServicesService
         await db.SaveChangesAsync(token);
         await eventService.SendUpdatedEvent(token);
 
-        return new BasicResponse
+        return new BasicReadResponse<Guid?>
         {
+            Entity = service.Id,
             Success = true
         };
     }

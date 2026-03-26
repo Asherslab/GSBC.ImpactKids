@@ -303,7 +303,7 @@ public partial class MemorisationEntriesTable
             OneDollaryDooGiven = oneDollaryDoo ?? false
         };
 
-        BasicResponse response = await MemorisationEntriesService.Create(request);
+        BasicReadResponse<Guid?> response = await MemorisationEntriesService.Create(request);
 
         if (response.HasErrorOrNull())
         {

@@ -14,6 +14,9 @@ public partial class DetailsModificationCard : ComponentBase
 
     [Parameter]
     public Guid? Id { get; set; }
+    
+    [Parameter]
+    public EventCallback<Guid?> IdChanged { get; set; }
 
     [Parameter]
     public RenderFragment? ChildContent { get; set; }
@@ -54,11 +57,14 @@ public partial class DetailsModificationCard : ComponentBase
 
     private async Task OnCreate()
     {
-        bool success = false;
+        Guid? responseId = null;
         if (_component?.Instance is IDetailsComponent detailsComponent)
-            success = await detailsComponent.CreateEntity();
-        if (success)
+            responseId = await detailsComponent.CreateEntity();
+        if (responseId != null)
+        {
+            await IdChanged.InvokeAsync(responseId);
             StateChanged(ModificationState.Reading);
+        }
     }
 
     private async Task OnUpdate()

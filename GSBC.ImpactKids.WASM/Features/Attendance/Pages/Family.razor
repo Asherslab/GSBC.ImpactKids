@@ -1,0 +1,79 @@
+@using PersonDisplay = GSBC.ImpactKids.WASM.Features.Attendance.Features.AttendanceItemTypes.Components.Individual.AttendanceItemTypeDisplay
+@inherits EntityUtilityComponent
+@page "/Attendance/Family/{Id:guid}"
+@inject IRefreshableStore<Service>          ServicesStore
+@inject IRefreshableStore<Person>           PeopleStore
+@inject IRefreshableStore<AttendanceRecord> AttendanceRecordsStore
+
+<PageTitle>Family Attendance</PageTitle>
+
+<MudBreadcrumbs Items="_breadcrumbs"/>
+
+<MudPaper Elevation="6" Class="pt-1 px-6 pb-6">
+    <MudText Align="Align.Center" Typo="Typo.h5" Class="py-3">Attendance for the @_familyName.Data Family</MudText>
+    <MudOverlay Visible="@(_service.IsLoading || _person.IsLoading)"
+                DarkBackground
+                Absolute>
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+    @if (_service.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">
+            @(_service.Error ?? "An Unexpected error occured")
+        </MudAlert>
+    }
+    @if (_person.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">
+            @(_person.Error ?? "An Unexpected error occured")
+        </MudAlert>
+    }
+    <MudStack>
+        <MudButton
+            Class="py-4"
+            Href="@($"/Attendance/CreatePerson?{nameof(CreatePerson.ServiceId)}={_service.Data?.Id}&{nameof(CreatePerson.FamilyId)}={_person.Data?.FamilyId}")">
+            Create Person in Family
+        </MudButton>
+        <MudPaper Elevation="0" Class="pa-4">
+            @if (_person.HasData)
+            {
+                <ListComponent T="Person"
+                               Filter="@(x => x.FamilyId == _person.Data!.FamilyId)"
+                               Ordering="@(l => l.OrderBy(x => x.GetAge()))"
+                               Spacing="3"
+                               Limit="15"
+                               Context="personId">
+                    <MudItem xs="12" md="4">
+                        <PersonDisplay Id="personId">
+                            <SuffixContent>
+                                @if (_peopleAttendance.IsLoading)
+                                {
+                                    <MudProgressCircular Indeterminate/>
+                                }
+                                else if (_peopleAttendance.Data != null && personId != null)
+                                {
+                                    if (_peopleAttendance.Data.TryGetValue(personId.Value, out Guid attendanceId))
+                                    {
+                                        <MudButton
+                                            Color="Color.Error"
+                                            Href="@($"/Attendance/SignOut/{personId}?{nameof(SignOut.AttendanceRecordId)}={attendanceId}")">
+                                            Sign Out
+                                        </MudButton>
+                                    }
+                                    else
+                                    {
+                                        <MudButton
+                                            Color="Color.Success"
+                                            Href="@($"/Attendance/SignIn/{personId}?{nameof(SignIn.ServiceId)}={_service.Data?.Id}")">
+                                            Sign In
+                                        </MudButton>
+                                    }
+                                }
+                            </SuffixContent>
+                        </PersonDisplay>
+                    </MudItem>
+                </ListComponent>
+            }
+        </MudPaper>
+    </MudStack>
+</MudPaper>

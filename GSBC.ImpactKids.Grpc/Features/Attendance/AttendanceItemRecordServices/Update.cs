@@ -18,9 +18,6 @@ public partial class AttendanceItemRecordService
         if (attendanceItemRecord == null)
             return BasicResponse.WithError(AttendanceRecordNotFound);
 
-        if (request.ItemBrought.IsUpdated)
-            attendanceItemRecord.ItemBrought = request.ItemBrought.Value;
-
         if (request.RewardGiven.IsUpdated)
             attendanceItemRecord.RewardGiven = request.RewardGiven.Value;
 

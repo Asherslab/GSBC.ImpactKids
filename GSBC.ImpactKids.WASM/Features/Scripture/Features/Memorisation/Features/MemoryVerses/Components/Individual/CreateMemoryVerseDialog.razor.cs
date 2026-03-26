@@ -48,7 +48,7 @@ public partial class CreateMemoryVerseDialog
 
     private async Task OnClick()
     {
-        BasicResponse resp = await CreateService.Create(_createMemoryVerseRequest);
+        BasicReadResponse<Guid?> resp = await CreateService.Create(_createMemoryVerseRequest);
 
         if (resp.HasErrorOrNull())
         {

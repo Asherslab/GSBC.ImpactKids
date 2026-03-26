@@ -1,0 +1,38 @@
+@using AllergyDisplay = GSBC.ImpactKids.WASM.Features.Attendance.Features.AttendanceItemRecords.Components.Individual.AttendanceItemRecordDisplay
+<MudCard Elevation="6" Class="relative">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudPaper Elevation="0" Class="d-flex justify-space-between flex-grow-1">
+                <MudText Typo="Typo.h6" Align="Align.Start">Allergies</MudText>
+                <MudPaper Elevation="0" Class="d-flex justify-end flex-grow-0">
+                    <MudButton Size="Size.Small" Color="Color.Default"
+                               OnClick="@CreateAllergy">
+                        <MudIcon Icon="@Icons.Material.Filled.PostAdd"/>
+                    </MudButton>
+                </MudPaper>
+            </MudPaper>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <ListComponent T="Allergy"
+                       Filter="@(x => x.PersonId == PersonId)"
+                       NoIdsChanged="@NoIdsChanged"
+                       Context="allergyId">
+            <ChildContent>
+                <MudItem xs="12" lg="6">
+                    <AllergyDisplay AllowUpdating AllowDeleting Id="allergyId"/>
+                </MudItem>
+            </ChildContent>
+            <NoIds>
+                <MudItem xs="12">
+                    <AllergyDisplay None/>
+                </MudItem>
+            </NoIds>
+            <NoData>
+                <MudItem xs="12">
+                    <AllergyDisplay None/>
+                </MudItem>
+            </NoData>
+        </ListComponent>
+    </MudCardContent>
+</MudCard>

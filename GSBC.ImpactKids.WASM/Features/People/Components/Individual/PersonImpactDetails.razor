@@ -1,0 +1,67 @@
+@inherits DetailsComponent<Person, CreatePersonRequest, UpdatePersonRequest>
+@inject IRefreshableStore<SchoolGrade> SchoolGradesStore
+
+<MudPaper Elevation="0" Class="d-flex flex-column flex-grow-1">
+    <MudDatePickerCreateOrUpdate
+        @bind-Create="@CreateRequest.LocalFirstTime"
+        Read="@UpdateRequest.LocalFirstTime.Value"
+        @bind-Update="@UpdateRequest.LocalFirstTime.Value"
+        State="State"
+
+        ErrorFunc="@FirstTimeGetError"
+
+        Class="mb-4"
+        Label="First Time at Impact Kids"
+        HelperText="01/01/2025 is used to signify that the first time was before our systems were in place to track it"
+        Variant="Variant.Filled"
+
+        Editable/>
+
+    <MudSelectCreateOrUpdate
+        @bind-Create="@CreateRequest.MediaConsent"
+        Read="@UpdateRequest.MediaConsent.Value"
+        @bind-Update="@UpdateRequest.MediaConsent.Value"
+        State="State"
+
+        Class="mb-4"
+        Label="Media Consent"
+        Variant="Variant.Filled"
+
+        ErrorFunc="@MediaConsentGetError"
+
+        Clearable>
+        @foreach (MediaConsent consent in Enum.GetValues<MediaConsent>())
+        {
+            <MudSelectItem Value="consent">@consent.ToDisplay()</MudSelectItem>
+        }
+    </MudSelectCreateOrUpdate>
+
+    <div class="relative mb-4">
+        <MudOverlay Visible="@(SchoolGradesStore.GetState().Entities.IsLoading)"
+                    DarkBackground
+                    Absolute>
+            <MudProgressCircular Indeterminate/>
+        </MudOverlay>
+        <MudSelectCreateOrUpdate
+            @bind-Create="@CreateRequest.SchoolGradeId"
+            Read="@UpdateRequest.SchoolGradeId.Value"
+            @bind-Update="@UpdateRequest.SchoolGradeId.Value"
+            State="State"
+
+            Label="School Grade"
+            Variant="Variant.Filled"
+
+            Clearable>
+            @if (SchoolGradesStore.GetState().Entities.HasData)
+            {
+                foreach (SchoolGrade schoolGrade in SchoolGradesStore.GetState().Entities.Data!)
+                {
+                    <MudSelectItem T="Guid?"
+                                   Value="@schoolGrade.Id">
+                        @(schoolGrade.Label)
+                    </MudSelectItem>
+                }
+            }
+        </MudSelectCreateOrUpdate>
+    </div>
+</MudPaper>

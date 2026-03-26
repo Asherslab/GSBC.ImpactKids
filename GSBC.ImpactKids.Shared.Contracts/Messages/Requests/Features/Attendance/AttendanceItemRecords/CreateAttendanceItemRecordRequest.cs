@@ -3,10 +3,9 @@ namespace GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Attendance
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
 public class CreateAttendanceItemRecordRequest
 {
-    public required bool  ItemBrought  { get; init; }
-    public required bool  RewardGiven  { get; init; }
-    public required bool? ItemReturned { get; init; }
+    public bool  RewardGiven  { get; set; }
+    public bool? ItemReturned { get; set; }
 
-    public required Guid AttendanceRecordId   { get; init; }
-    public required Guid AttendanceItemTypeId { get; init; }
+    public Guid  AttendanceRecordId   { get; set; }
+    public Guid? AttendanceItemTypeId { get; set; }
 }
