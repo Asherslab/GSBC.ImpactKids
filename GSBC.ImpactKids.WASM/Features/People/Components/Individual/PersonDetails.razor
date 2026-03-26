@@ -1,5 +1,4 @@
 @inherits DetailsComponent<Person, CreatePersonRequest, UpdatePersonRequest>
-@inject IRefreshableStore<SchoolGrade> SchoolGradesStore
 
 <MudPaper Elevation="0" Class="d-flex flex-column flex-grow-1">
     <MudOverlay Visible="@(Entity.IsLoading)"
@@ -35,51 +34,6 @@
             Immediate/>
     </MudPaper>
 
-    <div class="relative mb-4">
-        <MudOverlay Visible="@(SchoolGradesStore.GetState().Entities.IsLoading)"
-                    DarkBackground
-                    Absolute>
-            <MudProgressCircular Indeterminate/>
-        </MudOverlay>
-        <MudSelectCreateOrUpdate
-            @bind-Create="@CreateRequest.SchoolGradeId"
-            Read="@UpdateRequest.SchoolGradeId.Value"
-            @bind-Update="@UpdateRequest.SchoolGradeId.Value"
-            State="State"
-
-            Label="School Grade"
-            Variant="Variant.Filled"
-
-            Clearable>
-            @if (SchoolGradesStore.GetState().Entities.HasData)
-            {
-                @foreach (SchoolGrade schoolGrade in SchoolGradesStore.GetState().Entities.Data!)
-                {
-                    <MudSelectItem T="Guid?"
-                                   Value="@schoolGrade.Id">
-                        @(schoolGrade.Label)
-                    </MudSelectItem>
-                }
-            }
-        </MudSelectCreateOrUpdate>
-    </div>
-
-    <MudSelectCreateOrUpdate
-        @bind-Create="@CreateRequest.MediaConsent"
-        Read="@UpdateRequest.MediaConsent.Value"
-        @bind-Update="@UpdateRequest.MediaConsent.Value"
-        State="State"
-
-        Class="mb-4"
-        Label="Media Consent"
-        Variant="Variant.Filled"
-
-        Clearable>
-        @foreach (MediaConsent consent in Enum.GetValues<MediaConsent>())
-        {
-            <MudSelectItem Value="consent">@consent.ToDisplay()</MudSelectItem>
-        }
-    </MudSelectCreateOrUpdate>
 
     <MudDatePickerCreateOrUpdate
         @bind-Create="@CreateRequest.LocalDateOfBirth"
@@ -93,53 +47,69 @@
 
         Editable/>
 
-    <MudDatePickerCreateOrUpdate
-        @bind-Create="@CreateRequest.LocalFirstTime"
-        Read="@UpdateRequest.LocalFirstTime.Value"
-        @bind-Update="@UpdateRequest.LocalFirstTime.Value"
-        State="State"
+    @if (!BasicView)
+    {
+        <MudPaper Elevation="0" Class="d-flex flex-row flex-grow-1 mb-4">
+            <div class="relative mr-4" style="width: 100%">
+                <MudOverlay Visible="@(_families.IsLoading)"
+                            DarkBackground
+                            Absolute>
+                    <MudProgressCircular Indeterminate/>
+                </MudOverlay>
+                <MudSelectCreateOrUpdate
+                    @bind-Create="@CreateRequest.FamilyId"
+                    Read="@UpdateRequest.FamilyId.Value"
+                    @bind-Update="@UpdateRequest.FamilyId.Value"
+                    State="State"
 
-        Class="mb-4"
-        Label="First Time at Impact Kids"
-        HelperText="01/01/2025 is used to signify that the first time was before our systems were in place to track it"
-        Variant="Variant.Filled"
+                    Label="Family"
+                    Variant="Variant.Filled"
 
-        Editable/>
-
-    <MudPaper Elevation="0" Class="d-flex flex-row flex-grow-1 mb-4">
-        <div class="relative mr-4" style="width: 100%">
-            <MudOverlay Visible="@(_families.IsLoading)"
-                        DarkBackground
-                        Absolute>
-                <MudProgressCircular Indeterminate/>
-            </MudOverlay>
-            <MudSelectCreateOrUpdate
-                @bind-Create="@CreateRequest.FamilyId"
-                Read="@UpdateRequest.FamilyId.Value"
-                @bind-Update="@UpdateRequest.FamilyId.Value"
+                    Clearable>
+                    @if (_families.HasData)
+                    {
+                        foreach (FamilyDefinition family in _families.Data!)
+                        {
+                            <MudSelectItem T="Guid?" Value="family.Id">
+                                @family.FamilyName (@family.FamilyCount)
+                            </MudSelectItem>
+                        }
+                    }
+                </MudSelectCreateOrUpdate>
+            </div>
+            <MudCheckBoxCreateOrUpdate
+                @bind-Create="@CreateRequest.FamilyGuardian"
+                Read="@UpdateRequest.FamilyGuardian.Value"
+                @bind-Update="@UpdateRequest.FamilyGuardian.Value"
                 State="State"
 
-                Label="Family"
-                Variant="Variant.Filled"
-
-                Clearable>
-                @if (_families.HasData)
-                {
-                    foreach (FamilyDefinition family in _families.Data!)
-                    {
-                        <MudSelectItem T="Guid?" Value="family.Id">
-                            @family.FamilyName (@family.FamilyCount)
-                        </MudSelectItem>
-                    }
-                }
-            </MudSelectCreateOrUpdate>
-        </div>
-        <MudCheckBoxCreateOrUpdate
-            @bind-Create="@CreateRequest.FamilyGuardian"
-            Read="@UpdateRequest.FamilyGuardian.Value"
-            @bind-Update="@UpdateRequest.FamilyGuardian.Value"
-            State="State"
-
-            Label="Family Guardian"/>
-    </MudPaper>
+                Label="Family Guardian"/>
+        </MudPaper>
+    }
 </MudPaper>
+
+@* ReSharper disable Html.IdDuplication *@
+@if (!BasicView)
+{
+    if ((State == ModificationState.Creating && CreateRequest.FamilyGuardian) ||
+        (State != ModificationState.Creating && UpdateRequest.FamilyGuardian.Value))
+    {
+        <MudDivider Class="mb-4"/>
+        <PersonContactDetails
+            RequestsReadonly
+            CreateRequest="CreateRequest"
+            UpdateRequest="UpdateRequest"
+            Id="Id"
+            State="State"/>
+    }
+    else
+    {
+        <MudDivider Class="mb-4"/>
+        <PersonImpactDetails
+            CreateRequest="CreateRequest"
+            UpdateRequest="UpdateRequest"
+            ErrorsChanged="ErrorsChanged"
+            Id="Id"
+            State="State"/>
+    }
+}

@@ -28,7 +28,7 @@ public sealed class BffAuthenticationStateProvider(
                 _cached = new ClaimsPrincipal(new ClaimsIdentity());
             }
         }
-        catch (Exception e)
+        catch (Exception)
         {
             _cached = new ClaimsPrincipal(new ClaimsIdentity());
         }

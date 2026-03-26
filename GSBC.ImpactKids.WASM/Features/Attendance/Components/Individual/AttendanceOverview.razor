@@ -1,0 +1,24 @@
+@inherits EntityUtilityComponent
+@inject IRefreshableStore<AttendanceRecord> AttendanceRecordsStore
+
+<MudStack Class="relative">
+    <MudOverlay Visible="@(_attendanceRecords.IsLoading)"
+                DarkBackground
+                Absolute>
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+    <MudTextField
+        ReadOnly
+        Label="Attendance Count"
+        Value="@AttendanceCount()"/>
+    <MudStack Row>
+        <MudTextField
+            ReadOnly
+            Label="Signed In"
+            Value="@CurrentSignedInDistinctCount()"/>
+        <MudTextField
+            ReadOnly
+            Label="Signed Out"
+            Value="@CurrentSignedOutDistinctCount()"/>
+    </MudStack>
+</MudStack>

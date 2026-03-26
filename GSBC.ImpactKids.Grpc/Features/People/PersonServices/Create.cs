@@ -6,27 +6,30 @@ namespace GSBC.ImpactKids.Grpc.Features.People.PersonServices;
 
 public partial class PersonService
 {
-    public async Task<BasicResponse> Create(CreatePersonRequest request, CallContext context = default)
+    public async Task<BasicReadResponse<Guid?>> Create(CreatePersonRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 
         if (string.IsNullOrWhiteSpace(request.FirstName))
-            return BasicResponse.WithError(PersonFirstNameNull);
+            return BasicReadResponse<Guid?>.WithError(PersonFirstNameNull);
         if (string.IsNullOrWhiteSpace(request.LastName))
-            return BasicResponse.WithError(PersonLastNameNull);
-        
+            return BasicReadResponse<Guid?>.WithError(PersonLastNameNull);
+
         DbPerson person = new()
         {
             Id = Guid.Empty,
-            
+
             FirstName = request.FirstName,
             LastName = request.LastName,
-            
+
+            Email = request.Email,
+            PhoneNumber = request.PhoneNumber,
+
             SchoolGradeId = request.SchoolGradeId,
             MediaConsent = request.MediaConsent.ToString(),
             DateOfBirth = request.DateOfBirth,
             FirstTime = request.FirstTime,
-            
+
             FamilyId = request.FamilyId ?? Guid.NewGuid(),
             FamilyGuardian = request.FamilyGuardian
         };
@@ -35,8 +38,9 @@ public partial class PersonService
         await db.SaveChangesAsync(token);
         await eventService.SendUpdatedEvent(token);
 
-        return new BasicResponse
+        return new BasicReadResponse<Guid?>
         {
+            Entity = person.Id,
             Success = true
         };
     }

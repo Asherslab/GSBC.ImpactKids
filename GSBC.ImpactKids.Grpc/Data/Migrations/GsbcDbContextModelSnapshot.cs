@@ -17,10 +17,101 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.0")
+                .HasAnnotation("ProductVersion", "10.0.1")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Attendance.DbAttendanceItemRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("AttendanceItemTypeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AttendanceRecordId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool?>("ItemReturned")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("RewardGiven")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AttendanceItemTypeId");
+
+                    b.HasIndex("AttendanceRecordId");
+
+                    b.ToTable("AttendanceItemRecords");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Attendance.DbAttendanceItemType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("RequiresReturning")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("Reward")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AttendanceItemTypes");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Attendance.DbAttendanceRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Deleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("PersonId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ServiceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("SignedIn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SignedInUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("SignedOut")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("SignedOutUserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PersonId");
+
+                    b.HasIndex("ServiceId");
+
+                    b.HasIndex("SignedInUserId");
+
+                    b.HasIndex("SignedOutUserId");
+
+                    b.ToTable("AttendanceRecords");
+                });
 
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.DbBibleVerse", b =>
                 {
@@ -342,6 +433,9 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.Property<string>("ElvantoId")
                         .HasColumnType("text");
 
+                    b.Property<string>("Email")
+                        .HasColumnType("text");
+
                     b.Property<bool>("FamilyGuardian")
                         .HasColumnType("boolean");
 
@@ -364,6 +458,9 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("text")
                         .HasDefaultValue("NotRequested");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("text");
 
                     b.Property<Guid?>("SchoolGradeId")
                         .HasColumnType("uuid");
@@ -469,6 +566,56 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Terms");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Attendance.DbAttendanceItemRecord", b =>
+                {
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.Attendance.DbAttendanceItemType", "AttendanceItemType")
+                        .WithMany()
+                        .HasForeignKey("AttendanceItemTypeId");
+
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.Attendance.DbAttendanceRecord", "AttendanceRecord")
+                        .WithMany()
+                        .HasForeignKey("AttendanceRecordId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AttendanceItemType");
+
+                    b.Navigation("AttendanceRecord");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Attendance.DbAttendanceRecord", b =>
+                {
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.People.DbPerson", "Person")
+                        .WithMany()
+                        .HasForeignKey("PersonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.DbService", "Service")
+                        .WithMany()
+                        .HasForeignKey("ServiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.DbUser", "SignedInUser")
+                        .WithMany()
+                        .HasForeignKey("SignedInUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.DbUser", "SignedOutUser")
+                        .WithMany()
+                        .HasForeignKey("SignedOutUserId");
+
+                    b.Navigation("Person");
+
+                    b.Navigation("Service");
+
+                    b.Navigation("SignedInUser");
+
+                    b.Navigation("SignedOutUser");
                 });
 
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.DbDollarStoreEntry", b =>

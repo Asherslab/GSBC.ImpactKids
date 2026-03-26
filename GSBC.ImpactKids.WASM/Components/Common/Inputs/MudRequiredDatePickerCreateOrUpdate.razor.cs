@@ -22,17 +22,19 @@ public partial class MudRequiredDatePickerCreateOrUpdate
     [Parameter]
     public DateTime? Read { get; set; }
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
-        base.OnParametersSet();
-
+        await base.OnParametersSetAsync();
+        
         Required = true;
+#pragma warning disable MUD0011
         DateFormat = "dd/MM/yyyy";
+#pragma warning restore MUD0011
         
         switch (State)
         {
             case ModificationState.Creating:
-                Date = Create;
+                await SetDateAsync(Create, true);
                 DateChanged = EventCallback.Factory.Create<DateTime?>(
                     this,
                     OnDateChangedCreate
@@ -40,12 +42,12 @@ public partial class MudRequiredDatePickerCreateOrUpdate
                 ReadOnly = false;
                 break;
             case ModificationState.Reading:
-                Date = Read;
+                await SetDateAsync(Read, true);
                 DateChanged = default;
                 ReadOnly = true;
                 break;
             case ModificationState.Updating:
-                Date = Update;
+                await SetDateAsync(Update, true);
                 DateChanged = EventCallback.Factory.Create<DateTime?>(
                     this,
                     OnDateChangedUpdate

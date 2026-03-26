@@ -4,6 +4,7 @@ using EasyAppDev.Blazor.Store.Persistence;
 using EasyAppDev.Blazor.Store.Query;
 using EasyAppDev.Blazor.Store.Utilities;
 using GSBC.ImpactKids.Shared.Contracts.Entities;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Attendance;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.Allergies;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.MedicalNotes;
@@ -59,6 +60,9 @@ public static class StateStoreExtensions
                 .AddEntityStore<MedicalNote>()
                 .AddEntityStore<MedicalType>()
                 .AddEntityStore<SchoolGrade>()
+                .AddEntityStore<AttendanceRecord>()
+                .AddEntityStore<AttendanceItemType>()
+                .AddEntityStore<AttendanceItemRecord>()
                 .AddEntityStore<User>();
         }
 

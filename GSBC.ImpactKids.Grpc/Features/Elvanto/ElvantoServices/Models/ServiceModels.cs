@@ -107,6 +107,15 @@ public class ElvantoPerson
     
     [JsonPropertyName("birthday")]
     public string? Birthday { get; set; }
+    
+    [JsonPropertyName("email")]
+    public string? Email { get; set; }
+    
+    [JsonPropertyName("phone")]
+    public string? Phone { get; set; }
+    
+    [JsonPropertyName("mobile")]
+    public string? Mobile { get; set; }
 
     [JsonPropertyName($"custom_{CustomFieldMedicalId}")]
     public string? MedicalAllergyNotes { get; set; }

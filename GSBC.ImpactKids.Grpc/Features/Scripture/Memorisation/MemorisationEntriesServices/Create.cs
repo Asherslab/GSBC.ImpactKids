@@ -8,7 +8,7 @@ namespace GSBC.ImpactKids.Grpc.Features.Scripture.Memorisation.MemorisationEntri
 
 public partial class MemorisationEntriesService
 {
-    public async Task<BasicResponse> Create(CreateMemorisationEntryRequest request, CallContext context = default)
+    public async Task<BasicReadResponse<Guid?>> Create(CreateMemorisationEntryRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 
@@ -34,13 +34,13 @@ public partial class MemorisationEntriesService
         );
 
         if (!personFoundTask.Result)
-            return BasicResponse.WithError(PersonNotFound);
+            return BasicReadResponse<Guid?>.WithError(PersonNotFound);
 
         if (!memoryVerseFoundTask.Result)
-            return BasicResponse.WithError(MemoryVerseNotFound);
+            return BasicReadResponse<Guid?>.WithError(MemoryVerseNotFound);
 
         if (!serviceFoundTask.Result)
-            return BasicResponse.WithError(ServiceNotFound);
+            return BasicReadResponse<Guid?>.WithError(ServiceNotFound);
 
         DbMemorisationEntry entry = new()
         {
@@ -59,8 +59,9 @@ public partial class MemorisationEntriesService
         await db.SaveChangesAsync(token);
         await eventService.SendUpdatedEvent(token);
 
-        return new BasicResponse
+        return new BasicReadResponse<Guid?>
         {
+            Entity = entry.Id,
             Success = true
         };
     }

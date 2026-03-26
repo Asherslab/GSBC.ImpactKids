@@ -2,7 +2,7 @@
 @inject IRefreshableStore<Allergen> AllergensStore
 @inject IAllergyService             AllergyService
 
-<MudPaper Elevation="6" Class="d-flex justify-start flex-row flex-grow-1 relative">
+<MudPaper Elevation="6" Class="@Css">
     <MudOverlay Visible="@(Entity.IsLoading || _allergen.IsLoading)" DarkBackground="true" Absolute="true">
         <MudProgressCircular Indeterminate/>
     </MudOverlay>

@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using System.Globalization;
-using System.Text.Json;
 using GSBC.ImpactKids.Grpc.Data.Models.People;
 using GSBC.ImpactKids.Grpc.Features.Elvanto.ElvantoServices.Models;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
@@ -92,6 +91,17 @@ public partial class ElvantoService
                 FirstName = matchedPerson?.DbPerson.FirstName ?? elvantoPerson.FirstName ?? "Elvanto import error",
                 LastName = matchedPerson?.DbPerson.LastName ?? elvantoPerson.LastName ?? "Elvanto import error",
 
+                Email = matchedPerson?.DbPerson.Email ??
+                        (string.IsNullOrWhiteSpace(elvantoPerson.Email)
+                            ? null
+                            : elvantoPerson.Email),
+                PhoneNumber = matchedPerson?.DbPerson.PhoneNumber ??
+                              (string.IsNullOrWhiteSpace(elvantoPerson.Mobile)
+                                  ? string.IsNullOrWhiteSpace(elvantoPerson.Phone)
+                                      ? null
+                                      : elvantoPerson.Phone
+                                  : elvantoPerson.Mobile),
+
                 SchoolGradeId = matchedPerson?.DbPerson.SchoolGradeId ??
                                 schoolGrades.FirstOrDefault(x => x.ElvantoId == elvantoPerson.SchoolGrade?.Id)?.Id,
                 MediaConsent = matchedPerson?.DbPerson.MediaConsent == nameof(MediaConsent.NotRequested)
@@ -104,8 +114,6 @@ public partial class ElvantoService
                 FamilyId = elvantoPerson.FamilyId == null ? Guid.NewGuid() : familyIds[elvantoPerson.FamilyId],
                 FamilyGuardian = matchedPerson?.DbPerson.FamilyGuardian ?? IsGuardian(elvantoPerson.FamilyRelationship)
             };
-            if (elvantoPerson.FirstName == "Cayla")
-                logger.LogInformation("TESTING: {Json}", JsonSerializer.Serialize(elvantoPerson));
 
             if (!string.IsNullOrWhiteSpace(elvantoPerson.MedicalAllergyNotes))
             {

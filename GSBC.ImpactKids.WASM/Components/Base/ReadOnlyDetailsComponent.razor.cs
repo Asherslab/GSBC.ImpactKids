@@ -14,7 +14,7 @@ public partial class ReadOnlyDetailsComponent<TEntity> : IDetailsComponent
     public Action<ModificationState>? OnStateChanged { get; set; }
 
     // noop
-    public Task<bool> CreateEntity() => Task.FromResult(false);
+    public Task<Guid?> CreateEntity() => Task.FromResult((Guid?) null);
     public Task<bool> UpdateEntity() => Task.FromResult(false);
     public Task<bool> DeleteEntity() => Task.FromResult(false);
 }

@@ -6,12 +6,12 @@ namespace GSBC.ImpactKids.Grpc.Features.Scheduling.ServiceTypeServices;
 
 public partial class ServiceTypeService
 {
-    public async Task<BasicResponse> Create(CreateServiceTypeRequest request, CallContext context = default)
+    public async Task<BasicReadResponse<Guid?>> Create(CreateServiceTypeRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 
         if (string.IsNullOrWhiteSpace(request.Label))
-            return BasicResponse.WithError(ServiceTypeLabelNull);
+            return BasicReadResponse<Guid?>.WithError(ServiceTypeLabelNull);
         
         DbServiceType type = new()
         {
@@ -24,8 +24,9 @@ public partial class ServiceTypeService
         await db.SaveChangesAsync(token);
         await eventService.SendUpdatedEvent(token);
 
-        return new BasicResponse
+        return new BasicReadResponse<Guid?>
         {
+            Entity = type.Id,
             Success = true
         };
     }

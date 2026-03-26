@@ -8,6 +8,9 @@ public class CreatePersonRequest
     public string FirstName { get; set; } = null!;
     public string LastName  { get; set; } = null!;
 
+    public string? Email { get; set; }
+    public string? PhoneNumber { get; set; }
+    
     public Guid?        SchoolGradeId { get; set; }
     public MediaConsent MediaConsent  { get; set; } = MediaConsent.NotRequested;
     public DateTime?    DateOfBirth   { get; set; }

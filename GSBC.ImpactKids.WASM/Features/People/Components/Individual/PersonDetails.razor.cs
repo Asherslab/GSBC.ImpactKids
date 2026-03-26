@@ -1,12 +1,23 @@
 using System.Collections.Immutable;
 using EasyAppDev.Blazor.Store.AsyncActions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
+using GSBC.ImpactKids.WASM.Components.Common.Inputs;
 using GSBC.ImpactKids.WASM.Extensions;
+using Microsoft.AspNetCore.Components;
 
 namespace GSBC.ImpactKids.WASM.Features.People.Components.Individual;
 
 public partial class PersonDetails
 {
+    [Parameter]
+    public bool BasicView { get; set; }
+
+    [Parameter]
+    public Func<bool, Task>? ErrorsChanged { get; set; }
+
+    [Parameter]
+    public Guid? FamilyId { get; set; }
+
     private AsyncData<ImmutableList<FamilyDefinition>>
         _families = AsyncData<ImmutableList<FamilyDefinition>>.NotAsked();
 
@@ -14,14 +25,14 @@ public partial class PersonDetails
     {
         await base.OnInitializedAsync();
 
+        if (FamilyId != null && State == ModificationState.Creating)
+            CreateRequest.FamilyId = FamilyId;
+
         RetrieveFamilies();
         HandleSubscriptionDisposal(EntityStore, _ => RetrieveFamilies());
-        HandleSubscriptionDisposal(SchoolGradesStore, _ => StateHasChanged());
-        HandleStateChangeSubscriptionDisposal(SchoolGradesStore);
 
         await Task.WhenAll(
-            EntityStore.RefreshAll(),
-            SchoolGradesStore.RefreshAll()
+            EntityStore.RefreshAll()
         );
     }
 
@@ -55,6 +66,15 @@ public partial class PersonDetails
             .OrderBy(x => x.FamilyName)
             .ThenBy(x => x.FamilyCount)
             .ToImmutableList();
+
+        if (
+            FamilyId != null &&
+            State == ModificationState.Creating &&
+            string.IsNullOrWhiteSpace(CreateRequest.LastName)
+        )
+        {
+            CreateRequest.LastName = familyDefinitions.FirstOrDefault(x => x.Id == FamilyId)?.FamilyName ?? "";
+        }
 
         _families = _families.ToSuccess(familyDefinitions);
         StateHasChanged();

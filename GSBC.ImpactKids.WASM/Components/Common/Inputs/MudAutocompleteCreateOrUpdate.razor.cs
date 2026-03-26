@@ -11,13 +11,13 @@ public partial class MudAutocompleteCreateOrUpdate<T>
     public required T Create { get; set; }
 
     [Parameter]
-    public EventCallback<T> CreateChanged { get; set; }
+    public EventCallback<T?> CreateChanged { get; set; }
 
     [Parameter]
     public required T Update { get; set; }
 
     [Parameter]
-    public EventCallback<T> UpdateChanged { get; set; }
+    public EventCallback<T?> UpdateChanged { get; set; }
 
     [Parameter]
     public required T Read { get; set; }
@@ -29,13 +29,13 @@ public partial class MudAutocompleteCreateOrUpdate<T>
         switch (State)
         {
             case ModificationState.Creating:
-                await SetValueAsync(Create);
+                await SetValueCoreAsync(Create);
                 ValueChanged = CreateChanged;
                 ReadOnly = false;
                 break;
             case ModificationState.Reading:
                 await SelectOptionAsync(Read);
-                ValueChanged = new EventCallback<T>();
+                ValueChanged = new EventCallback<T?>();
                 ReadOnly = true;
                 break;
             case ModificationState.Updating:

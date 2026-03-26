@@ -13,24 +13,29 @@ public partial class Multiple
     {
         await base.OnInitializedAsync();
 
-        SubscribeToSelector(s => s.Search, _ => UpdateFilteredPeople());
-        PeopleStore.Subscribe(_ => UpdateFilteredPeople());
+        HandleStateChangeSubscriptionDisposal(SchoolGradeStore);
+        HandleSubscriptionDisposal(PeopleStore, UpdateFilteredPeople);
+        HandleSelectorSubscriptionDisposal(Store, s => s.Search, _ => UpdateFilteredPeople());
 
+        UpdateFilteredPeople();
         await Task.WhenAll(
             PeopleStore.RefreshAll(),
-            UpdateFilteredPeople()
+            SchoolGradeStore.RefreshAll()
         );
     }
 
-    private Task UpdateFilteredPeople()
+    private void UpdateFilteredPeople()
     {
         AsyncData<ImmutableList<Person>> people = PeopleStore.GetState().Entities;
 
         if (!people.HasData)
-            return Update(s => s with { FilteredPeople = people });
+        {
+            Update(s => s with { FilteredPeople = people });
+            return;
+        }
 
         string[]? searchStrings = State.Search?.Split(" ");
-        return Update(s => s with
+        Update(s => s with
         {
             FilteredPeople = s.FilteredPeople.ToSuccess(
                 people.Data!

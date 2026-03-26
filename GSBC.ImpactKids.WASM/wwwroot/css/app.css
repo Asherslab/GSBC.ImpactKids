@@ -10,6 +10,12 @@
     color: red;
 }
 
+.error-highlight {
+    border: 1px solid var(--mud-palette-error); 
+    border-left: 6px solid var(--mud-palette-error); 
+    padding-left: 16px;
+}
+
 #blazor-error-ui {
     color-scheme: light only;
     background: lightyellow;

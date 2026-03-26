@@ -49,16 +49,18 @@ public partial class MemorisationEntriesTable
 
         // HandleSubscriptionDisposal();
 
-        HandleSubscriptionDisposal(MemorisationEntriesStore, _ => RetrieveMemorisationEntries());
-        HandleSubscriptionDisposal(PeopleStore, _ => RetrieveMemorisationEntries());
-        HandleSubscriptionDisposal(MemoryVersesStore, _ => RetrieveMemorisationEntries());
-        HandleSubscriptionDisposal(ServicesStore, _ => RetrieveMemorisationEntries());
+        HandleSubscriptionDisposal(SchoolGradesStore, RetrieveMemorisationEntries);
+        HandleSubscriptionDisposal(MemorisationEntriesStore, RetrieveMemorisationEntries);
+        HandleSubscriptionDisposal(PeopleStore, RetrieveMemorisationEntries);
+        HandleSubscriptionDisposal(MemoryVersesStore, RetrieveMemorisationEntries);
+        HandleSubscriptionDisposal(ServicesStore, RetrieveMemorisationEntries);
 
         await Task.WhenAll(
             MemorisationEntriesStore.RefreshAll(),
             PeopleStore.RefreshAll(),
             MemoryVersesStore.RefreshAll(),
-            ServicesStore.RefreshAll()
+            ServicesStore.RefreshAll(),
+            SchoolGradesStore.RefreshAll()
         );
     }
 
@@ -121,6 +123,12 @@ public partial class MemorisationEntriesTable
             return false;
         }
 
+        if (!SchoolGradesStore.GetState().Entities.HasData)
+        {
+            _asyncState = _asyncState.CopyStatus(SchoolGradesStore.GetState().Entities);
+            return false;
+        }
+
         if (!MemoryVersesStore.GetState().Entities.HasData)
         {
             _asyncState = _asyncState.CopyStatus(MemoryVersesStore.GetState().Entities);
@@ -138,9 +146,9 @@ public partial class MemorisationEntriesTable
     }
 
     private MemorisationRecord? CreateMemorisationRecord(
-        Person                   person,
-        Service                  service,
-        MemoryVerseRecord        memoryVerse
+        Person            person,
+        Service           service,
+        MemoryVerseRecord memoryVerse
     )
     {
         MemorisationEntry? memorisationEntry = MemorisationEntriesStore.GetState().Entities.Data!
@@ -152,7 +160,7 @@ public partial class MemorisationEntriesTable
 
         bool verseHasBeenSaidBefore = MemorisationEntriesStore.GetState().Entities.Data!
             .Any(x => x.PersonId == person.Id &&
-                      x.MemoryVerseId == memoryVerse.Id && 
+                      x.MemoryVerseId == memoryVerse.Id &&
                       x.ServiceId != service.Id &&
                       x is { VerseRecited: true, FiveDollaryDoosGiven: true }
             );
@@ -191,8 +199,10 @@ public partial class MemorisationEntriesTable
         if (PersonId != null)
             return person.Id == PersonId;
 
-        if (person.SchoolGrade == null || !SchoolGrades.Contains(person.SchoolGrade.Label))
-            return false;
+        RetrieveSchoolGradeIds();
+        if (SchoolGradeIds != null)
+            if (person.SchoolGradeId == null || !SchoolGradeIds.Contains(person.SchoolGradeId.Value))
+                return false;
 
         if (SearchStrings == null)
             return true;
@@ -293,7 +303,7 @@ public partial class MemorisationEntriesTable
             OneDollaryDooGiven = oneDollaryDoo ?? false
         };
 
-        BasicResponse response = await MemorisationEntriesService.Create(request);
+        BasicReadResponse<Guid?> response = await MemorisationEntriesService.Create(request);
 
         if (response.HasErrorOrNull())
         {
@@ -333,6 +343,19 @@ public partial class MemorisationEntriesTable
             StateHasChanged();
         }
     }
+
+    private void RetrieveSchoolGradeIds()
+    {
+        if (SchoolGradeIds != null)
+            return;
+
+        SchoolGradeIds = SchoolGradesStore.GetState().Entities.Data?
+            .Where(x => SchoolGrades.Contains(x.Label))
+            .Select(x => x.Id)
+            .ToArray();
+    }
+
+    private Guid[]? SchoolGradeIds = null;
 
     private static readonly string[] SchoolGrades =
     [

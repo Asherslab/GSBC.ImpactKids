@@ -1,7 +1,3 @@
-using System.Collections.Immutable;
-using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.Allergies;
-using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.MedicalNotes;
-
 namespace GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
@@ -12,19 +8,19 @@ public record Person : IIdentifiable
     public required string FirstName { get; init; }
     public required string LastName  { get; init; }
 
-    public required SchoolGrade? SchoolGrade  { get; init; }
-    public required MediaConsent MediaConsent { get; init; }
-    public required DateTime?    DateOfBirth  { get; init; }
-    public required DateTime?    FirstTime    { get; init; }
+    public required string? PhoneNumber { get; init; }
+    public required string? Email       { get; init; }
+
+    public required Guid?        SchoolGradeId { get; init; }
+    public required MediaConsent MediaConsent  { get; init; }
+    public required DateTime?    DateOfBirth   { get; init; }
+    public required DateTime?    FirstTime     { get; init; }
 
     [ProtoIgnore]
     public DateTime? LocalDateOfBirth => DateOfBirth?.ToLocalTime();
 
     [ProtoIgnore]
     public DateTime? LocalFirstTime => FirstTime?.ToLocalTime();
-
-    public required ImmutableList<Allergy>     Allergies    { get; init; } = [];
-    public required ImmutableList<MedicalNote> MedicalNotes { get; init; } = [];
 
     // family stuff
     public required Guid FamilyId       { get; init; }

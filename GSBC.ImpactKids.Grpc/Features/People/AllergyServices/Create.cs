@@ -7,24 +7,24 @@ namespace GSBC.ImpactKids.Grpc.Features.People.AllergyServices;
 
 public partial class AllergyService
 {
-    public async Task<BasicResponse> Create(CreateAllergyRequest request, CallContext context = default)
+    public async Task<BasicReadResponse<Guid?>> Create(CreateAllergyRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 
         if (request.AllergenId == null && string.IsNullOrWhiteSpace(request.Notes))
-            return BasicResponse.WithError(AllergiesMustHaveTypeOrNotes);
+            return BasicReadResponse<Guid?>.WithError(AllergiesMustHaveTypeOrNotes);
 
         DbPerson? person = await db.People.FirstOrDefaultAsync(x => x.Id == request.PersonId, token);
 
         if (person == null)
-            return BasicResponse.WithError(PersonNotFound);
+            return BasicReadResponse<Guid?>.WithError(PersonNotFound);
 
         if (request.AllergenId != null)
         {
             bool allergenExists = await db.Allergens.AnyAsync(x => x.Id == request.AllergenId, token);
 
             if (!allergenExists)
-                return BasicResponse.WithError(AllergenNotFound);
+                return BasicReadResponse<Guid?>.WithError(AllergenNotFound);
         }
 
         DbAllergy allergy = new()
@@ -40,8 +40,9 @@ public partial class AllergyService
         await db.SaveChangesAsync(token);
         await eventService.SendUpdatedEvent(token);
 
-        return new BasicResponse
+        return new BasicReadResponse<Guid?>
         {
+            Entity = allergy.Id,
             Success = true
         };
     }

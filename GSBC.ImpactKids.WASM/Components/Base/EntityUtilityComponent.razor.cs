@@ -52,7 +52,7 @@ public partial class EntityUtilityComponent : IDisposable
         if (id == null)
             return DeleteResult.NullId;
 
-        bool? result = await DialogService.ShowMessageBox(
+        bool? result = await DialogService.ShowMessageBoxAsync(
             "Warning",
             "Deleting can not be undone!",
             yesText: "Delete!", cancelText: "Cancel");

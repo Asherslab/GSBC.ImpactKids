@@ -25,6 +25,9 @@ public class UpdatePersonRequest : ReadRequestBase, IUpdateRequest<Person, Updat
     public DeltaUpdate<string> FirstName { get; set; } = new();
     public DeltaUpdate<string> LastName  { get; set; } = new();
 
+    public DeltaUpdate<string?> Email { get; set; } = new();
+    public DeltaUpdate<string?> PhoneNumber  { get; set; } = new();
+
     public DeltaUpdate<Guid?>        SchoolGradeId { get; set; } = new();
     public DeltaUpdate<MediaConsent> MediaConsent  { get; set; } = new();
     public DeltaUpdate<DateTime?>    DateOfBirth   { get; set; } = new();
@@ -48,8 +51,11 @@ public class UpdatePersonRequest : ReadRequestBase, IUpdateRequest<Person, Updat
 
         request.FirstName.SetInitialValue(entity.FirstName);
         request.LastName.SetInitialValue(entity.LastName);
+        
+        request.Email.SetInitialValue(entity.Email);
+        request.PhoneNumber.SetInitialValue(entity.PhoneNumber);
 
-        request.SchoolGradeId.SetInitialValue(entity.SchoolGrade?.Id);
+        request.SchoolGradeId.SetInitialValue(entity.SchoolGradeId);
         request.MediaConsent.SetInitialValue(entity.MediaConsent);
         request.LocalDateOfBirth.SetInitialValue(entity.LocalDateOfBirth);
         request.LocalFirstTime.SetInitialValue(entity.LocalFirstTime);
