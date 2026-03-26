@@ -1,6 +1,9 @@
 using GSBC.ImpactKids.Grpc;
 using GSBC.ImpactKids.Grpc.Data;
 using GSBC.ImpactKids.Grpc.Extensions;
+using GSBC.ImpactKids.Grpc.Features.Attendance.AttendanceItemRecordServices;
+using GSBC.ImpactKids.Grpc.Features.Attendance.AttendanceItemTypeServices;
+using GSBC.ImpactKids.Grpc.Features.Attendance.AttendanceRecordServices;
 using GSBC.ImpactKids.Grpc.Features.Authentication;
 using GSBC.ImpactKids.Grpc.Features.Authentication.UsersServices;
 using GSBC.ImpactKids.Grpc.Features.DataDisplay;
@@ -125,6 +128,9 @@ app.MapGrpcService<BibleService>();
 app.MapGrpcService<MemoryVersesService>();
 app.MapGrpcService<MemoryVerseListsService>();
 app.MapGrpcService<MemorisationEntriesService>();
+app.MapGrpcService<AttendanceRecordService>();
+app.MapGrpcService<AttendanceItemTypeService>();
+app.MapGrpcService<AttendanceItemRecordService>();
 app.MapGet("/",
     () =>
         "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");

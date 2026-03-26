@@ -1,4 +1,4 @@
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Elvanto;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Elvanto;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Elvanto;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Services.Features.Elvanto;

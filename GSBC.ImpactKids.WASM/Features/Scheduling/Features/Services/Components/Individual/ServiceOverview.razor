@@ -10,37 +10,55 @@
             </MudItem>
         </MudGrid>
     </MudItem>
-    <MudItem xs="12" md="8">
-        <MudGrid Spacing="6" Justify="Justify.FlexStart">
-            <MudItem xs="12" md="6">
-                <MudCard Elevation="6" Class="relative">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudPaper Elevation="0" Class="d-flex justify-space-between flex-grow-1">
-                                <MudText Typo="Typo.h6" Align="Align.Start">Memory Verses</MudText>
-                            </MudPaper>
-                        </CardHeaderContent>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        <ListComponent T="MemoryVerse"
-                                       Filter="@(x => x.ServiceIds.Contains(Id ?? Guid.Empty))"
-                                       Spacing="3"
-                                       Context="memoryVerseId">
-                            <MudItem xs="12">
-                                <MemoryVerseDisplay Id="memoryVerseId"
-                                                    Href="@(Id == null ? null : $"/Scripture/Memorisation/Tool/{Id}?{nameof(Tool.MemoryVerseId)}={memoryVerseId}")"/>
-                            </MudItem>
-                        </ListComponent>
-                    </MudCardContent>
-                </MudCard>
-            </MudItem>
-            <MudItem xs="12" md="6" Class="relative">
-                <DetailsModificationCard
-                    ShowCreate="@(_dollarStoreEntry.Data == null)"
-                    ExtraParameters="@(new Dictionary<string, object?> { { nameof(DollarStoreEntryDetails.ServiceId), Id } })"
-                    DetailsComponentType="@(typeof(DollarStoreEntryDetails))"/>
-            </MudItem>
-            @*<MudItem xs="12" md="6">
+    <MudItem xs="12" md="4">
+        <MudStack>
+            <MudCard Elevation="6" Class="relative">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudPaper Elevation="0" Class="d-flex justify-space-between flex-grow-1">
+                            <MudText Typo="Typo.h6" Align="Align.Start">Memory Verses</MudText>
+                        </MudPaper>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <ListComponent T="MemoryVerse"
+                                   Filter="@(x => x.ServiceIds.Contains(Id ?? Guid.Empty))"
+                                   Spacing="3"
+                                   Context="memoryVerseId">
+                        <MudItem xs="12">
+                            <MemoryVerseDisplay Id="memoryVerseId"
+                                                Href="@(Id == null ? null : $"/Scripture/Memorisation/Tool/{Id}?{nameof(Tool.MemoryVerseId)}={memoryVerseId}")"/>
+                        </MudItem>
+                    </ListComponent>
+                </MudCardContent>
+            </MudCard>
+            <MudCard Elevation="6">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudStack Row>
+                            <MudText Typo="Typo.h6">Attendance</MudText>
+                            <MudSpacer/>
+                            <MudButton
+                                Color="Color.Success"
+                                Href="@($"/Attendance/Tool?{nameof(Attendance.Pages.Tool.ServiceId)}={Id}")">
+                                View
+                            </MudButton>
+                        </MudStack>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <AttendanceOverview
+                        ServiceId="@Id"/>
+                </MudCardContent>
+            </MudCard>
+        </MudStack>
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <DetailsModificationCard
+            ShowCreate="@(_dollarStoreEntry.Data == null)"
+            ExtraParameters="@(new Dictionary<string, object?> { { nameof(DollarStoreEntryDetails.ServiceId), Id } })"
+            DetailsComponentType="@(typeof(DollarStoreEntryDetails))"/>
+        @*<MudItem xs="12" md="6">
                 <MudCard Elevation="6" Class="relative">
                     <MudCardHeader>
                         <CardHeaderContent>
@@ -51,6 +69,5 @@
                     </MudCardContent>
                 </MudCard>
             </MudItem>*@
-        </MudGrid>
     </MudItem>
 </MudGrid>

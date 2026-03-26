@@ -58,4 +58,10 @@ public static class ErrorConstants
     public const string BibleVerseNotFound = "Bible Verse Not Found";
 
     public const string MemorisationEntryNotFound = "Memorisation Entry Not Found";
+
+    public const string AttendanceRecordNotFound             = "Attendance Record Not Found";
+    public const string AttendanceRecordExists               = "This person has already been signed in during this service without being signed out, Please sign out person before creating another sign in";
+    public const string AttendanceItemTypeNotFound           = "Attendance Item Type Not Found";
+    public const string AttendanceItemRecordNotFound         = "Attendance Item Record Not Found";
+    public const string AttendanceItemRecordReturnedRequired = "Attendance Item Record Item Requires Return Value";
 }

@@ -1,11 +1,12 @@
 @inherits DisplayComponent<Person>
+@inject IRefreshableStore<SchoolGrade> SchoolGradesStore
 
 <MudPaper Elevation="6" Class="relative">
     <MudOverlay Visible="@(Entity.IsLoading)" DarkBackground="true" Absolute="true">
         <MudProgressCircular Indeterminate/>
     </MudOverlay>
     <MudLink Underline="Underline.None" Href="@Href">
-        <MudPaper Elevation="0" Class="@Class">
+        <MudPaper Elevation="0" Class="@Css">
             <MudAvatar Rounded Color="@_avatarColor" Class="ma-3">
                 @_avatarDisplay
             </MudAvatar>
@@ -21,7 +22,17 @@
                 }
             </MudPaper>
             <MudPaper Elevation="0" Class="d-flex justify-center flex-column flex-grow-0 mr-5">
-                @if (Entity.Data?.GetAge() != null)
+                @if (SuffixContent != null)
+                {
+                    @SuffixContent(Entity.Data)
+                }
+                else if (ShowGrade)
+                {
+                    <MudText Typo="Typo.h6">
+                        @GetSchoolGrade()
+                    </MudText>
+                }
+                else if (Entity.Data?.GetAge() != null)
                 {
                     <MudText Typo="Typo.h6">
                         @Entity.Data?.GetAge()

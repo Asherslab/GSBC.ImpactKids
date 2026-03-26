@@ -1,3 +1,5 @@
+using EasyAppDev.Blazor.Store.AsyncActions;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Interfaces;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base.Interfaces;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
@@ -19,8 +21,14 @@ public partial class DetailsComponent<TEntity, TCreateRequest, TUpdateRequest> :
     [Parameter]
     public Action<ModificationState>? OnStateChanged { get; set; }
 
-    protected readonly TCreateRequest CreateRequest = new();
-    protected          TUpdateRequest UpdateRequest = new();
+    [Parameter]
+    public bool RequestsReadonly { get; set; }
+
+    [Parameter]
+    public TCreateRequest CreateRequest { get; set; } = new();
+
+    [Parameter]
+    public TUpdateRequest UpdateRequest { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -31,7 +39,7 @@ public partial class DetailsComponent<TEntity, TCreateRequest, TUpdateRequest> :
             if (!Entity.IsLoading && State == ModificationState.Updating)
             {
                 Snackbar.Add(
-                    "Somebody else has made modifications, your edit has been cancelled",
+                    "Somebody has made modifications, your edit has been cancelled",
                     Severity.Warning,
                     x =>
                     {
@@ -53,6 +61,8 @@ public partial class DetailsComponent<TEntity, TCreateRequest, TUpdateRequest> :
 
     protected override void OnRetrievedEntity()
     {
+        if (RequestsReadonly)
+            return;
         UpdateRequest = TUpdateRequest.FromEntity(Entity.Data!);
         UpdateRequestUpdated();
     }
@@ -61,22 +71,24 @@ public partial class DetailsComponent<TEntity, TCreateRequest, TUpdateRequest> :
 
     protected virtual TCreateRequest ModifyCreateRequest(TCreateRequest request) => request;
 
-    public async Task<bool> CreateEntity()
+    public async Task<Guid?> CreateEntity()
     {
         _awaitingModification = true;
         try
         {
             Entity = Entity.ToLoading();
             StateHasChanged();
-            TCreateRequest request = ModifyCreateRequest(CreateRequest);
-            BasicResponse  resp    = await CreateService.Create(request);
+            TCreateRequest           request = ModifyCreateRequest(CreateRequest);
+            BasicReadResponse<Guid?> resp    = await CreateService.Create(request);
 
             if (!resp.HasErrorOrNull())
-                return true;
+                return resp.Entity;
 
+            Entity = AsyncData<TEntity>.NotAsked();
             RetrieveEntity();
             Snackbar.AddErrorResponse(resp);
-            return false;
+            StateHasChanged();
+            return null;
         }
         finally
         {
@@ -135,7 +147,7 @@ public interface IDetailsComponent
     public ModificationState          State          { get; set; }
     public Action<ModificationState>? OnStateChanged { get; set; }
 
-    public Task<bool> CreateEntity();
-    public Task<bool> UpdateEntity();
-    public Task<bool> DeleteEntity();
+    public Task<Guid?> CreateEntity();
+    public Task<bool>  UpdateEntity();
+    public Task<bool>  DeleteEntity();
 }

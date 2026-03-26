@@ -12,7 +12,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Entities\Features\" />
+      <Folder Include="Messages\Requests\Features\Authentication\" />
       <Folder Include="Messages\Requests\Features\Scripture\Memorisation\" />
     </ItemGroup>
 

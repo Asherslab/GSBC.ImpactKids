@@ -14,8 +14,8 @@ public class ServicesRequest : IRequestMessage
     public DateOnly End { get; set; }
 
     [JsonPropertyName("service_types")]
-    public string[] ServiceTypes { get; set; }
+    public required string[] ServiceTypes { get; set; }
 
     [JsonPropertyName("fields")]
-    public string[] Fields { get; set; }
+    public required string[] Fields { get; set; }
 }

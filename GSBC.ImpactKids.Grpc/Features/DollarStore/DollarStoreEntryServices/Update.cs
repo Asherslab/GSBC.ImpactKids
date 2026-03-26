@@ -1,5 +1,5 @@
 using GSBC.ImpactKids.Grpc.Data.Models;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.DollarStoreEntries;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.DollarStore;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using Microsoft.EntityFrameworkCore;
 

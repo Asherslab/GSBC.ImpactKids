@@ -11,13 +11,13 @@ public partial class MudNumericFieldCreateorUpdate<T>
     public T? Create { get; set; }
     
     [Parameter]
-    public EventCallback<T> CreateChanged { get; set; }
+    public EventCallback<T?> CreateChanged { get; set; }
     
     [Parameter]
     public T? Update { get; set; }
     
     [Parameter]
-    public EventCallback<T> UpdateChanged { get; set; }
+    public EventCallback<T?> UpdateChanged { get; set; }
     
     [Parameter]
     public T? Read { get; set; }
@@ -29,17 +29,17 @@ public partial class MudNumericFieldCreateorUpdate<T>
         switch (State)
         {
             case ModificationState.Creating:
-                await SetValueAsync(Create);
+                await SetValueAndUpdateTextAsync(Create);
                 ValueChanged = CreateChanged;
                 ReadOnly = false;
                 break;
             case ModificationState.Reading:
-                await SetValueAsync(Read);
+                await SetValueAndUpdateTextAsync(Read);
                 ValueChanged = default;
                 ReadOnly = true;
                 break;
             case ModificationState.Updating:
-                await SetValueAsync(Update);
+                await SetValueAndUpdateTextAsync(Update);
                 ValueChanged = UpdateChanged;
                 ReadOnly = false;
                 break;

@@ -1,0 +1,99 @@
+@inherits DetailsComponent<AttendanceItemRecord, CreateAttendanceItemRecordRequest, UpdateAttendanceItemRecordRequest>
+@inject IRefreshableStore<AttendanceItemType> AttendanceItemTypesStore
+
+<MudPaper Elevation="0" Class="d-flex flex-column flex-grow-1">
+    <MudOverlay Visible="@(Entity.IsLoading)"
+                DarkBackground="true"
+                Absolute="true">
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+    @if (Entity.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">
+            @(Entity.Error ?? "An Unexpected error occured")
+        </MudAlert>
+    }
+    <div class="relative mb-4">
+        <MudOverlay Visible="@(AttendanceItemTypesStore.GetState().Entities.IsLoading)"
+                    DarkBackground
+                    Absolute>
+            <MudProgressCircular Indeterminate/>
+        </MudOverlay>
+        <MudSelectCreateOrUpdate
+            @bind-Create="@CreateRequest.AttendanceItemTypeId"
+            Read="@Entity.Data?.AttendanceItemTypeId"
+            Update="@Entity.Data?.AttendanceItemTypeId"
+            State="State"
+
+            Label="Item Type"
+            Variant="Variant.Filled"
+            Disabled="@(State == ModificationState.Updating)"
+
+            Clearable
+            FullWidth>
+            <MudSelectItem
+                T="Guid?"
+                Value="null">
+                Other
+            </MudSelectItem>
+            @if (AttendanceItemTypesStore.GetState().Entities.HasData)
+            {
+                foreach (AttendanceItemType itemType in AttendanceItemTypesStore.GetState().Entities.Data!)
+                {
+                    <MudSelectItem T="Guid?"
+                                   Value="@itemType.Id">
+                        @(itemType.Label)
+                    </MudSelectItem>
+                }
+            }
+        </MudSelectCreateOrUpdate>
+    </div>
+
+    <MudCheckBoxCreateOrUpdate
+        @bind-Create="@CreateRequest.RewardGiven"
+        Read="@UpdateRequest.RewardGiven.Value"
+        @bind-Update="@UpdateRequest.RewardGiven.Value"
+        State="State"
+
+        Disabled="@(GetItemType()?.Reward == null)"
+
+        Label="@($"Reward Given: ${GetItemType()?.Reward ?? 0}")"/>
+
+    @if (GetItemType()?.RequiresReturning != false) @* Allows Other or Requires Returning items *@
+    {
+        <MudSelectCreateOrUpdate
+            @bind-Create="@CreateRequest.ItemReturned"
+            Read="@UpdateRequest.ItemReturned.Value"
+            @bind-Update="@UpdateRequest.ItemReturned.Value"
+            State="State"
+
+            Label="Item Returned"
+            Variant="Variant.Filled"
+            Disabled="@DisableItemReturned()"
+
+            Clearable
+            FullWidth>
+            @if (!DisableItemReturned())
+            {
+                <MudSelectItem
+                    T="bool?"
+                    Value="null">
+                    @GetNullItemReturnedText()
+                </MudSelectItem>
+            }
+            @if (!DisableYesItemReturned())
+            {
+                <MudSelectItem
+                    T="bool?"
+                    Value="true">
+                    Yes
+                </MudSelectItem>
+            }
+            <MudSelectItem
+                T="bool?"
+                Value="false">
+                @GetNoItemReturnedText()
+            </MudSelectItem>
+        </MudSelectCreateOrUpdate>
+    }
+</MudPaper>

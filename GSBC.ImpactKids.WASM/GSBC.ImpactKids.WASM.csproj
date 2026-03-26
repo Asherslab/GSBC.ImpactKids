@@ -11,7 +11,7 @@
         <PackageReference Include="Aspire4Wasm.WebAssembly" Version="6.0.1"/>
         <PackageReference Include="Blazor.WhyDidYouRender" Version="3.0.0" />
         <PackageReference Include="Blazor.WhyDidYouRender.Aspire" Version="3.0.0" />
-        <PackageReference Include="EasyAppDev.Blazor.Store" Version="2.0.6" />
+        <PackageReference Include="EasyAppDev.Blazor.Store" Version="2.0.10" />
         <PackageReference Include="FuzzySharp" Version="2.0.2" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.0"/>
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="10.0.0"/>
@@ -23,7 +23,7 @@
         <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0"/>
         <PackageReference Include="Microsoft.Extensions.Logging.Configuration" Version="10.0.1" />
 
-        <PackageReference Include="MudBlazor" Version="8.15.0"/>
+        <PackageReference Include="MudBlazor" Version="9.2.0" />
 
         <PackageReference Include="Grpc.Net.Client" Version="2.71.0"/>
         <PackageReference Include="Grpc.Net.Client.Web" Version="2.71.0"/>
@@ -83,5 +83,6 @@
       <_ContentIncludedByDefault Remove="Components\Dialogs\Update\UpdateServiceDialog.razor" />
       <_ContentIncludedByDefault Remove="Pages\MemoryVerseLists\List.razor" />
       <_ContentIncludedByDefault Remove="Pages\Users\Users.razor" />
+      <_ContentIncludedByDefault Remove="Components\Common\Inputs\StoreInputs\EntitySelectList.razor" />
     </ItemGroup>
 </Project>

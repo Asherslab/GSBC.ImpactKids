@@ -1,5 +1,5 @@
 using GSBC.ImpactKids.Shared.Contracts.Entities;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.DollarStoreEntries;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.DollarStore;
 using Microsoft.AspNetCore.Components;
 
 namespace GSBC.ImpactKids.WASM.Features.DollarStore.Components.Individual;

@@ -11,16 +11,19 @@ public partial class MudSelectCreateOrUpdate<T>
     public T? Create { get; set; }
     
     [Parameter]
-    public EventCallback<T> CreateChanged { get; set; }
+    public EventCallback<T?> CreateChanged { get; set; }
     
     [Parameter]
     public T? Update { get; set; }
     
     [Parameter]
-    public EventCallback<T> UpdateChanged { get; set; }
+    public EventCallback<T?> UpdateChanged { get; set; }
     
     [Parameter]
     public T? Read { get; set; }
+    
+    [Parameter]
+    public Func<T?, Task<bool>>? ErrorFunc { get; set; }
     
     protected override async Task OnParametersSetAsync()
     {
@@ -36,7 +39,7 @@ public partial class MudSelectCreateOrUpdate<T>
             case ModificationState.Reading:
                 // await ClearAsync();
                 await SelectOption(Read);
-                ValueChanged = new EventCallback<T>();
+                ValueChanged = new EventCallback<T?>();
                 ReadOnly = true;
                 break;
             case ModificationState.Updating:
@@ -47,5 +50,8 @@ public partial class MudSelectCreateOrUpdate<T>
             default:
                 throw new ArgumentOutOfRangeException();
         }
+        
+        if (ErrorFunc != null)
+            await ErrorState.SetValueAsync(await ErrorFunc(ReadValue));
     }
 }

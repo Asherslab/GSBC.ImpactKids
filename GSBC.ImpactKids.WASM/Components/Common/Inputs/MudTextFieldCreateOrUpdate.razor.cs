@@ -11,35 +11,35 @@ public partial class MudTextFieldCreateOrUpdate
     public string? Create { get; set; }
     
     [Parameter]
-    public EventCallback<string> CreateChanged { get; set; }
+    public EventCallback<string?> CreateChanged { get; set; }
     
     [Parameter]
     public string? Update { get; set; }
     
     [Parameter]
-    public EventCallback<string> UpdateChanged { get; set; }
+    public EventCallback<string?> UpdateChanged { get; set; }
     
     [Parameter]
     public string? Read { get; set; }
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
-        base.OnParametersSet();
+        await base.OnParametersSetAsync();
         
         switch (State)
         {
             case ModificationState.Creating:
-                Text = Create;
+                await SetTextAndUpdateValueAsync(Create);
                 TextChanged = CreateChanged;
                 ReadOnly = false;
                 break;
             case ModificationState.Reading:
-                Text = Read;
+                await SetTextAndUpdateValueAsync(Read);
                 TextChanged = default;
                 ReadOnly = true;
                 break;
             case ModificationState.Updating:
-                Text = Update;
+                await SetTextAndUpdateValueAsync(Update);
                 TextChanged = UpdateChanged;
                 ReadOnly = false;
                 break;
