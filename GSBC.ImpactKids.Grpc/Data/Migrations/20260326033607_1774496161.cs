@@ -5,21 +5,20 @@
 namespace GSBC.ImpactKids.Grpc.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class _1770527858 : Migration
+    public partial class _1774496161 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<bool>(
-                name: "RequiresReturning",
-                table: "AttendanceItemTypes",
-                type: "boolean",
-                nullable: false,
-                defaultValue: false);
+            migrationBuilder.AddColumn<string>(
+                name: "Email",
+                table: "People",
+                type: "text",
+                nullable: true);
 
             migrationBuilder.AddColumn<string>(
-                name: "Notes",
-                table: "AttendanceItemRecords",
+                name: "PhoneNumber",
+                table: "People",
                 type: "text",
                 nullable: true);
         }
@@ -28,12 +27,12 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "RequiresReturning",
-                table: "AttendanceItemTypes");
+                name: "Email",
+                table: "People");
 
             migrationBuilder.DropColumn(
-                name: "Notes",
-                table: "AttendanceItemRecords");
+                name: "PhoneNumber",
+                table: "People");
         }
     }
 }

@@ -8,7 +8,8 @@
     <ActivatorContent>
         <MudNavGroup Icon="@Icon" Title="@Title"
                      ExpandIcon="@Icons.Material.Filled.NavigateBefore"
-                     Expanded="@_menuOpen"/>
+                     Expanded="@_menuOpen"
+                     onclick="@(() => context.ToggleAsync())"/>
     </ActivatorContent>
 </MudMenu>
 

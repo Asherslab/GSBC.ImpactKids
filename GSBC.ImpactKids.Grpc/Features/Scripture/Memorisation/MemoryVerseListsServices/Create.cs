@@ -8,19 +8,19 @@ namespace GSBC.ImpactKids.Grpc.Features.Scripture.Memorisation.MemoryVerseListsS
 
 public partial class MemoryVerseListsService
 {
-    public async Task<BasicResponse> Create(CreateMemoryVerseListRequest request, CallContext context = default)
+    public async Task<BasicReadResponse<Guid?>> Create(CreateMemoryVerseListRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 
         if (string.IsNullOrWhiteSpace(request.Name))
-            return BasicResponse.WithError(MemoryVerseListNameNull);
+            return BasicReadResponse<Guid?>.WithError(MemoryVerseListNameNull);
 
         if (request.SchoolTermId != null)
         {
             DbSchoolTerm? term = await db.Terms
                 .FirstOrDefaultAsync(x => x.Id == request.SchoolTermId, token);
             if (term == null)
-                return BasicResponse.WithError(SchoolTermNotFound);
+                return BasicReadResponse<Guid?>.WithError(SchoolTermNotFound);
         }
 
         DbMemoryVerseList list = new()
@@ -34,8 +34,9 @@ public partial class MemoryVerseListsService
         await db.SaveChangesAsync(token);
         await eventService.SendUpdatedEvent(token);
 
-        return new BasicResponse
+        return new BasicReadResponse<Guid?>
         {
+            Entity = list.Id,
             Success = true
         };
     }

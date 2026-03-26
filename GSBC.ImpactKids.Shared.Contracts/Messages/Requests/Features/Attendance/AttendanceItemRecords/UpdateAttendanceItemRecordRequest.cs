@@ -9,7 +9,6 @@ public class UpdateAttendanceItemRecordRequest
 {
     public override string Id { get; set; } = null!;
 
-    public DeltaUpdate<bool>  ItemBrought  { get; init; } = new();
     public DeltaUpdate<bool>  RewardGiven  { get; init; } = new();
     public DeltaUpdate<bool?> ItemReturned { get; init; } = new();
 
@@ -20,7 +19,6 @@ public class UpdateAttendanceItemRecordRequest
             Guid = entity.Id,
         };
 
-        request.ItemBrought.SetInitialValue(entity.ItemBrought);
         request.RewardGiven.SetInitialValue(entity.RewardGiven);
         request.ItemReturned.SetInitialValue(entity.ItemReturned);
 

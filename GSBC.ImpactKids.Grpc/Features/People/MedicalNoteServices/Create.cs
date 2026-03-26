@@ -7,24 +7,24 @@ namespace GSBC.ImpactKids.Grpc.Features.People.MedicalNoteServices;
 
 public partial class MedicalNoteService
 {
-    public async Task<BasicResponse> Create(CreateMedicalNoteRequest request, CallContext context = default)
+    public async Task<BasicReadResponse<Guid?>> Create(CreateMedicalNoteRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 
         if (request.MedicalTypeId == null && string.IsNullOrWhiteSpace(request.Notes))
-            return BasicResponse.WithError(MedicalNotesMustHaveTypeOrNotes);
+            return BasicReadResponse<Guid?>.WithError(MedicalNotesMustHaveTypeOrNotes);
 
         DbPerson? person = await db.People.FirstOrDefaultAsync(x => x.Id == request.PersonId, token);
 
         if (person == null)
-            return BasicResponse.WithError(PersonNotFound);
+            return BasicReadResponse<Guid?>.WithError(PersonNotFound);
 
         if (request.MedicalTypeId != null)
         {
             bool medicalTypeExists = await db.MedicalTypes.AnyAsync(x => x.Id == request.MedicalTypeId, token);
 
             if (!medicalTypeExists)
-                return BasicResponse.WithError(MedicalTypeNotFound);
+                return BasicReadResponse<Guid?>.WithError(MedicalTypeNotFound);
         }
 
         DbMedicalNote medicalNote = new()
@@ -40,8 +40,9 @@ public partial class MedicalNoteService
         await db.SaveChangesAsync(token);
         await eventService.SendUpdatedEvent(token);
 
-        return new BasicResponse
+        return new BasicReadResponse<Guid?>
         {
+            Entity = medicalNote.Id,
             Success = true
         };
     }

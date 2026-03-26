@@ -1,0 +1,121 @@
+@using GSBC.ImpactKids.Shared.Contracts.Services.Features.Attendance
+@using GSBC.ImpactKids.WASM.Features.Attendance.Features.AttendanceItemRecords.Components.Individual
+@inherits EntityUtilityComponent
+@page "/Attendance/SignOut/{Id:guid}"
+@inject IRefreshableStore<Service>              ServicesStore
+@inject IRefreshableStore<Person>               PeopleStore
+@inject IRefreshableStore<AttendanceRecord>     AttendanceRecordsStore
+@inject IRefreshableStore<AttendanceItemType>   AttendanceItemTypesStore
+@inject IRefreshableStore<AttendanceItemRecord> AttendanceItemRecordsStore
+@inject IAttendanceRecordService                AttendanceRecordsService
+
+<PageTitle>Sign In</PageTitle>
+
+<MudBreadcrumbs Items="_breadcrumbs"/>
+
+<MudPaper Elevation="6" Class="relative pt-1 px-6 pb-6">
+    <MudOverlay Visible="@(_attendanceRecord.IsLoading || _person.IsLoading)"
+                DarkBackground
+                Absolute>
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+    @if (_person.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">
+            @_person.Error
+        </MudAlert>
+    }
+    @if (_person.HasData)
+    {
+        <MudStepper
+            @bind-ActiveIndex="_index"
+            CompletedStepColor="Color.Success"
+            ErrorStepColor="Color.Error">
+            <ChildContent>
+                <MudStep Title="Check Details" HasError="_errorsInPerson">
+                    @if (_errorsInPerson)
+                    {
+                        <MudAlert Severity="Severity.Error" Class="mb-4">
+                            This person has errors in their profile, please check highlighted entries below!
+                        </MudAlert>
+                    }
+                    <PersonOverview
+                        Id="Id"
+                        ErrorsChanged="@PersonDetailsErrorsChanged"
+                        HideMemorisationEntries
+                        HideFamilyMembers/>
+                </MudStep>
+                <MudStep Title="Sign Out" Completed="@(_attendanceRecord.Data != null)">
+                    <MudGrid Justify="Justify.Center">
+                        <MudItem xs="12" md="6">
+                            <MudCard Elevation="6">
+                                <MudCardHeader>
+                                    <CardHeaderContent>
+                                        <MudText Typo="Typo.h6"
+                                                 Align="Align.Start">
+                                            Confirm Sign Out:
+                                        </MudText>
+                                    </CardHeaderContent>
+                                </MudCardHeader>
+                                <MudCardContent>
+                                    <PersonDetails BasicView
+                                                   Id="Id"/>
+                                </MudCardContent>
+                            </MudCard>
+                        </MudItem>
+                    </MudGrid>
+                </MudStep>
+                <MudStep Title="Check Items" Disabled="@(_attendanceRecord.Data == null)">
+                    <MudGrid Justify="Justify.Center">
+                        <MudItem xs="12" md="6">
+                            <MudCard Elevation="6">
+                                <MudCardHeader>
+                                    <CardHeaderContent>
+                                        <MudText Typo="Typo.h6"
+                                                 Align="Align.Start">
+                                            Attendance Items
+                                        </MudText>
+                                    </CardHeaderContent>
+                                </MudCardHeader>
+                                <MudCardContent>
+                                    <ListComponent
+                                        T="AttendanceItemRecord"
+                                        Filter="@(x => x.AttendanceRecordId == _attendanceRecord.Data?.Id)"
+                                        Context="itemRecordId">
+                                        <ChildContent>
+                                            <MudItem xs="12" md="6">
+                                                <AttendanceItemRecordDisplay Id="itemRecordId" ShowReturnError>
+                                                    <SuffixContent>
+                                                        <MudIconButton
+                                                            Icon="@Icons.Material.Filled.Edit"
+                                                            OnClick="@(() => UpdateAttendanceItemRecord(itemRecordId))"/>
+                                                    </SuffixContent>
+                                                </AttendanceItemRecordDisplay>
+                                            </MudItem>
+                                        </ChildContent>
+                                    </ListComponent>
+                                </MudCardContent>
+                            </MudCard>
+                        </MudItem>
+                    </MudGrid>
+                </MudStep>
+            </ChildContent>
+            <ActionContent Context="stepper">
+                <MudButton
+                    OnClick="@(() => PreviousStepAsync(stepper))"
+                    StartIcon="@stepper.PreviousButtonIcon"
+                    Color="Color.Primary"
+                    Disabled="@(_index <= 0)">
+                    Previous
+                </MudButton>
+                <MudSpacer/>
+                <MudButton
+                    OnClick="@(() => NextStepAsync(stepper))"
+                    EndIcon="@stepper.NextButtonIcon"
+                    Color="Color.Primary">
+                    @_alternativeButtonLabels.GetValueOrDefault(_index, "Next")
+                </MudButton>
+            </ActionContent>
+        </MudStepper>
+    }
+</MudPaper>

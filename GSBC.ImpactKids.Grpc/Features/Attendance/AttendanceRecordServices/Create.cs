@@ -11,26 +11,37 @@ namespace GSBC.ImpactKids.Grpc.Features.Attendance.AttendanceRecordServices;
 
 public partial class AttendanceRecordService
 {
-    public async Task<BasicResponse> Create(SignInAttendanceRecordRequest request, CallContext context = default)
+    public async Task<BasicReadResponse<Guid?>> Create(SignInAttendanceRecordRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 
         DbPerson? person = await db.People.FirstOrDefaultAsync(x => x.Id == request.PersonId, token);
 
         if (person == null)
-            return BasicResponse.WithError(PersonNotFound);
+            return BasicReadResponse<Guid?>.WithError(PersonNotFound);
 
         DbService? service = await db.Services.FirstOrDefaultAsync(x => x.Id == request.ServiceId, token);
 
         if (service == null)
-            return BasicResponse.WithError(ServiceNotFound);
+            return BasicReadResponse<Guid?>.WithError(ServiceNotFound);
 
         string? userId = context.ServerCallContext?.GetHttpContext().User
             .FindFirstValue("UserId");
 
         if (userId == null)
-            return BasicResponse.WithError(PermissionDenied);
+            return BasicReadResponse<Guid?>.WithError(PermissionDenied);
 
+        bool existingRecord = await db.AttendanceRecords
+            .AnyAsync(x => x.ServiceId == service.Id &&
+                           x.PersonId == person.Id &&
+                           x.SignedOut == null &&
+                           !x.Deleted,
+                token
+            );
+
+        if (existingRecord)
+            return BasicReadResponse<Guid?>.WithError(AttendanceRecordExists);
+        
         DbAttendanceRecord attendanceRecord = new()
         {
             Id = Guid.Empty,
@@ -46,8 +57,9 @@ public partial class AttendanceRecordService
         await db.SaveChangesAsync(token);
         await eventService.SendUpdatedEvent(token);
 
-        return new BasicResponse
+        return new BasicReadResponse<Guid?>
         {
+            Entity = attendanceRecord.Id,
             Success = true
         };
     }

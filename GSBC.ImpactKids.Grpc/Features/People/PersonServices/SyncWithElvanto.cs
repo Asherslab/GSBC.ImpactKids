@@ -2,6 +2,7 @@ using GSBC.ImpactKids.Grpc.Data.Models.People;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.Allergies;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.MedicalNotes;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
+using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ImpactKids.Grpc.Features.People.PersonServices;
 
@@ -33,7 +34,10 @@ public partial class PersonService
     )
     {
         List<string> matchedElvantoPeople = [];
-        await foreach (DbPerson dbPerson in db.People)
+        await foreach (DbPerson dbPerson in db.People
+                           .Include(x => x.Allergies)
+                           .Include(x => x.MedicalNotes)
+                           .AsAsyncEnumerable().WithCancellation(token))
         {
             DbPerson? elvantoPerson = resp.Entities.FirstOrDefault(x => x.ElvantoId == dbPerson.ElvantoId);
 
@@ -45,6 +49,12 @@ public partial class PersonService
                 dbPerson.FirstName = elvantoPerson.FirstName;
             if (dbPerson.LastName != elvantoPerson.LastName)
                 dbPerson.LastName = elvantoPerson.LastName;
+            
+            if (dbPerson.Email != elvantoPerson.Email)
+                dbPerson.Email = elvantoPerson.Email;
+            if (dbPerson.PhoneNumber != elvantoPerson.PhoneNumber)
+                dbPerson.PhoneNumber = elvantoPerson.PhoneNumber;
+            
             if (dbPerson.SchoolGradeId != elvantoPerson.SchoolGradeId)
                 dbPerson.SchoolGradeId = elvantoPerson.SchoolGradeId;
             if (dbPerson.MediaConsent != elvantoPerson.MediaConsent)

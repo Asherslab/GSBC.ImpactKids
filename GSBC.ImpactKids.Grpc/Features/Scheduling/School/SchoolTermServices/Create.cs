@@ -6,16 +6,16 @@ namespace GSBC.ImpactKids.Grpc.Features.Scheduling.School.SchoolTermServices;
 
 public partial class SchoolTermService
 {
-    public async Task<BasicResponse> Create(CreateSchoolTermRequest request, CallContext context = default)
+    public async Task<BasicReadResponse<Guid?>> Create(CreateSchoolTermRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 
         if (string.IsNullOrWhiteSpace(request.Name))
-            return BasicResponse.WithError(SchoolTermNameNull);
+            return BasicReadResponse<Guid?>.WithError(SchoolTermNameNull);
         if (request.StartDate == default)
-            return BasicResponse.WithError(SchoolTermStartDateNull);
+            return BasicReadResponse<Guid?>.WithError(SchoolTermStartDateNull);
         if (request.EndDate == default)
-            return BasicResponse.WithError(SchoolTermEndDateNull);
+            return BasicReadResponse<Guid?>.WithError(SchoolTermEndDateNull);
         
         DbSchoolTerm term = new()
         {
@@ -30,8 +30,9 @@ public partial class SchoolTermService
         await db.SaveChangesAsync(token);
         await eventService.SendUpdatedEvent(token);
 
-        return new BasicResponse
+        return new BasicReadResponse<Guid?>
         {
+            Entity = term.Id,
             Success = true
         };
     }

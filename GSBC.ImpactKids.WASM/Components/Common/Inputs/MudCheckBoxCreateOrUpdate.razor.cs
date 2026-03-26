@@ -22,24 +22,24 @@ public partial class MudCheckBoxCreateOrUpdate
     [Parameter]
     public bool Read { get; set; }
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
-        base.OnParametersSet();
+        await base.OnParametersSetAsync();
         
         switch (State)
         {
             case ModificationState.Creating:
-                Value = Create;
+                await SetValueCoreAsync(Create);
                 ValueChanged = CreateChanged;
                 ReadOnly = false;
                 break;
             case ModificationState.Reading:
-                Value = Read;
+                await SetValueCoreAsync(Read);
                 ValueChanged = default;
                 ReadOnly = true;
                 break;
             case ModificationState.Updating:
-                Value = Update;
+                await SetValueCoreAsync(Update);
                 ValueChanged = UpdateChanged;
                 ReadOnly = false;
                 break;

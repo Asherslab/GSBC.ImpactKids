@@ -1,0 +1,42 @@
+@page "/Attendance/CreatePerson"
+
+<PageTitle>Create Person</PageTitle>
+
+<MudBreadcrumbs Items="_breadcrumbs"/>
+
+<MudPaper Elevation="6" Class="relative pt-1 px-6 pb-6">
+    <CreatePersonWorkflow
+        FamilyId="FamilyId"
+        OnExit="OnExit"/>
+</MudPaper>
+
+@code
+{
+    [SupplyParameterFromQuery]
+    public Guid? ServiceId { get; set; }
+
+    [SupplyParameterFromQuery]
+    public Guid? FamilyId { get; set; }
+
+    private readonly BreadcrumbItem[] _breadcrumbs =
+    [
+        new("Attendance", href: "/Attendance/Tool"),
+        new("Create Person", href: null, disabled: true)
+    ];
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        _breadcrumbs[0] = new BreadcrumbItem("Attendance", href: $"/Attendance/Tool?{nameof(Tool.ServiceId)}={ServiceId}");
+    }
+
+    private void OnExit(Guid? personId)
+    {
+        Navigation.NavigateTo(
+            personId == null
+                ? $"/Attendance/Tool?{nameof(Family.ServiceId)}={ServiceId}"
+                : $"/Attendance/Family/{personId}?{nameof(Family.ServiceId)}={ServiceId}"
+        );
+    }
+}

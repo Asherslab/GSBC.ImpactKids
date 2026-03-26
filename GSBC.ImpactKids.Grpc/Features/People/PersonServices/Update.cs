@@ -32,6 +32,20 @@ public partial class PersonService
             person.LastName = request.LastName.Value;
         }
 
+        if (request.Email.IsUpdated)
+        {
+            if (string.IsNullOrWhiteSpace(request.Email.Value))
+                request.Email.Value = null;
+            person.Email = request.Email.Value;
+        }
+
+        if (request.PhoneNumber.IsUpdated)
+        {
+            if (string.IsNullOrWhiteSpace(request.PhoneNumber.Value))
+                request.PhoneNumber.Value = null;
+            person.PhoneNumber = request.PhoneNumber.Value;
+        }
+
         if (request.SchoolGradeId.IsUpdated)
         {
             if (request.SchoolGradeId.Value != null)

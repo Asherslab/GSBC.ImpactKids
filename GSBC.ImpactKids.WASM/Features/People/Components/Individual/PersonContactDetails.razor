@@ -1,0 +1,24 @@
+@inherits DetailsComponent<Person, CreatePersonRequest, UpdatePersonRequest>
+
+<MudPaper Elevation="0" Class="d-flex flex-column flex-grow-1">
+    <MudTextFieldCreateOrUpdate
+        @bind-Create="@CreateRequest.Email"
+        Read="@UpdateRequest.Email.Value"
+        @bind-Update="@UpdateRequest.Email.Value"
+        State="State"
+        
+        Class="mb-4"
+        Label="Email"
+        Variant="Variant.Filled"/>
+    <MudTextFieldCreateOrUpdate
+        @bind-Create="@CreateRequest.PhoneNumber"
+        Read="@UpdateRequest.PhoneNumber.Value"
+        @bind-Update="@UpdateRequest.PhoneNumber.Value"
+        State="State"
+        
+        Mask="@(new PatternMask("0000 000 000"))"
+
+        Class="mb-4"
+        Label="Phone Number"
+        Variant="Variant.Filled"/>
+</MudPaper>

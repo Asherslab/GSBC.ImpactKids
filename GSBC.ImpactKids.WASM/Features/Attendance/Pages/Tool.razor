@@ -1,19 +1,104 @@
+@using GSBC.ImpactKids.WASM.Features.Attendance.Components.Individual
+@using PersonDisplay = GSBC.ImpactKids.WASM.Features.Attendance.Features.AttendanceItemTypes.Components.Individual.AttendanceItemTypeDisplay
 @inherits EntityUtilityComponent
-@page "/Attendance/Tool/{ServiceId:guid}"
-@inject IRefreshableStore<Service> ServicesStore
+@page "/Attendance/Tool"
+@inject IRefreshableStore<Service>          ServicesStore
+@inject IRefreshableStore<SchoolGrade>      SchoolGradesStore
+@inject IRefreshableStore<AttendanceRecord> AttendanceRecordsStore
 
 <PageTitle>Attendance</PageTitle>
 
-<MudPaper Elevation="6" Class="mt-4 pt-1 px-6 pb-6">
+<MudBreadcrumbs Class="" Items="@_breadcrumbs"/>
+
+<MudPaper Elevation="6" Class="pt-1 px-6 pb-6">
     <MudText Align="Align.Center" Typo="Typo.h5" Class="py-3">Attendance</MudText>
-    @* @if (_service.HasError) *@
-    @* { *@
-    @*     <MudAlert Severity="Severity.Error" Class="mb-4"> *@
-    @*         @(_service.Error ?? "An Unexpected error occured") *@
-    @*     </MudAlert> *@
-    @* } *@
-    @* <MemorisationTool *@
-    @*     ServiceId="_service.Data?.Id" *@
-    @*     MemoryVerseId="@State.MemoryVerseId" *@
-    @*     MemoryVerseIdChanged="OnMemoryVerseIdChanged"/> *@
+    <MudOverlay Visible="@(_service.IsLoading)"
+                DarkBackground
+                Absolute>
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+    @if (_service.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">
+            @(_service.Error ?? "An Unexpected error occured")
+        </MudAlert>
+    }
+    <MudGrid Spacing="3" Justify="Justify.Center">
+        <MudItem xs="12" md="3">
+            <MudStack>
+                <ServiceDisplay Id="_service.Data?.Id" Link/>
+                <MudCard Elevation="6">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">Filters</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudStack>
+                            @foreach (string key in _filters.Keys)
+                            {
+                                <MudLink
+                                    OnClick="@(() => _currentFilter = key)">
+                                    @key
+                                </MudLink>
+                            }
+                        </MudStack>
+                    </MudCardContent>
+                </MudCard>
+                <MudCard Elevation="6">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">Stats</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <AttendanceOverview
+                            ServiceId="_service.Data?.Id"/>
+                    </MudCardContent>
+                </MudCard>
+            </MudStack>
+        </MudItem>
+        <MudItem xs="12" md="9">
+            <MudStack>
+                <MudPaper Elevation="6">
+                    <MudButton
+                        Class="py-3"
+                        FullWidth
+                        Href="@($"/Attendance/CreatePerson?{nameof(CreatePerson.ServiceId)}={_service.Data?.Id}")">
+                        Create New Person & Family
+                    </MudButton>
+                </MudPaper>
+                <MudPaper Elevation="6" Class="pa-2">
+                    <MudTextField
+                        T="string"
+                        autocorrect="off"
+                        Value="@_search"
+                        ValueChanged="@(OnSearchChanged)"
+                        Placeholder="Search"
+                        Adornment="Adornment.Start"
+                        AdornmentIcon="@Icons.Material.Filled.Search"
+                        IconSize="Size.Medium"
+                        Clearable
+                        Variant="Variant.Outlined"
+                        Immediate/>
+                </MudPaper>
+                <MudPaper Elevation="6" Class="pa-4">
+                    <ListComponent T="Person"
+                                   Filter="@_filters[_currentFilter]"
+                                   TieredFilters="_tieredFilters"
+                                   Search="@_search"
+                                   SearchFields="@SearchFields"
+                                   Ordering="@(l => l.OrderBy(x => x.FirstName))"
+                                   Spacing="3"
+                                   Limit="15"
+                                   Context="personId">
+                        <MudItem xs="12" md="4">
+                            <PersonDisplay Id="personId" ShowGrade
+                                           Link="@($"/Attendance/Family/{personId}?{nameof(Family.ServiceId)}={_service.Data?.Id}")"/>
+                        </MudItem>
+                    </ListComponent>
+                </MudPaper>
+            </MudStack>
+        </MudItem>
+    </MudGrid>
 </MudPaper>

@@ -8,22 +8,22 @@ namespace GSBC.ImpactKids.Grpc.Features.DollarStore.DollarStoreEntryServices;
 
 public partial class DollarStoreEntryService
 {
-    public async Task<BasicResponse> Create(CreateDollarStoreEntryRequest request, CallContext context = default)
+    public async Task<BasicReadResponse<Guid?>> Create(CreateDollarStoreEntryRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
 
         if (request.ServiceId == Guid.Empty)
-            return BasicResponse.WithError(DollarStoreServiceNull);
+            return BasicReadResponse<Guid?>.WithError(DollarStoreServiceNull);
         
         DbService? service = await db.Services
             .Include(x => x.DollarStoreEntry)
             .FirstOrDefaultAsync(x => x.Id == request.ServiceId, cancellationToken: token);
 
         if (service == null)
-            return BasicResponse.WithError(ServiceNotFound);
+            return BasicReadResponse<Guid?>.WithError(ServiceNotFound);
         
         if (service.DollarStoreEntry != null)
-            return BasicResponse.WithError(DollarStoreServiceExists);
+            return BasicReadResponse<Guid?>.WithError(DollarStoreServiceExists);
         
         DbDollarStoreEntry entry = new()
         {
@@ -38,8 +38,9 @@ public partial class DollarStoreEntryService
         await db.SaveChangesAsync(token);
         await eventService.SendUpdatedEvent(token);
 
-        return new BasicResponse
+        return new BasicReadResponse<Guid?>
         {
+            Entity = entry.Id,
             Success = true
         };
     }

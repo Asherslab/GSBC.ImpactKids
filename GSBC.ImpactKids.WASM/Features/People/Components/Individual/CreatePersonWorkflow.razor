@@ -1,0 +1,42 @@
+@inherits EntityUtilityComponent
+@inject IRefreshableStore<Person> PeopleStore
+
+<MudStepper 
+    @bind-ActiveIndex="_index"
+    CompletedStepColor="Color.Success"
+    ErrorStepColor="Color.Error">
+    <ChildContent>
+        <MudStep Title="Create Person">
+            <PersonDetails
+                @ref="@_personDetails"
+                Id="@_createdPersonId"
+                FamilyId="@FamilyId"
+                State="@_state"/>
+        </MudStep>
+        <MudStep Title="Check Medical & Allergies" Disabled="@(_createdPersonId == null)">
+            <MudGrid>
+                <MudItem xs="12" md="6">
+                    <MedicalNotesCard PersonId="_createdPersonId"/>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <AllergiesCard PersonId="_createdPersonId"/>
+                </MudItem>
+            </MudGrid>
+        </MudStep>
+    </ChildContent>
+    <ActionContent Context="stepper">
+        <MudButton
+            OnClick="@(() => PreviousStepAsync(stepper))"
+            StartIcon="@stepper.PreviousButtonIcon"
+            Color="Color.Primary">
+            Previous
+        </MudButton>
+        <MudSpacer/>
+        <MudButton
+            OnClick="@(() => NextStepAsync(stepper))"
+            EndIcon="@stepper.NextButtonIcon"
+            Color="Color.Primary">
+            @_alternativeButtonLabels.GetValueOrDefault(_index, "Next")
+        </MudButton>
+    </ActionContent>
+</MudStepper>
