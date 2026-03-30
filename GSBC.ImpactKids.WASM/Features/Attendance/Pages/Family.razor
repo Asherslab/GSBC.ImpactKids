@@ -46,29 +46,36 @@
                     <MudItem xs="12" md="4">
                         <PersonDisplay Id="personId">
                             <SuffixContent>
-                                @if (_peopleAttendance.IsLoading)
-                                {
-                                    <MudProgressCircular Indeterminate/>
-                                }
-                                else if (_peopleAttendance.Data != null && personId != null)
-                                {
-                                    if (_peopleAttendance.Data.TryGetValue(personId.Value, out Guid attendanceId))
+                                <MudStack Row>
+                                    @if (_peopleAttendance.IsLoading)
                                     {
-                                        <MudButton
-                                            Color="Color.Error"
-                                            Href="@($"/Attendance/SignOut/{personId}?{nameof(SignOut.AttendanceRecordId)}={attendanceId}")">
-                                            Sign Out
-                                        </MudButton>
+                                        <MudProgressCircular Indeterminate/>
                                     }
-                                    else
+                                    else if (_peopleAttendance.Data != null && personId != null)
                                     {
-                                        <MudButton
-                                            Color="Color.Success"
-                                            Href="@($"/Attendance/SignIn/{personId}?{nameof(SignIn.ServiceId)}={_service.Data?.Id}")">
-                                            Sign In
-                                        </MudButton>
+                                        if (_peopleAttendance.Data.TryGetValue(personId.Value, out Guid attendanceId))
+                                        {
+                                            <MudButton
+                                                Color="Color.Success"
+                                                Href="@($"/Attendance/SignIn/{personId}?{nameof(SignIn.ServiceId)}={_service.Data?.Id}")">
+                                                View
+                                            </MudButton>
+                                            <MudButton
+                                                Color="Color.Error"
+                                                Href="@($"/Attendance/SignOut/{personId}?{nameof(SignOut.AttendanceRecordId)}={attendanceId}")">
+                                                Sign Out
+                                            </MudButton>
+                                        }
+                                        else
+                                        {
+                                            <MudButton
+                                                Color="Color.Success"
+                                                Href="@($"/Attendance/SignIn/{personId}?{nameof(SignIn.ServiceId)}={_service.Data?.Id}")">
+                                                Sign In
+                                            </MudButton>
+                                        }
                                     }
-                                }
+                                </MudStack>
                             </SuffixContent>
                         </PersonDisplay>
                     </MudItem>

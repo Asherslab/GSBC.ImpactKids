@@ -12,6 +12,7 @@ using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
+using GSBC.ImpactKids.WASM.Features.Attendance;
 using GSBC.ImpactKids.WASM.Features.Authentication;
 using GSBC.ImpactKids.WASM.Features.Calendar;
 using GSBC.ImpactKids.WASM.Features.Eventing;
@@ -82,6 +83,7 @@ public static class StateStoreExtensions
                 .AddPageStore<CalendarState>()
                 .AddPageStore<MultiplePeopleState>()
                 .AddPageStore<MemorisationToolState>()
+                .AddPageStore<AttendanceToolState>()
                 .AddPageStore<MultipleMemoryVersesState>()
                 .AddPageStore<MultipleUsersState>();
         }
