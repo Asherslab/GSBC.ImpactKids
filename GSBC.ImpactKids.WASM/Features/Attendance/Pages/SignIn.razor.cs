@@ -3,8 +3,10 @@ using EasyAppDev.Blazor.Store.AsyncActions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Attendance;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Attendance.AttendanceRecords;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
+using GSBC.ImpactKids.WASM.Components.Base;
 using GSBC.ImpactKids.WASM.Components.Common;
 using GSBC.ImpactKids.WASM.Components.Common.Inputs;
 using GSBC.ImpactKids.WASM.Extensions;
@@ -216,6 +218,28 @@ public partial class SignIn
         }
         
         await stepper.NextStepAsync();
+    }
+
+    private async Task DeleteAttendanceRecord()
+    {
+        if (_attendanceRecordId.Data == null)
+            return;
+
+        bool? result = await DialogService.ShowMessageBoxAsync(
+            "Warning",
+            "Deleting can not be undone!",
+            yesText: "Delete!", cancelText: "Cancel");
+
+        if (result == null)
+            return;
+
+        BasicReadRequest request = new() { Guid = _attendanceRecordId.Data.Value };
+        BasicResponse    resp    = await AttendanceRecordsService.BasicDelete(request);
+
+        if (!resp.HasErrorOrNull())
+            return;
+
+        Snackbar.AddErrorResponse(resp);
     }
     
     private async Task CreateAttendanceItemRecord(Guid? itemTypeId) =>

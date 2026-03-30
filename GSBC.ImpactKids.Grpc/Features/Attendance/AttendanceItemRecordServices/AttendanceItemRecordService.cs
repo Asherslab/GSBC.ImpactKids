@@ -3,8 +3,6 @@ using GSBC.ImpactKids.Grpc.Data;
 using GSBC.ImpactKids.Grpc.Data.Models.Attendance;
 using GSBC.ImpactKids.Grpc.Services;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Attendance;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.Attendance;
 using Microsoft.AspNetCore.Authorization;
 

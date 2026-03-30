@@ -157,6 +157,15 @@
                     Previous
                 </MudButton>
                 <MudSpacer/>
+                @if (_index == 1 && _attendanceRecordId.Data != null)
+                {
+                    <MudButton 
+                        Color="Color.Error"
+                        OnClick="@DeleteAttendanceRecord">
+                        Delete
+                    </MudButton>
+                    <MudSpacer/>
+                }
                 <MudButton
                     OnClick="@(() => NextStepAsync(stepper))"
                     EndIcon="@stepper.NextButtonIcon"

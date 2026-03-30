@@ -37,7 +37,6 @@ public partial class MudSelectCreateOrUpdate<T>
                 ReadOnly = false;
                 break;
             case ModificationState.Reading:
-                // await ClearAsync();
                 await SelectOption(Read);
                 ValueChanged = new EventCallback<T?>();
                 ReadOnly = true;

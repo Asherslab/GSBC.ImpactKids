@@ -30,8 +30,6 @@ public partial class Tool
     [
         x => $"{x.FirstName} {x.LastName}"
     ];
-
-    private string _currentFilter = "All";
     
     private readonly Dictionary<string, Func<Person, bool>> _filters = new();
 
@@ -97,6 +95,10 @@ public partial class Tool
         {
             service = services.Data!
                 .FirstOrDefault(x => x.LocalDate.Date == DateTime.Today);
+
+            service ??= services.Data!
+                .OrderByDescending(x => x.LocalDate.Date)
+                .FirstOrDefault();
         }
 
         _service = service != null

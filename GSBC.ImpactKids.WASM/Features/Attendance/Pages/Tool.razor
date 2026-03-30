@@ -1,6 +1,5 @@
 @using GSBC.ImpactKids.WASM.Features.Attendance.Components.Individual
-@using PersonDisplay = GSBC.ImpactKids.WASM.Features.Attendance.Features.AttendanceItemTypes.Components.Individual.AttendanceItemTypeDisplay
-@inherits EntityUtilityComponent
+@inherits StoreEntityUtilityComponent<AttendanceToolState>
 @page "/Attendance/Tool"
 @inject IRefreshableStore<Service>          ServicesStore
 @inject IRefreshableStore<SchoolGrade>      SchoolGradesStore
@@ -38,7 +37,8 @@
                             @foreach (string key in _filters.Keys)
                             {
                                 <MudLink
-                                    OnClick="@(() => _currentFilter = key)">
+                                    Color="@(State.FilterKey == key ? Color.Success : Color.Primary)"
+                                    OnClick="@(() => Update(x => x.SetFilterKey(key)))">
                                     @key
                                 </MudLink>
                             }
@@ -84,7 +84,7 @@
                 </MudPaper>
                 <MudPaper Elevation="6" Class="pa-4">
                     <ListComponent T="Person"
-                                   Filter="@_filters[_currentFilter]"
+                                   Filter="@_filters[State.FilterKey]"
                                    TieredFilters="_tieredFilters"
                                    Search="@_search"
                                    SearchFields="@SearchFields"

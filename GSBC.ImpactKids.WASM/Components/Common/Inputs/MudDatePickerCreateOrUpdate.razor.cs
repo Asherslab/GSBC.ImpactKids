@@ -29,10 +29,6 @@ public partial class MudDatePickerCreateOrUpdate
     {
         await base.OnParametersSetAsync();
         
-#pragma warning disable MUD0011
-        DateFormat = "dd/MM/yyyy";
-#pragma warning restore MUD0011
-        
         switch (State)
         {
             case ModificationState.Creating:

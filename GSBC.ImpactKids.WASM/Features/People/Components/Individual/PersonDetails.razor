@@ -45,6 +45,7 @@
         Label="Date of Birth"
         Variant="Variant.Filled"
 
+        DateFormat="dd/MM/yyyy"
         Editable/>
 
     @if (!BasicView)
@@ -106,6 +107,7 @@
     {
         <MudDivider Class="mb-4"/>
         <PersonImpactDetails
+            RequestsReadonly
             CreateRequest="CreateRequest"
             UpdateRequest="UpdateRequest"
             ErrorsChanged="ErrorsChanged"
