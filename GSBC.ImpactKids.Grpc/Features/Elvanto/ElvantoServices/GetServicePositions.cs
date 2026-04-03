@@ -17,7 +17,9 @@ public partial class ElvantoService
     [
         "f891f318-bce8-11e0-9229-ea942707ad51",
         "0af6997e-d142-11e0-9229-ea942707ad51",
-        "bb20e352-85d0-11e1-ab21-651537d68e43"
+        "bb20e352-85d0-11e1-ab21-651537d68e43",
+        "af633ea0-fc44-4001-b2b7-7f4a71fb62a6",
+        "24c7388d-ad2f-4003-8e4d-013de102fbb8"
     ];
 
     public async Task<ElvantoServicePositionsResponse> GetServicePositions(
