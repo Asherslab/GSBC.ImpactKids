@@ -80,6 +80,7 @@ public partial class Family
             _breadcrumbs[0] = new BreadcrumbItem("Attendance",
                 href: $"/Attendance/Tool?{nameof(Tool.ServiceId)}={service.Id}");
 
+        RetrieveAttendanceRecords();
         StateHasChanged();
     }
 
@@ -130,9 +131,18 @@ public partial class Family
             return;
         }
 
+        if (_service.Data == null)
+        {
+            _peopleAttendance = _peopleAttendance.CopyStatus(_service);
+            StateHasChanged();
+            return;
+        }
+
         Dictionary<Guid, Guid> records = attendanceRecords.Data
             .Where(x => x is { Deleted: false, LocalSignedOut: null })
-            .ToDictionary(x => x.PersonId, x => x.Id);
+            .Where(x => x.ServiceId == _service.Data.Id)
+            .GroupBy(x => x.PersonId)
+            .ToDictionary(g => g.Key, g => g.MaxBy(x => x.SignedIn)!.Id);
 
         _peopleAttendance = _peopleAttendance.ToSuccess(records);
         StateHasChanged();
