@@ -16,6 +16,15 @@ else
     <PageTitle>Kids Dashboard</PageTitle>
 }
 
+<MudStack Row Class="mt-4 align-center justify-space-between">
+    <MudText Typo="Typo.h6">@(_label ?? "Kids Dashboard")</MudText>
+    <MudIconButton
+        Icon="@Icons.Material.Filled.Refresh"
+        Color="Color.Primary"
+        Disabled="@_refreshing"
+        OnClick="@RefreshClicked"/>
+</MudStack>
+
 <MudPaper Elevation="6" Class="mt-4" Style="height: 90vh">
     @if (_token != null)
     {
@@ -42,15 +51,32 @@ else
     private string?           _reportUrl;
     private string?           _token;
     private DashboardMapping? _mapping;
+    private bool               _refreshing;
 
     protected override async Task OnParametersSetAsync()
     {
         await base.OnParametersSetAsync();
+        _mapping = MetabaseConfig.DashboardMappings.FirstOrDefault(x => x.Label == DashboardLabel);
+        _label = DashboardLabel;
+        await LoadDashboardAsync();
+    }
+
+    private async Task RefreshClicked()
+    {
+        _refreshing = true;
+        StateHasChanged();
+
+        await LoadDashboardAsync();
+
+        _refreshing = false;
+        StateHasChanged();
+    }
+
+    private async Task LoadDashboardAsync()
+    {
         _iframeKey = Guid.NewGuid();
         StateHasChanged();
 
-        _mapping = MetabaseConfig.DashboardMappings.FirstOrDefault(x => x.Label == DashboardLabel);
-        _label = DashboardLabel;
         await RefreshDashboard();
         _reportUrl = DashboardUrl();
     }

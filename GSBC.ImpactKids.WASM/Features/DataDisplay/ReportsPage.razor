@@ -14,6 +14,15 @@ else
 }
 
 
+<MudStack Row Class="mt-4 align-center justify-space-between">
+    <MudText Typo="Typo.h6">@(_label ?? "Elvanto Report")</MudText>
+    <MudIconButton
+        Icon="@Icons.Material.Filled.Refresh"
+        Color="Color.Primary"
+        Disabled="@_refreshing"
+        OnClick="@RefreshClicked"/>
+</MudStack>
+
 <MudPaper Elevation="6" Class="mt-4" Style="height: 90vh">
     @if (_reportUrl != null)
     {
@@ -35,10 +44,27 @@ else
     private Guid    _iframeKey = Guid.NewGuid();
     private string? _label;
     private string? _reportUrl;
+    private bool    _refreshing;
 
     protected override async Task OnParametersSetAsync()
     {
         await base.OnParametersSetAsync();
+        await LoadReportAsync();
+    }
+
+    private async Task RefreshClicked()
+    {
+        _refreshing = true;
+        StateHasChanged();
+
+        await LoadReportAsync();
+
+        _refreshing = false;
+        StateHasChanged();
+    }
+
+    private async Task LoadReportAsync()
+    {
         _iframeKey = Guid.NewGuid();
         StateHasChanged();
         ElvantoReportResponse? resp = await ElvantoService.GetElvantoReport(ReportLabel);
