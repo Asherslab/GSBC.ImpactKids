@@ -1,0 +1,100 @@
+.display {
+    display: flex;
+    flex-direction: column;
+
+    width: 100%;
+    height: 100%;
+    padding: 2vmin 3vmin;
+
+    font-family: system-ui, sans-serif;
+}
+
+.display-message {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 6vmin;
+    letter-spacing: .05em;
+    opacity: .65;
+}
+
+.display-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 2vmin;
+
+    margin-bottom: 2vmin;
+}
+
+.display-heading {
+    font-size: 5vmin;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    opacity: .9;
+}
+
+.display-paused {
+    padding: .4vmin 1.6vmin;
+    border: .3vmin solid rgba(255, 255, 255, .45);
+    border-radius: 999px;
+
+    font-size: 2.4vmin;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    opacity: .7;
+}
+
+.display-grid {
+    display: grid;
+    flex: 1;
+    gap: 2vmin;
+    min-height: 0;
+}
+
+.display-row {
+    display: grid;
+    grid-template-columns: minmax(0, 6fr) 1fr;
+    grid-template-areas:
+        "team points"
+        "bar  points";
+    align-items: center;
+    column-gap: 3vmin;
+}
+
+.display-team {
+    grid-area: team;
+
+    color: var(--team);
+    font-size: 5vmin;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    line-height: 1.1;
+}
+
+/* Length is relative to the leader so standings read from across the room. */
+.display-bar {
+    grid-area: bar;
+
+    height: 3.5vmin;
+    min-width: .8vmin;
+    border-radius: 999px;
+    background: var(--team);
+
+    transition: width .5s ease-out;
+}
+
+.display-points {
+    grid-area: points;
+
+    text-align: right;
+    color: var(--team);
+    font-size: 11vmin;
+    font-weight: 800;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}

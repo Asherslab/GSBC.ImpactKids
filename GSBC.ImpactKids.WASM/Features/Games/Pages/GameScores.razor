@@ -1,0 +1,70 @@
+@page "/Games/Scores"
+@using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Games
+@using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling
+@using GSBC.ImpactKids.WASM.Features.Games
+@using GSBC.ImpactKids.WASM.Features.Games.Services
+@attribute [Authorize]
+@inherits EntityUtilityComponent
+@inject IRefreshableStore<Service> ServicesStore
+@inject IGamePointsService         Points
+
+<PageTitle>Tonight's Scores</PageTitle>
+
+<MudStack Spacing="2">
+    <MudStack Row Class="align-center justify-space-between flex-wrap gap-2">
+        <MudText Typo="Typo.h6">Tonight's Scores</MudText>
+        <MudStack Row Class="align-center gap-1">
+            <MudIconButton Icon="@Icons.Material.Filled.SportsEsports"
+                           Title="Back to scoring"
+                           Href="/Games/Points"/>
+            <MudIconButton Icon="@Icons.Material.Filled.Cast"
+                           Title="Open wall display"
+                           Href="/Display/Scores"
+                           Target="_blank"/>
+        </MudStack>
+    </MudStack>
+
+    @if (_service.Data == null)
+    {
+        <MudAlert Severity="Severity.Warning" Dense>
+            @(_service.Error ?? "Finding today's service...")
+        </MudAlert>
+    }
+    else
+    {
+        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+            @_service.Data.GetDisplayName() — @_service.Data.LocalDate.ToString("ddd d MMM")
+        </MudText>
+
+        <MudStack Spacing="1">
+            @foreach ((TeamStanding standing, int index) in Standings.Select((x, i) => (x, i)))
+            {
+                <MudPaper Elevation="2"
+                          Class="pa-3 standing"
+                          Style="@($"border-left: 6px solid {GameTeams.Colour(standing.Team)};")">
+                    <MudStack Row Class="align-center justify-space-between">
+                        <MudStack Row Class="align-center gap-2">
+                            <span class="standing-rank">@Placing(index)</span>
+                            <MudText Typo="Typo.subtitle1"><b>@GameTeams.Label(standing.Team)</b></MudText>
+                        </MudStack>
+                        <MudText Typo="Typo.h5"><b>@standing.Total</b></MudText>
+                    </MudStack>
+
+                    <div class="standing-breakdown">
+                        @for (int game = 1; game <= GamesPlayed; game++)
+                        {
+                            <span class="standing-chip">
+                                <span class="standing-chip-label">G@(game)</span>
+                                <span class="standing-chip-value">@standing.PerGame[game - 1]</span>
+                            </span>
+                        }
+                        <span class="standing-chip standing-chip-behaviour">
+                            <span class="standing-chip-label">Behaviour</span>
+                            <span class="standing-chip-value">@standing.Behaviour</span>
+                        </span>
+                    </div>
+                </MudPaper>
+            }
+        </MudStack>
+    }
+</MudStack>

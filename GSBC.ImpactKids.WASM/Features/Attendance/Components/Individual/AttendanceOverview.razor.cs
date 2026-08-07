@@ -14,6 +14,8 @@ public partial class AttendanceOverview
     private AsyncData<ImmutableList<AttendanceRecord>> _attendanceRecords =
         AsyncData<ImmutableList<AttendanceRecord>>.NotAsked();
 
+    private Guid? _lastServiceId;
+
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
@@ -21,10 +23,21 @@ public partial class AttendanceOverview
         HandleSubscriptionDisposal(AttendanceRecordsStore, RetrieveAttendanceRecords);
 
         RetrieveAttendanceRecords();
-        
+
         await Task.WhenAll(
             AttendanceRecordsStore.RefreshAll()
         );
+    }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        if (ServiceId != _lastServiceId)
+        {
+            _lastServiceId = ServiceId;
+            RetrieveAttendanceRecords();
+        }
     }
 
     private void RetrieveAttendanceRecords()

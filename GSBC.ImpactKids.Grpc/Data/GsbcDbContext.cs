@@ -21,5 +21,6 @@ public partial class GsbcDbContext(
         BuildScheduleModel(modelBuilder);
         BuildScriptureModel(modelBuilder);
         BuildAttendanceModel(modelBuilder);
+        BuildGamesModel(modelBuilder);
     }
 }
