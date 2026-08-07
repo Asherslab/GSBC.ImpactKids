@@ -25,28 +25,50 @@ public sealed class BffAuthenticationStateProvider(
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
+        HttpResponseMessage? response = null;
+
         try
         {
-            UserInfo? info = await http.GetFromJsonAsync<UserInfo>("/bff/user");
-
-            if (info?.IsAuthenticated == true)
-            {
-                _cached = BuildPrincipal(info.Claims);
-                await WriteCacheAsync(info.Claims);
-            }
-            else
-            {
-                // The server answered and said no. Not an offline case - drop the cache.
-                _cached = new ClaimsPrincipal(new ClaimsIdentity());
-                await ClearCacheAsync();
-            }
+            response = await http.GetAsync("/bff/user");
         }
         catch (Exception)
         {
-            // Could not reach the server. Fall back to the last known sign in so the
-            // app still opens offline, rather than bouncing the user to a login page
+            // No response at all - genuinely offline. Fall back to the last known sign
+            // in so the app still opens, rather than bouncing the user to a login page
             // they cannot load.
             _cached = await ReadCacheAsync() ?? new ClaimsPrincipal(new ClaimsIdentity());
+            return new AuthenticationState(_cached);
+        }
+
+        // The server answered. Whatever it said is authoritative - never fall back to
+        // the cache here. A stale cache would leave the UI "signed in" while every gRPC
+        // call gets challenged by the proxy and comes back as a login page (HTML),
+        // which surfaces as "Bad gRPC response. Invalid content-type value: text/html".
+        UserInfo? info = null;
+
+        if (response.IsSuccessStatusCode)
+        {
+            try
+            {
+                info = await response.Content.ReadFromJsonAsync<UserInfo>();
+            }
+            catch (Exception)
+            {
+                // 200 with a non-JSON body means the proxy served something else -
+                // treat it as signed out.
+                info = null;
+            }
+        }
+
+        if (info?.IsAuthenticated == true)
+        {
+            _cached = BuildPrincipal(info.Claims);
+            await WriteCacheAsync(info.Claims);
+        }
+        else
+        {
+            _cached = new ClaimsPrincipal(new ClaimsIdentity());
+            await ClearCacheAsync();
         }
 
         return new AuthenticationState(_cached);
