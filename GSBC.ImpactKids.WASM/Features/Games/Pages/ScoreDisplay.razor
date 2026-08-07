@@ -1,0 +1,49 @@
+@page "/Display/Scores"
+@page "/Display/Scores/{ServiceId:guid}"
+@using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Games
+@using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Features.Games
+@using GSBC.ImpactKids.WASM.Features.Games
+@using GSBC.ImpactKids.WASM.Features.Games.Layout
+@layout DisplayLayout
+
+@* Deliberately anonymous - a screen on a wall cannot sign in. Aggregate scores only. *@
+
+<PageTitle>Scores</PageTitle>
+
+<div class="display">
+    @if (_board == null)
+    {
+        <div class="display-message">Connecting…</div>
+    }
+    else if (!_board.Success)
+    {
+        <div class="display-message">@(_board.Error ?? "No scores yet")</div>
+    }
+    else if (_board.Hidden)
+    {
+        <div class="display-message">Scores hidden</div>
+    }
+    else
+    {
+        <div class="display-header">
+            <span class="display-heading">
+                @(_board.Mode == GameDisplayMode.CurrentGame ? $"Game {_board.CurrentGame}" : "Tonight's Scores")
+            </span>
+            @if (_board.Paused)
+            {
+                <span class="display-paused">Paused</span>
+            }
+        </div>
+
+        <div class="display-grid" style="@($"grid-template-rows: repeat({_board.Teams.Count}, 1fr);")">
+            @foreach (TeamScoreLine line in _board.Teams)
+            {
+                <div class="display-row" style="@($"--team: {GameTeams.Colour(line.Team)};")">
+                    <span class="display-team">@GameTeams.Label(line.Team)</span>
+                    <span class="display-bar" style="@BarStyle(line)"></span>
+                    <span class="display-points">@line.DisplayPoints</span>
+                </div>
+            }
+        </div>
+    }
+</div>

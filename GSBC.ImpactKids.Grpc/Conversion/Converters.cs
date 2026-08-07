@@ -1,12 +1,14 @@
 using System.Collections.Immutable;
 using GSBC.ImpactKids.Grpc.Data.Models;
 using GSBC.ImpactKids.Grpc.Data.Models.Attendance;
+using GSBC.ImpactKids.Grpc.Data.Models.Games;
 using GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses;
 using GSBC.ImpactKids.Grpc.Data.Models.People;
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling;
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling.School;
 using GSBC.ImpactKids.Shared.Contracts.Entities;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Attendance;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Games;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.Allergies;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.MedicalNotes;
@@ -166,4 +168,28 @@ public partial class AttendanceItemTypeConverter : IConverter<DbAttendanceItemTy
 public partial class AttendanceItemRecordConverter : IConverter<DbAttendanceItemRecord, AttendanceItemRecord>
 {
     public partial AttendanceItemRecord Convert(DbAttendanceItemRecord input);
+}
+
+[Mapper]
+public partial class GameBoardConverter(
+    IConverter<DateTimeOffset, DateTime> dateTimeConverter
+) : IConverter<DbGameBoard, GameBoard>
+{
+    [UseMapper]
+    private readonly IConverter<DateTimeOffset, DateTime> _dateTimeConverter = dateTimeConverter;
+
+    public partial GameBoard Convert(DbGameBoard input);
+}
+
+[Mapper]
+public partial class GamePointRecordConverter(
+    IConverter<DateTimeOffset, DateTime> dateTimeConverter
+) : IConverter<DbGamePointRecord, GamePointRecord>
+{
+    [UseMapper]
+    private readonly IConverter<DateTimeOffset, DateTime> _dateTimeConverter = dateTimeConverter;
+
+    [MapperIgnoreTarget(nameof(GamePointRecord.LocalAwarded))]
+    [MapperIgnoreTarget(nameof(GamePointRecord.IsBehaviour))]
+    public partial GamePointRecord Convert(DbGamePointRecord input);
 }
