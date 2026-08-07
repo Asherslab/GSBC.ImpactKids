@@ -4,6 +4,7 @@ using GSBC.ImpactKids.Shared.Contracts.Services.Features.Authentication;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.DataDisplay;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.DollarStore;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.Elvanto;
+using GSBC.ImpactKids.Shared.Contracts.Services.Features.Games;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.Scheduling;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.Scheduling.School;
@@ -15,6 +16,7 @@ using GSBC.ImpactKids.WASM;
 using GSBC.ImpactKids.WASM.Authentication;
 using GSBC.ImpactKids.WASM.Extensions;
 using GSBC.ImpactKids.WASM.Features.Eventing.Services;
+using GSBC.ImpactKids.WASM.Features.Games.Services;
 using GSBC.ImpactKids.WASM.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using MudBlazor.Services;
@@ -74,6 +76,16 @@ builder.Services
 
 builder.Services.AddSingleton<ISseClientService, SseClientService>();
 
+// Wall display client - unauthenticated on purpose, routed past the proxy's auth
+// policy so a screen with no login can still read the scoreboard.
+builder.Services
+    .AddCodeFirstGrpcClient<IGameDisplayService>(
+        typeof(IGameDisplayService).FullName!,
+        x => { x.Address = new Uri("https://yarp"); }
+    )
+    .ConfigureChannel(x => { x.UnsafeUseInsecureChannelCallCredentials = true; })
+    .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(new HttpClientHandler()));
+
 // builder.Services.AddScoped<UnauthorizedMessageHandler>();
 builder.Services.AddAuthenticatedGrpcClient<IMetabaseService>();
 builder.Services.AddAuthenticatedGrpcClient<IUsersService>();
@@ -97,6 +109,11 @@ builder.Services.AddAuthenticatedGrpcClient<IMemorisationEntriesService>();
 builder.Services.AddAuthenticatedGrpcClient<IAttendanceRecordService>();
 builder.Services.AddAuthenticatedGrpcClient<IAttendanceItemTypeService>();
 builder.Services.AddAuthenticatedGrpcClient<IAttendanceItemRecordService>();
+builder.Services.AddAuthenticatedGrpcClient<IGamePointRecordService>();
+builder.Services.AddAuthenticatedGrpcClient<IGameBoardService>();
+
+// Offline first, so it outlives any page and keeps its outbox for the whole session.
+builder.Services.AddSingleton<IGamePointsService, GamePointsService>();
 
 MetabaseConfig? metabaseConfig = builder.Configuration.GetSection("metabase").Get<MetabaseConfig>();
 if (metabaseConfig != null)

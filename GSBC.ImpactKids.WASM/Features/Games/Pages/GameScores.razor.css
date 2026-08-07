@@ -1,0 +1,37 @@
+.standing-rank {
+    font-size: 1.35rem;
+    line-height: 1;
+}
+
+.standing-breakdown {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+    margin-top: .5rem;
+}
+
+.standing-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: .3rem;
+
+    padding: .15rem .5rem;
+    border-radius: .5rem;
+    background: var(--mud-palette-background-gray);
+}
+
+.standing-chip-behaviour {
+    border: 1px dashed var(--mud-palette-divider);
+}
+
+.standing-chip-label {
+    font-size: .65rem;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    opacity: .75;
+}
+
+.standing-chip-value {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}

@@ -64,4 +64,8 @@ public static class ErrorConstants
     public const string AttendanceItemTypeNotFound           = "Attendance Item Type Not Found";
     public const string AttendanceItemRecordNotFound         = "Attendance Item Record Not Found";
     public const string AttendanceItemRecordReturnedRequired = "Attendance Item Record Item Requires Return Value";
+
+    public const string GamePointRecordNotFound   = "Game Point Record Not Found";
+    public const string GamePointRecordIdRequired = "Game Point Record Must Have A Client Generated Id";
+    public const string GamePointRecordPointsZero = "Game Point Record Must Award A Non Zero Number Of Points";
 }

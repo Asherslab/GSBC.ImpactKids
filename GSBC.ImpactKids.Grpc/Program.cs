@@ -11,6 +11,9 @@ using GSBC.ImpactKids.Grpc.Features.DollarStore.DollarStoreEntryServices;
 using GSBC.ImpactKids.Grpc.Features.Elvanto.ElvantoServices;
 using GSBC.ImpactKids.Grpc.Features.Elvanto.ElvantoServices.Models;
 using GSBC.ImpactKids.Grpc.Features.Eventing;
+using GSBC.ImpactKids.Grpc.Features.Games.GameBoardServices;
+using GSBC.ImpactKids.Grpc.Features.Games.GameDisplayServices;
+using GSBC.ImpactKids.Grpc.Features.Games.GamePointRecordServices;
 using GSBC.ImpactKids.Grpc.Features.Eventing.Services;
 using GSBC.ImpactKids.Grpc.Features.People.AllergenServices;
 using GSBC.ImpactKids.Grpc.Features.People.AllergyServices;
@@ -131,6 +134,10 @@ app.MapGrpcService<MemorisationEntriesService>();
 app.MapGrpcService<AttendanceRecordService>();
 app.MapGrpcService<AttendanceItemTypeService>();
 app.MapGrpcService<AttendanceItemRecordService>();
+app.MapGrpcService<GamePointRecordService>();
+app.MapGrpcService<GameBoardService>();
+// Unauthenticated - wall display only, aggregate scores only.
+app.MapGrpcService<GameDisplayService>();
 app.MapGet("/",
     () =>
         "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");
