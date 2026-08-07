@@ -1,0 +1,65 @@
+.points-page {
+    height: 100%;
+}
+
+/* Four tiles fill the phone screen; two tiles stack into the same space. */
+.points-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: 1fr;
+    gap: .75rem;
+
+    height: calc(100dvh - 20rem);
+    min-height: 18rem;
+}
+
+.points-grid-two {
+    grid-template-columns: 1fr;
+}
+
+.behaviour-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: .5rem;
+}
+
+.behaviour-cell {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+
+    padding: .25rem .5rem;
+    border: 1px solid;
+    border-radius: .5rem;
+}
+
+.behaviour-name {
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+.behaviour-total {
+    min-width: 1.75rem;
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 900px) {
+    .points-grid {
+        grid-template-columns: repeat(4, 1fr);
+        height: calc(100dvh - 22rem);
+    }
+
+    .points-grid-two {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .behaviour-row {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}

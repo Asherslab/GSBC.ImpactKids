@@ -1,0 +1,171 @@
+@page "/Games/Points"
+@using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Games
+@using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling
+@using GSBC.ImpactKids.WASM.Features.Games
+@using GSBC.ImpactKids.WASM.Features.Games.Components
+@using GSBC.ImpactKids.WASM.Features.Games.Services
+@attribute [Authorize]
+@inherits EntityUtilityComponent
+@inject IRefreshableStore<Service> ServicesStore
+@inject IGamePointsService         Points
+
+<PageTitle>Team Points</PageTitle>
+
+<MudStack Spacing="2" Class="points-page">
+    <MudStack Row Class="align-center justify-space-between flex-wrap gap-2">
+        <MudStack Row Class="align-center gap-2">
+            <MudButton Size="Size.Small"
+                       Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.SkipNext"
+                       OnClick="@StartNewGame">
+                Game @Board.CurrentGame · new
+            </MudButton>
+            <MudChip T="string"
+                     Size="Size.Small"
+                     Variant="Variant.Text"
+                     Color="@SyncColour"
+                     Icon="@SyncIcon">
+                @SyncLabel
+            </MudChip>
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Cast">
+                @(Board.DisplayMode == GameDisplayMode.Totals ? "Totals" : "This game")
+            </MudChip>
+            @if (Board.Hidden || Board.Paused)
+            {
+                <MudChip T="string"
+                         Size="Size.Small"
+                         Variant="Variant.Filled"
+                         Color="Color.Warning"
+                         Icon="@(Board.Hidden ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Pause)">
+                    @(Board.Hidden ? "Display hidden" : "Display paused")
+                </MudChip>
+            }
+        </MudStack>
+
+        <MudStack Row Class="align-center gap-1">
+            <MudIconButton Icon="@Icons.Material.Filled.Undo"
+                           Title="Undo last"
+                           Disabled="@(!CanUndo)"
+                           OnClick="@UndoLast"/>
+            <MudIconButton Icon="@Icons.Material.Filled.Leaderboard"
+                           Title="Tonight's scores"
+                           Href="/Games/Scores"/>
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense>
+                <MudMenuItem Icon="@(Board.Paused ? Icons.Material.Filled.PlayArrow : Icons.Material.Filled.Pause)"
+                             OnClick="@TogglePaused">
+                    @(Board.Paused ? "Resume display" : "Pause display")
+                </MudMenuItem>
+                <MudMenuItem Icon="@(Board.Hidden ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
+                             OnClick="@ToggleHidden">
+                    @(Board.Hidden ? "Show scores on display" : "Hide scores on display")
+                </MudMenuItem>
+                <MudDivider/>
+                <MudMenuItem Icon="@Icons.Material.Filled.Scoreboard"
+                             OnClick="@(() => SetDisplayMode(Board.DisplayMode == GameDisplayMode.Totals ? GameDisplayMode.CurrentGame : GameDisplayMode.Totals))">
+                    Display shows: @(Board.DisplayMode == GameDisplayMode.Totals ? "totals" : $"game {Board.CurrentGame}")
+                </MudMenuItem>
+                <MudDivider/>
+                <MudMenuItem Icon="@Icons.Material.Filled.Tune" OnClick="@(() => _settingsOpen = true)">
+                    Board settings
+                </MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.Cast" Href="/Display/Scores" Target="_blank">
+                    Open wall display
+                </MudMenuItem>
+            </MudMenu>
+        </MudStack>
+    </MudStack>
+
+    @if (_service.Data == null)
+    {
+        <MudAlert Severity="Severity.Warning" Dense>
+            @(_service.Error ?? "Finding today's service...")
+        </MudAlert>
+    }
+    else
+    {
+        <div class="points-grid @(Board.TeamCount == 2 ? "points-grid-two" : "")">
+            @foreach (GameTeam team in GameTeams.Take(Board.TeamCount))
+            {
+                <TeamScoreTile Team="@team"
+                               Label="@GameTeams.Label(team)"
+                               Colour="@GameTeams.Colour(team)"
+                               Total="@Points.TotalFor(ServiceKey, team)"
+                               GamePoints="@Points.GamePointsFor(ServiceKey, team)"
+                               BehaviourPoints="@Points.BehaviourPointsFor(ServiceKey, team)"
+                               CurrentGamePoints="@Points.GamePointsFor(ServiceKey, team, Board.CurrentGame)"
+                               ShowCurrentGame="@(Points.GamesPlayed(ServiceKey) > 1)"
+                               StepPoints="@Board.StepPoints"
+                               BonusPoints="@Board.BonusPoints"
+                               OnAdd="@(points => AddGamePoints(team, points))"/>
+            }
+        </div>
+
+        <MudPaper Elevation="2" Class="pa-2">
+            <MudStack Row Class="align-center justify-space-between mb-1">
+                <MudText Typo="Typo.overline">Behaviour points</MudText>
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">counts toward the total, not the game</MudText>
+            </MudStack>
+            <div class="behaviour-row">
+                @foreach (GameTeam team in GameTeams.Take(Board.TeamCount))
+                {
+                    <div class="behaviour-cell" style="@($"border-color: {GameTeams.Colour(team)};")">
+                        <span class="behaviour-name" style="@($"color: {GameTeams.Colour(team)};")">
+                            @GameTeams.Label(team)
+                        </span>
+                        <MudStack Row Class="align-center gap-1">
+                            <MudIconButton Icon="@Icons.Material.Filled.Remove"
+                                           Size="Size.Small"
+                                           Variant="Variant.Outlined"
+                                           OnClick="@(() => AddBehaviourPoints(team, -1))"/>
+                            <span class="behaviour-total">@Points.BehaviourPointsFor(ServiceKey, team)</span>
+                            <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                           Size="Size.Small"
+                                           Variant="Variant.Filled"
+                                           Color="Color.Primary"
+                                           OnClick="@(() => AddBehaviourPoints(team, 1))"/>
+                        </MudStack>
+                    </div>
+                }
+            </div>
+        </MudPaper>
+    }
+</MudStack>
+
+<MudDialog @bind-Visible="_settingsOpen" Options="@(new DialogOptions { MaxWidth = MaxWidth.ExtraSmall, FullWidth = true })">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Board settings</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <div>
+                <MudText Typo="Typo.subtitle2" Class="mb-1">Teams</MudText>
+                <MudToggleGroup T="int"
+                                Value="@Board.TeamCount"
+                                ValueChanged="@SetTeamCount"
+                                Size="Size.Small"
+                                SelectionMode="SelectionMode.SingleSelection">
+                    <MudToggleItem T="int" Value="2" Text="2"/>
+                    <MudToggleItem T="int" Value="4" Text="4"/>
+                </MudToggleGroup>
+            </div>
+            <MudNumericField T="int"
+                             Label="Tap / minus button"
+                             Value="@Board.StepPoints"
+                             ValueChanged="@SetStepPoints"
+                             Min="1"
+                             Max="100"
+                             Variant="Variant.Outlined"/>
+            <MudNumericField T="int"
+                             Label="Bonus button"
+                             Value="@Board.BonusPoints"
+                             ValueChanged="@SetBonusPoints"
+                             Min="1"
+                             Max="100"
+                             Variant="Variant.Outlined"/>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _settingsOpen = false)">Done</MudButton>
+    </DialogActions>
+</MudDialog>

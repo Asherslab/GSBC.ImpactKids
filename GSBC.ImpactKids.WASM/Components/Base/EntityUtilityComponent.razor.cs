@@ -74,7 +74,7 @@ public partial class EntityUtilityComponent : IDisposable
         return DeleteResult.Errored;
     }
 
-    public void Dispose()
+    public virtual void Dispose()
     {
         foreach (IDisposable subscription in _subscriptions)
         {

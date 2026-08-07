@@ -3,6 +3,7 @@ using System;
 using GSBC.ImpactKids.Grpc.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GSBC.ImpactKids.Grpc.Data.Migrations
 {
     [DbContext(typeof(GsbcDbContext))]
-    partial class GsbcDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260807093900_1786095539")]
+    partial class _1786095539
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -189,50 +192,6 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Games.DbGameBoard", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("BonusPoints")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("CurrentGame")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("DisplayMode")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("Hidden")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("Paused")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTimeOffset?>("PausedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("ServiceId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("StepPoints")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TeamCount")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ServiceId")
-                        .IsUnique();
-
-                    b.ToTable("GameBoards");
-                });
-
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Games.DbGamePointRecord", b =>
                 {
                     b.Property<Guid>("Id")
@@ -246,9 +205,6 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
 
                     b.Property<bool>("Deleted")
                         .HasColumnType("boolean");
-
-                    b.Property<int?>("GameNumber")
-                        .HasColumnType("integer");
 
                     b.Property<int>("Points")
                         .HasColumnType("integer");
@@ -702,17 +658,6 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.DbService", "Service")
                         .WithOne("DollarStoreEntry")
                         .HasForeignKey("GSBC.ImpactKids.Grpc.Data.Models.DbDollarStoreEntry", "ServiceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Service");
-                });
-
-            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Games.DbGameBoard", b =>
-                {
-                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.DbService", "Service")
-                        .WithMany()
-                        .HasForeignKey("ServiceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

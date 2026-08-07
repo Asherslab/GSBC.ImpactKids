@@ -1,0 +1,91 @@
+@using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Games
+
+@* The whole tile is the add button. The inner pill exists so that is obvious at a glance. *@
+<button type="button"
+        class="team-tile"
+        style="@TileStyle"
+        aria-label="@($"Add {StepPoints} to {Label}")"
+        @onclick="@(() => Add(StepPoints))">
+    <div class="team-tile-label">@Label</div>
+
+    @* Once the night has more than one game, the big number is this game and the
+       running total drops to a subtitle - otherwise they would be the same number. *@
+    <div class="team-tile-total">@(ShowCurrentGame ? CurrentGamePoints : Total)</div>
+
+    @if (ShowCurrentGame)
+    {
+        <div class="team-tile-breakdown">Total @Total</div>
+    }
+    else if (BehaviourPoints != 0)
+    {
+        <div class="team-tile-breakdown">
+            @GamePoints game @(BehaviourPoints > 0 ? "+" : "−") @Math.Abs(BehaviourPoints) behaviour
+        </div>
+    }
+
+    <div class="team-tile-cta">
+        <span class="team-tile-cta-plus">+@StepPoints</span>
+        <span class="team-tile-cta-hint">tap anywhere</span>
+    </div>
+
+    <div class="team-tile-actions">
+        <span role="button"
+              tabindex="0"
+              class="team-tile-action"
+              aria-label="@($"Remove {StepPoints} from {Label}")"
+              @onclick="@(() => Add(-StepPoints))"
+              @onclick:stopPropagation>
+            −@StepPoints
+        </span>
+        <span role="button"
+              tabindex="0"
+              class="team-tile-action"
+              aria-label="@($"Add {BonusPoints} to {Label}")"
+              @onclick="@(() => Add(BonusPoints))"
+              @onclick:stopPropagation>
+            +@BonusPoints
+        </span>
+    </div>
+</button>
+
+@code {
+
+    [Parameter]
+    public required GameTeam Team { get; set; }
+
+    [Parameter]
+    public required string Label { get; set; }
+
+    [Parameter]
+    public required string Colour { get; set; }
+
+    [Parameter]
+    public required int Total { get; set; }
+
+    [Parameter]
+    public required int GamePoints { get; set; }
+
+    [Parameter]
+    public required int BehaviourPoints { get; set; }
+
+    [Parameter]
+    public required int CurrentGamePoints { get; set; }
+
+    /// <summary>Lead with this game's score rather than the night's total.</summary>
+    [Parameter]
+    public required bool ShowCurrentGame { get; set; }
+
+    [Parameter]
+    public required int StepPoints { get; set; }
+
+    [Parameter]
+    public required int BonusPoints { get; set; }
+
+    [Parameter]
+    public required EventCallback<int> OnAdd { get; set; }
+
+    private string TileStyle => $"background: {Colour};";
+
+    private Task Add(int points) => OnAdd.InvokeAsync(points);
+
+}
