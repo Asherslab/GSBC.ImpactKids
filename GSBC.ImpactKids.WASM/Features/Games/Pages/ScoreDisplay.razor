@@ -5,8 +5,9 @@
 @using GSBC.ImpactKids.WASM.Features.Games
 @using GSBC.ImpactKids.WASM.Features.Games.Layout
 @layout DisplayLayout
-
-@* Deliberately anonymous - a screen on a wall cannot sign in. Aggregate scores only. *@
+@* Overrides the blanket [Authorize] in Features/_Imports.razor. A screen on a wall
+   cannot sign in, and this page only ever renders aggregate scores. *@
+@attribute [AllowAnonymous]
 
 <PageTitle>Scores</PageTitle>
 
