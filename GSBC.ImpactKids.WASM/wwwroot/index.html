@@ -70,6 +70,31 @@
 <script src="_framework/blazor.webassembly.js"></script>
 <script>
     navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' });
+
+    /*
+        A deploy replaces the fingerprinted assets under _framework. A page that is still
+        controlled by the previous worker boots against the old hashes, which no longer
+        exist, and dies before it can render anything - so there is no in-app way to
+        recover and the user is simply stuck.
+
+        The new worker claims this page as soon as it activates, which fires
+        controllerchange. Reloading once at that point re-boots against the assets the new
+        worker actually has. Guarded by sessionStorage so a bad deploy can cost one reload
+        per tab and never a loop.
+    */
+    const reloadGuardKey = 'sw:reloaded-for-update';
+
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (sessionStorage.getItem(reloadGuardKey)) return;
+
+        sessionStorage.setItem(reloadGuardKey, '1');
+        location.reload();
+    });
+
+    // Only the update path should reload; a normal boot clears the guard for next time.
+    window.addEventListener('load', () => {
+        if (navigator.serviceWorker.controller) sessionStorage.removeItem(reloadGuardKey);
+    });
 </script>
 <!-- Important: Increment the version parameter whenever you update MudBlazor to prevent caching issues -->
 <script src="_content/MudBlazor/MudBlazor.min.js?v=1"></script>
