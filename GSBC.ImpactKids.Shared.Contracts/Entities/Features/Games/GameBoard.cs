@@ -1,8 +1,10 @@
+using System.Collections.Immutable;
+
 namespace GSBC.ImpactKids.Shared.Contracts.Entities.Features.Games;
 
 /// <summary>
-/// Shared scoreboard settings for one service - which game is running, how the
-/// buttons are configured, and what the public display is allowed to show.
+/// Shared scoreboard settings for one service - which game is running, who the teams
+/// are, how the buttons are configured, and what the public display is allowed to show.
 /// One per service.
 /// </summary>
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
@@ -14,8 +16,17 @@ public record GameBoard : IIdentifiable
     /// <summary>1 based. Bumped by "new game", which starts a fresh split.</summary>
     public required int CurrentGame { get; init; }
 
-    /// <summary>2 or 4.</summary>
-    public required int TeamCount { get; init; }
+    /// <summary>
+    /// The teams playing tonight, ordered by <see cref="GameTeamDefinition.Index"/>.
+    /// Empty falls back to the usual four - see <see cref="EffectiveTeams"/>.
+    /// </summary>
+    public ImmutableList<GameTeamDefinition> Teams { get; init; } = [];
+
+    /// <summary>
+    /// Only the games that need settings of their own - a name, or teams combined.
+    /// Sparse on purpose: an ordinary game is just its number.
+    /// </summary>
+    public ImmutableList<GameDefinition> Games { get; init; } = [];
 
     /// <summary>Points awarded by the main tap and removed by the minus button.</summary>
     public required int StepPoints { get; init; }
@@ -42,12 +53,38 @@ public record GameBoard : IIdentifiable
     /// </summary>
     public required DateTime UpdatedAt { get; init; }
 
+    /// <summary>Teams to score against, defaulted for a board that has never been edited.</summary>
+    public ImmutableList<GameTeamDefinition> EffectiveTeams() =>
+        Teams.Count > 0 ? Teams : GameTeamDefaults.Default();
+
+    /// <summary>Settings for a game, or a plain unnamed game with no alliances.</summary>
+    public GameDefinition GameAt(int number) =>
+        Games.FirstOrDefault(x => x.Number == number) ?? GameDefinition.For(number);
+
+    public GameDefinition CurrentGameDefinition() => GameAt(CurrentGame);
+
+    /// <summary>Replaces the settings for one game, dropping the entry when it is plain again.</summary>
+    public GameBoard WithGame(GameDefinition game)
+    {
+        ImmutableList<GameDefinition> rest = Games.RemoveAll(x => x.Number == game.Number);
+
+        bool worthKeeping = !string.IsNullOrWhiteSpace(game.Name) || game.Alliances.Count > 0;
+
+        return this with
+        {
+            Games = worthKeeping
+                ? rest.Add(game).Sort((a, b) => a.Number.CompareTo(b.Number))
+                : rest
+        };
+    }
+
     public static GameBoard Default(Guid serviceId) => new()
     {
         Id = Guid.Empty,
         ServiceId = serviceId,
         CurrentGame = 1,
-        TeamCount = 4,
+        Teams = GameTeamDefaults.Default(),
+        Games = [],
         StepPoints = 1,
         BonusPoints = 5,
         DisplayMode = GameDisplayMode.Totals,

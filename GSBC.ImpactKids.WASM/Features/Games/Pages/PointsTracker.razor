@@ -1,4 +1,5 @@
 @page "/Games/Points"
+@using System.Collections.Immutable
 @using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Games
 @using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling
 @using GSBC.ImpactKids.WASM.Features.Games
@@ -12,46 +13,76 @@
 <PageTitle>Team Points</PageTitle>
 
 <MudStack Spacing="2" Class="points-page">
-    <MudStack Row Class="align-center justify-space-between flex-wrap gap-2">
-        <MudStack Row Class="align-center gap-2">
-            <MudButton Size="Size.Small"
-                       Variant="Variant.Filled"
-                       Color="Color.Primary"
-                       StartIcon="@Icons.Material.Filled.SkipNext"
-                       OnClick="@StartNewGame">
-                Game @Board.CurrentGame · new
-            </MudButton>
-            <MudChip T="string"
-                     Size="Size.Small"
-                     Variant="Variant.Text"
-                     Color="@SyncColour"
-                     Icon="@SyncIcon">
-                @SyncLabel
-            </MudChip>
-            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Cast">
-                @(Board.DisplayMode == GameDisplayMode.Totals ? "Totals" : "This game")
-            </MudChip>
-            @if (Board.Hidden || Board.Paused)
+    @* Game navigation sits first and stays one row on a phone - it is the control that
+       gets used mid-game, with a child hanging off each arm. *@
+    <MudStack Row Class="align-center justify-space-between gap-1">
+        <MudStack Row Class="align-center gap-0">
+            <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
+                           aria-label="Previous game"
+                           Disabled="@(!CanGoBack)"
+                           OnClick="@PreviousGame"/>
+
+            <MudMenu Dense AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
+                <ActivatorContent>
+                    @* Wrapped so ::deep can reach into MudButton - "Game 1" was wrapping
+                       onto two lines on a phone and shoving the grid down. *@
+                    <span class="game-name">
+                        <MudButton Variant="Variant.Text">@CurrentGame.DisplayName()</MudButton>
+                    </span>
+                </ActivatorContent>
+                <ChildContent>
+                    <MudMenuItem Icon="@Icons.Material.Filled.DriveFileRenameOutline" OnClick="@OpenRenameGame">
+                        @(CurrentGame.Name == null ? "Name this game" : "Rename game")
+                    </MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Filled.Merge" OnClick="@OpenAlliances">
+                        Combine teams for this game
+                    </MudMenuItem>
+                    @if (GamesPlayed > 1)
+                    {
+                        <MudDivider/>
+                        @for (int game = 1; game <= GamesPlayed; game++)
+                        {
+                            int number = game;
+                            <MudMenuItem Icon="@(number == Board.CurrentGame ? Icons.Material.Filled.Check : null)"
+                                         OnClick="@(() => GoToGame(number))">
+                                @Board.GameAt(number).DisplayName()
+                            </MudMenuItem>
+                        }
+                    }
+                </ChildContent>
+            </MudMenu>
+
+            @if (CanGoForward)
             {
-                <MudChip T="string"
-                         Size="Size.Small"
-                         Variant="Variant.Filled"
-                         Color="Color.Warning"
-                         Icon="@(Board.Hidden ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Pause)">
-                    @(Board.Hidden ? "Display hidden" : "Display paused")
-                </MudChip>
+                <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
+                               aria-label="Next game"
+                               OnClick="@NextGame"/>
+            }
+            else
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.AddCircle"
+                               Color="Color.Primary"
+                               aria-label="New game"
+                               OnClick="@StartNewGame"/>
             }
         </MudStack>
 
-        <MudStack Row Class="align-center gap-1">
+        <MudStack Row Class="align-center gap-0">
             <MudIconButton Icon="@Icons.Material.Filled.Undo"
-                           Title="Undo last"
+                           aria-label="Undo last"
                            Disabled="@(!CanUndo)"
                            OnClick="@UndoLast"/>
             <MudIconButton Icon="@Icons.Material.Filled.Leaderboard"
-                           Title="Tonight's scores"
+                           aria-label="Tonight's scores"
                            Href="/Games/Scores"/>
             <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense>
+                <MudMenuItem Icon="@Icons.Material.Filled.Groups" OnClick="@(() => _teamsOpen = true)">
+                    Teams (@Teams.Count)
+                </MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.Merge" OnClick="@OpenAlliances">
+                    Combine teams for this game
+                </MudMenuItem>
+                <MudDivider/>
                 <MudMenuItem Icon="@(Board.Paused ? Icons.Material.Filled.PlayArrow : Icons.Material.Filled.Pause)"
                              OnClick="@TogglePaused">
                     @(Board.Paused ? "Resume display" : "Pause display")
@@ -60,20 +91,53 @@
                              OnClick="@ToggleHidden">
                     @(Board.Hidden ? "Show scores on display" : "Hide scores on display")
                 </MudMenuItem>
-                <MudDivider/>
                 <MudMenuItem Icon="@Icons.Material.Filled.Scoreboard"
                              OnClick="@(() => SetDisplayMode(Board.DisplayMode == GameDisplayMode.Totals ? GameDisplayMode.CurrentGame : GameDisplayMode.Totals))">
-                    Display shows: @(Board.DisplayMode == GameDisplayMode.Totals ? "totals" : $"game {Board.CurrentGame}")
+                    Display shows: @(Board.DisplayMode == GameDisplayMode.Totals ? "totals" : "this game")
                 </MudMenuItem>
                 <MudDivider/>
                 <MudMenuItem Icon="@Icons.Material.Filled.Tune" OnClick="@(() => _settingsOpen = true)">
-                    Board settings
+                    Button values
                 </MudMenuItem>
                 <MudMenuItem Icon="@Icons.Material.Filled.Cast" Href="/Display/Scores" Target="_blank">
                     Open wall display
                 </MudMenuItem>
             </MudMenu>
         </MudStack>
+    </MudStack>
+
+    <MudStack Row Class="align-center flex-wrap gap-1">
+        <MudChip T="string"
+                 Size="Size.Small"
+                 Variant="Variant.Text"
+                 Color="@SyncColour"
+                 Icon="@SyncIcon">
+            @SyncLabel
+        </MudChip>
+        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Cast">
+            @(Board.DisplayMode == GameDisplayMode.Totals ? "Totals" : "This game")
+        </MudChip>
+        @if (CurrentGame.HasAlliances())
+        {
+            <MudChip T="string"
+                     Size="Size.Small"
+                     Variant="Variant.Filled"
+                     Color="Color.Info"
+                     Icon="@Icons.Material.Filled.Merge"
+                     OnClick="@OpenAlliances">
+                Teams combined
+            </MudChip>
+        }
+        @if (Board.Hidden || Board.Paused)
+        {
+            <MudChip T="string"
+                     Size="Size.Small"
+                     Variant="Variant.Filled"
+                     Color="Color.Warning"
+                     Icon="@(Board.Hidden ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Pause)">
+                @(Board.Hidden ? "Display hidden" : "Display paused")
+            </MudChip>
+        }
     </MudStack>
 
     @if (_service.Data == null)
@@ -84,47 +148,58 @@
     }
     else
     {
-        <div class="points-grid @(Board.TeamCount == 2 ? "points-grid-two" : "")">
-            @foreach (GameTeam team in GameTeams.Take(Board.TeamCount))
+        <div class="points-grid @(Compact ? "points-grid-scroll" : "points-grid-fill")" style="@GridStyle">
+            @foreach (Side side in Sides)
             {
-                <TeamScoreTile Team="@team"
-                               Label="@GameTeams.Label(team)"
-                               Colour="@GameTeams.Colour(team)"
-                               Total="@Points.TotalFor(ServiceKey, team)"
-                               GamePoints="@Points.GamePointsFor(ServiceKey, team)"
-                               BehaviourPoints="@Points.BehaviourPointsFor(ServiceKey, team)"
-                               CurrentGamePoints="@Points.GamePointsFor(ServiceKey, team, Board.CurrentGame)"
-                               ShowCurrentGame="@(Points.GamesPlayed(ServiceKey) > 1)"
+                @* ShowCurrentGame: a combined side has no single running total to lead
+                   with, so it always shows the game it is playing. *@
+                <TeamScoreTile Label="@side.Label"
+                               Background="@GameTeams.Background(side.Teams)"
+                               Total="@SidePoints(side, index => Points.TotalFor(ServiceKey, index))"
+                               GamePoints="@SidePoints(side, index => Points.GamePointsFor(ServiceKey, index))"
+                               BehaviourPoints="@SidePoints(side, index => Points.BehaviourPointsFor(ServiceKey, index))"
+                               CurrentGamePoints="@SidePoints(side, index => Points.GamePointsFor(ServiceKey, index, Board.CurrentGame))"
+                               ShowCurrentGame="@(GamesPlayed > 1 || side.Teams.Count > 1)"
+                               Subtitle="@SideSubtitle(side)"
+                               Compact="@Compact"
                                StepPoints="@Board.StepPoints"
                                BonusPoints="@Board.BonusPoints"
-                               OnAdd="@(points => AddGamePoints(team, points))"/>
+                               OnAdd="@(points => AddSidePoints(side, points))"/>
             }
         </div>
 
         <MudPaper Elevation="2" Class="pa-2">
-            <MudStack Row Class="align-center justify-space-between mb-1">
-                <MudText Typo="Typo.overline">Behaviour points</MudText>
-                <MudText Typo="Typo.caption" Class="mud-text-secondary">counts toward the total, not the game</MudText>
-            </MudStack>
+            @* Plain elements, not MudText - scoped CSS does not reach a child component's
+               root, so a class put on one here would never be styled. *@
+            <div class="behaviour-header">
+                <span class="behaviour-heading">Behaviour points</span>
+                @* Drops out on a phone rather than wrapping into the heading. *@
+                <span class="behaviour-hint">counts toward the total, not the game</span>
+            </div>
+            @* Always per team, never per side - behaviour is one group's doing. *@
             <div class="behaviour-row">
-                @foreach (GameTeam team in GameTeams.Take(Board.TeamCount))
+                @foreach (GameTeamDefinition team in Teams)
                 {
-                    <div class="behaviour-cell" style="@($"border-color: {GameTeams.Colour(team)};")">
-                        <span class="behaviour-name" style="@($"color: {GameTeams.Colour(team)};")">
-                            @GameTeams.Label(team)
-                        </span>
-                        <MudStack Row Class="align-center gap-1">
+                    int index = team.Index;
+
+                    @* Name on its own line - side by side with the controls it was being
+                       squeezed down to "R…" and you could not tell the teams apart. *@
+                    <div class="behaviour-cell" style="@($"border-color: {team.Colour};")">
+                        <span class="behaviour-name" style="@($"color: {team.Colour};")">@team.Name</span>
+                        <div class="behaviour-controls">
                             <MudIconButton Icon="@Icons.Material.Filled.Remove"
                                            Size="Size.Small"
                                            Variant="Variant.Outlined"
-                                           OnClick="@(() => AddBehaviourPoints(team, -1))"/>
-                            <span class="behaviour-total">@Points.BehaviourPointsFor(ServiceKey, team)</span>
+                                           aria-label="@($"Remove a behaviour point from {team.Name}")"
+                                           OnClick="@(() => AddBehaviourPoints(index, -1))"/>
+                            <span class="behaviour-total">@Points.BehaviourPointsFor(ServiceKey, index)</span>
                             <MudIconButton Icon="@Icons.Material.Filled.Add"
                                            Size="Size.Small"
                                            Variant="Variant.Filled"
                                            Color="Color.Primary"
-                                           OnClick="@(() => AddBehaviourPoints(team, 1))"/>
-                        </MudStack>
+                                           aria-label="@($"Add a behaviour point to {team.Name}")"
+                                           OnClick="@(() => AddBehaviourPoints(index, 1))"/>
+                        </div>
                     </div>
                 }
             </div>
@@ -132,23 +207,203 @@
     }
 </MudStack>
 
-<MudDialog @bind-Visible="_settingsOpen" Options="@(new DialogOptions { MaxWidth = MaxWidth.ExtraSmall, FullWidth = true })">
+@* ---------- teams ---------- *@
+<MudDialog @bind-Visible="_teamsOpen" Options="@(new DialogOptions { MaxWidth = MaxWidth.ExtraSmall, FullWidth = true })">
     <TitleContent>
-        <MudText Typo="Typo.h6">Board settings</MudText>
+        <MudText Typo="Typo.h6">Teams</MudText>
     </TitleContent>
     <DialogContent>
         <MudStack Spacing="3">
-            <div>
-                <MudText Typo="Typo.subtitle2" Class="mb-1">Teams</MudText>
-                <MudToggleGroup T="int"
-                                Value="@Board.TeamCount"
-                                ValueChanged="@SetTeamCount"
-                                Size="Size.Small"
-                                SelectionMode="SelectionMode.SingleSelection">
-                    <MudToggleItem T="int" Value="2" Text="2"/>
-                    <MudToggleItem T="int" Value="4" Text="4"/>
-                </MudToggleGroup>
+            @* Tap-only path first: the count and the presets cover almost every night. *@
+            <MudStack Row Class="align-center justify-space-between">
+                <MudText Typo="Typo.subtitle2">How many</MudText>
+                <MudStack Row Class="align-center gap-1">
+                    <MudIconButton Icon="@Icons.Material.Filled.Remove"
+                                   Variant="Variant.Outlined"
+                                   Size="Size.Small"
+                                   aria-label="One fewer team"
+                                   Disabled="@(Teams.Count <= GameTeamDefaults.MinTeams)"
+                                   OnClick="@(() => SetTeamCount(Teams.Count - 1))"/>
+                    <span class="team-count">@Teams.Count</span>
+                    <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                   Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   Size="Size.Small"
+                                   aria-label="One more team"
+                                   Disabled="@(Teams.Count >= GameTeamDefaults.MaxTeams)"
+                                   OnClick="@(() => SetTeamCount(Teams.Count + 1))"/>
+                </MudStack>
+            </MudStack>
+
+            <MudStack Row Class="flex-wrap gap-1">
+                @foreach (int preset in new[] { 2, 4, 6, 8, 10, 12 })
+                {
+                    int count = preset;
+
+                    <MudChip T="string"
+                             Size="Size.Small"
+                             Variant="@(Teams.Count == count ? Variant.Filled : Variant.Outlined)"
+                             Color="@(Teams.Count == count ? Color.Primary : Color.Default)"
+                             OnClick="@(() => SetTeamCount(count))">
+                        @count
+                    </MudChip>
+                }
+            </MudStack>
+
+            <MudDivider/>
+
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                Names and colours are filled in for you - change them only if you want to.
+                Tap a swatch to pick a colour, or shuffle for a new one.
+            </MudText>
+
+            <div class="team-editor">
+                @foreach (GameTeamDefinition team in Teams)
+                {
+                    int index = team.Index;
+
+                    <div class="team-editor-row">
+                        @* Native colour input, so phones get the OS picker and there is
+                           nothing to type. The label is the swatch; the input is hidden. *@
+                        <label class="team-swatch" style="@($"background: {team.Colour};")">
+                            <span class="visually-hidden">@($"{team.Name} colour")</span>
+                            <input type="color"
+                                   value="@team.Colour"
+                                   @onchange="@(e => SetTeamColour(index, e.Value?.ToString()))"/>
+                        </label>
+                        <MudIconButton Icon="@Icons.Material.Filled.Casino"
+                                       Size="Size.Small"
+                                       aria-label="@($"Shuffle {team.Name}'s colour")"
+                                       OnClick="@(() => ShuffleTeamColour(index))"/>
+                        <MudTextField T="string"
+                                      Value="@team.Name"
+                                      ValueChanged="@(name => RenameTeam(index, name))"
+                                      DebounceInterval="500"
+                                      MaxLength="@GameTeamDefaults.MaxNameLength"
+                                      Margin="Margin.Dense"
+                                      Variant="Variant.Text"/>
+                    </div>
+                }
             </div>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _teamsOpen = false)">Done</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@* ---------- alliances ---------- *@
+<MudDialog @bind-Visible="_alliancesOpen" Options="@(new DialogOptions { MaxWidth = MaxWidth.ExtraSmall, FullWidth = true })">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Combine teams</MudText>
+        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+            @CurrentGame.DisplayName() only. Combined teams each get the full points.
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudStack Row Class="flex-wrap gap-1">
+                <MudButton Size="Size.Small"
+                           Variant="Variant.Outlined"
+                           StartIcon="@Icons.Material.Filled.Merge"
+                           Disabled="@(Teams.Count < 4)"
+                           OnClick="@PairUpTeams">
+                    Pair up
+                </MudButton>
+                <MudButton Size="Size.Small"
+                           Variant="Variant.Outlined"
+                           StartIcon="@Icons.Material.Filled.CallSplit"
+                           Disabled="@(!CurrentGame.HasAlliances())"
+                           OnClick="@ClearAlliances">
+                    Split all
+                </MudButton>
+            </MudStack>
+
+            @{
+                IReadOnlyList<ImmutableList<int>> combined =
+                    GameAlliances.Combined(CurrentGame.Alliances, Teams.Count);
+            }
+
+            @if (combined.Count > 0)
+            {
+                <MudStack Spacing="1">
+                    @foreach (ImmutableList<int> group in combined)
+                    {
+                        ImmutableList<int> captured = group;
+
+                        <MudPaper Elevation="0" Class="pa-2 alliance-group">
+                            <span>@string.Join(" + ", group.Select(x => Teams[x].Name))</span>
+                            <MudIconButton Icon="@Icons.Material.Filled.CallSplit"
+                                           Size="Size.Small"
+                                           aria-label="Split this side"
+                                           OnClick="@(() => SeparateGroup(captured))"/>
+                        </MudPaper>
+                    }
+                </MudStack>
+            }
+
+            <MudDivider/>
+
+            <MudText Typo="Typo.subtitle2">Pick the teams to put together</MudText>
+
+            <div class="alliance-picker">
+                @foreach (GameTeamDefinition team in Teams)
+                {
+                    int  index    = team.Index;
+                    bool selected = _allianceSelection.Contains(index);
+
+                    <button type="button"
+                            class="alliance-chip @(selected ? "alliance-chip-selected" : "")"
+                            style="@($"--team: {team.Colour};")"
+                            @onclick="@(() => ToggleAllianceSelection(index))">
+                        @team.Name
+                    </button>
+                }
+            </div>
+
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Merge"
+                       Disabled="@(_allianceSelection.Count < 2)"
+                       OnClick="@CombineSelected">
+                Combine @(_allianceSelection.Count < 2 ? "" : $"{_allianceSelection.Count} teams")
+            </MudButton>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _alliancesOpen = false)">Done</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@* ---------- game name ---------- *@
+<MudDialog @bind-Visible="_renameOpen" Options="@(new DialogOptions { MaxWidth = MaxWidth.ExtraSmall, FullWidth = true })">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Name game @Board.CurrentGame</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="_gameNameDraft"
+                      Label="Game name"
+                      Placeholder="@($"Game {Board.CurrentGame}")"
+                      MaxLength="@GameTeamDefaults.MaxGameNameLength"
+                      Variant="Variant.Outlined"
+                      Immediate/>
+        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+            Leave it empty to go back to just the number.
+        </MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _renameOpen = false)">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="@SaveGameName">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@* ---------- button values ---------- *@
+<MudDialog @bind-Visible="_settingsOpen" Options="@(new DialogOptions { MaxWidth = MaxWidth.ExtraSmall, FullWidth = true })">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Button values</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
             <MudNumericField T="int"
                              Label="Tap / minus button"
                              Value="@Board.StepPoints"

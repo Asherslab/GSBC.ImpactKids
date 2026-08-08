@@ -1,5 +1,7 @@
 using System.Collections.Immutable;
 using EasyAppDev.Blazor.Store.AsyncActions;
+using Grpc.Core;
+using Microsoft.AspNetCore.Components;
 using EasyAppDev.Blazor.Store.Core;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
@@ -13,7 +15,8 @@ public partial class RefreshableStore<T>(
     IStore<EntityListState<T>>               store,
     IAsyncActionExecutor<EntityListState<T>> actionExecutor,
     IServiceProvider                         services,
-    ISseClientService                        sseClientService
+    ISseClientService                        sseClientService,
+    NavigationManager                        navigation
 )
     : IRefreshableStore<T>
 {
@@ -21,16 +24,41 @@ public partial class RefreshableStore<T>(
     {
         string name = typeof(T).Name;
         string key  = $"{name}-list";
-        BasicReadMultipleResponse<T> resp = await actionExecutor.ExecuteCachedAsync(
-            key,
-            RetrieveEntities,
-            loading: s => s with { Entities = s.Entities.ToLoading() },
-            success: (s, resp) => resp.HasError()
-                ? s with { Entities = s.Entities.ToFailure(resp.Error ?? "An unexpected error occurred") }
-                : s with { Entities = s.Entities.ToSuccess(resp.Entities) },
-            error: (s, _) => s with { Entities = s.Entities.ToFailure("An unexpected error occurred") },
-            cacheFor: TimeSpan.FromMinutes(30)
-        );
+
+        BasicReadMultipleResponse<T> resp;
+
+        // BasicReadMultiple is server streaming, and ExceptionInterceptor only wraps
+        // unary calls, so a failed read reaches the calling component and takes the
+        // render tree down with it. The executor has already put the store into its
+        // failure state by this point, so pages can render from that instead.
+        try
+        {
+            resp = await actionExecutor.ExecuteCachedAsync(
+                key,
+                RetrieveEntities,
+                loading: s => s with { Entities = s.Entities.ToLoading() },
+                success: (s, resp) => resp.HasError()
+                    ? s with { Entities = s.Entities.ToFailure(resp.Error ?? "An unexpected error occurred") }
+                    : s with { Entities = s.Entities.ToSuccess(resp.Entities) },
+                error: (s, _) => s with { Entities = s.Entities.ToFailure("An unexpected error occurred") },
+                cacheFor: TimeSpan.FromMinutes(30)
+            );
+        }
+        catch (RpcException e)
+        {
+            // The session died out from under us - the cached client side principal can
+            // outlive the proxy's cookie. Get a fresh one rather than sitting on a page
+            // where nothing will ever load.
+            if (e.StatusCode is StatusCode.Unauthenticated)
+            {
+                navigation.NavigateTo(
+                    $"bff/login?returnUrl={Uri.EscapeDataString(navigation.Uri)}",
+                    forceLoad: true
+                );
+            }
+
+            return;
+        }
 
         if (!resp.HasErrorOrNull())
         {

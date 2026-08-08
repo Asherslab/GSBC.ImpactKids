@@ -1,4 +1,11 @@
+.scores-page {
+    width: 100%;
+    max-width: 52rem;
+    margin-inline: auto;
+}
+
 .standing-rank {
+    min-width: 1.75rem;
     font-size: 1.35rem;
     line-height: 1;
 }

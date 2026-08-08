@@ -51,7 +51,7 @@
 .display-grid {
     display: grid;
     flex: 1;
-    gap: 2vmin;
+    gap: calc(2vmin * var(--scale, 1));
     min-height: 0;
 }
 
@@ -65,11 +65,27 @@
     column-gap: 3vmin;
 }
 
+/* Full width rail, so the row still reads as a bar chart when the score is zero. */
+.display-bar-track {
+    grid-area: bar;
+
+    width: 100%;
+    height: calc(3.5vmin * var(--scale, 1));
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .07);
+
+    overflow: hidden;
+}
+
 .display-team {
     grid-area: team;
 
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
     color: var(--team);
-    font-size: 5vmin;
+    font-size: calc(5vmin * var(--scale, 1));
     font-weight: 700;
     letter-spacing: .06em;
     text-transform: uppercase;
@@ -78,12 +94,11 @@
 
 /* Length is relative to the leader so standings read from across the room. */
 .display-bar {
-    grid-area: bar;
+    display: block;
 
-    height: 3.5vmin;
-    min-width: .8vmin;
+    height: 100%;
     border-radius: 999px;
-    background: var(--team);
+    background: var(--team-bar, var(--team));
 
     transition: width .5s ease-out;
 }
@@ -93,7 +108,7 @@
 
     text-align: right;
     color: var(--team);
-    font-size: 11vmin;
+    font-size: calc(11vmin * var(--scale, 1));
     font-weight: 800;
     line-height: 1;
     font-variant-numeric: tabular-nums;

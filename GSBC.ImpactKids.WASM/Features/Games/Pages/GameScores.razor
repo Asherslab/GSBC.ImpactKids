@@ -10,6 +10,9 @@
 
 <PageTitle>Tonight's Scores</PageTitle>
 
+@* Capped width - stretched to 1920 the team name and its score ended up a screen apart.
+   A plain wrapper, because scoped CSS does not reach a MudBlazor component's root. *@
+<div class="scores-page">
 <MudStack Spacing="2">
     <MudStack Row Class="align-center justify-space-between flex-wrap gap-2">
         <MudText Typo="Typo.h6">Tonight's Scores</MudText>
@@ -41,11 +44,11 @@
             {
                 <MudPaper Elevation="2"
                           Class="pa-3 standing"
-                          Style="@($"border-left: 6px solid {GameTeams.Colour(standing.Team)};")">
+                          Style="@($"border-left: 6px solid {standing.Team.Colour};")">
                     <MudStack Row Class="align-center justify-space-between">
                         <MudStack Row Class="align-center gap-2">
                             <span class="standing-rank">@Placing(index)</span>
-                            <MudText Typo="Typo.subtitle1"><b>@GameTeams.Label(standing.Team)</b></MudText>
+                            <MudText Typo="Typo.subtitle1"><b>@standing.Team.Name</b></MudText>
                         </MudStack>
                         <MudText Typo="Typo.h5"><b>@standing.Total</b></MudText>
                     </MudStack>
@@ -54,7 +57,7 @@
                         @for (int game = 1; game <= GamesPlayed; game++)
                         {
                             <span class="standing-chip">
-                                <span class="standing-chip-label">G@(game)</span>
+                                <span class="standing-chip-label">@GameLabel(game)</span>
                                 <span class="standing-chip-value">@standing.PerGame[game - 1]</span>
                             </span>
                         }
@@ -68,3 +71,4 @@
         </MudStack>
     }
 </MudStack>
+</div>

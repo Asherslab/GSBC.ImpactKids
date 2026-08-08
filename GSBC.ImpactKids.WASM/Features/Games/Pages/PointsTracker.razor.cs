@@ -17,12 +17,71 @@ public partial class PointsTracker
     private AsyncData<Service> _service = AsyncData<Service>.NotAsked();
 
     private bool _settingsOpen;
+    private bool _teamsOpen;
+    private bool _alliancesOpen;
+    private bool _renameOpen;
+
+    private string _gameNameDraft = string.Empty;
+
+    /// <summary>Teams ticked in the combine dialog, waiting to be put on one side.</summary>
+    private readonly HashSet<int> _allianceSelection = [];
 
     private Guid ServiceKey => _service.Data?.Id ?? Guid.Empty;
 
     private GameBoard Board => Points.BoardFor(ServiceKey);
 
+    private ImmutableList<GameTeamDefinition> Teams => Board.EffectiveTeams();
+
+    private GameDefinition CurrentGame => Board.CurrentGameDefinition();
+
+    private int GamesPlayed => Points.GamesPlayed(ServiceKey);
+
     private bool CanUndo => _service.Data != null && Points.CanUndo(ServiceKey);
+
+    private bool CanGoBack => Board.CurrentGame > 1;
+
+    private bool CanGoForward => Board.CurrentGame < GamesPlayed;
+
+    /// <summary>One scoring tile: a team, or the teams playing this game combined.</summary>
+    private sealed record Side(ImmutableList<GameTeamDefinition> Teams)
+    {
+        public string Label => string.Join(" + ", Teams.Select(x => x.Name));
+
+        public IReadOnlyList<int> Indexes => Teams.ConvertAll(x => x.Index);
+    }
+
+    /// <summary>
+    /// The tiles to draw. Combined teams collapse into one tile - they are scored
+    /// together, so two tiles showing the same number would only invite a double tap.
+    /// </summary>
+    private IReadOnlyList<Side> Sides
+    {
+        get
+        {
+            ImmutableList<GameTeamDefinition> teams = Teams;
+
+            return GameAlliances
+                .Groups(CurrentGame.Alliances, teams.Count)
+                .Select(group => new Side(group.ConvertAll(index => teams[index])))
+                .ToList();
+        }
+    }
+
+    /// <summary>Past four tiles the grid stops trying to fill the screen and starts scrolling.</summary>
+    private bool Compact => Sides.Count > 4;
+
+    private string GridStyle
+    {
+        get
+        {
+            int count = Sides.Count;
+
+            int columns        = count <= 2 ? 1 : 2;
+            int wideColumns    = Math.Clamp(count, 1, count <= 4 ? 4 : 5);
+
+            return $"--cols: {columns}; --cols-wide: {wideColumns};";
+        }
+    }
 
     private string SyncLabel => !Points.IsOnline
         ? Points.PendingCount > 0
@@ -100,20 +159,20 @@ public partial class PointsTracker
 
     // ---------- scoring ----------
 
-    private async Task AddGamePoints(GameTeam team, int points)
+    private async Task AddSidePoints(Side side, int points)
     {
         if (_service.Data == null)
             return;
 
-        await Points.AddGamePointsAsync(ServiceKey, team, points);
+        await Points.AddGamePointsAsync(ServiceKey, side.Indexes, points);
     }
 
-    private async Task AddBehaviourPoints(GameTeam team, int points)
+    private async Task AddBehaviourPoints(int teamIndex, int points)
     {
         if (_service.Data == null)
             return;
 
-        await Points.AddBehaviourPointsAsync(ServiceKey, team, points);
+        await Points.AddBehaviourPointsAsync(ServiceKey, teamIndex, points);
     }
 
     private async Task UndoLast()
@@ -124,17 +183,144 @@ public partial class PointsTracker
         await Points.UndoLastAsync(ServiceKey);
     }
 
-    // ---------- board ----------
+    /// <summary>Each team's own running total - a combined tile hides them behind one number.</summary>
+    private string? SideSubtitle(Side side) =>
+        side.Teams.Count < 2
+            ? null
+            : string.Join(" · ", side.Teams.Select(x => $"{x.Name} {Points.TotalFor(ServiceKey, x.Index)}"));
+
+    private int SidePoints(Side side, Func<int, int> pointsFor) =>
+        side.Teams.Count == 0 ? 0 : pointsFor(side.Teams[0].Index);
+
+    // ---------- games ----------
 
     private async Task StartNewGame()
     {
         if (_service.Data == null)
             return;
 
-        await UpdateBoard(board => board with { CurrentGame = board.CurrentGame + 1 });
+        // Always lands after the last game played, even if we had stepped back to look
+        // at an earlier one.
+        int next = Math.Max(Board.CurrentGame, GamesPlayed) + 1;
 
-        Snackbar.Add($"Game {Board.CurrentGame} started", Severity.Success);
+        await UpdateBoard(board => board with { CurrentGame = next });
+
+        Snackbar.Add($"Game {next} started", Severity.Success);
     }
+
+    /// <summary>
+    /// Steps back a game. A game nobody scored in never really happened, so leaving it
+    /// takes its settings with it rather than leaving an empty column on the tally.
+    /// </summary>
+    private async Task PreviousGame()
+    {
+        if (_service.Data == null || !CanGoBack)
+            return;
+
+        int leaving  = Board.CurrentGame;
+        bool discard = leaving >= GamesPlayed && !Points.HasScores(ServiceKey, leaving);
+
+        await UpdateBoard(board =>
+            {
+                GameBoard moved = board with { CurrentGame = leaving - 1 };
+
+                return discard
+                    ? moved with { Games = moved.Games.RemoveAll(x => x.Number == leaving) }
+                    : moved;
+            }
+        );
+
+        if (discard)
+            Snackbar.Add($"Game {leaving} discarded - nothing was scored", Severity.Info);
+    }
+
+    private Task NextGame() => CanGoForward
+        ? UpdateBoard(board => board with { CurrentGame = board.CurrentGame + 1 })
+        : Task.CompletedTask;
+
+    private Task GoToGame(int number) =>
+        UpdateBoard(board => board with { CurrentGame = Math.Clamp(number, 1, GamesPlayed) });
+
+    private void OpenRenameGame()
+    {
+        _gameNameDraft = CurrentGame.Name ?? string.Empty;
+        _renameOpen = true;
+    }
+
+    private async Task SaveGameName()
+    {
+        _renameOpen = false;
+
+        string? name = string.IsNullOrWhiteSpace(_gameNameDraft) ? null : _gameNameDraft.Trim();
+
+        await UpdateBoard(board => board.WithGame(board.CurrentGameDefinition() with { Name = name }));
+    }
+
+    // ---------- alliances ----------
+
+    private void OpenAlliances()
+    {
+        _allianceSelection.Clear();
+        _alliancesOpen = true;
+    }
+
+    private void ToggleAllianceSelection(int teamIndex)
+    {
+        if (!_allianceSelection.Add(teamIndex))
+            _allianceSelection.Remove(teamIndex);
+    }
+
+    private Task CombineSelected()
+    {
+        if (_allianceSelection.Count < 2)
+            return Task.CompletedTask;
+
+        int[] selected = [.._allianceSelection];
+
+        _allianceSelection.Clear();
+
+        return SetAlliances(current => GameAlliances.Combine(current, Teams.Count, selected));
+    }
+
+    private Task SeparateGroup(ImmutableList<int> group) =>
+        SetAlliances(current => GameAlliances.Separate(current, Teams.Count, group));
+
+    private Task PairUpTeams() => SetAlliances(_ => GameAlliances.PairUp(Teams.Count));
+
+    private Task ClearAlliances() => SetAlliances(_ => GameAlliances.None);
+
+    private Task SetAlliances(Func<ImmutableList<int>, ImmutableList<int>> mutate) =>
+        UpdateBoard(board => board.WithGame(
+                board.CurrentGameDefinition() with { Alliances = mutate(board.CurrentGameDefinition().Alliances) }
+            )
+        );
+
+    // ---------- teams ----------
+
+    private Task SetTeamCount(int count) => UpdateBoard(board => board with
+        {
+            Teams = GameTeams.Resize(board.EffectiveTeams(), count),
+
+            // Alliances are positional, so changing the team list makes every grouping
+            // stale. Names survive; the combining has to be redone.
+            Games = board.Games
+                .Select(game => game with { Alliances = [] })
+                .Where(game => !string.IsNullOrWhiteSpace(game.Name))
+                .ToImmutableList()
+        }
+    );
+
+    private Task RenameTeam(int index, string? name) =>
+        UpdateBoard(board => board with { Teams = GameTeams.Rename(board.EffectiveTeams(), index, name) });
+
+    private Task ShuffleTeamColour(int index) =>
+        UpdateBoard(board => board with { Teams = GameTeams.ShuffleColour(board.EffectiveTeams(), index) });
+
+    /// <summary>From the swatch's native colour picker, for when a team has to be a exact shade.</summary>
+    private Task SetTeamColour(int index, string? colour) =>
+        UpdateBoard(board => board with { Teams = GameTeams.SetColour(board.EffectiveTeams(), index, colour) });
+
+    // ---------- board ----------
 
     private Task TogglePaused() => UpdateBoard(board => board with
         {
@@ -147,8 +333,6 @@ public partial class PointsTracker
     private Task ToggleHidden() => UpdateBoard(board => board with { Hidden = !board.Hidden });
 
     private Task SetDisplayMode(GameDisplayMode mode) => UpdateBoard(board => board with { DisplayMode = mode });
-
-    private Task SetTeamCount(int teamCount) => UpdateBoard(board => board with { TeamCount = teamCount });
 
     private Task SetStepPoints(int points) => UpdateBoard(board => board with { StepPoints = points });
 

@@ -71,6 +71,8 @@ builder.Services.AddGrpc();
 builder.Services.AddConverters();
 builder.Services.AddTransient<ElvantoService>();
 builder.Services.AddSingleton<EventingChannelsService>();
+// Wakes the wall display's scoreboard stream - see GameDisplayService.WatchScoreboard.
+builder.Services.AddSingleton<GameDataChangeNotifier>();
 builder.Services.AddHostedService<RabbitWorker>();
 builder.Services.AddHostedService<HeartbeatService>();
 builder.Services.AddHybridCache();

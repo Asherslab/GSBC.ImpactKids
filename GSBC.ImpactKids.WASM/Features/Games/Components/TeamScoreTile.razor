@@ -1,8 +1,6 @@
-@using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Games
-
 @* The whole tile is the add button. The inner pill exists so that is obvious at a glance. *@
 <button type="button"
-        class="team-tile"
+        class="team-tile @(Compact ? "team-tile-compact" : "")"
         style="@TileStyle"
         aria-label="@($"Add {StepPoints} to {Label}")"
         @onclick="@(() => Add(StepPoints))">
@@ -12,7 +10,11 @@
        running total drops to a subtitle - otherwise they would be the same number. *@
     <div class="team-tile-total">@(ShowCurrentGame ? CurrentGamePoints : Total)</div>
 
-    @if (ShowCurrentGame)
+    @if (Subtitle != null)
+    {
+        <div class="team-tile-breakdown">@Subtitle</div>
+    }
+    else if (ShowCurrentGame)
     {
         <div class="team-tile-breakdown">Total @Total</div>
     }
@@ -23,10 +25,13 @@
         </div>
     }
 
-    <div class="team-tile-cta">
-        <span class="team-tile-cta-plus">+@StepPoints</span>
-        <span class="team-tile-cta-hint">tap anywhere</span>
-    </div>
+    @if (!Compact)
+    {
+        <div class="team-tile-cta">
+            <span class="team-tile-cta-plus">+@StepPoints</span>
+            <span class="team-tile-cta-hint">tap anywhere</span>
+        </div>
+    }
 
     <div class="team-tile-actions">
         <span role="button"
@@ -50,14 +55,13 @@
 
 @code {
 
-    [Parameter]
-    public required GameTeam Team { get; set; }
-
+    /// <summary>One team, or the teams of a combined side joined with "+".</summary>
     [Parameter]
     public required string Label { get; set; }
 
+    /// <summary>A colour, or a gradient when the tile stands for a combined side.</summary>
     [Parameter]
-    public required string Colour { get; set; }
+    public required string Background { get; set; }
 
     [Parameter]
     public required int Total { get; set; }
@@ -75,6 +79,17 @@
     [Parameter]
     public required bool ShowCurrentGame { get; set; }
 
+    /// <summary>
+    /// Overrides the usual breakdown line. A combined side uses it to spell out each
+    /// team's own running total, which the shared game score hides.
+    /// </summary>
+    [Parameter]
+    public string? Subtitle { get; set; }
+
+    /// <summary>Shrinks everything so a screenful of teams still fits. </summary>
+    [Parameter]
+    public bool Compact { get; set; }
+
     [Parameter]
     public required int StepPoints { get; set; }
 
@@ -84,7 +99,7 @@
     [Parameter]
     public required EventCallback<int> OnAdd { get; set; }
 
-    private string TileStyle => $"background: {Colour};";
+    private string TileStyle => $"background: {Background};";
 
     private Task Add(int points) => OnAdd.InvokeAsync(points);
 

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Grpc.Core;
 using GSBC.ImpactKids.Grpc.Data.Models.Games;
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Games;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Games;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using Microsoft.EntityFrameworkCore;
@@ -22,6 +23,9 @@ public partial class GamePointRecordService
 
         if (request.Points == 0)
             return BasicReadResponse<Guid?>.WithError(GamePointRecordPointsZero);
+
+        if (request.TeamIndex < 0 || request.TeamIndex >= GameTeamDefaults.MaxTeams)
+            return BasicReadResponse<Guid?>.WithError(GamePointRecordTeamIndex);
 
         DbService? service = await db.Services.FirstOrDefaultAsync(x => x.Id == request.ServiceId, token);
 
@@ -49,9 +53,10 @@ public partial class GamePointRecordService
         {
             Id = request.Id,
 
-            Team = request.Team,
+            TeamIndex = request.TeamIndex,
             Points = request.Points,
             GameNumber = request.GameNumber is > 0 ? request.GameNumber : null,
+            GroupId = request.GroupId == Guid.Empty ? null : request.GroupId,
             Awarded = request.Awarded == default
                 ? DateTimeOffset.UtcNow
                 : new DateTimeOffset(DateTime.SpecifyKind(request.Awarded, DateTimeKind.Utc)),

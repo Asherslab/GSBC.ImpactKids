@@ -1,5 +1,6 @@
 using GSBC.ImpactKids.Grpc.Data.Models.Games;
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Games;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Games;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using Microsoft.EntityFrameworkCore;
@@ -26,6 +27,10 @@ public partial class GameBoardService
 
         DateTimeOffset updatedAt = ToUtc(request.UpdatedAt) ?? DateTimeOffset.UtcNow;
 
+        int              currentGame = Math.Max(1, request.CurrentGame);
+        List<DbGameTeam> teams       = NormaliseTeams(request.Teams);
+        List<DbGame>     games       = NormaliseGames(request.Games, teams.Count);
+
         DbGameBoard? board = await db.GameBoards
             .FirstOrDefaultAsync(x => x.ServiceId == service.Id, token);
 
@@ -35,10 +40,12 @@ public partial class GameBoardService
             {
                 Id = Guid.Empty,
 
-                CurrentGame = Math.Max(1, request.CurrentGame),
-                TeamCount = NormaliseTeamCount(request.TeamCount),
+                CurrentGame = currentGame,
                 StepPoints = NormalisePoints(request.StepPoints, fallback: 1),
                 BonusPoints = NormalisePoints(request.BonusPoints, fallback: 5),
+
+                Teams = teams,
+                Games = games,
 
                 DisplayMode = request.DisplayMode,
                 Hidden = request.Hidden,
@@ -60,10 +67,11 @@ public partial class GameBoardService
                     Success = true
                 };
 
-            board.CurrentGame = Math.Max(1, request.CurrentGame);
-            board.TeamCount = NormaliseTeamCount(request.TeamCount);
+            board.CurrentGame = currentGame;
             board.StepPoints = NormalisePoints(request.StepPoints, fallback: 1);
             board.BonusPoints = NormalisePoints(request.BonusPoints, fallback: 5);
+            board.Teams = teams;
+            board.Games = games;
             board.DisplayMode = request.DisplayMode;
             board.Hidden = request.Hidden;
             board.Paused = request.Paused;
@@ -81,7 +89,81 @@ public partial class GameBoardService
         };
     }
 
-    private static int NormaliseTeamCount(int teamCount) => teamCount is 2 or 4 ? teamCount : 4;
+    /// <summary>
+    /// Re-indexes the list so team indexes stay contiguous, and fills in a default name
+    /// or colour for anything the client left blank or malformed.
+    /// </summary>
+    private static List<DbGameTeam> NormaliseTeams(IEnumerable<GameTeamDefinition> teams)
+    {
+        List<GameTeamDefinition> ordered = teams
+            .OrderBy(x => x.Index)
+            .Take(GameTeamDefaults.MaxTeams)
+            .ToList();
+
+        if (ordered.Count < GameTeamDefaults.MinTeams)
+            ordered = [.. GameTeamDefaults.Default()];
+
+        return ordered
+            .Select((team, index) => new DbGameTeam
+                {
+                    Index = index,
+                    Name = NormaliseName(team.Name, GameTeamDefaults.MaxNameLength)
+                           ?? GameTeamDefaults.DefaultName(index),
+                    Colour = GameTeamDefaults.IsValidColour(team.Colour)
+                        ? team.Colour
+                        : GameTeamDefaults.DefaultColour(index)
+                }
+            )
+            .ToList();
+    }
+
+    /// <summary>
+    /// Keeps only games that still say something - a name, or teams combined - and
+    /// drops alliance entries that point at teams the board no longer has.
+    /// </summary>
+    private static List<DbGame> NormaliseGames(IEnumerable<GameDefinition> games, int teamCount)
+    {
+        List<DbGame> normalised = [];
+
+        foreach (GameDefinition game in games.OrderBy(x => x.Number))
+        {
+            if (game.Number < 1 || normalised.Any(x => x.Number == game.Number))
+                continue;
+
+            string? name = NormaliseName(game.Name, GameTeamDefaults.MaxGameNameLength);
+
+            List<int> alliances = game.Alliances.Count == teamCount
+                ? game.Alliances.Select(x => Math.Clamp(x, 0, teamCount - 1)).ToList()
+                : [];
+
+            // Every team in a group of its own is the same as no alliances at all.
+            if (alliances.Distinct().Count() == alliances.Count)
+                alliances = [];
+
+            if (name == null && alliances.Count == 0)
+                continue;
+
+            normalised.Add(new DbGame
+                {
+                    Number = game.Number,
+                    Name = name,
+                    Alliances = alliances
+                }
+            );
+        }
+
+        return normalised;
+    }
+
+    private static string? NormaliseName(string? name, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return null;
+
+        string trimmed = name.Trim();
+
+        return trimmed.Length <= maxLength ? trimmed : trimmed[..maxLength];
+    }
 
     private static int NormalisePoints(int points, int fallback) =>
         points is > 0 and <= 100 ? points : fallback;
