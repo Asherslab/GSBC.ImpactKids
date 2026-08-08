@@ -77,6 +77,46 @@ async function onActivate(event) {
     await Promise.all(cacheKeys
         .filter(key => key.startsWith(cacheNamePrefix) && key !== cacheName)
         .map(key => caches.delete(key)));
+
+    await recoverStaleClients();
+}
+
+/*
+    A page still running the previous shell is already dead by the time we get here: it
+    booted against asset hashes this deploy replaced and failed before rendering. It cannot
+    heal itself, because the recovery script only exists in the *new* index.html, which such
+    a page never received - so without this it takes two manual reloads.
+
+    Now that this worker has claimed them, re-navigating a client is served by us, network
+    first, off the current shell. Runs once per activation, so it cannot loop.
+*/
+async function recoverStaleClients() {
+    let windows = [];
+
+    try {
+        windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: false });
+    } catch {
+        return;
+    }
+
+    await Promise.all(windows.map(async client => {
+        // navigate() is the only thing that reaches a page with no script of ours running.
+        // Not available everywhere, so fall back to a message the new shell listens for.
+        try {
+            if (typeof client.navigate === 'function') {
+                await client.navigate(client.url);
+                return;
+            }
+        } catch {
+            // Cross-origin or disallowed - fall through to the message.
+        }
+
+        try {
+            client.postMessage({ type: 'sw-updated' });
+        } catch {
+            // Nothing more we can do from here.
+        }
+    }));
 }
 
 function onFetch(event) {

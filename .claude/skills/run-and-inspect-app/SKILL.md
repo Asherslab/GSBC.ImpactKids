@@ -107,6 +107,46 @@ mcp__Claude_Browser__preview_start         # url: https://localhost:7263/…
 Diagnostic that identifies this: `navigator.serviceWorker.controller` is non-null while a
 `_framework` asset 404s in the console but fetches 200.
 
+## Production: stale service worker after a deploy
+
+Symptom: returning visitors get a dead page, fresh browsers are fine. Console shows
+`FetchEvent.respondWith received an error: TypeError: Load failed` on `_framework/*.wasm`.
+
+That error means the **old** worker is still in control — the current worker returns a 404
+`Response` for a missing asset rather than a rejected promise, so it cannot produce it.
+Diagnose from the outside before touching code:
+
+```bash
+# Is the fixed worker actually deployed? Compare against wwwroot/service-worker.published.js
+curl -s https://kids.baptist.com.au/service-worker.js | grep -c clients.claim
+
+# Do the failing hashes belong to the current build, or a previous one?
+curl -s https://kids.baptist.com.au/service-worker-assets.js | grep -c <hash>
+
+# Is Cloudflare involved? DYNAMIC means it is passing through, not caching.
+curl -sI https://kids.baptist.com.au/_framework/<asset>.wasm | grep -i cf-cache-status
+```
+
+A missing `_framework` asset must return **404**, never 200 `text/html`. If it returns the
+HTML shell, nginx's SPA `try_files` fallback is catching it and the runtime's integrity
+check turns that into the opaque "Load failed".
+
+**Ask how many tabs are open before theorising.** A new worker enters the *waiting* state
+while any client of the old worker still exists, and **reloading a tab does not release
+control** - the client persists across the navigation. With two tabs open, refreshing
+either one forever never escapes; only closing all of them does. This looks exactly like a
+route-specific bug, because whichever tab you happen to keep open is the one that stays
+broken. `skipWaiting()` + `clients.claim()` are what remove the trap, and both are now in
+`service-worker.published.js`.
+
+Console output survives a failed boot, so errors on screen may be scrollback from an
+earlier load. Clear the console, reload, and re-read before drawing conclusions - state
+queried after the fact can show a healthy worker while the visible errors are from before
+it activated.
+
+Do not conclude the app is broken from one browser. Load it in a clean profile — an origin
+with no prior worker boots off the current manifest and will work while a stuck tab does not.
+
 ## Auth
 
 Auth0 with **Google SSO only**. Never drive that sign-in — ask the user to complete it in
