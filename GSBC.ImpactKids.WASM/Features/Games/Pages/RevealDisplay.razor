@@ -1,0 +1,180 @@
+@page "/Display/Reveal"
+@page "/Display/Reveal/{ServiceId:guid}"
+@using GSBC.ImpactKids.WASM.Features.Games.Layout
+@using static GSBC.ImpactKids.WASM.Features.Games.GameReveal
+@layout DisplayLayout
+@inherits GSBC.ImpactKids.WASM.Features.Games.Components.ScoreboardWatcherComponent
+@* Same reasoning as the score display - a screen on a wall cannot sign in, and this
+   page only ever renders aggregate scores. *@
+@attribute [AllowAnonymous]
+
+<PageTitle>Score Reveal</PageTitle>
+
+<div class="reveal">
+    <div class="reveal-ambient"></div>
+
+    @if (Board == null)
+    {
+        <div class="reveal-holding">Connecting…</div>
+    }
+    else if (!Board.Success)
+    {
+        <div class="reveal-holding">@(Board.Error ?? "No scores yet")</div>
+    }
+    else if (Board.Hidden)
+    {
+        <div class="reveal-holding">Scores hidden</div>
+    }
+    else if (!Running)
+    {
+        @* Idle, and likely to sit here for an hour before the reveal starts. *@
+        <div class="reveal-standby">
+            <div class="reveal-standby-title">Scores locked in</div>
+            <div class="reveal-standby-teams">
+                @foreach ((RevealTeam team, int index) in _teams.Select((x, i) => (x, i)))
+                {
+                    <span class="reveal-standby-team" style="@($"--team: {team.Colour}; --i: {index};")">
+                        @team.Name
+                    </span>
+                }
+            </div>
+            <div class="reveal-standby-hint">The results are coming…</div>
+        </div>
+    }
+    else
+    {
+        <div class="reveal-pips">
+            @for (int i = 0; i < _steps.Count; i++)
+            {
+                <span class="reveal-pip @(i <= _step ? "reveal-pip-done" : "")"></span>
+            }
+        </div>
+
+        @switch (Current.Stage)
+        {
+            case RevealStage.Intro:
+                <div class="reveal-intro" @key="@("intro")">
+                    <div class="reveal-intro-kicker">@(Board.Title ?? "Tonight")</div>
+                    <div class="reveal-intro-title">
+                        @foreach ((char letter, int index) in "FINAL SCORES".Select((c, i) => (c, i)))
+                        {
+                            <span class="reveal-letter" style="@($"--i: {index};")">
+                                @(letter == ' ' ? (MarkupString)"&nbsp;" : (MarkupString)letter.ToString())
+                            </span>
+                        }
+                    </div>
+                    <div class="reveal-intro-teams">
+                        @foreach ((RevealTeam team, int index) in _teams.Select((x, i) => (x, i)))
+                        {
+                            <span class="reveal-intro-team"
+                                  style="@($"--team: {team.Colour}; --i: {index};")">@team.Name</span>
+                        }
+                    </div>
+                    <div class="reveal-intro-hint">
+                        @_rounds.Count @(_rounds.Count == 1 ? "round" : "rounds") to reveal
+                    </div>
+                </div>
+                break;
+
+            case RevealStage.Podium:
+            case RevealStage.Champion:
+                <div class="reveal-podium-wrap">
+                    <div class="reveal-podium-title">@PodiumTitle</div>
+
+                    <div class="reveal-podium">
+                        @foreach (PodiumSlot slot in Podium)
+                        {
+                            <div class="reveal-plinth reveal-plinth-@slot.Place @(slot.Shown ? "reveal-plinth-shown" : "")"
+                                 style="@($"--team: {slot.Team.Colour};")"
+                                 @key="@($"plinth{slot.Team.Index}")">
+                                <div class="reveal-plinth-card">
+                                    <div class="reveal-plinth-medal">@Medal(slot.Place)</div>
+                                    <div class="reveal-plinth-name">@slot.Team.Name</div>
+                                    <div class="reveal-plinth-score">@GameScoreFormat.Points(slot.Total)</div>
+                                </div>
+                                @* "Tied 1st" rather than three identical golds and no
+                                   explanation of why nobody came second. *@
+                                <div class="reveal-plinth-block">
+                                    @(slot.Shared ? $"Tied {Ordinal(slot.Place)}" : Ordinal(slot.Place))
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    @if (Current.Stage == RevealStage.Champion)
+                    {
+                        <div class="reveal-confetti">
+                            @foreach (string piece in _confetti)
+                            {
+                                <span class="reveal-confetti-piece" style="@piece"></span>
+                            }
+                        </div>
+                    }
+                </div>
+                break;
+
+            default:
+                <div class="reveal-board-wrap">
+                    @* The header name only fades in as the card flies into it, so the two
+                       read as one title moving rather than a copy appearing. *@
+                    <div class="reveal-round-title" @key="@($"title{_step}")">
+                        <span class="reveal-round-kicker">Scores</span>
+                        <span class="reveal-round-name @(_cardPhase ? "reveal-round-name-waiting" : "")">
+                            @RoundTitle
+                        </span>
+                    </div>
+
+                    @* Rows hold their place in the DOM and are moved by rank, so a team
+                       taking the lead visibly climbs past the one it passed. *@
+                    <div class="reveal-board @(_cardPhase ? "reveal-board-dim" : "") @(RoundIsBlank ? "reveal-board-blank" : "")"
+                         style="@($"--rows: {_teams.Count}; --scale: {RowScale};")">
+                        @foreach (RevealRow row in Rows)
+                        {
+                            <div class="reveal-row @(row.IsLeader ? "reveal-row-leader" : "")"
+                                 style="@($"--team: {row.Team.Colour}; --rank: {row.Rank};")"
+                                 @key="@($"row{row.Team.Index}")">
+                                @* Spelled out - "=1" is athletics shorthand and the room
+                                   is full of children. Teams level on points simply show
+                                   the same placing. *@
+                                <span class="reveal-place">@Ordinal(row.Place)</span>
+                                <span class="reveal-name">@row.Team.Name</span>
+                                <span class="reveal-track">
+                                    <span class="reveal-bar" style="@($"width: {row.Percent}%;")"></span>
+                                </span>
+                                <span class="reveal-total">
+                                    <span class="reveal-total-value" @key="@($"v{row.Team.Index}#{_step}")">
+                                        @GameScoreFormat.Points(row.Total)
+                                    </span>
+                                    @if (row.Gain != 0)
+                                    {
+                                        <span class="reveal-gain @(row.Gain < 0 ? "reveal-gain-down" : "")"
+                                              @key="@($"g{row.Team.Index}#{_step}")">
+                                            @GameScoreFormat.Delta(row.Gain)
+                                        </span>
+                                    }
+                                </span>
+                            </div>
+                        }
+                    </div>
+
+                    @* Nobody scored. Slammed across the board like a rubber stamp, because
+                       the round has nothing else to show and still has to land. *@
+                    @if (RoundIsBlank)
+                    {
+                        <div class="reveal-stamp" @key="@($"stamp{_step}")">
+                            <span class="reveal-stamp-text">No points!</span>
+                        </div>
+                    }
+
+                    @* Stays mounted for the whole round. Its own keyframes hold it in the
+                       middle, then fly it up into the header - one element moving, which
+                       is why the header copy is hidden until it lands. Keyed on the step
+                       so the sequence replays each round. *@
+                    <div class="reveal-card" @key="@($"card{_step}")">
+                        <div class="reveal-card-name">@RoundTitle</div>
+                    </div>
+                </div>
+                break;
+        }
+    }
+</div>

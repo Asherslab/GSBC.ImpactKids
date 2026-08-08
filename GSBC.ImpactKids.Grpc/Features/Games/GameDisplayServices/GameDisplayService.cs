@@ -95,7 +95,10 @@ public class GameDisplayService(
             .Append((int)board.Mode).Append('|')
             .Append(board.CurrentGame).Append('|')
             .Append(board.CurrentGameName).Append('|')
-            .Append(board.CurrentGameHasAlliances);
+            .Append(board.CurrentGameHasAlliances).Append('|')
+            .Append(board.RevealStep).Append('|')
+            .Append(board.GamesPlayed).Append('|')
+            .Append(string.Join(',', board.GameNames));
 
         foreach (TeamScoreLine line in board.Teams)
         {
@@ -104,7 +107,12 @@ public class GameDisplayService(
                 .Append(line.Name).Append(':')
                 .Append(line.Colour).Append(':')
                 .Append(line.AllianceGroup).Append(':')
-                .Append(line.DisplayPoints);
+                .Append(line.DisplayPoints).Append(':')
+                .Append(line.BehaviourPoints).Append(':')
+                // The reveal renders these, and while the board is showing one game they
+                // can move without
+                // DisplayPoints moving with them - a correction to an earlier game.
+                .Append(string.Join(',', line.PerGamePoints));
         }
 
         return builder.ToString();
@@ -165,6 +173,7 @@ public class GameDisplayService(
                 CurrentGame = currentGame,
                 CurrentGameName = currentGameName,
                 CurrentGameHasAlliances = hasAlliances,
+                RevealStep = board?.RevealStep,
                 Teams = []
             };
 
@@ -179,20 +188,65 @@ public class GameDisplayService(
 
         List<DbGamePointRecord> records = await query.ToListAsync(token);
 
+        // Games actually played, matching the scoring tool: the current game, or further
+        // if anything has been scored in a later one.
+        int gamesPlayed = Math.Max(
+            currentGame,
+            records.Where(x => x.GameNumber != null).Select(x => x.GameNumber!.Value).DefaultIfEmpty(0).Max()
+        );
+
+        ImmutableList<string> gameNames = Enumerable.Range(1, gamesPlayed)
+            .Select(number =>
+                {
+                    DbGame? definition = board?.Games.FirstOrDefault(x => x.Number == number);
+
+                    return string.IsNullOrWhiteSpace(definition?.Name)
+                        ? $"Game {number}"
+                        : definition!.Name!;
+                }
+            )
+            .ToImmutableList();
+
+        // Display only scaling, worked out once for the board: a point in game three can
+        // be worth a different number on screen to a point in game four. Everything below
+        // this line is in screen numbers, not scored points.
+        int[] multipliers = GameMultipliers.PerGame(
+            gamesPlayed,
+            board?.PointsMultiplier ?? GameMultipliers.Default,
+            number => board?.Games.FirstOrDefault(x => x.Number == number)?.Multiplier
+        );
+
+        // Behaviour points belong to no game, so they never follow a game's multiplier -
+        // they are priced on their own.
+        int behaviourMultiplier = GameMultipliers.Normalise(
+            board?.BehaviourPointsMultiplier ?? GameMultipliers.Default
+        );
+
         ImmutableList<TeamScoreLine> teams = teamDefinitions
             .Select(team =>
                 {
-                    int gamePoints = records
-                        .Where(x => x.TeamIndex == team.Index && x.GameNumber != null)
-                        .Sum(x => x.Points);
+                    ImmutableList<int> perGamePoints = Enumerable.Range(1, gamesPlayed)
+                        .Select(number => GameMultipliers.Multiply(
+                                records
+                                    .Where(x => x.TeamIndex == team.Index && x.GameNumber == number)
+                                    .Sum(x => x.Points),
+                                multipliers[number - 1]
+                            )
+                        )
+                        .ToImmutableList();
 
-                    int behaviourPoints = records
-                        .Where(x => x.TeamIndex == team.Index && x.GameNumber == null)
-                        .Sum(x => x.Points);
+                    // Summed after multiplying, so a night with two different multipliers
+                    // still totals to what the board showed round by round.
+                    int gamePoints = perGamePoints.Sum();
 
-                    int currentGamePoints = records
-                        .Where(x => x.TeamIndex == team.Index && x.GameNumber == currentGame)
-                        .Sum(x => x.Points);
+                    int behaviourPoints = GameMultipliers.Multiply(
+                        records
+                            .Where(x => x.TeamIndex == team.Index && x.GameNumber == null)
+                            .Sum(x => x.Points),
+                        behaviourMultiplier
+                    );
+
+                    int currentGamePoints = perGamePoints[currentGame - 1];
 
                     return new TeamScoreLine
                     {
@@ -207,7 +261,8 @@ public class GameDisplayService(
                             : gamePoints + behaviourPoints,
                         GamePoints = gamePoints,
                         BehaviourPoints = behaviourPoints,
-                        CurrentGamePoints = currentGamePoints
+                        CurrentGamePoints = currentGamePoints,
+                        PerGamePoints = perGamePoints
                     };
                 }
             )
@@ -225,6 +280,9 @@ public class GameDisplayService(
             CurrentGame = currentGame,
             CurrentGameName = currentGameName,
             CurrentGameHasAlliances = hasAlliances,
+            RevealStep = board?.RevealStep,
+            GamesPlayed = gamesPlayed,
+            GameNames = gameNames,
             Teams = teams
         };
     }

@@ -5,12 +5,13 @@
 @using GSBC.ImpactKids.WASM.Features.Games
 @using GSBC.ImpactKids.WASM.Features.Games.Components
 @using GSBC.ImpactKids.WASM.Features.Games.Services
+@using MudBlazor.Utilities
 @attribute [Authorize]
 @inherits EntityUtilityComponent
 @inject IRefreshableStore<Service> ServicesStore
 @inject IGamePointsService         Points
 
-<PageTitle>Team Points</PageTitle>
+<PageTitle>Game Scoring</PageTitle>
 
 <MudStack Spacing="2" Class="points-page">
     @* Game navigation sits first and stays one row on a phone - it is the control that
@@ -97,7 +98,7 @@
                 </MudMenuItem>
                 <MudDivider/>
                 <MudMenuItem Icon="@Icons.Material.Filled.Tune" OnClick="@(() => _settingsOpen = true)">
-                    Button values
+                    Points setup
                 </MudMenuItem>
                 <MudMenuItem Icon="@Icons.Material.Filled.Cast" Href="/Display/Scores" Target="_blank">
                     Open wall display
@@ -107,15 +108,29 @@
     </MudStack>
 
     <MudStack Row Class="align-center flex-wrap gap-1">
+        @* Tappable: a queue that has wedged is otherwise only fixable by reloading. *@
         <MudChip T="string"
                  Size="Size.Small"
                  Variant="Variant.Text"
                  Color="@SyncColour"
-                 Icon="@SyncIcon">
+                 Icon="@SyncIcon"
+                 Title="Tap to sync now"
+                 Disabled="@_resyncing"
+                 OnClick="@Resync">
             @SyncLabel
         </MudChip>
         <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Cast">
             @(Board.DisplayMode == GameDisplayMode.Totals ? "Totals" : "This game")
+        </MudChip>
+        @* What the wall is multiplying by. A leader taps single points either way, but
+           they still get asked what the big number on the screen means. *@
+        <MudChip T="string"
+                 Size="Size.Small"
+                 Variant="Variant.Outlined"
+                 Icon="@Icons.Material.Filled.Close"
+                 Title="Tap to change the display multiplier"
+                 OnClick="@(() => _settingsOpen = true)">
+            @EffectiveMultiplier on screen
         </MudChip>
         @if (CurrentGame.HasAlliances())
         {
@@ -254,7 +269,7 @@
 
             <MudText Typo="Typo.caption" Class="mud-text-secondary">
                 Names and colours are filled in for you - change them only if you want to.
-                Tap a swatch to pick a colour, or shuffle for a new one.
+                Tap a colour to pick your own, or shuffle for a new one.
             </MudText>
 
             <div class="team-editor">
@@ -263,14 +278,18 @@
                     int index = team.Index;
 
                     <div class="team-editor-row">
-                        @* Native colour input, so phones get the OS picker and there is
-                           nothing to type. The label is the swatch; the input is hidden. *@
-                        <label class="team-swatch" style="@($"background: {team.Colour};")">
-                            <span class="visually-hidden">@($"{team.Name} colour")</span>
-                            <input type="color"
-                                   value="@team.Colour"
-                                   @onchange="@(e => SetTeamColour(index, e.Value?.ToString()))"/>
-                        </label>
+                        @* The same picker service types are coloured with, so a colour is
+                           chosen the same way everywhere in the app. *@
+                        <MudColorPicker Value="@(new MudColor(team.Colour))"
+                                        ValueChanged="@(colour => SetTeamColour(index, colour.ToString(MudColorOutputFormats.Hex)))"
+                                        Label="@($"{team.Name} colour")"
+                                        Class="team-colour"
+                                        Variant="Variant.Filled"
+                                        Margin="Margin.Dense"
+                                        ColorPickerMode="ColorPickerMode.HEX"
+                                        ShowAlpha="false"
+                                        Style="@($"color: {team.Colour};")"
+                                        ShowToolbar/>
                         <MudIconButton Icon="@Icons.Material.Filled.Casino"
                                        Size="Size.Small"
                                        aria-label="@($"Shuffle {team.Name}'s colour")"
@@ -397,10 +416,10 @@
     </DialogActions>
 </MudDialog>
 
-@* ---------- button values ---------- *@
+@* ---------- points setup ---------- *@
 <MudDialog @bind-Visible="_settingsOpen" Options="@(new DialogOptions { MaxWidth = MaxWidth.ExtraSmall, FullWidth = true })">
     <TitleContent>
-        <MudText Typo="Typo.h6">Button values</MudText>
+        <MudText Typo="Typo.h6">Points setup</MudText>
     </TitleContent>
     <DialogContent>
         <MudStack Spacing="3">
@@ -417,6 +436,60 @@
                              ValueChanged="@SetBonusPoints"
                              Min="1"
                              Max="100"
+                             Variant="Variant.Outlined"/>
+
+            <MudDivider/>
+
+            @* Scoring never changes - this is only what the wall multiplies it by. *@
+            <MudText Typo="Typo.subtitle2">On the displays</MudText>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                Scoring stays in @(Board.StepPoints == 1 ? "single points" : $"{Board.StepPoints}s").
+                The screens multiply it - one point shows as @Board.PointsMultiplier.
+            </MudText>
+
+            <MudStack Row Class="flex-wrap gap-1">
+                @foreach (int preset in GameMultipliers.Presets)
+                {
+                    int multiplier = preset;
+
+                    <MudChip T="string"
+                             Size="Size.Small"
+                             Variant="@(Board.PointsMultiplier == multiplier ? Variant.Filled : Variant.Outlined)"
+                             Color="@(Board.PointsMultiplier == multiplier ? Color.Primary : Color.Default)"
+                             OnClick="@(() => SetPointsMultiplier(multiplier))">
+                        ×@multiplier
+                    </MudChip>
+                }
+            </MudStack>
+
+            <MudNumericField T="int"
+                             Label="Multiplier for the night"
+                             Value="@Board.PointsMultiplier"
+                             ValueChanged="@SetPointsMultiplier"
+                             Min="@GameMultipliers.Min"
+                             Max="@GameMultipliers.Max"
+                             Variant="Variant.Outlined"/>
+
+            @* Per game, because one game that scores twenty times as often should not
+               drag the whole night's numbers up with it. *@
+            <MudNumericField T="int?"
+                             Label="@($"Multiplier for {CurrentGame.DisplayName()}")"
+                             Value="@CurrentGame.Multiplier"
+                             ValueChanged="@SetCurrentGameMultiplier"
+                             Min="@GameMultipliers.Min"
+                             Max="@GameMultipliers.Max"
+                             Placeholder="@InheritedMultiplier.ToString()"
+                             HelperText="@($"Empty follows the game before it — ×{InheritedMultiplier}. Later games follow this one.")"
+                             Clearable
+                             Variant="Variant.Outlined"/>
+
+            @* Priced on its own - behaviour points are not won in a game. *@
+            <MudNumericField T="int"
+                             Label="Multiplier for behaviour points"
+                             Value="@Board.BehaviourPointsMultiplier"
+                             ValueChanged="@SetBehaviourMultiplier"
+                             Min="@GameMultipliers.Min"
+                             Max="@GameMultipliers.Max"
                              Variant="Variant.Outlined"/>
         </MudStack>
     </DialogContent>

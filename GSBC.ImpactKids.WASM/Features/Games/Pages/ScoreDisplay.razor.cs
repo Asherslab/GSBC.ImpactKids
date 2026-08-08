@@ -1,131 +1,121 @@
 using System.Globalization;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Games;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Games;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Features.Games;
-using GSBC.ImpactKids.Shared.Contracts.Services.Features.Games;
-using Microsoft.AspNetCore.Components;
+using GSBC.ImpactKids.WASM.Features.Games.Components;
 
 namespace GSBC.ImpactKids.WASM.Features.Games.Pages;
 
 /// <summary>
-/// Unauthenticated wall display. Reads a server streamed scoreboard, so a tap on a
-/// phone reaches the wall as fast as the write lands rather than on the next poll.
-/// The stream cannot use the signed in event stream - this screen has no cookie - so
-/// the push comes down the same anonymous gRPC route the board itself is read over.
+/// Unauthenticated wall display of the live standings. See
+/// <see cref="ScoreboardWatcherComponent"/> for how the board reaches the screen.
 /// </summary>
-public partial class ScoreDisplay : IAsyncDisposable
+public partial class ScoreDisplay
 {
-    /// <summary>Backoff for a dropped stream. Nothing on the wall is worth hammering for.</summary>
-    private static readonly TimeSpan MinRetryDelay = TimeSpan.FromSeconds(1);
+    private IReadOnlyList<DisplayRow> _rows = [];
 
-    private static readonly TimeSpan MaxRetryDelay = TimeSpan.FromSeconds(15);
+    /// <summary>
+    /// Points as of the last board, per row key. A row that moves gets a one off pop and
+    /// a floating delta, which is the only cue on a wall that anything just happened.
+    /// </summary>
+    private readonly Dictionary<string, int> _lastPoints = [];
 
-    [Parameter]
-    public Guid? ServiceId { get; set; }
+    /// <summary>Bumped whenever a row's points move, purely to restart its CSS animation.</summary>
+    private readonly Dictionary<string, int> _bumps = [];
 
-    [Inject]
-    public required IGameDisplayService DisplayService { get; set; }
+    protected override void OnBoardReceived(GameScoreboardResponse board) => _rows = BuildRows(board);
 
-    private GameScoreboardResponse? _board;
-
-    private CancellationTokenSource? _watchTokenSource;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await base.OnInitializedAsync();
-
-        StartWatching();
-    }
-
-    private void StartWatching()
-    {
-        _watchTokenSource?.Cancel();
-        _watchTokenSource = new CancellationTokenSource();
-        CancellationToken token = _watchTokenSource.Token;
-
-        _ = Task.Run(() => WatchAsync(token), token);
-    }
-
-    private async Task WatchAsync(CancellationToken token)
-    {
-        TimeSpan delay = MinRetryDelay;
-
-        while (!token.IsCancellationRequested)
-        {
-            try
-            {
-                await foreach (GameScoreboardResponse board in DisplayService.WatchScoreboard(
-                                   new GameScoreboardRequest { ServiceId = ServiceId },
-                                   token
-                               ).WithCancellation(token))
-                {
-                    // A board arrived, so the connection is good - forget the backoff.
-                    delay = MinRetryDelay;
-
-                    _board = board;
-
-                    await InvokeAsync(StateHasChanged);
-                }
-            }
-            catch (OperationCanceledException) when (token.IsCancellationRequested)
-            {
-                return;
-            }
-            catch
-            {
-                // Keep the last good board on screen rather than blanking the wall.
-            }
-
-            if (token.IsCancellationRequested)
-                return;
-
-            try
-            {
-                await Task.Delay(delay, token);
-            }
-            catch (OperationCanceledException)
-            {
-                return;
-            }
-
-            delay = TimeSpan.FromTicks(Math.Min(delay.Ticks * 2, MaxRetryDelay.Ticks));
-        }
-    }
-
-    /// <summary>One line on the wall: a team, or the teams playing this game combined.</summary>
-    private sealed record DisplayRow(string Label, string Colour, string Background, int Points);
+    /// <summary>
+    /// One line on the wall: a team, or the teams playing this game combined.
+    /// <para>
+    /// <see cref="Key"/> holds the line's DOM position steady across boards while
+    /// <see cref="Rank"/> moves it, so overtaking reads as one row sliding past another.
+    /// </para>
+    /// </summary>
+    private sealed record DisplayRow(
+        string Key,
+        string Label,
+        string Colour,
+        string Background,
+        int    Points,
+        int    Rank,
+        bool   IsLeader,
+        int    Delta,
+        int    Bump
+    );
 
     /// <summary>
     /// Combined teams share a line while the display is showing the current game - they
     /// score together, so two lines with the same number would just read as a mistake.
     /// The totals view always breaks them back apart, because the totals differ.
     /// </summary>
-    private IReadOnlyList<DisplayRow> Rows
+    private IReadOnlyList<DisplayRow> BuildRows(GameScoreboardResponse board)
     {
-        get
-        {
-            if (_board == null)
-                return [];
+        List<(string Key, string Label, string Colour, string Background, int Points)> lines;
 
-            if (_board.Mode != GameDisplayMode.CurrentGame || !_board.CurrentGameHasAlliances)
-                return _board.Teams
-                    .Select(x => new DisplayRow(x.Name, x.Colour, x.Colour, x.DisplayPoints))
-                    .ToList();
-
-            return _board.Teams
-                .GroupBy(x => x.AllianceGroup)
-                .Select(group => new DisplayRow(
-                        string.Join(" + ", group.Select(x => x.Name)),
-                        group.First().Colour,
-                        group.Count() == 1
-                            ? group.First().Colour
-                            : $"linear-gradient(135deg, {string.Join(", ", group.Select(x => x.Colour))})",
-                        group.Max(x => x.DisplayPoints)
+        if (board.Mode != GameDisplayMode.CurrentGame || !board.CurrentGameHasAlliances)
+            lines = board.Teams
+                .Select(x => (
+                        Key: $"t{x.TeamIndex}",
+                        Label: x.Name,
+                        x.Colour,
+                        Background: x.Colour,
+                        Points: x.DisplayPoints
                     )
                 )
-                .OrderByDescending(x => x.Points)
                 .ToList();
+        else
+            lines = board.Teams
+                .GroupBy(x => x.AllianceGroup)
+                .Select(group => (
+                        Key: $"a{string.Join("_", group.Select(x => x.TeamIndex).Order())}",
+                        Label: string.Join(" + ", group.Select(x => x.Name)),
+                        group.First().Colour,
+                        Background: group.Count() == 1
+                            ? group.First().Colour
+                            : $"linear-gradient(135deg, {string.Join(", ", group.Select(x => x.Colour))})",
+                        Points: group.Max(x => x.DisplayPoints)
+                    )
+                )
+                .ToList();
+
+        // Ranked separately from the render order - the DOM order has to stay put for the
+        // rows to animate between placings rather than jump.
+        List<string> ranked = lines
+            .OrderByDescending(x => x.Points)
+            .Select(x => x.Key)
+            .ToList();
+
+        // Everyone on the top score is a leader. Crowning only the first would make a
+        // tie look like a lead, which is exactly the thing the wall must not get wrong.
+        int best = lines.Select(x => x.Points).DefaultIfEmpty(0).Max();
+
+        List<DisplayRow> rows = [];
+
+        foreach ((string Key, string Label, string Colour, string Background, int Points) line in lines)
+        {
+            bool known = _lastPoints.TryGetValue(line.Key, out int previous);
+            int delta = known ? line.Points - previous : 0;
+
+            if (delta != 0)
+                _bumps[line.Key] = _bumps.GetValueOrDefault(line.Key) + 1;
+
+            _lastPoints[line.Key] = line.Points;
+
+            rows.Add(new DisplayRow(
+                    line.Key,
+                    line.Label,
+                    line.Colour,
+                    line.Background,
+                    line.Points,
+                    ranked.IndexOf(line.Key),
+                    line.Points == best && best > 0,
+                    delta,
+                    _bumps.GetValueOrDefault(line.Key)
+                )
+            );
         }
+
+        return rows;
     }
 
     /// <summary>
@@ -133,27 +123,20 @@ public partial class ScoreDisplay : IAsyncDisposable
     /// twenty team night still fits on one screen instead of scrolling off it.
     /// </summary>
     private string RowScale =>
-        Math.Clamp(4d / Math.Max(Rows.Count, 1), .3, 1).ToString("0.00", CultureInfo.InvariantCulture);
+        Math.Clamp(4d / Math.Max(_rows.Count, 1), .3, 1).ToString("0.00", CultureInfo.InvariantCulture);
+
+    private static string RowStyle(DisplayRow row) =>
+        $"--team: {row.Colour}; --team-bar: {row.Background}; --rank: {row.Rank};";
 
     /// <summary>Bar length is relative to the leader, so the board reads at a distance.</summary>
     private string BarStyle(DisplayRow row)
     {
-        int max = Rows.Count == 0 ? 0 : Rows.Max(x => Math.Max(x.Points, 0));
+        int max = _rows.Count == 0 ? 0 : _rows.Max(x => Math.Max(x.Points, 0));
 
         int percent = max <= 0
             ? 0
             : (int)Math.Round(Math.Max(row.Points, 0) / (double)max * 100);
 
         return $"width: {percent}%;";
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (_watchTokenSource is not null)
-        {
-            await _watchTokenSource.CancelAsync();
-            _watchTokenSource.Dispose();
-            _watchTokenSource = null;
-        }
     }
 }

@@ -4,6 +4,193 @@
     margin-inline: auto;
 }
 
+/* The table needs the room a phone layout does not - a night of eight games is eight
+   columns. Only widened where the table is actually the thing on screen. */
+@media (min-width: 60rem) {
+    .scores-page {
+        max-width: 82rem;
+    }
+}
+
+/* One of these two is always hidden. The table is for comparing games against each
+   other, which needs columns; a phone gets the same numbers as cards. */
+.totals-table-wrap {
+    display: none;
+}
+
+@media (min-width: 60rem) {
+    .totals-table-wrap {
+        display: block;
+        overflow-x: auto;
+    }
+
+    .totals-cards {
+        display: none;
+    }
+}
+
+.totals-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+}
+
+.totals-table th,
+.totals-table td {
+    padding: .5rem .75rem;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.totals-table thead th {
+    font-size: .7rem;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    vertical-align: bottom;
+    border-bottom: 1px solid var(--mud-palette-divider);
+}
+
+.totals-head-name {
+    display: block;
+}
+
+/* The multiplier belongs with the column it applies to - a night with one game at 100
+   and the rest at 1000 is otherwise a column of numbers that look wrong. */
+.totals-head-sub {
+    display: block;
+    font-size: .65rem;
+    font-weight: 400;
+    opacity: .6;
+}
+
+.totals-table tbody tr:not(:last-child) td,
+.totals-table tbody tr:not(:last-child) th {
+    border-bottom: 1px solid var(--mud-palette-divider);
+}
+
+.totals-table tfoot td,
+.totals-table tfoot th {
+    border-top: 2px solid var(--mud-palette-divider);
+    font-size: .8rem;
+    opacity: .75;
+}
+
+.totals-place {
+    width: 3rem;
+    text-align: center !important;
+    font-size: 1.1rem;
+}
+
+/* Left aligned and colour keyed, so a row is found by its team rather than by counting
+   down from the top. */
+.totals-team {
+    text-align: left !important;
+    font-weight: 700;
+    border-left: 4px solid var(--team, transparent);
+}
+
+.totals-number {
+    font-variant-numeric: tabular-nums;
+}
+
+/* A game a team did not score in should read as empty, not as a number to compare. */
+.totals-zero {
+    opacity: .35;
+}
+
+.totals-total {
+    font-weight: 700;
+    font-size: 1.05rem;
+    background: var(--mud-palette-background-gray);
+}
+
+.totals-row-leader {
+    background: color-mix(in srgb, var(--mud-palette-primary) 8%, transparent);
+}
+
+/* ---------- last minute changes ---------- */
+
+/* Collapsed on an ordinary night, so it must not look like part of the standings.
+   ::deep because the panels are a MudBlazor component - a class put straight on one gets
+   no scope attribute and the rule silently never matches. */
+.scores-setup ::deep .mud-expansion-panels {
+    border: 1px solid var(--mud-palette-divider);
+    border-radius: var(--mud-default-borderradius);
+}
+
+.setup-games {
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+}
+
+.setup-game {
+    display: grid;
+    grid-template-columns: 1.5rem minmax(0, 1fr) 7rem;
+    align-items: center;
+    gap: .5rem;
+}
+
+@media (min-width: 40rem) {
+    .setup-game {
+        grid-template-columns: 1.5rem minmax(0, 1fr) 7rem minmax(6rem, auto);
+    }
+}
+
+.setup-game-number {
+    font-size: .8rem;
+    text-align: center;
+    opacity: .6;
+}
+
+.setup-game-hint {
+    font-size: .75rem;
+    opacity: .6;
+    /* Wraps under its row on a narrow screen rather than squeezing the name field. */
+    grid-column: 2 / -1;
+}
+
+@media (min-width: 40rem) {
+    .setup-game-hint {
+        grid-column: auto;
+    }
+}
+
+.setup-multiplier {
+    display: inline-block;
+    width: 7rem;
+}
+
+.setup-teams {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+    gap: .5rem;
+}
+
+/* The team's own colour, so a rename is checked against the right team at a glance. The
+   var comes off the field's inline style; only the slot inside it needs reaching. */
+.setup-teams ::deep .mud-input-slot {
+    color: var(--team);
+    font-weight: 600;
+}
+
+/* The remote for the wall display. Set apart from the standings below it, because it
+   drives another screen rather than describing this one. */
+.reveal-control {
+    border: 1px solid var(--mud-palette-divider);
+}
+
+.reveal-step {
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Advancing the reveal is a one handed job in a dark room. */
+.reveal-next {
+    min-height: 3.5rem;
+    font-size: 1.1rem;
+}
+
 .standing-rank {
     min-width: 1.75rem;
     font-size: 1.35rem;

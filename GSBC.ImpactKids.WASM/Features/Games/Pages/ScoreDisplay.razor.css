@@ -1,4 +1,5 @@
 .display {
+    position: relative;
     display: flex;
     flex-direction: column;
 
@@ -7,9 +8,33 @@
     padding: 2vmin 3vmin;
 
     font-family: system-ui, sans-serif;
+    overflow: hidden;
+}
+
+/* Two coloured blooms drifting behind the board. Cheap, GPU only, and it stops a
+   quiet scoreboard from reading as a frozen screen. */
+.display-ambient {
+    position: absolute;
+    inset: -30%;
+    z-index: 0;
+
+    background:
+        radial-gradient(35vmax 35vmax at 25% 30%, rgba(96, 165, 250, .18), transparent 60%),
+        radial-gradient(30vmax 30vmax at 75% 70%, rgba(244, 114, 182, .16), transparent 60%);
+
+    animation: display-drift 24s ease-in-out infinite alternate;
+    pointer-events: none;
+}
+
+@keyframes display-drift {
+    from { transform: translate3d(-4%, -3%, 0) scale(1); }
+    to   { transform: translate3d(4%, 3%, 0) scale(1.12); }
 }
 
 .display-message {
+    position: relative;
+    z-index: 1;
+
     display: flex;
     flex: 1;
     align-items: center;
@@ -18,23 +43,63 @@
     font-size: 6vmin;
     letter-spacing: .05em;
     opacity: .65;
+
+    animation: display-fade-in .6s ease-out both;
+}
+
+.display-dots span {
+    animation: display-blink 1.4s infinite;
+}
+
+.display-dots span:nth-child(2) { animation-delay: .2s; }
+.display-dots span:nth-child(3) { animation-delay: .4s; }
+
+@keyframes display-blink {
+    0%, 60%, 100% { opacity: .15; }
+    30%           { opacity: 1; }
 }
 
 .display-header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 2vmin;
+    position: relative;
+    z-index: 1;
 
-    margin-bottom: 2vmin;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1vmin;
+
+    margin-bottom: 2.5vmin;
+    text-align: center;
 }
 
+/* A slow sheen crossing the title. It is the only thing on screen when the board is
+   empty, so it carries the "this is live" job on its own. */
 .display-heading {
+    background: linear-gradient(100deg,
+        #fff 0%, #fff 38%,
+        rgba(147, 197, 253, 1) 50%,
+        #fff 62%, #fff 100%);
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+
     font-size: 5vmin;
-    font-weight: 700;
-    letter-spacing: .04em;
+    font-weight: 800;
+    letter-spacing: .08em;
     text-transform: uppercase;
-    opacity: .9;
+
+    animation: display-sheen 7s linear infinite, display-drop-in .7s cubic-bezier(.2, .9, .25, 1) both;
+}
+
+@keyframes display-sheen {
+    from { background-position: 150% 0; }
+    to   { background-position: -150% 0; }
+}
+
+@keyframes display-drop-in {
+    from { opacity: 0; transform: translateY(-1.5vmin); }
+    to   { opacity: 1; transform: none; }
 }
 
 .display-paused {
@@ -46,16 +111,36 @@
     letter-spacing: .12em;
     text-transform: uppercase;
     opacity: .7;
+
+    animation: display-pulse 2.4s ease-in-out infinite;
 }
 
+@keyframes display-pulse {
+    0%, 100% { opacity: .35; }
+    50%      { opacity: .85; }
+}
+
+/* Rows are placed by rank rather than by document order, so a team going past another
+   slides. In a grid they would swap instantly and the overtake - the whole point of
+   watching a scoreboard - would be invisible. */
 .display-grid {
-    display: grid;
+    position: relative;
+    z-index: 1;
+
     flex: 1;
-    gap: calc(2vmin * var(--scale, 1));
     min-height: 0;
+
+    --gap: calc(2vmin * var(--scale, 1));
 }
 
 .display-row {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+
+    height: calc((100% - (var(--rows) - 1) * var(--gap)) / var(--rows));
+
     display: grid;
     grid-template-columns: minmax(0, 6fr) 1fr;
     grid-template-areas:
@@ -63,12 +148,44 @@
         "bar  points";
     align-items: center;
     column-gap: 3vmin;
+
+    padding: 0 1.5vmin;
+    border-radius: 1.5vmin;
+
+    transform: translateY(calc(var(--rank) * (100% + var(--gap))));
+    transition: transform .75s cubic-bezier(.22, .9, .25, 1), background-color .6s ease;
+
+    animation: display-row-in .5s cubic-bezier(.2, .9, .25, 1) both;
+    animation-delay: calc(var(--rank) * 70ms);
+}
+
+@keyframes display-row-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+/* The leader is lifted rather than labelled - a badge would need reading, this does not. */
+.display-row-leader {
+    background: rgba(255, 255, 255, .05);
+    box-shadow: inset 0 0 0 .2vmin rgba(255, 255, 255, .08);
+}
+
+.display-crown {
+    margin-right: 1vmin;
+    font-size: .8em;
+    animation: display-crown-bob 3s ease-in-out infinite;
+}
+
+@keyframes display-crown-bob {
+    0%, 100% { transform: translateY(0) rotate(-6deg); }
+    50%      { transform: translateY(-.6vmin) rotate(6deg); }
 }
 
 /* Full width rail, so the row still reads as a bar chart when the score is zero. */
 .display-bar-track {
     grid-area: bar;
 
+    position: relative;
     width: 100%;
     height: calc(3.5vmin * var(--scale, 1));
     border-radius: 999px;
@@ -92,24 +209,120 @@
     line-height: 1.1;
 }
 
+.display-row-leader .display-team {
+    text-shadow: 0 0 2.5vmin color-mix(in srgb, var(--team) 55%, transparent);
+}
+
 /* Length is relative to the leader so standings read from across the room. */
 .display-bar {
+    position: relative;
     display: block;
 
     height: 100%;
     border-radius: 999px;
     background: var(--team-bar, var(--team));
 
-    transition: width .5s ease-out;
+    transition: width .8s cubic-bezier(.22, .9, .25, 1);
+    overflow: hidden;
+}
+
+/* Moving stripes inside the bar. At a distance the bar reads as filling even when the
+   score has not changed for a while. */
+/* Moves the layer, not the background inside it - see the reveal display for why.
+   A gradient tiles at the element box, so scrolling background-position drags the
+   tile seam across the bar. This layer overhangs both ends, so it holds one seamless
+   tile, and it travels exactly one pattern period: 3.4vmin along the 115deg axis is
+   3.4 / sin(115deg) = 3.75vmin across x. */
+.display-bar::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -8vmin;
+    right: -8vmin;
+
+    background: repeating-linear-gradient(115deg,
+        rgba(255, 255, 255, .16) 0 1.2vmin,
+        transparent 1.2vmin 3.4vmin);
+
+    animation: display-stripes 1.4s linear infinite;
+    will-change: transform;
+}
+
+@keyframes display-stripes {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-3.75vmin); }
+}
+
+.display-row-leader .display-bar {
+    box-shadow: 0 0 3vmin color-mix(in srgb, var(--team) 45%, transparent);
 }
 
 .display-points {
     grid-area: points;
 
-    text-align: right;
+    position: relative;
+    justify-self: end;
+
     color: var(--team);
     font-size: calc(11vmin * var(--scale, 1));
     font-weight: 800;
     line-height: 1;
     font-variant-numeric: tabular-nums;
+}
+
+/* Keyed on a bump counter, so Blazor replaces the element on every change and the pop
+   replays. Without that the animation only ever runs once. */
+.display-points-value {
+    display: inline-block;
+    animation: display-pop .55s cubic-bezier(.2, 1.5, .4, 1) both;
+}
+
+@keyframes display-pop {
+    0%   { transform: scale(1); }
+    35%  { transform: scale(1.28); }
+    100% { transform: scale(1); }
+}
+
+/* Floats off the number and fades, then stays gone - the only record on the wall of
+   what the last tap was worth. */
+.display-delta {
+    position: absolute;
+    right: 0;
+    bottom: 100%;
+
+    color: #4ade80;
+    font-size: calc(4vmin * var(--scale, 1));
+    font-weight: 800;
+
+    animation: display-delta-rise 1.6s ease-out forwards;
+    pointer-events: none;
+}
+
+.display-delta-down {
+    color: #f87171;
+}
+
+@keyframes display-delta-rise {
+    0%   { opacity: 0; transform: translateY(1vmin) scale(.8); }
+    18%  { opacity: 1; transform: translateY(0) scale(1); }
+    70%  { opacity: 1; transform: translateY(-1.5vmin); }
+    100% { opacity: 0; transform: translateY(-3vmin); }
+}
+
+@keyframes display-fade-in {
+    from { opacity: 0; }
+    to   { opacity: .65; }
+}
+
+/* A wall display runs unattended for hours; honour the setting anyway for anyone
+   previewing it on a machine that asks for stillness. */
+@media (prefers-reduced-motion: reduce) {
+    .display-ambient,
+    .display-heading,
+    .display-crown,
+    .display-bar::after,
+    .display-paused {
+        animation: none;
+    }
 }

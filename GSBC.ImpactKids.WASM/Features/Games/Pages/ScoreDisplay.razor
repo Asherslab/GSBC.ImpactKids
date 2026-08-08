@@ -3,6 +3,7 @@
 @using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Games
 @using GSBC.ImpactKids.WASM.Features.Games.Layout
 @layout DisplayLayout
+@inherits GSBC.ImpactKids.WASM.Features.Games.Components.ScoreboardWatcherComponent
 @* Overrides the blanket [Authorize] in Features/_Imports.razor. A screen on a wall
    cannot sign in, and this page only ever renders aggregate scores. *@
 @attribute [AllowAnonymous]
@@ -10,15 +11,21 @@
 <PageTitle>Scores</PageTitle>
 
 <div class="display">
-    @if (_board == null)
+    @* Slow drifting glow behind everything, so a board nobody has scored on yet still
+       looks alive from across the room. *@
+    <div class="display-ambient"></div>
+
+    @if (Board == null)
     {
-        <div class="display-message">Connecting…</div>
+        <div class="display-message">
+            <span class="display-dots">Connecting<span>.</span><span>.</span><span>.</span></span>
+        </div>
     }
-    else if (!_board.Success)
+    else if (!Board.Success)
     {
-        <div class="display-message">@(_board.Error ?? "No scores yet")</div>
+        <div class="display-message">@(Board.Error ?? "No scores yet")</div>
     }
-    else if (_board.Hidden)
+    else if (Board.Hidden)
     {
         <div class="display-message">Scores hidden</div>
     }
@@ -26,29 +33,51 @@
     {
         <div class="display-header">
             <span class="display-heading">
-                @(_board.Mode == GameDisplayMode.CurrentGame
-                    ? _board.CurrentGameName ?? $"Game {_board.CurrentGame}"
-                    : "Tonight's Scores")
+                @(Board.Mode == GameDisplayMode.CurrentGame
+                    ? Board.CurrentGameName ?? $"Game {Board.CurrentGame}"
+                    : "Score totals")
             </span>
-            @if (_board.Paused)
+            @if (Board.Paused)
             {
                 <span class="display-paused">Paused</span>
             }
         </div>
 
-        @* Rows shrink as teams are added, so twenty of them still fill the wall. *@
-        <div class="display-grid"
-             style="@($"grid-template-rows: repeat({Rows.Count}, 1fr); --scale: {RowScale};")">
-            @foreach (DisplayRow row in Rows)
+        @* Rows shrink as teams are added, so twenty of them still fill the wall. Rows keep
+           a stable DOM order and are moved by rank, so a team overtaking another slides
+           past it instead of teleporting. *@
+        <div class="display-grid" style="@($"--rows: {_rows.Count}; --scale: {RowScale};")">
+            @foreach (DisplayRow row in _rows)
             {
-                @* The bar sits in a track. Without one, a board of zeros rendered as a
-                   row of stubs that read as broken rather than as "nobody has scored". *@
-                <div class="display-row" style="@($"--team: {row.Colour}; --team-bar: {row.Background};")">
-                    <span class="display-team">@row.Label</span>
+                <div class="display-row @(row.IsLeader ? "display-row-leader" : "")"
+                     style="@RowStyle(row)"
+                     @key="row.Key">
+                    <span class="display-team">
+                        @if (row.IsLeader)
+                        {
+                            <span class="display-crown">👑</span>
+                        }
+                        @row.Label
+                    </span>
+
+                    @* The bar sits in a track. Without one, a board of zeros rendered as a
+                       row of stubs that read as broken rather than as "nobody has scored". *@
                     <span class="display-bar-track">
                         <span class="display-bar" style="@BarStyle(row)"></span>
                     </span>
-                    <span class="display-points">@row.Points</span>
+
+                    <span class="display-points">
+                        <span class="display-points-value" @key="@($"{row.Key}#{row.Bump}")">
+                            @GameScoreFormat.Points(row.Points)
+                        </span>
+                        @if (row.Delta != 0)
+                        {
+                            <span class="display-delta @(row.Delta > 0 ? "" : "display-delta-down")"
+                                  @key="@($"{row.Key}!{row.Bump}")">
+                                @GameScoreFormat.Delta(row.Delta)
+                            </span>
+                        }
+                    </span>
                 </div>
             }
         </div>

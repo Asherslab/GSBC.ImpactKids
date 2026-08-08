@@ -34,6 +34,24 @@ public record GameBoard : IIdentifiable
     /// <summary>Points awarded by the secondary bonus button.</summary>
     public required int BonusPoints { get; init; }
 
+    /// <summary>
+    /// What one scored point is worth on the wall displays. Scoring itself is untouched -
+    /// a tap is still one point - this only scales what the screens show.
+    /// <para>
+    /// It is the night's multiplier: the value the first game runs at and what every game
+    /// without one of its own inherits. A single game can override it; see
+    /// <see cref="GameDefinition.Multiplier"/>.
+    /// </para>
+    /// </summary>
+    public required int PointsMultiplier { get; init; }
+
+    /// <summary>
+    /// What one behaviour point is worth on the displays. Its own value rather than the
+    /// night's: behaviour points are handed out all evening for something other than
+    /// winning a game, so what they are worth on screen is a separate decision.
+    /// </summary>
+    public required int BehaviourPointsMultiplier { get; init; }
+
     /// <summary>Whether the wall display shows the night's totals or just this game.</summary>
     public required GameDisplayMode DisplayMode { get; init; }
 
@@ -47,6 +65,16 @@ public record GameBoard : IIdentifiable
     public required bool Paused { get; init; }
 
     public required DateTime? PausedAt { get; init; }
+
+    /// <summary>
+    /// Which step of the end of night reveal the public display is showing, or null when
+    /// no reveal is running.
+    /// <para>
+    /// It lives on the board because the reveal is driven from a leader's phone and plays
+    /// on a screen that cannot be touched - the board is the only thing both ends share.
+    /// </para>
+    /// </summary>
+    public int? RevealStep { get; init; }
 
     /// <summary>
     /// Last write wins, so a board edit queued offline can never clobber a newer one.
@@ -63,12 +91,34 @@ public record GameBoard : IIdentifiable
 
     public GameDefinition CurrentGameDefinition() => GameAt(CurrentGame);
 
+    /// <summary>
+    /// What one point in a game is worth on screen - the game's own multiplier, or the
+    /// last game before it that set one, or the board's.
+    /// </summary>
+    public int MultiplierFor(int gameNumber) =>
+        GameMultipliers.For(gameNumber, PointsMultiplier, OwnMultiplier);
+
+    /// <summary>Multiplier per game, index 0 being game 1.</summary>
+    public int[] MultipliersThrough(int gamesPlayed) =>
+        GameMultipliers.PerGame(gamesPlayed, PointsMultiplier, OwnMultiplier);
+
+    /// <summary>
+    /// Behaviour points belong to no game, so they never follow a game's multiplier -
+    /// they have one of their own.
+    /// </summary>
+    public int BehaviourMultiplier() => GameMultipliers.Normalise(BehaviourPointsMultiplier);
+
+    private int? OwnMultiplier(int gameNumber) =>
+        Games.FirstOrDefault(x => x.Number == gameNumber)?.Multiplier;
+
     /// <summary>Replaces the settings for one game, dropping the entry when it is plain again.</summary>
     public GameBoard WithGame(GameDefinition game)
     {
         ImmutableList<GameDefinition> rest = Games.RemoveAll(x => x.Number == game.Number);
 
-        bool worthKeeping = !string.IsNullOrWhiteSpace(game.Name) || game.Alliances.Count > 0;
+        bool worthKeeping = !string.IsNullOrWhiteSpace(game.Name)
+                            || game.Alliances.Count > 0
+                            || game.Multiplier != null;
 
         return this with
         {
@@ -87,10 +137,13 @@ public record GameBoard : IIdentifiable
         Games = [],
         StepPoints = 1,
         BonusPoints = 5,
+        PointsMultiplier = GameMultipliers.Default,
+        BehaviourPointsMultiplier = GameMultipliers.Default,
         DisplayMode = GameDisplayMode.Totals,
         Hidden = false,
         Paused = false,
         PausedAt = null,
+        RevealStep = null,
         UpdatedAt = DateTime.UnixEpoch
     };
 }

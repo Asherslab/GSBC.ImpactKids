@@ -83,7 +83,41 @@ public partial class PointsTracker
         }
     }
 
-    private string SyncLabel => !Points.IsOnline
+    private bool _resyncing;
+
+    /// <summary>
+    /// Tapping the sync chip forces the whole cycle: connectivity, send, re-read. It is
+    /// the fix for the queue that says "Syncing 3" and stays there.
+    /// </summary>
+    private async Task Resync()
+    {
+        if (_resyncing)
+            return;
+
+        _resyncing = true;
+
+        try
+        {
+            if (!Points.Initialised)
+                await Points.InitialiseAsync();
+
+            await Points.ResyncAsync();
+        }
+        catch
+        {
+            // Still offline, or the server is down. The queue is intact either way and
+            // the chip goes back to saying so.
+        }
+        finally
+        {
+            _resyncing = false;
+            StateHasChanged();
+        }
+    }
+
+    private string SyncLabel => _resyncing
+        ? "Checking…"
+        : !Points.IsOnline
         ? Points.PendingCount > 0
             ? $"Offline · {Points.PendingCount} queued"
             : "Offline"
@@ -302,10 +336,10 @@ public partial class PointsTracker
             Teams = GameTeams.Resize(board.EffectiveTeams(), count),
 
             // Alliances are positional, so changing the team list makes every grouping
-            // stale. Names survive; the combining has to be redone.
+            // stale. Names and multipliers survive; the combining has to be redone.
             Games = board.Games
                 .Select(game => game with { Alliances = [] })
-                .Where(game => !string.IsNullOrWhiteSpace(game.Name))
+                .Where(game => !string.IsNullOrWhiteSpace(game.Name) || game.Multiplier != null)
                 .ToImmutableList()
         }
     );
@@ -337,6 +371,39 @@ public partial class PointsTracker
     private Task SetStepPoints(int points) => UpdateBoard(board => board with { StepPoints = points });
 
     private Task SetBonusPoints(int points) => UpdateBoard(board => board with { BonusPoints = points });
+
+    // ---------- display multiplier ----------
+
+    /// <summary>What one point in the current game is worth on the wall.</summary>
+    private string EffectiveMultiplier => $"×{Board.MultiplierFor(Board.CurrentGame)}";
+
+    /// <summary>
+    /// What this game would run at with no multiplier of its own - the game before it, or
+    /// the night's. Shown as the placeholder so leaving the field empty is an obvious
+    /// choice rather than a blank.
+    /// </summary>
+    private int InheritedMultiplier => Board.CurrentGame <= 1
+        ? GameMultipliers.Normalise(Board.PointsMultiplier)
+        : Board.MultiplierFor(Board.CurrentGame - 1);
+
+    private Task SetBehaviourMultiplier(int multiplier) =>
+        UpdateBoard(board => board with
+            {
+                BehaviourPointsMultiplier = GameMultipliers.Normalise(multiplier)
+            }
+        );
+
+    private Task SetPointsMultiplier(int multiplier) =>
+        UpdateBoard(board => board with { PointsMultiplier = GameMultipliers.Normalise(multiplier) });
+
+    /// <summary>
+    /// Null clears the override, which puts the game back to following the one before it.
+    /// </summary>
+    private Task SetCurrentGameMultiplier(int? multiplier) =>
+        UpdateBoard(board => board.WithGame(
+                board.CurrentGameDefinition() with { Multiplier = GameMultipliers.Normalise(multiplier) }
+            )
+        );
 
     private async Task UpdateBoard(Func<GameBoard, GameBoard> mutate)
     {

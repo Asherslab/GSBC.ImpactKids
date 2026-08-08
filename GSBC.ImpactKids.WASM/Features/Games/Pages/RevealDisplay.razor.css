@@ -1,0 +1,706 @@
+.reveal {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+
+    width: 100%;
+    height: 100%;
+    padding: 3vmin;
+
+    font-family: system-ui, sans-serif;
+    overflow: hidden;
+}
+
+.reveal-ambient {
+    position: absolute;
+    inset: -30%;
+    z-index: 0;
+
+    background:
+        radial-gradient(38vmax 38vmax at 20% 25%, rgba(129, 140, 248, .22), transparent 60%),
+        radial-gradient(32vmax 32vmax at 80% 75%, rgba(236, 72, 153, .18), transparent 60%);
+
+    animation: reveal-drift 26s ease-in-out infinite alternate;
+    pointer-events: none;
+}
+
+@keyframes reveal-drift {
+    from { transform: translate3d(-5%, -4%, 0) scale(1); }
+    to   { transform: translate3d(5%, 4%, 0) scale(1.15); }
+}
+
+.reveal-holding {
+    position: relative;
+    z-index: 1;
+
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 6vmin;
+    letter-spacing: .05em;
+    opacity: .6;
+}
+
+/* ---------- standby ---------- */
+
+.reveal-standby {
+    position: relative;
+    z-index: 1;
+
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3vmin;
+
+    text-align: center;
+}
+
+.reveal-standby-title {
+    font-size: 7vmin;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+
+    animation: reveal-breathe 4s ease-in-out infinite;
+}
+
+@keyframes reveal-breathe {
+    0%, 100% { opacity: .55; transform: scale(1); }
+    50%      { opacity: 1; transform: scale(1.03); }
+}
+
+.reveal-standby-teams {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2vmin;
+    justify-content: center;
+}
+
+.reveal-standby-team,
+.reveal-intro-team {
+    padding: 1vmin 3vmin;
+    border: .35vmin solid var(--team);
+    border-radius: 999px;
+
+    color: var(--team);
+    font-size: 3vmin;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+
+    animation: reveal-team-in .6s cubic-bezier(.2, .9, .25, 1) both;
+    animation-delay: calc(var(--i) * 120ms);
+}
+
+@keyframes reveal-team-in {
+    from { opacity: 0; transform: translateY(2vmin) scale(.9); }
+    to   { opacity: 1; transform: none; }
+}
+
+.reveal-standby-hint,
+.reveal-intro-hint {
+    font-size: 2.6vmin;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    opacity: .45;
+
+    animation: reveal-pulse 3s ease-in-out infinite;
+}
+
+@keyframes reveal-pulse {
+    0%, 100% { opacity: .25; }
+    50%      { opacity: .6; }
+}
+
+/* ---------- progress ---------- */
+
+.reveal-pips {
+    position: relative;
+    z-index: 1;
+
+    display: flex;
+    gap: .8vmin;
+    justify-content: center;
+    margin-bottom: 2vmin;
+}
+
+.reveal-pip {
+    width: 3vmin;
+    height: .6vmin;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .15);
+
+    transition: background-color .4s ease, transform .4s ease;
+}
+
+.reveal-pip-done {
+    background: rgba(255, 255, 255, .8);
+    transform: scaleY(1.4);
+}
+
+/* ---------- intro ---------- */
+
+.reveal-intro {
+    position: relative;
+    z-index: 1;
+
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4vmin;
+
+    text-align: center;
+}
+
+.reveal-intro-kicker {
+    font-size: 3vmin;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    opacity: .5;
+}
+
+.reveal-intro-title {
+    display: flex;
+    font-size: 12vmin;
+    font-weight: 900;
+    letter-spacing: .04em;
+}
+
+/* Letter by letter, so the title lands rather than appears. */
+.reveal-letter {
+    display: inline-block;
+    animation: reveal-letter-drop .7s cubic-bezier(.2, 1.4, .4, 1) both;
+    animation-delay: calc(var(--i) * 60ms);
+}
+
+@keyframes reveal-letter-drop {
+    from { opacity: 0; transform: translateY(-8vmin) rotate(-12deg); }
+    to   { opacity: 1; transform: none; }
+}
+
+.reveal-intro-teams {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2vmin;
+    justify-content: center;
+}
+
+/* ---------- board ---------- */
+
+.reveal-board-wrap {
+    position: relative;
+    z-index: 1;
+
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.reveal-round-title {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .6vmin;
+    margin-bottom: 2.5vmin;
+
+    animation: reveal-title-in .5s ease-out both;
+}
+
+@keyframes reveal-title-in {
+    from { opacity: 0; transform: translateY(-1.5vmin); }
+    to   { opacity: 1; transform: none; }
+}
+
+.reveal-round-kicker {
+    font-size: 2.2vmin;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    opacity: .45;
+}
+
+.reveal-round-name {
+    font-size: 5vmin;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+
+    /* Delayed, so it appears under the card rather than beside it. */
+    transition: opacity .5s ease-in .3s;
+}
+
+.reveal-board {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+
+    --gap: calc(2vmin * var(--scale, 1));
+
+    transition: filter .5s ease, opacity .5s ease;
+}
+
+/* The card is the moment; the board behind it steps back rather than competing. */
+.reveal-board-dim {
+    filter: blur(.4vmin);
+    opacity: .35;
+}
+
+/* Nobody scored. The board takes the hit as the stamp lands - the jolt is what sells
+   it as a stamp rather than a caption fading in. Timed to the stamp's own 60% mark. */
+.reveal-board-blank {
+    animation: reveal-stamp-hit .45s ease-out .33s both;
+}
+
+@keyframes reveal-stamp-hit {
+    0%   { transform: translateY(0); }
+    25%  { transform: translateY(.9vmin) scale(.994); }
+    60%  { transform: translateY(-.3vmin) scale(1.002); }
+    100% { transform: translateY(0) scale(1); }
+}
+
+.reveal-row {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+
+    height: calc((100% - (var(--rows) - 1) * var(--gap)) / var(--rows));
+
+    display: grid;
+    grid-template-columns: auto minmax(0, 5fr) auto;
+    grid-template-areas:
+        "place name  total"
+        "place track total";
+    align-items: center;
+    column-gap: 2.5vmin;
+
+    padding: 0 1.5vmin;
+    border-radius: 1.5vmin;
+
+    transform: translateY(calc(var(--rank) * (100% + var(--gap))));
+
+    /* Quick enough to keep up with a team climbing past two others in a second, slow
+       enough that the swap is watched rather than blinked through. */
+    transition: transform .5s cubic-bezier(.22, .9, .25, 1);
+}
+
+.reveal-row-leader {
+    background: rgba(255, 255, 255, .06);
+    box-shadow: inset 0 0 0 .2vmin rgba(255, 255, 255, .1);
+}
+
+.reveal-place {
+    grid-area: place;
+
+    /* Wide enough for "10th" so the names below it do not step left and right. */
+    min-width: 4.5ch;
+    text-align: center;
+    font-size: calc(4vmin * var(--scale, 1));
+    font-weight: 800;
+    opacity: .35;
+    font-variant-numeric: tabular-nums;
+}
+
+.reveal-row-leader .reveal-place {
+    opacity: .9;
+}
+
+.reveal-name {
+    grid-area: name;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    color: var(--team);
+    font-size: calc(4.5vmin * var(--scale, 1));
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    line-height: 1.1;
+}
+
+.reveal-row-leader .reveal-name {
+    text-shadow: 0 0 3vmin color-mix(in srgb, var(--team) 60%, transparent);
+}
+
+.reveal-track {
+    grid-area: track;
+
+    width: 100%;
+    height: calc(3vmin * var(--scale, 1));
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .07);
+
+    overflow: hidden;
+}
+
+/* The count up is the animation now, so the bar only has to smooth the gap between
+   ticks. Anything longer and it trails the number it belongs to. */
+.reveal-bar {
+    display: block;
+    position: relative;
+
+    height: 100%;
+    border-radius: 999px;
+    background: var(--team);
+
+    transition: width .12s linear;
+    overflow: hidden;
+}
+
+/* Moves the layer, not the background inside it.
+   <para>
+   A gradient's tile is the element box, and the pattern restarts at every tile edge.
+   Scrolling background-position therefore drags a seam across the bar - visible near
+   the right end of a full width bar and constantly on a short one. Here the layer is
+   wider than the bar on both sides, so it is a single tile with no seam in it, and the
+   translation is exactly one pattern period: 3.4vmin along the 115deg axis is
+   3.4 / sin(115deg) = 3.75vmin across x, so the loop point is invisible. */
+.reveal-bar::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -8vmin;
+    right: -8vmin;
+
+    background: repeating-linear-gradient(115deg,
+        rgba(255, 255, 255, .18) 0 1.2vmin,
+        transparent 1.2vmin 3.4vmin);
+
+    animation: reveal-stripes 1.4s linear infinite;
+    will-change: transform;
+}
+
+@keyframes reveal-stripes {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-3.75vmin); }
+}
+
+.reveal-total {
+    grid-area: total;
+
+    position: relative;
+    justify-self: end;
+
+    color: var(--team);
+    font-size: calc(10vmin * var(--scale, 1));
+    font-weight: 800;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Keyed on the step, so Blazor replaces the element and the pop replays each round. */
+.reveal-total-value {
+    display: inline-block;
+    animation: reveal-pop .8s cubic-bezier(.2, 1.5, .4, 1) both;
+}
+
+@keyframes reveal-pop {
+    0%   { transform: scale(1); }
+    30%  { transform: scale(1.35); }
+    100% { transform: scale(1); }
+}
+
+.reveal-gain {
+    position: absolute;
+    right: 0;
+    bottom: 100%;
+
+    color: #4ade80;
+    font-size: calc(4vmin * var(--scale, 1));
+    font-weight: 800;
+
+    animation: reveal-gain-rise 2.4s ease-out forwards;
+    pointer-events: none;
+}
+
+.reveal-gain-down {
+    color: #f87171;
+}
+
+/* ---------- no points stamp ---------- */
+
+/* Comes in from far too big and slams to rest, off square, the way a rubber stamp
+   lands. It stays put for the rest of the round - there is nothing else to look at. */
+.reveal-stamp {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    pointer-events: none;
+    animation: reveal-stamp-in .55s cubic-bezier(.35, 1.6, .4, 1) both;
+}
+
+.reveal-stamp-text {
+    padding: 2vmin 7vmin;
+
+    border: .9vmin solid rgba(248, 113, 113, .85);
+    border-radius: 2vmin;
+    outline: .25vmin solid rgba(248, 113, 113, .35);
+    outline-offset: .9vmin;
+
+    color: rgba(248, 113, 113, .95);
+    font-size: 11vmin;
+    font-weight: 900;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    text-shadow: 0 0 4vmin rgba(248, 113, 113, .35);
+
+    /* Off square on purpose - a stamp nobody lined up. */
+    transform: rotate(-7deg);
+}
+
+@keyframes reveal-stamp-in {
+    0%   { opacity: 0; transform: scale(3.4) rotate(-16deg); }
+    60%  { opacity: 1; transform: scale(.94) rotate(1deg); }
+    80%  { opacity: 1; transform: scale(1.03) rotate(-1deg); }
+    100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+@keyframes reveal-gain-rise {
+    0%   { opacity: 0; transform: translateY(1vmin) scale(.7); }
+    12%  { opacity: 1; transform: translateY(0) scale(1.1); }
+    22%  { transform: translateY(0) scale(1); }
+    75%  { opacity: 1; transform: translateY(-1.5vmin); }
+    100% { opacity: 0; transform: translateY(-3.5vmin); }
+}
+
+/* ---------- round card ---------- */
+
+/* One element for the whole round: it lands in the middle, holds there for the three
+   seconds the C# side is also waiting out, then flies up into the header slot and
+   hands over to the copy that lives there. Percentages of the total 3.9s:
+   0-10% land, 10-77% hold (to 3s), 77-100% fly. */
+.reveal-card {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
+    pointer-events: none;
+
+    animation: reveal-card-fly 3.9s cubic-bezier(.3, .7, .3, 1) forwards;
+}
+
+.reveal-card-name {
+    padding: 2vmin 6vmin;
+    border-radius: 3vmin;
+    background: rgba(255, 255, 255, .08);
+    box-shadow: 0 0 8vmin rgba(255, 255, 255, .12);
+
+    font-size: 9vmin;
+    font-weight: 900;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+@keyframes reveal-card-fly {
+    0%   { opacity: 0; transform: scale(.8); }
+    10%  { opacity: 1; transform: scale(1); }
+    77%  { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: translateY(-46%) scale(.5); }
+}
+
+/* The header title is the card's landing spot, so it stays out of sight until the
+   card is on its way in. */
+.reveal-round-name-waiting {
+    opacity: 0;
+}
+
+/* ---------- podium ---------- */
+
+.reveal-podium-wrap {
+    position: relative;
+    z-index: 1;
+
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    min-height: 0;
+}
+
+.reveal-podium-title {
+    margin-bottom: 3vmin;
+
+    font-size: 4vmin;
+    font-weight: 800;
+    letter-spacing: .25em;
+    text-transform: uppercase;
+    opacity: .6;
+}
+
+.reveal-podium {
+    display: flex;
+    flex: 1;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 3vmin;
+    min-height: 0;
+}
+
+/* A placing can hold any number of teams - five tied for first is rare but has to fit
+   on the screen rather than run off the side of it. */
+.reveal-plinth {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1.5vmin;
+
+    flex: 0 1 26vmin;
+    min-width: 0;
+
+    opacity: 0;
+    transform: translateY(6vmin);
+    transition: opacity .6s ease-out, transform .7s cubic-bezier(.2, 1.4, .4, 1);
+}
+
+.reveal-plinth-shown {
+    opacity: 1;
+    transform: none;
+}
+
+.reveal-plinth-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .5vmin;
+
+    text-align: center;
+}
+
+.reveal-plinth-medal {
+    font-size: 8vmin;
+    line-height: 1;
+}
+
+.reveal-plinth-shown .reveal-plinth-medal {
+    animation: reveal-medal-in .8s cubic-bezier(.2, 1.6, .3, 1) both;
+}
+
+@keyframes reveal-medal-in {
+    from { transform: scale(0) rotate(-90deg); }
+    to   { transform: none; }
+}
+
+.reveal-plinth-name {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    color: var(--team);
+    font-size: 3.4vmin;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.reveal-plinth-score {
+    font-size: 6vmin;
+    font-weight: 900;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Blocks are sized by placing, so the shape of the podium says who won before the
+   numbers are read. */
+.reveal-plinth-block {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 100%;
+    padding: 0 .6vmin;
+    border-radius: 1.5vmin 1.5vmin 0 0;
+    background: linear-gradient(180deg,
+        color-mix(in srgb, var(--team) 85%, transparent),
+        color-mix(in srgb, var(--team) 35%, transparent));
+
+    /* "Tied 1st" wraps once the podium is holding ten teams, and a wrapped line
+       defaults to left aligned inside a centred flex item. */
+    text-align: center;
+    font-size: 3vmin;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+
+    transition: height .8s cubic-bezier(.2, 1.2, .3, 1);
+}
+
+.reveal-plinth-1 .reveal-plinth-block { height: 28vmin; }
+.reveal-plinth-2 .reveal-plinth-block { height: 20vmin; }
+.reveal-plinth-3 .reveal-plinth-block { height: 14vmin; }
+
+.reveal-plinth-1 .reveal-plinth-name {
+    text-shadow: 0 0 4vmin color-mix(in srgb, var(--team) 70%, transparent);
+}
+
+.reveal-plinth-1.reveal-plinth-shown .reveal-plinth-card {
+    animation: reveal-champion 2.5s ease-in-out infinite;
+}
+
+@keyframes reveal-champion {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-1.2vmin); }
+}
+
+/* ---------- confetti ---------- */
+
+.reveal-confetti {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.reveal-confetti-piece {
+    position: absolute;
+    top: -6vmin;
+
+    width: var(--size);
+    height: calc(var(--size) * 1.6);
+    border-radius: .2vmin;
+
+    animation: reveal-fall var(--duration) linear var(--delay) infinite;
+}
+
+@keyframes reveal-fall {
+    from {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) rotate(0);
+    }
+    to {
+        opacity: .9;
+        transform: translate3d(var(--drift), 115vh, 0) rotate(var(--spin));
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .reveal-ambient,
+    .reveal-confetti,
+    .reveal-bar::after,
+    .reveal-standby-title,
+    .reveal-plinth-1.reveal-plinth-shown .reveal-plinth-card {
+        animation: none;
+    }
+}

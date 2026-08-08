@@ -47,4 +47,11 @@ public interface IGamePointsService : IAsyncDisposable
     Task UndoLastAsync(Guid serviceId);
 
     Task FlushAsync();
+
+    /// <summary>
+    /// Everything a stuck queue might need, in order: ask the browser whether it is
+    /// really offline, send whatever is waiting, then re-read the server. Exists because
+    /// the only thing anyone can do about a stalled sync otherwise is reload the page.
+    /// </summary>
+    Task ResyncAsync();
 }
