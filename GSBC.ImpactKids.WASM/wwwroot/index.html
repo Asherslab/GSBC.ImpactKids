@@ -84,11 +84,18 @@
     */
     const reloadGuardKey = 'sw:reloaded-for-update';
 
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
+    function reloadOnce() {
         if (sessionStorage.getItem(reloadGuardKey)) return;
 
         sessionStorage.setItem(reloadGuardKey, '1');
         location.reload();
+    }
+
+    navigator.serviceWorker.addEventListener('controllerchange', reloadOnce);
+
+    // Fallback for browsers where the worker cannot call client.navigate() itself.
+    navigator.serviceWorker.addEventListener('message', event => {
+        if (event.data && event.data.type === 'sw-updated') reloadOnce();
     });
 
     // Only the update path should reload; a normal boot clears the guard for next time.
