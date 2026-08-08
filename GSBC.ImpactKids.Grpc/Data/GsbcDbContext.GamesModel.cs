@@ -30,6 +30,15 @@ public partial class GsbcDbContext
         modelBuilder.Entity<DbGamePointRecord>()
             .HasIndex(x => x.ServiceId);
 
+        // Teams and games are rewritten wholesale on every board edit and are only ever
+        // read alongside their board, so they live in the board row as JSON rather than
+        // as tables of their own.
+        modelBuilder.Entity<DbGameBoard>()
+            .OwnsMany(x => x.Teams, teams => teams.ToJson());
+
+        modelBuilder.Entity<DbGameBoard>()
+            .OwnsMany(x => x.Games, games => games.ToJson());
+
         modelBuilder.Entity<DbGameBoard>()
             .HasOne(x => x.Service)
             .WithMany()

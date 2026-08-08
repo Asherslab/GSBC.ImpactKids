@@ -18,12 +18,14 @@ public partial class GameScores
 
     private int GamesPlayed => Points.GamesPlayed(ServiceKey);
 
+    private GameBoard Board => Points.BoardFor(ServiceKey);
+
     /// <summary>A team's night: what it scored in each game, plus behaviour points.</summary>
     private sealed record TeamStanding(
-        GameTeam  Team,
-        int[]     PerGame,
-        int       Behaviour,
-        int       Total
+        GameTeamDefinition Team,
+        int[]              PerGame,
+        int                Behaviour,
+        int                Total
     );
 
     private IReadOnlyList<TeamStanding> Standings
@@ -32,20 +34,28 @@ public partial class GameScores
         {
             int games = GamesPlayed;
 
-            return GameTeams.Take(Points.BoardFor(ServiceKey).TeamCount)
+            return Board.EffectiveTeams()
                 .Select(team => new TeamStanding(
                         team,
                         Enumerable.Range(1, games)
-                            .Select(game => Points.GamePointsFor(ServiceKey, team, game))
+                            .Select(game => Points.GamePointsFor(ServiceKey, team.Index, game))
                             .ToArray(),
-                        Points.BehaviourPointsFor(ServiceKey, team),
-                        Points.TotalFor(ServiceKey, team)
+                        Points.BehaviourPointsFor(ServiceKey, team.Index),
+                        Points.TotalFor(ServiceKey, team.Index)
                     )
                 )
                 .OrderByDescending(x => x.Total)
-                .ThenBy(x => x.Team)
+                .ThenBy(x => x.Team.Index)
                 .ToList();
         }
+    }
+
+    /// <summary>"G3" normally, but a named game earns its name on the chip.</summary>
+    private string GameLabel(int number)
+    {
+        GameDefinition game = Board.GameAt(number);
+
+        return game.Name ?? $"G{number}";
     }
 
     private static string Placing(int index) => index switch

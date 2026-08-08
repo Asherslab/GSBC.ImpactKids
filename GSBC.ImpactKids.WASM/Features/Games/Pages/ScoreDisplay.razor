@@ -1,8 +1,6 @@
 @page "/Display/Scores"
 @page "/Display/Scores/{ServiceId:guid}"
 @using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Games
-@using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Features.Games
-@using GSBC.ImpactKids.WASM.Features.Games
 @using GSBC.ImpactKids.WASM.Features.Games.Layout
 @layout DisplayLayout
 @* Overrides the blanket [Authorize] in Features/_Imports.razor. A screen on a wall
@@ -28,7 +26,9 @@
     {
         <div class="display-header">
             <span class="display-heading">
-                @(_board.Mode == GameDisplayMode.CurrentGame ? $"Game {_board.CurrentGame}" : "Tonight's Scores")
+                @(_board.Mode == GameDisplayMode.CurrentGame
+                    ? _board.CurrentGameName ?? $"Game {_board.CurrentGame}"
+                    : "Tonight's Scores")
             </span>
             @if (_board.Paused)
             {
@@ -36,13 +36,19 @@
             }
         </div>
 
-        <div class="display-grid" style="@($"grid-template-rows: repeat({_board.Teams.Count}, 1fr);")">
-            @foreach (TeamScoreLine line in _board.Teams)
+        @* Rows shrink as teams are added, so twenty of them still fill the wall. *@
+        <div class="display-grid"
+             style="@($"grid-template-rows: repeat({Rows.Count}, 1fr); --scale: {RowScale};")">
+            @foreach (DisplayRow row in Rows)
             {
-                <div class="display-row" style="@($"--team: {GameTeams.Colour(line.Team)};")">
-                    <span class="display-team">@GameTeams.Label(line.Team)</span>
-                    <span class="display-bar" style="@BarStyle(line)"></span>
-                    <span class="display-points">@line.DisplayPoints</span>
+                @* The bar sits in a track. Without one, a board of zeros rendered as a
+                   row of stubs that read as broken rather than as "nobody has scored". *@
+                <div class="display-row" style="@($"--team: {row.Colour}; --team-bar: {row.Background};")">
+                    <span class="display-team">@row.Label</span>
+                    <span class="display-bar-track">
+                        <span class="display-bar" style="@BarStyle(row)"></span>
+                    </span>
+                    <span class="display-points">@row.Points</span>
                 </div>
             }
         </div>

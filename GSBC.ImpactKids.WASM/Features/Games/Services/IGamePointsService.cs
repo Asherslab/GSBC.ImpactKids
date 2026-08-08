@@ -21,22 +21,28 @@ public interface IGamePointsService : IAsyncDisposable
     /// <summary>Games actually played - the higher of the current game and the highest scored in.</summary>
     int GamesPlayed(Guid serviceId);
 
+    /// <summary>Whether anything has been scored in a given game yet.</summary>
+    bool HasScores(Guid serviceId, int gameNumber);
+
     /// <summary>Game points plus behaviour points.</summary>
-    int TotalFor(Guid serviceId, GameTeam team);
+    int TotalFor(Guid serviceId, int teamIndex);
 
-    int GamePointsFor(Guid serviceId, GameTeam team);
+    int GamePointsFor(Guid serviceId, int teamIndex);
 
-    int GamePointsFor(Guid serviceId, GameTeam team, int gameNumber);
+    int GamePointsFor(Guid serviceId, int teamIndex, int gameNumber);
 
-    int BehaviourPointsFor(Guid serviceId, GameTeam team);
+    int BehaviourPointsFor(Guid serviceId, int teamIndex);
 
     bool CanUndo(Guid serviceId);
 
-    /// <summary>Awards points in the current game.</summary>
-    Task AddGamePointsAsync(Guid serviceId, GameTeam team, int points);
+    /// <summary>
+    /// Awards points in the current game. Passing more than one team scores a combined
+    /// side: every team named gets the full amount, and undo takes the lot back.
+    /// </summary>
+    Task AddGamePointsAsync(Guid serviceId, IReadOnlyList<int> teamIndexes, int points);
 
     /// <summary>Awards points outside any game. Still counts toward the total.</summary>
-    Task AddBehaviourPointsAsync(Guid serviceId, GameTeam team, int points);
+    Task AddBehaviourPointsAsync(Guid serviceId, int teamIndex, int points);
 
     Task UndoLastAsync(Guid serviceId);
 

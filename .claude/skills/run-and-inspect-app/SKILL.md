@@ -1,0 +1,206 @@
+---
+name: run-and-inspect-app
+description: Run the Aspire app locally and inspect/iterate on the Blazor WASM frontend in a browser. Use when asked to start, stop, restart, or preview the app; to check how a page looks or behaves; to verify a UI change; or when writing scoped CSS against MudBlazor components. Covers the Rider run config, the correct localhost port, restart and service-worker gotchas, Auth0 sign-in limits, and how to read the DB and the live scoreboard stream.
+---
+
+# Running and inspecting this app
+
+Aspire AppHost fronts a Blazor WASM client, a YARP BFF, a gRPC service, Postgres,
+RabbitMQ and Redis. Everything below was established by doing it — the gotchas are
+real failures that cost time, not speculation.
+
+## Tooling you need
+
+Three MCP servers do the work here. Their schemas are **deferred** — the names appear in a
+system-reminder but calling one straight off fails with `InputValidationError`. Load them
+first:
+
+```
+ToolSearch  query: "select:mcp__rider__execute_run_configuration,mcp__rider__get_run_configurations"
+```
+
+- **Rider MCP** (`mcp__rider__*`) — runs the app. `get_run_configurations` lists what exists
+  (pass `projectPath: /Users/asherp/Documents/Git/GSBC.ImpactKids`) if the name below has
+  drifted. There is **no stop tool** — see the restart section, stopping is done with `pkill`.
+- **Claude Browser** (`mcp__Claude_Browser__*`) — already loaded, no ToolSearch needed.
+  `preview_start`, `navigate`, `computer`, `read_page`, `javascript_tool`,
+  `read_console_messages`, `read_network_requests`, `resize_window`.
+- **MudBlazor MCP** (`mcp__mudblazor__*`) — component API reference, for checking a
+  parameter exists before guessing at it.
+
+If the Rider MCP is unavailable, fall back to
+`dotnet run --project GSBC.ImpactKids.AppHost --launch-profile https` backgrounded — but
+know it dies when the agent session is torn down, so expect to relaunch between turns.
+
+## Start it
+
+Use the **Rider run configuration**, not `dotnet run`:
+
+```
+mcp__rider__execute_run_configuration
+  configurationName: "GSBC.ImpactKids.AppHost: https"
+  projectPath: "/Users/asherp/Documents/Git/GSBC.ImpactKids"
+  waitForExit: false
+```
+
+`waitForExit: false` is required — the app runs until stopped, so waiting blocks forever.
+It returns immediately with a `fullOutputPath` log file you can `Read` if startup fails.
+
+Rider owns the process, so it survives an agent session teardown. A backgrounded
+`dotnet run --project GSBC.ImpactKids.AppHost` dies with the session.
+
+Docker must be running. The infra containers (`sql-*`, `rabbitmq-*`, `redis-*`) are
+`ContainerLifetime.Persistent`, so they usually stay up between runs and startup is fast.
+
+## The URL is https://localhost:7263
+
+That is the Aspire DCP **proxy** port, from `GSBC.ImpactKids.YARP/Properties/launchSettings.json`.
+
+Do not discover the port with `lsof`/`ps`. YARP's *internal* bind is a random high port
+(e.g. 57514). Hitting that directly appears to work — the app loads — but the WASM client's
+service discovery still points gRPC at `https://localhost:7263`, so every call is
+cross-origin and dies on CORS preflight. The symptom is a page stuck on "Connecting…"
+with `No 'Access-Control-Allow-Origin' header` in the console.
+
+The DCP proxy is not a `dotnet` process, which is why process-based port hunting misses it.
+
+## Restarting after a code change
+
+WASM changes need a **full restart**. Blazor's devserver serves a snapshot from
+`GSBC.ImpactKids.WASM/bin/Debug/net10.0/wwwroot/_framework/`; a rebuild alone leaves it
+serving stale hashed assets and the browser 404s on a `.wasm`/`.pdb`, then shows
+"An unhandled error has occurred."
+
+Calling `execute_run_configuration` again while it is running is a **no-op** — it returns
+instantly and nothing restarts. Stop everything first:
+
+```bash
+pkill -f "GSBC.ImpactKids.AppHost"; sleep 2
+pkill -f "blazor-devserver"; pkill -f "GSBC.ImpactKids.YARP"; pkill -f "GSBC.ImpactKids.Grpc"
+```
+
+Killing AppHost alone orphans the other three. Then re-run the config and wait on a real
+condition (never chain `sleep`s — the harness blocks that):
+
+```bash
+until curl -sk -f -o /dev/null -m 3 https://localhost:7263/_framework/dotnet.js \
+   && curl -sk -f -o /dev/null -m 3 https://localhost:7263/; do sleep 2; done
+```
+
+Assets can 404 briefly while the devserver warms up — that race is transient, not a bug.
+
+## Browser: restart it after an app restart
+
+The app registers a **Blazor PWA service worker**. After the app restarts with new asset
+hashes, the SW keeps serving the old manifest and the page fails to boot — even in a brand
+new tab, and even though `curl` and a normal browser fetch both return 200 for the asset it
+claims is missing. Unregistering the SW from JS is not enough.
+
+Restart the browser pane:
+
+```
+mcp__Claude_Browser__preview_list          # get the serverId (browser-preview-…)
+mcp__Claude_Browser__preview_stop          # serverId, NOT the previewId
+mcp__Claude_Browser__preview_start         # url: https://localhost:7263/…
+```
+
+Diagnostic that identifies this: `navigator.serviceWorker.controller` is non-null while a
+`_framework` asset 404s in the console but fetches 200.
+
+## Auth
+
+Auth0 with **Google SSO only**. Never drive that sign-in — ask the user to complete it in
+the browser pane; the BFF cookie then persists for the session and authed pages work.
+
+- `/Display/Scores` — `[AllowAnonymous]`, the wall display. Needs no login, so iterate here freely.
+- `/Games/Points`, `/Games/Scores` — `[Authorize]`, need the user to sign in first.
+
+A 401 on `/bff/user` from an anonymous page is expected, not a fault.
+
+## Inspecting the UI
+
+Prefer the DOM over screenshots for anything measurable. The pane's screenshot can capture
+mid-layout or render a smaller region than the viewport it reports — twice this looked like
+a layout bug that `getBoundingClientRect` disproved. Screenshots are for judging *design*;
+JS is for judging *facts*.
+
+Viewport: pass `width` + `height` alone. Passing `preset` together with `width`/`height`
+silently resets to native size instead.
+
+```
+mcp__Claude_Browser__resize_window  width: 1920  height: 1080   # desktop
+mcp__Claude_Browser__resize_window  preset: "mobile"            # 375x812
+```
+
+The nav drawer stays open when going desktop → mobile and overlays the page; it is not a
+responsive bug.
+
+`read_page` is the fastest way to check accessibility — it lists every `aria-label`.
+
+**MudMenu popovers do not open under synthetic clicks** (neither `computer left_click` nor
+`.click()`), so menu items and the dialogs behind them are hard to reach programmatically.
+Ask the user to open those, or verify the markup another way — do not claim a dialog works
+because it compiled.
+
+## Scoped CSS does not reach MudBlazor components
+
+Blazor CSS isolation only stamps the `b-<hash>` attribute on elements in the component's
+**own markup**. A class on `<MudText>`, `<MudButton>`, `<MudStack>`, `<MudPaper>` gets no
+scope attribute, so the rule never matches and fails **silently** — it compiles, and the
+page looks almost right.
+
+Confirm with:
+
+```js
+[...document.querySelector('.my-class').attributes].map(a => a.name)
+// ["class", "b-wasd9xu8ju"]  -> scoped, will style
+// ["class"]                  -> NOT scoped, rule is dead
+```
+
+Two fixes:
+
+```razor
+@* 1. Use a plain element instead of the Mud component *@
+<span class="behaviour-hint">counts toward the total</span>
+
+@* 2. Wrap it and reach in with ::deep *@
+<span class="game-name"><MudButton>@Name</MudButton></span>
+```
+```css
+.game-name ::deep .mud-button-root { white-space: nowrap; }
+```
+
+`::deep` works because the *wrapper* is your own element and carries the attribute.
+
+Also: a `@* razor comment *@` between component attributes is parsed as an attribute name.
+It builds fine and throws at render — `does not have a property matching the name '@* … *@'`.
+Put comments above the tag.
+
+## Database
+
+Aspire generates the Postgres password into the container env:
+
+```bash
+c=$(docker ps --format '{{.Names}}' | grep '^sql-')
+docker exec -e PGPASSWORD="$(docker exec $c printenv POSTGRES_PASSWORD)" $c \
+  psql -U postgres -d impact-kids -c '\d "GameBoards"'
+```
+
+Useful for confirming a migration actually applied and backfilled, rather than trusting
+that `dotnet ef` generated the right thing.
+
+## Verifying the live scoreboard
+
+`/Display/Scores` uses a **gRPC server-streaming** call (`WatchScoreboard`), not polling.
+A working stream is a single `POST …/Games.Display/WatchScoreboard` held open at 200 —
+check `read_network_requests`. Several requests means it is falling back or reconnecting.
+
+End-to-end push test, no auth needed on the display side:
+
+1. Open the tracker in one tab, the display in another.
+2. Score in the tracker: `document.querySelectorAll('.team-tile')[0].click()`.
+3. Read the display tab — it should change with no reload.
+4. Undo to clean up: click the button with `aria-label="Undo last"` once per award.
+
+Bars animate via a 0.5s CSS transition, so `getComputedStyle(bar).width` read immediately
+after an update returns a mid-transition value. Wait before measuring or it looks like a bug.

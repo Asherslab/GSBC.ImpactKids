@@ -9,11 +9,19 @@ public class DbGamePointRecord
     /// <summary>Client generated - see <see cref="GsbcDbContext.BuildGamesModel"/>.</summary>
     public required Guid Id { get; set; }
 
-    public required GameTeam Team   { get; set; }
-    public required int      Points { get; set; }
+    /// <summary>Positional, matching <see cref="DbGameTeam.Index"/> on the service's board.</summary>
+    public required int TeamIndex { get; set; }
+
+    public required int Points { get; set; }
 
     /// <summary>Null for behaviour points, which are not scoped to a game.</summary>
     public required int? GameNumber { get; set; }
+
+    /// <summary>
+    /// Shared by the sibling records written when an alliance is scored, so undo can
+    /// take the whole award back.
+    /// </summary>
+    public Guid? GroupId { get; set; }
 
     public required DateTimeOffset Awarded { get; set; }
 

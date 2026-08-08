@@ -25,6 +25,12 @@ public class GameScoreboardResponse
 
     public int CurrentGame { get; init; }
 
+    /// <summary>What to call the current game - its name if it has one, else "Game 3".</summary>
+    public string? CurrentGameName { get; init; }
+
+    /// <summary>At least two teams are playing the current game as one side.</summary>
+    public bool CurrentGameHasAlliances { get; init; }
+
     /// <summary>Ordered by <see cref="TeamScoreLine.DisplayPoints"/>, highest first.</summary>
     public ImmutableList<TeamScoreLine> Teams { get; init; } = [];
 
@@ -38,7 +44,15 @@ public class GameScoreboardResponse
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
 public class TeamScoreLine
 {
-    public required GameTeam Team { get; init; }
+    public required int    TeamIndex { get; init; }
+    public required string Name      { get; init; }
+    public required string Colour    { get; init; }
+
+    /// <summary>
+    /// Teams sharing this value are playing the current game combined. Distinct per
+    /// team when nothing is combined, so the display can group on it unconditionally.
+    /// </summary>
+    public required int AllianceGroup { get; init; }
 
     /// <summary>
     /// The number to put on screen, already resolved for the board's

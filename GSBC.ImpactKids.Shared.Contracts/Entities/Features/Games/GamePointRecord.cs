@@ -13,14 +13,22 @@ public record GamePointRecord : IIdentifiable
 {
     public required Guid Id { get; init; }
 
-    public required GameTeam Team   { get; init; }
-    public required int      Points { get; init; }
+    /// <summary>Positional, matching <see cref="GameTeamDefinition.Index"/> on the board.</summary>
+    public required int TeamIndex { get; init; }
+
+    public required int Points { get; init; }
 
     /// <summary>
     /// Which game of the night this belongs to, or <c>null</c> for behaviour points,
     /// which are awarded outside of any game but still count toward the total.
     /// </summary>
     public required int? GameNumber { get; init; }
+
+    /// <summary>
+    /// Set when the tap scored an alliance: one record per member team, all sharing this
+    /// id. It is what lets undo take the whole award back rather than half of it.
+    /// </summary>
+    public Guid? GroupId { get; init; }
 
     [ProtoIgnore]
     [JsonIgnore]

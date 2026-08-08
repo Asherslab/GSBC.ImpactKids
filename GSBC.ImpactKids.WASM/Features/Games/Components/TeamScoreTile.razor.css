@@ -31,6 +31,38 @@
     filter: brightness(1.12);
 }
 
+/* Many teams on one screen: the tile keeps its tap target but loses the breathing room. */
+.team-tile-compact {
+    gap: 0;
+    padding: .35rem;
+    border-radius: .75rem;
+}
+
+.team-tile-compact .team-tile-label {
+    font-size: .7rem;
+    letter-spacing: .04em;
+}
+
+.team-tile-compact .team-tile-total {
+    font-size: 2rem;
+}
+
+.team-tile-compact .team-tile-breakdown {
+    font-size: .65rem;
+}
+
+.team-tile-compact .team-tile-actions {
+    gap: .35rem;
+    margin-top: .2rem;
+}
+
+.team-tile-compact .team-tile-action {
+    min-width: 2.5rem;
+    min-height: 2rem;
+    padding: 0 .4rem;
+    font-size: .85rem;
+}
+
 .team-tile-label {
     font-size: clamp(.85rem, 3.2vw, 1.15rem);
     font-weight: 600;
@@ -111,4 +143,53 @@
 
 .team-tile-action:active {
     background: rgba(0, 0, 0, .4);
+}
+
+/* On a big screen the tiles get enormous while the type stayed phone sized, leaving
+   the score marooned in a field of colour. Scale the content with the tile. */
+@media (min-width: 900px) {
+    .team-tile {
+        gap: .5rem;
+    }
+
+    .team-tile-label {
+        font-size: clamp(1rem, 1.6vw, 1.75rem);
+    }
+
+    .team-tile-total {
+        font-size: clamp(4rem, 11vw, 11rem);
+    }
+
+    .team-tile-breakdown {
+        font-size: clamp(.9rem, 1.1vw, 1.25rem);
+    }
+
+    .team-tile-cta {
+        padding: .45rem 1.25rem;
+    }
+
+    .team-tile-cta-plus {
+        font-size: 1.5rem;
+    }
+
+    .team-tile-action {
+        min-width: 4.5rem;
+        min-height: 3rem;
+        font-size: 1.25rem;
+    }
+
+    /* Compact tiles stay compact - that mode exists because there are many of them. */
+    .team-tile-compact .team-tile-total {
+        font-size: 2.6rem;
+    }
+
+    .team-tile-compact .team-tile-label {
+        font-size: .8rem;
+    }
+
+    .team-tile-compact .team-tile-action {
+        min-width: 3rem;
+        min-height: 2.25rem;
+        font-size: 1rem;
+    }
 }

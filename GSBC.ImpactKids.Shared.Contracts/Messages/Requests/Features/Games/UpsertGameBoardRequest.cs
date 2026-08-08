@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Games;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Games;
@@ -8,9 +9,14 @@ public class UpsertGameBoardRequest
     public Guid ServiceId { get; set; }
 
     public int CurrentGame { get; set; }
-    public int TeamCount   { get; set; }
     public int StepPoints  { get; set; }
     public int BonusPoints { get; set; }
+
+    /// <summary>Replaces the stored team list wholesale. Empty means "keep the default four".</summary>
+    public ImmutableList<GameTeamDefinition> Teams { get; set; } = [];
+
+    /// <summary>Replaces the stored per game settings wholesale.</summary>
+    public ImmutableList<GameDefinition> Games { get; set; } = [];
 
     public GameDisplayMode DisplayMode { get; set; }
 

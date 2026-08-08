@@ -52,6 +52,23 @@ internal static class HostExtensions
                     options.Cookie.SameSite = SameSiteMode.Strict;
                     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
                     options.Cookie.HttpOnly = true;
+
+                    // Everything behind the cookie policy is an API call from the SPA -
+                    // gRPC, /api, /bff/user. The default 302 to LoginPath falls through
+                    // to the wasm catch-all route, so the caller gets index.html with a
+                    // 200, which grpc-web reports as
+                    // "Bad gRPC response. Invalid content-type value: text/html".
+                    // Answer with status codes and let the client drive /bff/login.
+                    options.Events.OnRedirectToLogin = context =>
+                    {
+                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                        return Task.CompletedTask;
+                    };
+                    options.Events.OnRedirectToAccessDenied = context =>
+                    {
+                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                        return Task.CompletedTask;
+                    };
                 })
                 .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, configureOptions: options =>
                 {

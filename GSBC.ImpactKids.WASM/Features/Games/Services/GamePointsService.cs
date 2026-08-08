@@ -35,11 +35,13 @@ public sealed class GamePointsService(
     IRefreshableStore<GameBoard>       boardsStore
 ) : IGamePointsService
 {
-    private const string RecordsKey     = "gamepoints:records";
-    private const string OutboxKey      = "gamepoints:outbox";
-    private const string DeletesKey     = "gamepoints:deletes";
-    private const string BoardsKey      = "gamepoints:boards";
-    private const string BoardOutboxKey = "gamepoints:boardoutbox";
+    // v2: teams became a list on the board rather than a fixed four-value enum. Old
+    // cached payloads would deserialize into the wrong shape, so they are left behind.
+    private const string RecordsKey     = "gamepoints:v2:records";
+    private const string OutboxKey      = "gamepoints:v2:outbox";
+    private const string DeletesKey     = "gamepoints:v2:deletes";
+    private const string BoardsKey      = "gamepoints:v2:boards";
+    private const string BoardOutboxKey = "gamepoints:v2:boardoutbox";
 
     private static readonly TimeSpan PruneAfter = TimeSpan.FromDays(90);
     private static readonly TimeSpan RetryEvery = TimeSpan.FromSeconds(20);
@@ -148,7 +150,8 @@ public sealed class GamePointsService(
         {
             ServiceId = serviceId,
             CurrentGame = updated.CurrentGame,
-            TeamCount = updated.TeamCount,
+            Teams = updated.Teams,
+            Games = updated.Games,
             StepPoints = updated.StepPoints,
             BonusPoints = updated.BonusPoints,
             DisplayMode = updated.DisplayMode,
@@ -179,20 +182,23 @@ public sealed class GamePointsService(
         return Math.Max(BoardFor(serviceId).CurrentGame, highestScoredIn);
     }
 
-    public int TotalFor(Guid serviceId, GameTeam team) =>
-        Live(serviceId, team).Sum(x => x.Points);
+    public bool HasScores(Guid serviceId, int gameNumber) =>
+        _records.Values.Any(x => !x.Deleted && x.ServiceId == serviceId && x.GameNumber == gameNumber);
 
-    public int GamePointsFor(Guid serviceId, GameTeam team) =>
-        Live(serviceId, team).Where(x => x.GameNumber != null).Sum(x => x.Points);
+    public int TotalFor(Guid serviceId, int teamIndex) =>
+        Live(serviceId, teamIndex).Sum(x => x.Points);
 
-    public int GamePointsFor(Guid serviceId, GameTeam team, int gameNumber) =>
-        Live(serviceId, team).Where(x => x.GameNumber == gameNumber).Sum(x => x.Points);
+    public int GamePointsFor(Guid serviceId, int teamIndex) =>
+        Live(serviceId, teamIndex).Where(x => x.GameNumber != null).Sum(x => x.Points);
 
-    public int BehaviourPointsFor(Guid serviceId, GameTeam team) =>
-        Live(serviceId, team).Where(x => x.GameNumber == null).Sum(x => x.Points);
+    public int GamePointsFor(Guid serviceId, int teamIndex, int gameNumber) =>
+        Live(serviceId, teamIndex).Where(x => x.GameNumber == gameNumber).Sum(x => x.Points);
 
-    private IEnumerable<GamePointRecord> Live(Guid serviceId, GameTeam team) =>
-        _records.Values.Where(x => !x.Deleted && x.ServiceId == serviceId && x.Team == team);
+    public int BehaviourPointsFor(Guid serviceId, int teamIndex) =>
+        Live(serviceId, teamIndex).Where(x => x.GameNumber == null).Sum(x => x.Points);
+
+    private IEnumerable<GamePointRecord> Live(Guid serviceId, int teamIndex) =>
+        _records.Values.Where(x => !x.Deleted && x.ServiceId == serviceId && x.TeamIndex == teamIndex);
 
     public bool CanUndo(Guid serviceId) => LastRecordFor(serviceId) != null;
 
@@ -203,40 +209,56 @@ public sealed class GamePointsService(
 
     // ---------- writes ----------
 
-    public Task AddGamePointsAsync(Guid serviceId, GameTeam team, int points) =>
-        AddPointsAsync(serviceId, team, points, BoardFor(serviceId).CurrentGame);
+    public Task AddGamePointsAsync(Guid serviceId, IReadOnlyList<int> teamIndexes, int points) =>
+        AddPointsAsync(serviceId, teamIndexes, points, BoardFor(serviceId).CurrentGame);
 
-    public Task AddBehaviourPointsAsync(Guid serviceId, GameTeam team, int points) =>
-        AddPointsAsync(serviceId, team, points, gameNumber: null);
+    public Task AddBehaviourPointsAsync(Guid serviceId, int teamIndex, int points) =>
+        AddPointsAsync(serviceId, [teamIndex], points, gameNumber: null);
 
-    private async Task AddPointsAsync(Guid serviceId, GameTeam team, int points, int? gameNumber)
+    /// <summary>
+    /// One record per team. A combined side therefore scores the full amount for each of
+    /// its teams, and the shared group id keeps them together for undo.
+    /// </summary>
+    private async Task AddPointsAsync(
+        Guid               serviceId,
+        IReadOnlyList<int> teamIndexes,
+        int                points,
+        int?               gameNumber
+    )
     {
-        if (points == 0)
+        if (points == 0 || teamIndexes.Count == 0)
             return;
 
-        Guid     id      = Guid.NewGuid();
         DateTime awarded = DateTime.UtcNow;
+        Guid?    groupId = teamIndexes.Count > 1 ? Guid.NewGuid() : null;
 
-        // Applied locally first so the tap registers instantly, online or not.
-        _records[id] = new GamePointRecord
+        foreach (int teamIndex in teamIndexes.Distinct())
         {
-            Id = id,
-            Team = team,
-            Points = points,
-            GameNumber = gameNumber,
-            Awarded = awarded,
-            ServiceId = serviceId
-        };
+            Guid id = Guid.NewGuid();
 
-        _outbox[id] = new CreateGamePointRecordRequest
-        {
-            Id = id,
-            Team = team,
-            Points = points,
-            GameNumber = gameNumber,
-            Awarded = awarded,
-            ServiceId = serviceId
-        };
+            // Applied locally first so the tap registers instantly, online or not.
+            _records[id] = new GamePointRecord
+            {
+                Id = id,
+                TeamIndex = teamIndex,
+                Points = points,
+                GameNumber = gameNumber,
+                GroupId = groupId,
+                Awarded = awarded,
+                ServiceId = serviceId
+            };
+
+            _outbox[id] = new CreateGamePointRecordRequest
+            {
+                Id = id,
+                TeamIndex = teamIndex,
+                Points = points,
+                GameNumber = gameNumber,
+                GroupId = groupId,
+                Awarded = awarded,
+                ServiceId = serviceId
+            };
+        }
 
         Changed?.Invoke();
 
@@ -254,22 +276,33 @@ public sealed class GamePointsService(
         if (last == null)
             return;
 
-        if (_outbox.Remove(last.Id))
+        // A combined side was scored as several records at once, so undo has to take the
+        // whole award back rather than leaving one team ahead.
+        List<GamePointRecord> undoing = last.GroupId == null
+            ? [last]
+            : _records.Values
+                .Where(x => !x.Deleted && x.ServiceId == serviceId && x.GroupId == last.GroupId)
+                .ToList();
+
+        foreach (GamePointRecord record in undoing)
         {
-            // Never reached the server, so drop it outright rather than tombstoning it.
-            _records.Remove(last.Id);
-            await PersistOutboxAsync();
-        }
-        else
-        {
-            _records[last.Id] = last with { Deleted = true };
-            _pendingDeletes.Add(last.Id);
-            await PersistDeletesAsync();
+            if (_outbox.Remove(record.Id))
+            {
+                // Never reached the server, so drop it outright rather than tombstoning it.
+                _records.Remove(record.Id);
+            }
+            else
+            {
+                _records[record.Id] = record with { Deleted = true };
+                _pendingDeletes.Add(record.Id);
+            }
         }
 
         Changed?.Invoke();
 
         await PersistRecordsAsync();
+        await PersistOutboxAsync();
+        await PersistDeletesAsync();
 
         _ = Vibrate(25);
         _ = FlushAsync();

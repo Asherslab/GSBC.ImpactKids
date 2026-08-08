@@ -18,4 +18,14 @@ public interface IGameDisplayService
         GameScoreboardRequest request,
         CallContext           context = default
     );
+
+    /// <summary>
+    /// Server streaming. Yields the board immediately, then again on every change - the
+    /// display does not poll. Also re-sends periodically so a stream killed by something
+    /// in between is noticed rather than leaving a frozen screen on the wall.
+    /// </summary>
+    IAsyncEnumerable<GameScoreboardResponse> WatchScoreboard(
+        GameScoreboardRequest request,
+        CallContext           context = default
+    );
 }
