@@ -11,8 +11,17 @@
 
     <MudNavLink Href="/Attendance/Tool" Icon="@Icons.Material.Filled.Checklist">Attendance</MudNavLink>
 
-    <MudNavLink Href="/Games/Points" Icon="@Icons.Material.Filled.EmojiEvents">Team Points</MudNavLink>
-    <MudNavLink Href="/Games/Scores" Icon="@Icons.Material.Filled.Leaderboard">Tonight's Scores</MudNavLink>
+    <MudNavGroup Icon="@Icons.Material.Filled.EmojiEvents"
+                 Title="Scoring">
+        <MudNavLink Icon="@Icons.Material.Filled.SportsEsports"
+                    Href="/Games/Points">
+            Game Scoring
+        </MudNavLink>
+        <MudNavLink Icon="@Icons.Material.Filled.Leaderboard"
+                    Href="/Games/Scores">
+            Totals
+        </MudNavLink>
+    </MudNavGroup>
 
     <MudNavGroup Icon="@Icons.Material.Filled.School"
                  Title="Verse Memorisation">

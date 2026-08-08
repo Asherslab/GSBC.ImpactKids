@@ -43,6 +43,8 @@ public partial class GameBoardService
                 CurrentGame = currentGame,
                 StepPoints = NormalisePoints(request.StepPoints, fallback: 1),
                 BonusPoints = NormalisePoints(request.BonusPoints, fallback: 5),
+                PointsMultiplier = GameMultipliers.Normalise(request.PointsMultiplier),
+                BehaviourPointsMultiplier = GameMultipliers.Normalise(request.BehaviourPointsMultiplier),
 
                 Teams = teams,
                 Games = games,
@@ -51,6 +53,7 @@ public partial class GameBoardService
                 Hidden = request.Hidden,
                 Paused = request.Paused,
                 PausedAt = ToUtc(request.PausedAt),
+                RevealStep = NormaliseRevealStep(request.RevealStep),
 
                 UpdatedAt = updatedAt,
                 ServiceId = service.Id
@@ -70,12 +73,15 @@ public partial class GameBoardService
             board.CurrentGame = currentGame;
             board.StepPoints = NormalisePoints(request.StepPoints, fallback: 1);
             board.BonusPoints = NormalisePoints(request.BonusPoints, fallback: 5);
+            board.PointsMultiplier = GameMultipliers.Normalise(request.PointsMultiplier);
+            board.BehaviourPointsMultiplier = GameMultipliers.Normalise(request.BehaviourPointsMultiplier);
             board.Teams = teams;
             board.Games = games;
             board.DisplayMode = request.DisplayMode;
             board.Hidden = request.Hidden;
             board.Paused = request.Paused;
             board.PausedAt = ToUtc(request.PausedAt);
+            board.RevealStep = NormaliseRevealStep(request.RevealStep);
             board.UpdatedAt = updatedAt;
         }
 
@@ -118,8 +124,9 @@ public partial class GameBoardService
     }
 
     /// <summary>
-    /// Keeps only games that still say something - a name, or teams combined - and
-    /// drops alliance entries that point at teams the board no longer has.
+    /// Keeps only games that still say something - a name, teams combined, or a
+    /// multiplier of their own - and drops alliance entries that point at teams the
+    /// board no longer has.
     /// </summary>
     private static List<DbGame> NormaliseGames(IEnumerable<GameDefinition> games, int teamCount)
     {
@@ -140,14 +147,17 @@ public partial class GameBoardService
             if (alliances.Distinct().Count() == alliances.Count)
                 alliances = [];
 
-            if (name == null && alliances.Count == 0)
+            int? multiplier = GameMultipliers.Normalise(game.Multiplier);
+
+            if (name == null && alliances.Count == 0 && multiplier == null)
                 continue;
 
             normalised.Add(new DbGame
                 {
                     Number = game.Number,
                     Name = name,
-                    Alliances = alliances
+                    Alliances = alliances,
+                    Multiplier = multiplier
                 }
             );
         }
@@ -164,6 +174,12 @@ public partial class GameBoardService
 
         return trimmed.Length <= maxLength ? trimmed : trimmed[..maxLength];
     }
+
+    /// <summary>
+    /// A negative step is the same as no reveal - the display would clamp it to the start
+    /// anyway, and storing it would leave a reveal that cannot be seen but is still "on".
+    /// </summary>
+    private static int? NormaliseRevealStep(int? step) => step is >= 0 ? step : null;
 
     private static int NormalisePoints(int points, int fallback) =>
         points is > 0 and <= 100 ? points : fallback;

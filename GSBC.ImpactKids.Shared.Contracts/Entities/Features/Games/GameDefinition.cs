@@ -3,8 +3,8 @@ using System.Collections.Immutable;
 namespace GSBC.ImpactKids.Shared.Contracts.Entities.Features.Games;
 
 /// <summary>
-/// Per game settings. A game only needs one of these if it is named or has teams
-/// combined - an ordinary game is just its number.
+/// Per game settings. A game only needs one of these if it is named, has teams combined
+/// or runs at its own multiplier - an ordinary game is just its number.
 /// </summary>
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
 public record GameDefinition
@@ -22,6 +22,12 @@ public record GameDefinition
     /// <para>Empty - the usual case - means every team plays for itself.</para>
     /// </summary>
     public ImmutableList<int> Alliances { get; init; } = [];
+
+    /// <summary>
+    /// What one scored point is worth on the displays for this game, or null to follow
+    /// the game before it. See <see cref="GameMultipliers"/>.
+    /// </summary>
+    public int? Multiplier { get; init; }
 
     /// <summary>
     /// The group a team plays in. Teams outside the alliance list get a group of their

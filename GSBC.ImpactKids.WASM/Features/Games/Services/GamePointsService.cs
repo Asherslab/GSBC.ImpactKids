@@ -137,8 +137,23 @@ public sealed class GamePointsService(
 
     public GameBoard BoardFor(Guid serviceId) =>
         _boards.TryGetValue(serviceId, out GameBoard? board)
-            ? board
+            ? Sane(board)
             : GameBoard.Default(serviceId);
+
+    /// <summary>
+    /// A board cached or stored before the multiplier existed comes back with a zero,
+    /// which would show as "×0" in the settings even though every reader treats it as the
+    /// default. Fixed on the way out rather than in every caller.
+    /// </summary>
+    private static GameBoard Sane(GameBoard board) =>
+        GameMultipliers.IsValid(board.PointsMultiplier) &&
+        GameMultipliers.IsValid(board.BehaviourPointsMultiplier)
+            ? board
+            : board with
+            {
+                PointsMultiplier = GameMultipliers.Normalise(board.PointsMultiplier),
+                BehaviourPointsMultiplier = GameMultipliers.Normalise(board.BehaviourPointsMultiplier)
+            };
 
     public async Task UpdateBoardAsync(Guid serviceId, Func<GameBoard, GameBoard> mutate)
     {
@@ -154,10 +169,13 @@ public sealed class GamePointsService(
             Games = updated.Games,
             StepPoints = updated.StepPoints,
             BonusPoints = updated.BonusPoints,
+            PointsMultiplier = updated.PointsMultiplier,
+            BehaviourPointsMultiplier = updated.BehaviourPointsMultiplier,
             DisplayMode = updated.DisplayMode,
             Hidden = updated.Hidden,
             Paused = updated.Paused,
             PausedAt = updated.PausedAt,
+            RevealStep = updated.RevealStep,
             UpdatedAt = updated.UpdatedAt
         };
 
@@ -309,6 +327,29 @@ public sealed class GamePointsService(
     }
 
     // ---------- sync ----------
+
+    public async Task ResyncAsync()
+    {
+        // The usual cause of a queue that will not move is a stale offline flag - the
+        // browser told us it had dropped and never told us it was back.
+        await StartConnectivityWatchAsync();
+
+        // A flush that died mid send leaves the guard up and nothing ever retries. Racing
+        // a live flush is the lesser evil: creates carry a client id the server treats as
+        // idempotent, and a board upsert is last write wins on the same timestamp.
+        _flushing = false;
+
+        Changed?.Invoke();
+
+        await FlushAsync();
+        await RefreshFromServerAsync();
+
+        // The retry loop is cancelled by a cold start that never finished; harmless to
+        // put a fresh one up either way.
+        StartRetryLoop();
+
+        Changed?.Invoke();
+    }
 
     public async Task FlushAsync()
     {

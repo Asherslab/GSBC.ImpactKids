@@ -3,6 +3,7 @@ using System;
 using GSBC.ImpactKids.Grpc.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GSBC.ImpactKids.Grpc.Data.Migrations
 {
     [DbContext(typeof(GsbcDbContext))]
-    partial class GsbcDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260808070100_1786172458")]
+    partial class _1786172458
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -194,9 +197,6 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
-
-                    b.Property<int>("BehaviourPointsMultiplier")
-                        .HasColumnType("integer");
 
                     b.Property<int>("BonusPoints")
                         .HasColumnType("integer");
