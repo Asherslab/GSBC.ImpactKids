@@ -1,9 +1,31 @@
 ---
 name: run-and-inspect-app
-description: Run the Aspire app locally and inspect/iterate on the Blazor WASM frontend in a browser. Use when asked to start, stop, restart, or preview the app; to check how a page looks or behaves; to verify a UI change; or when writing scoped CSS against MudBlazor components. Covers the Rider run config, the correct localhost port, restart and service-worker gotchas, Auth0 sign-in limits, and how to read the DB and the live scoreboard stream.
+description: Run the Aspire app locally and inspect/iterate on the Blazor WASM frontend in a browser. Use when asked to start, stop, restart, or preview the app; to check how a page looks or behaves; to verify a UI change; or when writing scoped CSS against MudBlazor components. ALSO use before planning, proposing or designing ANY change to a page, screen or component — look at the real UI first, never from the code alone. Covers the Rider run config, the correct localhost port, restart and service-worker gotchas, Auth0 sign-in limits, and how to read the DB and the live scoreboard stream.
 ---
 
 # Running and inspecting this app
+
+## Look at the UI before you plan a change to it
+
+**Non-negotiable, and it comes before any proposal, mockup or opinion about a screen.**
+Run the app and look at the page. Reading the `.razor` is not looking - a plan drawn from
+the markup invents affordances the page does not have and misses the ones it does. This
+has already produced a whole design proposal for a list widget on a page that is a grid of
+full-bleed tiles where the tile *is* the button.
+
+- **Changing an existing page**: open that page, at `preset: "mobile"` as well as desktop
+  if leaders use it on a phone. Note what the primary tap target already is, what lives in
+  the header, what the inline/secondary actions are, and how tight the page is for space.
+  A new control has to fit that, not sit beside it.
+- **Adding a new page**: open the two or three existing pages that do the nearest thing and
+  copy their idiom - the same dialog shape, the same chip presets, the same
+  `−  n  +` steppers, the same header layout. New styling is a last resort, not a start.
+- **Prefer the existing pattern to a better one.** Where a page already solves a problem
+  (presets to avoid typing, an inline action that stops propagation, a collapsed chip for
+  secondary detail), reuse it verbatim. Consistency beats a locally nicer control.
+- Say what you saw in the proposal. If the app could not be started or the page needs a
+  login you cannot do, state that the design is drawn from markup alone rather than
+  quietly presenting it as observed.
 
 Aspire AppHost fronts a Blazor WASM client, a YARP BFF, a gRPC service, Postgres,
 RabbitMQ and Redis. Everything below was established by doing it — the gotchas are
