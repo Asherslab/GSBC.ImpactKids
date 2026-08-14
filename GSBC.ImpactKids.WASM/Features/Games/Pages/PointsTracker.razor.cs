@@ -456,29 +456,49 @@ public partial class PointsTracker
         );
 
     /// <summary>
-    /// Steps back a game. A game nobody scored in never really happened, so leaving it
-    /// takes its settings with it rather than leaving an empty column on the tally.
+    /// Steps back a game. A game nobody scored in never really happened, so it does not
+    /// get to leave an empty column on the tally - but what happens to it depends on
+    /// whether anybody ever said anything about it.
+    /// <para>
+    /// A game opened by accident is nothing but its number, and is forgotten. A game that
+    /// was set up - named, priced, made a race, or planned in the hall - is put back on the
+    /// planned list instead. Binning it took the whole night's preparation with it, which
+    /// is exactly what stepping forward and back again used to do.
+    /// </para>
     /// </summary>
     private async Task PreviousGame()
     {
         if (_service.Data == null || !CanGoBack)
             return;
 
-        int leaving  = Board.CurrentGame;
-        bool discard = leaving >= GamesPlayed && !Points.HasScores(ServiceKey, leaving);
+        int leaving = Board.CurrentGame;
+
+        GameDefinition definition = Board.GameAt(leaving);
+
+        bool unscored = leaving >= GamesPlayed && !Points.HasScores(ServiceKey, leaving);
+
+        bool discard = unscored && !definition.HasSettings();
+
+        // Not for a voided game: hidden is somebody's decision and outranks this.
+        bool replan = unscored && definition.HasSettings() && !definition.Hidden;
 
         await UpdateBoard(board =>
             {
                 GameBoard moved = board with { CurrentGame = leaving - 1 };
 
-                return discard
-                    ? moved with { Games = moved.Games.RemoveAll(x => x.Number == leaving) }
+                if (discard)
+                    return moved with { Games = moved.Games.RemoveAll(x => x.Number == leaving) };
+
+                return replan
+                    ? moved.WithGame(moved.GameAt(leaving) with { Planned = true })
                     : moved;
             }
         );
 
         if (discard)
             Snackbar.Add($"Game {leaving} discarded - nothing was scored", Severity.Info);
+        else if (replan)
+            Snackbar.Add($"{definition.DisplayName()} is waiting again - nothing was scored", Severity.Info);
     }
 
     private Task NextGame() => NextGameNumber is { } next

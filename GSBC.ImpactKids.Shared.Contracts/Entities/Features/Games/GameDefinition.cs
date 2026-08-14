@@ -75,6 +75,19 @@ public record GameDefinition
     public bool CountsTowardNight() => !Planned && !Hidden;
 
     /// <summary>
+    /// Whether somebody has said anything about this game. False means it is nothing but
+    /// its number, and there is nothing to lose by forgetting it - which is what tells an
+    /// accidental "new game" apart from one that was set up on purpose.
+    /// </summary>
+    public bool HasSettings() =>
+        !string.IsNullOrWhiteSpace(Name)
+        || Alliances.Count > 0
+        || Multiplier != null
+        || IsPlacement()
+        || Planned
+        || Hidden;
+
+    /// <summary>
     /// The group a team plays in. Teams outside the alliance list get a group of their
     /// own, numbered negatively so it can never collide with a real group id.
     /// </summary>

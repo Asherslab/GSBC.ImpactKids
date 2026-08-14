@@ -184,15 +184,9 @@ public record GameBoard : IIdentifiable
     {
         ImmutableList<GameDefinition> rest = Games.RemoveAll(x => x.Number == game.Number);
 
-        bool worthKeeping = !string.IsNullOrWhiteSpace(game.Name)
-                            || game.Alliances.Count > 0
-                            || game.Multiplier != null
-                            || game.IsPlacement()
-                            // A planned game is often nothing but a slot in the running
-                            // order, and a hidden one may hold nothing but the decision to
-                            // void it. Dropped as "plain", both would come straight back.
-                            || game.Planned
-                            || game.Hidden;
+        // A planned game is often nothing but a slot in the running order, and a hidden one
+        // may hold nothing but the decision to void it - so both count as settings.
+        bool worthKeeping = game.HasSettings();
 
         return this with
         {
