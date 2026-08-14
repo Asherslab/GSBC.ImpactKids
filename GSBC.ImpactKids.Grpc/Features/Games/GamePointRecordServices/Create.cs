@@ -21,7 +21,10 @@ public partial class GamePointRecordService
         if (request.Id == Guid.Empty)
             return BasicReadResponse<Guid?>.WithError(GamePointRecordIdRequired);
 
-        if (request.Points == 0)
+        // A placing is worth recording even when it scores nothing: coming fourth when
+        // only the top three score is a result, and a night that drops it cannot say
+        // afterwards who ran.
+        if (request.Points == 0 && request.Place is not > 0)
             return BasicReadResponse<Guid?>.WithError(GamePointRecordPointsZero);
 
         if (request.TeamIndex < 0 || request.TeamIndex >= GameTeamDefaults.MaxTeams)
@@ -57,6 +60,7 @@ public partial class GamePointRecordService
             Points = request.Points,
             GameNumber = request.GameNumber is > 0 ? request.GameNumber : null,
             GroupId = request.GroupId == Guid.Empty ? null : request.GroupId,
+            Place = request.Place is > 0 and <= GamePlacements.MaxPlaces ? request.Place : null,
             Awarded = request.Awarded == default
                 ? DateTimeOffset.UtcNow
                 : new DateTimeOffset(DateTime.SpecifyKind(request.Awarded, DateTimeKind.Utc)),

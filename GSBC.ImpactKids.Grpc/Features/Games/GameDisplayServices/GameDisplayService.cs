@@ -195,7 +195,24 @@ public class GameDisplayService(
             records.Where(x => x.GameNumber != null).Select(x => x.GameNumber!.Value).DefaultIfEmpty(0).Max()
         );
 
-        ImmutableList<string> gameNames = Enumerable.Range(1, gamesPlayed)
+        // The games that are part of the night. A game planned for later, or one that was
+        // voided, is not on the wall and gets no round in the reveal - and its points do
+        // not count, which is what keeps the columns adding up to the total.
+        //
+        // Everything below is positional over this list, and the phone driving the reveal
+        // filters identically. One end counting a game the other does not slides every
+        // later step of the reveal out of place.
+        List<int> countingGames = Enumerable.Range(1, gamesPlayed)
+            .Where(number =>
+                {
+                    DbGame? definition = board?.Games.FirstOrDefault(x => x.Number == number);
+
+                    return definition is not { Planned: true } and not { Hidden: true };
+                }
+            )
+            .ToList();
+
+        ImmutableList<string> gameNames = countingGames
             .Select(number =>
                 {
                     DbGame? definition = board?.Games.FirstOrDefault(x => x.Number == number);
@@ -225,7 +242,7 @@ public class GameDisplayService(
         ImmutableList<TeamScoreLine> teams = teamDefinitions
             .Select(team =>
                 {
-                    ImmutableList<int> perGamePoints = Enumerable.Range(1, gamesPlayed)
+                    ImmutableList<int> perGamePoints = countingGames
                         .Select(number => GameMultipliers.Multiply(
                                 records
                                     .Where(x => x.TeamIndex == team.Index && x.GameNumber == number)
@@ -246,7 +263,15 @@ public class GameDisplayService(
                         behaviourMultiplier
                     );
 
-                    int currentGamePoints = perGamePoints[currentGame - 1];
+                    // Worked out from the records rather than by indexing the list above:
+                    // that list only holds the games that count, so its positions no
+                    // longer line up with game numbers.
+                    int currentGamePoints = GameMultipliers.Multiply(
+                        records
+                            .Where(x => x.TeamIndex == team.Index && x.GameNumber == currentGame)
+                            .Sum(x => x.Points),
+                        multipliers[currentGame - 1]
+                    );
 
                     return new TeamScoreLine
                     {
@@ -281,7 +306,9 @@ public class GameDisplayService(
             CurrentGameName = currentGameName,
             CurrentGameHasAlliances = hasAlliances,
             RevealStep = board?.RevealStep,
-            GamesPlayed = gamesPlayed,
+            // The count of games on the wall, not the highest number reached: the reveal
+            // takes its running order from this and the names beside it.
+            GamesPlayed = countingGames.Count,
             GameNames = gameNames,
             Teams = teams
         };

@@ -1,0 +1,581 @@
+@using System.Collections.Immutable
+@using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Games
+@using GSBC.ImpactKids.WASM.Features.Games
+@using GSBC.ImpactKids.WASM.Features.Games.Services
+@using MudBlazor.Utilities
+@inject IGamePointsService Points
+@inject ISnackbar         Snackbar
+
+@* Everything about how the night is put together, in one place. It exists because a game
+   used to be edited in two panels - name and multiplier in one, placings and heats in
+   another - and neither could add a game, void one, or fix a score that was tapped in
+   wrong. A game is one thing, so it gets one card. *@
+<MudStack Spacing="4">
+
+    @* ---------- the night ---------- *@
+    @* Each section sits on its own raised surface. Headings alone left three unrelated
+       groups of controls floating on one flat background, which is what made the teams
+       run into the games. *@
+    <MudPaper Elevation="0" Class="pa-4 setup-section">
+    <MudStack Spacing="1">
+        <MudText Typo="Typo.subtitle1" Class="setup-section-title"><b>The night</b></MudText>
+        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+            Points are scored in ones and multiplied for the screens. This is what game 1
+            runs at, and what a game with no multiplier of its own follows.
+        </MudText>
+        <MudStack Row Class="align-center flex-wrap gap-1">
+            @foreach (int preset in GameMultipliers.Presets)
+            {
+                int multiplier = preset;
+
+                <MudChip T="string"
+                         Size="Size.Small"
+                         Variant="@(Board.PointsMultiplier == multiplier ? Variant.Filled : Variant.Outlined)"
+                         Color="@(Board.PointsMultiplier == multiplier ? Color.Primary : Color.Default)"
+                         OnClick="@(() => SetPointsMultiplier(multiplier))">
+                    ×@multiplier
+                </MudChip>
+            }
+            @* Wrapped so the width rule has something scoped to land on. *@
+            <span class="setup-multiplier">
+                <MudNumericField T="int"
+                                 Value="@Board.PointsMultiplier"
+                                 ValueChanged="@SetPointsMultiplier"
+                                 Min="@GameMultipliers.Min"
+                                 Max="@GameMultipliers.Max"
+                                 Margin="Margin.Dense"
+                                 Variant="Variant.Outlined"/>
+            </span>
+        </MudStack>
+
+        @* Priced on its own: behaviour points are handed out all evening for something
+           other than winning a game, and a night can want them to count for less than a
+           game does - or for more. *@
+        <MudText Typo="Typo.caption" Class="mud-text-secondary mt-2">Behaviour points</MudText>
+        <MudStack Row Class="align-center flex-wrap gap-1">
+            @foreach (int preset in GameMultipliers.Presets)
+            {
+                int multiplier = preset;
+
+                <MudChip T="string"
+                         Size="Size.Small"
+                         Variant="@(Board.BehaviourPointsMultiplier == multiplier ? Variant.Filled : Variant.Outlined)"
+                         Color="@(Board.BehaviourPointsMultiplier == multiplier ? Color.Primary : Color.Default)"
+                         OnClick="@(() => SetBehaviourMultiplier(multiplier))">
+                    ×@multiplier
+                </MudChip>
+            }
+            <span class="setup-multiplier">
+                <MudNumericField T="int"
+                                 Value="@Board.BehaviourPointsMultiplier"
+                                 ValueChanged="@SetBehaviourMultiplier"
+                                 Min="@GameMultipliers.Min"
+                                 Max="@GameMultipliers.Max"
+                                 Margin="Margin.Dense"
+                                 Variant="Variant.Outlined"/>
+            </span>
+        </MudStack>
+    </MudStack>
+    </MudPaper>
+
+    @* ---------- teams ---------- *@
+    <MudPaper Elevation="0" Class="pa-4 setup-section">
+    <MudStack Spacing="2">
+        <MudStack Row Class="align-center justify-space-between flex-wrap gap-2">
+            <MudText Typo="Typo.subtitle1" Class="setup-section-title"><b>Teams</b></MudText>
+            <MudStack Row Class="align-center gap-1">
+                <MudIconButton Icon="@Icons.Material.Filled.Remove"
+                               Variant="Variant.Outlined"
+                               Size="Size.Small"
+                               aria-label="One fewer team"
+                               Disabled="@(Teams.Count <= GameTeamDefaults.MinTeams)"
+                               OnClick="@(() => SetTeamCount(Teams.Count - 1))"/>
+                <span class="setup-team-count">@Teams.Count</span>
+                <MudIconButton Icon="@Icons.Material.Filled.Add"
+                               Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Size="Size.Small"
+                               aria-label="One more team"
+                               Disabled="@(Teams.Count >= GameTeamDefaults.MaxTeams)"
+                               OnClick="@(() => SetTeamCount(Teams.Count + 1))"/>
+            </MudStack>
+        </MudStack>
+
+        <MudStack Row Class="flex-wrap gap-1">
+            @foreach (int preset in new[] { 2, 4, 6, 8, 10, 12 })
+            {
+                int count = preset;
+
+                <MudChip T="string"
+                         Size="Size.Small"
+                         Variant="@(Teams.Count == count ? Variant.Filled : Variant.Outlined)"
+                         Color="@(Teams.Count == count ? Color.Primary : Color.Default)"
+                         OnClick="@(() => SetTeamCount(count))">
+                    @count
+                </MudChip>
+            }
+        </MudStack>
+
+        @* One card per team, name above its colour. Laid out as one flat row of fields,
+           "Red colour" sat beside the box holding "Green" and there was no telling which
+           colour belonged to which name. *@
+        <div class="setup-teams">
+            @foreach (GameTeamDefinition team in Teams)
+            {
+                int index = team.Index;
+
+                <div class="setup-team" style="@($"--team: {team.Colour};")">
+                    <MudTextField T="string"
+                                  Value="@team.Name"
+                                  ValueChanged="@(name => RenameTeam(index, name))"
+                                  Placeholder="Team name"
+                                  DebounceInterval="500"
+                                  MaxLength="@GameTeamDefaults.MaxNameLength"
+                                  Margin="Margin.Dense"
+                                  Variant="Variant.Outlined"
+                                  />
+
+                    <div class="setup-team-colour-row">
+                        <MudColorPicker Value="@(new MudColor(team.Colour))"
+                                        ValueChanged="@(colour => SetTeamColour(index, colour.ToString(MudColorOutputFormats.Hex)))"
+                                        Class="setup-team-colour"
+                                        Variant="Variant.Outlined"
+                                        Margin="Margin.Dense"
+                                        ColorPickerMode="ColorPickerMode.HEX"
+                                        ShowAlpha="false"
+                                        Style="@($"color: {team.Colour};")"
+                                        ShowToolbar/>
+                        <MudIconButton Icon="@Icons.Material.Filled.Casino"
+                                       Size="Size.Small"
+                                       Title="@($"Shuffle {team.Name}'s colour")"
+                                       aria-label="@($"Shuffle {team.Name}'s colour")"
+                                       OnClick="@(() => ShuffleTeamColour(index))"/>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+            Combining teams for one game is done while scoring it, on
+            <MudLink Href="/Games/Points">Game Scoring</MudLink>.
+        </MudText>
+    </MudStack>
+    </MudPaper>
+
+    @* ---------- games ---------- *@
+    <MudPaper Elevation="0" Class="pa-4 setup-section">
+    <MudStack Spacing="2">
+        <MudStack Row Class="align-center justify-space-between flex-wrap gap-2">
+            <MudText Typo="Typo.subtitle1" Class="setup-section-title"><b>Games</b></MudText>
+            <MudButton Size="Size.Small"
+                       Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="@AddGame">
+                Add a game
+            </MudButton>
+        </MudStack>
+
+        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+            A game added here is planned: it stays off the wall and out of the reveal until
+            it is scored. "New game" on the scoring page picks up the next one waiting.
+        </MudText>
+
+        @if (SetupGames.Count == 0)
+        {
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                Nothing set up yet. Add the night's games, or just start scoring.
+            </MudText>
+        }
+
+        @foreach (int number in SetupGames)
+        {
+            int            game       = number;
+            GameDefinition definition = Board.GameAt(game);
+
+            IReadOnlyList<GameRound> rounds = RoundsOf(game);
+
+            <MudPaper Elevation="4"
+                      Class="@($"pa-3 setup-game-card {(definition.CountsTowardNight() ? "" : "setup-game-out")}")">
+                <MudStack Spacing="3">
+                    <div class="setup-game-head">
+                        <span class="setup-game-number">@game</span>
+
+                        <MudTextField T="string"
+                                      Value="@definition.Name"
+                                      ValueChanged="@(name => SetGameName(game, name))"
+                                      Placeholder="@($"Game {game}")"
+                                      Label="Name"
+                                      DebounceInterval="500"
+                                      MaxLength="@GameTeamDefaults.MaxGameNameLength"
+                                      Margin="Margin.Dense"
+                                      Variant="Variant.Outlined"/>
+
+                        @* Empty is the normal state: the game follows the one before it,
+                           which is how a new game inherits without being told. *@
+                        <MudNumericField T="int?"
+                                         Value="@definition.Multiplier"
+                                         ValueChanged="@(multiplier => SetGameMultiplier(game, multiplier))"
+                                         Label="Multiplier"
+                                         Placeholder="@InheritedMultiplier(game).ToString()"
+                                         Min="@GameMultipliers.Min"
+                                         Max="@GameMultipliers.Max"
+                                         Margin="Margin.Dense"
+                                         Variant="Variant.Outlined"
+                                         Clearable/>
+
+                        <span class="setup-game-hint">
+                            ×@Board.MultiplierFor(game)@(definition.Multiplier == null ? " inherited" : "")
+                        </span>
+
+                        <span class="setup-game-actions">
+                            <MudIconButton Icon="@(definition.Hidden
+                                                     ? Icons.Material.Filled.Visibility
+                                                     : Icons.Material.Filled.VisibilityOff)"
+                                           Size="Size.Small"
+                                           Title="@(definition.Hidden
+                                                      ? "Count this game again"
+                                                      : "Stop this game counting")"
+                                           aria-label="@(definition.Hidden
+                                                           ? $"Count game {game} again"
+                                                           : $"Hide game {game}")"
+                                           OnClick="@(() => ToggleHidden(game))"/>
+                            <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline"
+                                           Size="Size.Small"
+                                           Color="Color.Error"
+                                           Title="Delete this game and its points"
+                                           aria-label="@($"Delete game {game}")"
+                                           OnClick="@(() => AskDelete(game))"/>
+                        </span>
+                    </div>
+
+                    @if (!definition.CountsTowardNight())
+                    {
+                        <MudAlert Severity="@(definition.Hidden ? Severity.Warning : Severity.Info)" Dense>
+                            @(definition.Hidden
+                                ? "Hidden. Not on the wall, no round in the reveal, and its points do not count."
+                                : "Planned. Appears once it is scored.")
+                        </MudAlert>
+                    }
+
+                    <MudStack Row Class="align-center flex-wrap gap-2">
+                        <MudButton Size="Size.Small"
+                                   Variant="Variant.Text"
+                                   StartIcon="@(definition.IsPlacement()
+                                                  ? Icons.Material.Filled.TouchApp
+                                                  : Icons.Material.Filled.EmojiEvents)"
+                                   OnClick="@(() => TogglePlacement(game))">
+                            @(definition.IsPlacement() ? "Score by tapping instead" : "Score by placement")
+                        </MudButton>
+                    </MudStack>
+
+                    @if (definition.IsPlacement())
+                    {
+                        <MudStack Row Class="flex-wrap gap-1">
+                            @foreach (GamePlacements.PlacementPreset preset in GamePlacements.Presets)
+                            {
+                                GamePlacements.PlacementPreset captured = preset;
+
+                                bool active = preset.Matches(definition.PlacementPoints, Teams.Count);
+
+                                <MudChip T="string"
+                                         Size="Size.Small"
+                                         Variant="@(active ? Variant.Filled : Variant.Outlined)"
+                                         Color="@(active ? Color.Primary : Color.Default)"
+                                         Title="@preset.Summary"
+                                         OnClick="@(() => SetPlacementPreset(game, captured))">
+                                    @preset.Name
+                                </MudChip>
+                            }
+                        </MudStack>
+
+                        @* Ordinal on the left, what it pays on the right. Scored points,
+                           like everything a leader touches. *@
+                        <div class="placing-values">
+                            @for (int index = 1; index <= PlacesIn(game); index++)
+                            {
+                                int place = index;
+
+                                <div class="placing-value">
+                                    <span class="placing-value-ordinal">@GamePlacements.Ordinal(place)</span>
+                                    <span class="placing-value-points">@PlacementValue(game, place)</span>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Remove"
+                                                   Size="Size.Small"
+                                                   Variant="Variant.Outlined"
+                                                   aria-label="@($"One point less for {GamePlacements.Ordinal(place)}")"
+                                                   OnClick="@(() => NudgePlacementValue(game, place, -1))"/>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                                   Size="Size.Small"
+                                                   Variant="Variant.Filled"
+                                                   Color="Color.Primary"
+                                                   aria-label="@($"One point more for {GamePlacements.Ordinal(place)}")"
+                                                   OnClick="@(() => NudgePlacementValue(game, place, 1))"/>
+                                </div>
+                            }
+                        </div>
+
+                        <MudStack Row Class="align-center flex-wrap gap-1">
+                            <MudButton Size="Size.Small"
+                                       Variant="Variant.Outlined"
+                                       StartIcon="@Icons.Material.Filled.Add"
+                                       Disabled="@(PlacesIn(game) >= GamePlacements.MaxPlaces)"
+                                       OnClick="@(() => AddPlace(game))">
+                                Add a place
+                            </MudButton>
+                            <MudButton Size="Size.Small"
+                                       Variant="Variant.Outlined"
+                                       StartIcon="@Icons.Material.Filled.Remove"
+                                       Disabled="@(PlacesIn(game) <= 1)"
+                                       OnClick="@(() => RemovePlace(game))">
+                                One fewer
+                            </MudButton>
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                Places past the list score nothing. Changing a place re-prices
+                                the rounds already scored.
+                            </MudText>
+                        </MudStack>
+                    }
+
+                    @if (rounds.Count > 0)
+                    {
+                        <table class="totals-table rounds-table">
+                            <thead>
+                                <tr>
+                                    <th class="totals-team">Team</th>
+                                    @foreach (GameRound round in rounds)
+                                    {
+                                        GameRound captured = round;
+
+                                        <th class="totals-number">
+                                            @* Parenthesised: Razor reads "R@round" as an
+                                               email address. *@
+                                            <span class="totals-head-name">R@(round.Number)</span>
+                                            <span class="rounds-head-actions">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                               Size="Size.Small"
+                                                               aria-label="@($"Edit round {round.Number}")"
+                                                               OnClick="@(() => OpenRound(game, captured))"/>
+                                                <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline"
+                                                               Size="Size.Small"
+                                                               aria-label="@($"Delete round {round.Number}")"
+                                                               OnClick="@(() => DeleteRound(captured))"/>
+                                            </span>
+                                        </th>
+                                    }
+                                    <th class="totals-number totals-total">Game</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (GameTeamDefinition team in Teams)
+                                {
+                                    int index = team.Index;
+
+                                    <tr>
+                                        <th scope="row"
+                                            class="totals-team"
+                                            style="@($"--team: {team.Colour};")">
+                                            @team.Name
+                                        </th>
+                                        @foreach (GameRound round in rounds)
+                                        {
+                                            <td class="totals-number @(round.PlaceFor(index) == null ? "totals-zero" : "")">
+                                                @RoundCell(round, index)
+                                            </td>
+                                        }
+                                        <td class="totals-number totals-total">
+                                            @ScoredIn(game, index)
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+
+                    @if (definition.IsPlacement())
+                    {
+                        <MudButton Size="Size.Small"
+                                   Variant="Variant.Outlined"
+                                   StartIcon="@Icons.Material.Filled.PlaylistAdd"
+                                   OnClick="@(() => OpenRound(game, null))">
+                            Add a round
+                        </MudButton>
+                    }
+                    else
+                    {
+                        @* A tapped game has no heats to rewrite, so what it needs is the
+                           score itself. The correction is written as the difference, so a
+                           phone still scoring in the field merges with it. *@
+                        <div class="setup-scores">
+                            @foreach (GameTeamDefinition team in Teams)
+                            {
+                                int index = team.Index;
+
+                                <div class="setup-score" style="@($"--team: {team.Colour};")">
+                                    <span class="setup-score-name">@team.Name</span>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Remove"
+                                                   Size="Size.Small"
+                                                   Variant="Variant.Outlined"
+                                                   aria-label="@($"One point less for {team.Name}")"
+                                                   OnClick="@(() => NudgeScore(game, index, -1))"/>
+                                    <MudNumericField T="int"
+                                                     Value="@ScoredIn(game, index)"
+                                                     ValueChanged="@(points => SetScore(game, index, points))"
+                                                     Margin="Margin.Dense"
+                                                     Variant="Variant.Outlined"
+                                                     HideSpinButtons
+                                                     Class="setup-score-field"/>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                                   Size="Size.Small"
+                                                   Variant="Variant.Filled"
+                                                   Color="Color.Primary"
+                                                   aria-label="@($"One point more for {team.Name}")"
+                                                   OnClick="@(() => NudgeScore(game, index, 1))"/>
+                                </div>
+                            }
+                        </div>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                            Scored points, before the ×@Board.MultiplierFor(game) the screens apply.
+                        </MudText>
+                    }
+                </MudStack>
+            </MudPaper>
+        }
+    </MudStack>
+    </MudPaper>
+</MudStack>
+
+@* ---------- deleting a game ---------- *@
+<MudDialog @bind-Visible="_deleteOpen" Options="@(new DialogOptions { MaxWidth = MaxWidth.ExtraSmall, FullWidth = true })">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Delete @Board.GameAt(_deleteGame).DisplayName()?</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.body2">
+            @if (Points.HasScores(ServiceId, _deleteGame))
+            {
+                <text>
+                    Everything scored in it goes too. Hiding it instead keeps the points, in
+                    case it turns out the game should have counted after all.
+                </text>
+            }
+            else
+            {
+                <text>Nothing has been scored in it.</text>
+            }
+        </MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _deleteOpen = false)">Cancel</MudButton>
+        <MudButton Color="Color.Error" OnClick="@DeleteGame">Delete</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@* ---------- one round, rewritten ---------- *@
+<MudDialog @bind-Visible="_roundEditorOpen" Options="@(new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true })">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@EditTitle</MudText>
+        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+            Tap a team to put it on the end of the order. Everything left below did not run.
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            @if (_editOrder.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info" Dense>
+                    Nobody placed yet.@(_editRoundKey == null ? "" : " Saving now deletes this round.")
+                </MudAlert>
+            }
+
+            @for (int index = 0; index < _editOrder.Count; index++)
+            {
+                int  groupIndex = index;
+                int  place      = GamePlacementOrder.PlaceOf(_editOrder, groupIndex);
+                bool tied       = _editOrder[groupIndex].Count > 1;
+
+                <div class="round-place">
+                    <div class="round-place-head">
+                        <span class="round-place-ordinal">
+                            @GamePlacements.Ordinal(place)@(tied ? " — tied" : "")
+                        </span>
+                        <span class="round-place-points">@EditPointsFor(place)</span>
+                        <MudIconButton Icon="@Icons.Material.Filled.Remove"
+                                       Size="Size.Small"
+                                       Variant="Variant.Outlined"
+                                       aria-label="@($"One point less for {GamePlacements.Ordinal(place)}")"
+                                       OnClick="@(() => NudgeEditPoints(place, -1))"/>
+                        <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                       Size="Size.Small"
+                                       Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       aria-label="@($"One point more for {GamePlacements.Ordinal(place)}")"
+                                       OnClick="@(() => NudgeEditPoints(place, 1))"/>
+                    </div>
+
+                    @foreach (int team in _editOrder[groupIndex])
+                    {
+                        int                captured = team;
+                        GameTeamDefinition entrant  = Teams[captured];
+
+                        <div class="round-team" style="@($"--team: {entrant.Colour};")">
+                            <span class="round-team-name">@entrant.Name</span>
+                            @if (groupIndex > 0 && !tied)
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.CallMerge"
+                                               Size="Size.Small"
+                                               Title="@($"Tie with {GamePlacements.Ordinal(GamePlacementOrder.PlaceOf(_editOrder, groupIndex - 1))}")"
+                                               aria-label="@($"Tie {entrant.Name} with the place above")"
+                                               OnClick="@(() => EditTieWithAbove(groupIndex, captured))"/>
+                            }
+                            @if (tied)
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.CallSplit"
+                                               Size="Size.Small"
+                                               Title="Out of the tie, one place down"
+                                               aria-label="@($"Take {entrant.Name} out of the tie")"
+                                               OnClick="@(() => EditSplit(groupIndex, captured))"/>
+                            }
+                            <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                           Size="Size.Small"
+                                           Title="Did not run"
+                                           aria-label="@($"Take {entrant.Name} out of this round")"
+                                           OnClick="@(() => EditRemove(captured))"/>
+                        </div>
+                    }
+                </div>
+            }
+
+            @if (EditUnplaced.Count > 0)
+            {
+                <MudDivider/>
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">Did not place</MudText>
+                <div class="round-unplaced">
+                    @foreach (GameTeamDefinition team in EditUnplaced)
+                    {
+                        int index = team.Index;
+
+                        <button type="button"
+                                class="round-chip"
+                                style="@($"--team: {team.Colour};")"
+                                @onclick="@(() => EditPlace(index))">
+                            @team.Name
+                        </button>
+                    }
+                </div>
+                @if (_editOrder.Count > 0)
+                {
+                    <MudButton Size="Size.Small"
+                               Variant="Variant.Text"
+                               StartIcon="@Icons.Material.Filled.CallMerge"
+                               OnClick="@(() => EditTie(EditUnplaced[0].Index))">
+                        Tie @EditUnplaced[0].Name for @GamePlacements.Ordinal(GamePlacementOrder.TiePlace(_editOrder) ?? 1)
+                    </MudButton>
+                }
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _roundEditorOpen = false)">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="@SaveRound">Save round</MudButton>
+    </DialogActions>
+</MudDialog>

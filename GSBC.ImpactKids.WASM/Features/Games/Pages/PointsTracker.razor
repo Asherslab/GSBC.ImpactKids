@@ -38,15 +38,28 @@
                     <MudMenuItem Icon="@Icons.Material.Filled.Merge" OnClick="@OpenAlliances">
                         Combine teams for this game
                     </MudMenuItem>
-                    @if (GamesPlayed > 1)
+                    @* Per game and never inherited - the next game is a tapping game again
+                       unless somebody says otherwise. *@
+                    <MudMenuItem Icon="@(IsPlacement ? Icons.Material.Filled.Check : Icons.Material.Filled.EmojiEvents)"
+                                 OnClick="@TogglePlacement">
+                        @(IsPlacement ? "Score by tapping instead" : "Score by placement")
+                    </MudMenuItem>
+                    @* Games set up ahead of the night belong in here too, or a game named
+                       in the hall could only be reached by stepping through the ones
+                       before it. *@
+                    @if (SelectableGames.Count > 1)
                     {
                         <MudDivider/>
-                        @for (int game = 1; game <= GamesPlayed; game++)
+                        @foreach (int game in SelectableGames)
                         {
-                            int number = game;
-                            <MudMenuItem Icon="@(number == Board.CurrentGame ? Icons.Material.Filled.Check : null)"
+                            int  number  = game;
+                            bool planned = Board.GameAt(number).Planned;
+
+                            <MudMenuItem Icon="@(number == Board.CurrentGame
+                                                   ? Icons.Material.Filled.Check
+                                                   : planned ? Icons.Material.Filled.Schedule : null)"
                                          OnClick="@(() => GoToGame(number))">
-                                @Board.GameAt(number).DisplayName()
+                                @Board.GameAt(number).DisplayName()@(planned ? " — planned" : "")
                             </MudMenuItem>
                         }
                     }
@@ -55,8 +68,12 @@
 
             @if (CanGoForward)
             {
+                @* An arrow, not a plus, whenever there is a game to move on to - including
+                   one planned in advance. Offering to create game 7 while game 7 sits there
+                   named and waiting is how a night ends up with two of them. *@
                 <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
-                               aria-label="Next game"
+                               aria-label="@($"Go to {Board.GameAt(NextGameNumber ?? Board.CurrentGame).DisplayName()}")"
+                               Title="@($"Go to {Board.GameAt(NextGameNumber ?? Board.CurrentGame).DisplayName()}")"
                                OnClick="@NextGame"/>
             }
             else
@@ -82,6 +99,15 @@
                 </MudMenuItem>
                 <MudMenuItem Icon="@Icons.Material.Filled.Merge" OnClick="@OpenAlliances">
                     Combine teams for this game
+                </MudMenuItem>
+                @* Also on the game menu. It is a property of the game, so it belongs
+                   there - but it is the sort of thing that gets hunted for here, and
+                   buried in Points setup it was found by nobody. *@
+                <MudMenuItem Icon="@(IsPlacement ? Icons.Material.Filled.Check : Icons.Material.Filled.EmojiEvents)"
+                             OnClick="@TogglePlacement">
+                    @(IsPlacement
+                        ? $"Score {CurrentGame.DisplayName()} by tapping instead"
+                        : $"Score {CurrentGame.DisplayName()} by placement")
                 </MudMenuItem>
                 <MudDivider/>
                 <MudMenuItem Icon="@(Board.Paused ? Icons.Material.Filled.PlayArrow : Icons.Material.Filled.Pause)"
@@ -132,6 +158,32 @@
                  OnClick="@(() => _settingsOpen = true)">
             @EffectiveMultiplier on screen
         </MudChip>
+        @if (IsPlacement)
+        {
+            @* Outlined like the other status chips. It is what the game is paying, not a
+               warning, and a filled chip made it the loudest thing above the grid. *@
+            <MudChip T="string"
+                     Size="Size.Small"
+                     Variant="Variant.Outlined"
+                     Icon="@Icons.Material.Filled.EmojiEvents"
+                     Title="Tap to change what each place is worth"
+                     OnClick="@(() => _settingsOpen = true)">
+                @PlacementSummary
+            </MudChip>
+        }
+        @if (Rounds.Count > 0)
+        {
+            @* Which heat we are up to, and the way back to one that went wrong. Collapsed,
+               because the grid is fighting for every pixel on a phone. *@
+            <MudChip T="string"
+                     Size="Size.Small"
+                     Variant="@(_roundsOpen ? Variant.Filled : Variant.Outlined)"
+                     Color="Color.Default"
+                     Icon="@Icons.Material.Filled.Flag"
+                     OnClick="@(() => _roundsOpen = !_roundsOpen)">
+                @Rounds.Count @(Rounds.Count == 1 ? "round" : "rounds")
+            </MudChip>
+        }
         @if (CurrentGame.HasAlliances())
         {
             <MudChip T="string"
@@ -141,6 +193,18 @@
                      Icon="@Icons.Material.Filled.Merge"
                      OnClick="@OpenAlliances">
                 Teams combined
+            </MudChip>
+        }
+        @* A voided game still takes taps - it just does not count anywhere. Without this
+           a leader would score a whole game into a hole. *@
+        @if (CurrentGame.Hidden)
+        {
+            <MudChip T="string"
+                     Size="Size.Small"
+                     Variant="Variant.Filled"
+                     Color="Color.Error"
+                     Icon="@Icons.Material.Filled.VisibilityOff">
+                Not counting — hidden on Totals
             </MudChip>
         }
         @if (Board.Hidden || Board.Paused)
@@ -164,8 +228,11 @@
     else
     {
         <div class="points-grid @(Compact ? "points-grid-scroll" : "points-grid-fill")" style="@GridStyle">
-            @foreach (Side side in Sides)
+            @for (int position = 0; position < Sides.Count; position++)
             {
+                int  sideIndex = position;
+                Side side      = Sides[position];
+
                 @* ShowCurrentGame: a combined side has no single running total to lead
                    with, so it always shows the game it is playing. *@
                 <TeamScoreTile Label="@side.Label"
@@ -179,9 +246,57 @@
                                Compact="@Compact"
                                StepPoints="@Board.StepPoints"
                                BonusPoints="@Board.BonusPoints"
-                               OnAdd="@(points => AddSidePoints(side, points))"/>
+                               OnAdd="@(points => AddSidePoints(side, points))"
+                               Placement="@IsPlacement"
+                               Place="@PlaceOfSide(sideIndex)"
+                               PlacePoints="@PointsForPlace(PlaceOfSide(sideIndex) ?? 0)"
+                               NextPlace="@NextPlace"
+                               TiePlace="@TiePlace"
+                               OnPlace="@(() => PlaceSide(sideIndex))"
+                               OnTie="@(() => TieSide(sideIndex))"/>
             }
         </div>
+
+        @if (IsPlacement)
+        {
+            @* One award for the whole race: it lands on one group, undoes in one tap and
+               cannot leave half a result behind. *@
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Size="Size.Large"
+                       FullWidth
+                       StartIcon="@Icons.Material.Filled.EmojiEvents"
+                       Disabled="@(PlacedCount == 0)"
+                       OnClick="@AwardRound">
+                @(PlacedCount == 0
+                    ? $"Place the teams to score round {Rounds.Count + 1}"
+                    : $"Award round {Rounds.Count + 1}")
+            </MudButton>
+        }
+
+        @if (_roundsOpen && Rounds.Count > 0)
+        {
+            <MudPaper Elevation="2" Class="pa-2">
+                <div class="rounds-list">
+                    @foreach (GameRound round in Rounds)
+                    {
+                        GameRound captured = round;
+
+                        <div class="rounds-row">
+                            @* Parenthesised: Razor reads "R@round" as an email address and
+                               prints it verbatim. *@
+                            <span class="rounds-number">R@(round.Number)</span>
+                            <span class="rounds-detail">@RoundSummary(round)</span>
+                            <MudIconButton Icon="@Icons.Material.Filled.Undo"
+                                           Size="Size.Small"
+                                           aria-label="@($"Remove round {round.Number}")"
+                                           OnClick="@(() => DeleteRound(captured))"/>
+                        </div>
+                    }
+                </div>
+                <div class="rounds-hint">Change a placing or a score on the totals page.</div>
+            </MudPaper>
+        }
 
         <MudPaper Elevation="2" Class="pa-2">
             @* Plain elements, not MudText - scoped CSS does not reach a child component's
@@ -437,6 +552,59 @@
                              Min="1"
                              Max="100"
                              Variant="Variant.Outlined"/>
+
+            <MudDivider/>
+
+            @* Placement values are picked, never typed - the whole point is that a race
+               is scored with one tap per team. Editing a single place, or a score after
+               the fact, lives on the totals page where there is room and time. *@
+            <MudText Typo="Typo.subtitle2">Scored by placement</MudText>
+
+            @if (IsPlacement)
+            {
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                    @CurrentGame.DisplayName() pays @PlacementSummary in scored points.
+                    On screen that is ×@Board.MultiplierFor(Board.CurrentGame).
+                </MudText>
+
+                <MudStack Row Class="flex-wrap gap-1">
+                    @foreach (GamePlacements.PlacementPreset preset in GamePlacements.Presets)
+                    {
+                        GamePlacements.PlacementPreset captured = preset;
+                        bool                           active   = preset.Matches(CurrentGame.PlacementPoints, Sides.Count);
+
+                        <MudChip T="string"
+                                 Size="Size.Small"
+                                 Variant="@(active ? Variant.Filled : Variant.Outlined)"
+                                 Color="@(active ? Color.Primary : Color.Default)"
+                                 Title="@preset.Summary"
+                                 OnClick="@(() => SetPlacementPreset(captured))">
+                            @preset.Name
+                        </MudChip>
+                    }
+                </MudStack>
+
+                <MudButton Size="Size.Small"
+                           Variant="Variant.Outlined"
+                           StartIcon="@Icons.Material.Filled.TouchApp"
+                           OnClick="@TogglePlacement">
+                    Score @CurrentGame.DisplayName() by tapping instead
+                </MudButton>
+            }
+            else
+            {
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                    For a race: tap the teams in the order they finished and award the
+                    whole round at once.
+                </MudText>
+
+                <MudButton Size="Size.Small"
+                           Variant="Variant.Outlined"
+                           StartIcon="@Icons.Material.Filled.EmojiEvents"
+                           OnClick="@TogglePlacement">
+                    Score @CurrentGame.DisplayName() by placement
+                </MudButton>
+            }
 
             <MudDivider/>
 

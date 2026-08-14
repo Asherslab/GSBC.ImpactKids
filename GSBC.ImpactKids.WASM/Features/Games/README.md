@@ -152,6 +152,150 @@ Consequences worth knowing:
 - Screen numbers are grouped (`GameScoreFormat`) - "15,000" rather than counting noughts
   off a wall.
 
+## Placement scoring
+
+A race is scored by finishing order, not by tapping: one tap per team, then one award for
+the whole heat. `GamePlacements` owns what a place is worth; `GamePlacementOrder` owns the
+order being built.
+
+- **The values on `GameDefinition.PlacementPoints` are the mode.** Non-null means the game
+  is a race; there is no second flag to keep in step. It is in the list of things
+  `WithGame` and `NormaliseGames` count as worth keeping, and in the team-count reset's
+  filter - miss one and a placement game with no name vanishes on sync.
+- **Placement does not inherit forward, unlike the multiplier.** A multiplier is a rate; a
+  way of playing is not. Game 4 quietly becoming a race because game 3 was one is the
+  confusion the feature exists to remove.
+- **Values are scored points**, like everything a leader touches - 10, not 10,000. The
+  wall multiplies as usual.
+- **Ties: everyone on the place gets its full value and the next place is skipped.**
+  Competition ranking, the same rule as the board and the reveal. Not an average - a
+  number on the wall that matches no placing is unreadable, and two teams on 950 with
+  nobody on 1st is worse.
+- **Combined sides place as one side**, so their teams land on the same place and read as
+  tied on the totals page. That is what happened - they crossed the line together - so it
+  is not a case to special case away.
+- **A place worth nothing is still a place**, so it gets a record. That is why
+  `GamePointRecord.Place` is stored rather than inferred from the points, and why
+  `GamePointRecordService.Create` lets a zero through when a place is set: otherwise
+  "came fourth when only three score" and "did not run" are the same row.
+
+### Rounds
+
+Heats of one game **all carry that game's number**. Nothing about the tally, the display
+or the reveal changes - game 3 is still one round of the reveal with one total.
+
+A round is not stored as a thing of its own. It is the records of one award read back
+together, keyed by the `GroupId` they share, which is what undo already worked on. Round
+numbers are worked out by ordering those groups - a label, nothing computes off it. Two
+phones scoring the same game offline would both call theirs "round 2", so a stored number
+would be wrong on merge in a way a derived one is not.
+
+Rewriting a round (the totals page) deletes its records and writes new ones under the same
+group id and the same awarded time, so an edited heat keeps its place in the order.
+
+Taking a record back is where the duplicates come from, and there are **three** rules
+holding it together. All three exist because a team scored twice on the wall is the one
+mistake a night cannot recover from.
+
+1. **`MergeRecordsFromServer` keeps a local tombstone while its delete is still queued.**
+   The server still has the record as live, and a refresh landing in that window puts the
+   points straight back.
+2. **A record being taken back is always tombstoned and always queued for deletion, even
+   when its create is still sitting in the outbox.** A flush already running holds its own
+   snapshot of that queue, so the create may be on the wire right now; treating "still
+   queued" as "the server never saw it" leaves it to land with nothing ever deleting it.
+   The cost when the create really had not gone is one delete the server answers "not
+   found" to, which the queue drops.
+3. **After a create is accepted, the flush re-checks whether that record has since been
+   taken back**, and queues the delete itself if so. That is what closes the window rather
+   than narrowing it.
+
+Re-pricing is the stress test: one press of a place's `+` rewrites *every* heat in the
+game, back to back, against a flush that is already in flight. Eight presses in a row must
+leave exactly one live record per team per round.
+
+Changing what a place pays re-prices the heats already scored in that game. A leader who
+decides the race should have been worth more means the round they just watched.
+
+### Where each half lives
+
+`/Games/Points` does the cheap gestures only: tap to place, `= 1st` to tie with the last
+place given out, one button to award, undo. `/Games/Scores` is where a placing, a score or
+a whole round is changed after the fact - it is used on a desktop, so the round editor is
+built around a table of teams against rounds rather than a phone list.
+
+## Planning a night ahead, and voiding a game
+
+A big night is laid out in the hall before anybody reaches the field. Two flags on
+`GameDefinition` carry it, and **one rule decides everything**:
+`CountsTowardNight() = !Planned && !Hidden`.
+
+- **`Planned`** - added ahead of time and not part of the night yet. Clears itself the
+  moment the game is opened or scored (`GoToGameNumber`, `EnsureCurrentGamePlayed`), so
+  there is no "start it" step to forget. `New game` picks up the lowest planned game after
+  the current one rather than opening a blank one, which is what makes planning pay off.
+- **`Hidden`** - voided. Out of the tally, off the wall, no round in the reveal, and its
+  points stop counting. Its records are left alone, so un-hiding restores the game exactly;
+  hiding must never be a destructive act wearing a display setting's clothes. Never clears
+  itself - it was somebody's decision.
+
+A game that counts for nothing must have **no column**, not a column of zeroes: otherwise
+the row stops adding up to the total, and a child comparing them will notice before you do.
+
+**The filter is applied twice and must match.** `GameBoard.CountingGames(gamesPlayed)` on
+the phone, and the same test over `DbGame` in `GameDisplayService`. Everything downstream is
+positional over that list - `GameNames`, `PerGamePoints`, the tally's columns, the reveal's
+running order - so one end filtering where the other does not slides every later reveal step
+out of place. Two consequences already paid for:
+
+- `CurrentGamePoints` is summed from the records, **not** read as `perGamePoints[currentGame - 1]`.
+  Once the list holds only counting games, its positions are not game numbers.
+- `GamesPlayed` on the response is the *count of counting games*, not the highest number
+  reached.
+
+Deleting a game clears its records and drops its definition, but **the numbers of later
+games are left alone** - every record names its game, so renumbering would move a phone's
+queued taps into the wrong game. A game deleted from the middle is hidden as well, or the
+night reaching past it would bring it back as an empty column.
+
+Correcting a tapped game writes the **difference** (`SetGamePointsAsync`), so a laptop
+correction merges with a phone still scoring instead of fighting it. Placement games are not
+corrected that way - their rounds are the record of what happened, and an invisible
+adjustment beside them would stop the heats adding up to the game.
+
+## Where things live on the totals page
+
+Two tabs, because the page does two jobs: **Scores** (the tally, and the reveal remote) and
+**Set up** (`GameSetup`). Tabs rather than another chip pair - the chips below already mean
+"how should this number read", and two rows of chips meaning different things is how a page
+stops being readable.
+
+`GameSetup` exists because a game used to be edited in two panels at once - name and
+multiplier in one, placings and heats in another - and neither could add a game, void one,
+or fix a score that went in wrong. **A game is one thing, so it gets one card**, holding its
+name, multiplier, scoring mode, placement values, heats and scores. Everything in that
+component is in scored points; the tally beside it is where screen numbers are checked.
+
+When markup moves between components, its **scoped CSS has to move with it**. The
+`b-<hash>` attribute is stamped per component, so a rule left behind matches nothing and
+fails silently - the elements are all still there, just unstyled.
+
+Three ways a style silently does nothing here, all of which cost time:
+
+- **`--mud-palette-background-grey` does not exist** - MudBlazor spells it `gray`. An
+  invalid variable makes the declaration a no-op, so a card simply has no background. That
+  is what left the coloured edge on each score row standing on nothing, reading as a stray
+  tick hanging off the row before it.
+- **Elevation alone separates nothing in this theme.** MudBlazor's shadows are black at low
+  alpha and the background is near black, so `Elevation="4"` on a card whose surface matches
+  its parent is invisible. `MudPaper` defaults to the same surface as its parent, so
+  nesting one in another needs an explicit colour. Depth reads as *lighter*: the set up page
+  goes recessed section → raised card → inset row, with elevation on top of the surface
+  shift rather than instead of it. Both were tried in the browser and compared.
+- **A class on a MudBlazor component gets no scope attribute**, so `.my-class ::deep input`
+  never matches when `.my-class` sits on the `MudTextField` itself. Put it on your own
+  wrapper element and reach in from there.
+
 ## Scoring data
 
 Points are **append only deltas** (`GamePointRecord`), so two phones scoring the same game
@@ -168,6 +312,12 @@ silently vanishes on sync:
 A field on `GameDefinition` needs the same treatment minus the migration - `DbGame` is a
 JSON column - plus a line in `NormaliseGames`, which is also what decides whether a game
 entry is worth keeping at all.
+
+A field on `GamePointRecord` needs `CreateGamePointRecordRequest`,
+`GamePointRecordServices/Create` (which is also where the record is validated) and
+`DbGamePointRecord` plus a migration. The service's own outbox writes both the record and
+the request side by side, so a field added to one and not the other survives locally and
+is lost on sync.
 
 `GameDisplayService.Signature()` is what decides whether the stream bothers pushing. A new
 field the display renders **must** be added there or the wall will never see it change.

@@ -19,9 +19,15 @@ public class DbGamePointRecord
 
     /// <summary>
     /// Shared by the sibling records written when an alliance is scored, so undo can
-    /// take the whole award back.
+    /// take the whole award back, and by every record of one placement round.
     /// </summary>
     public Guid? GroupId { get; set; }
+
+    /// <summary>
+    /// Finishing place for a game scored by placement, 1 based, null for tapped points.
+    /// See <see cref="Shared.Contracts.Entities.Features.Games.GamePointRecord.Place"/>.
+    /// </summary>
+    public int? Place { get; set; }
 
     public required DateTimeOffset Awarded { get; set; }
 

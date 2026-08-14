@@ -1,0 +1,385 @@
+/* Three unrelated groups of controls - the night, the teams, the games - each on its own
+   raised surface. Headings alone were not enough to keep them apart. */
+/* Recessed, so the cards inside it can be the things that stand up. In a dark theme
+   "raised" reads as lighter, not as a heavier shadow: MudBlazor's elevation is a black
+   shadow at low alpha, which over a near-black background does almost nothing on its own.
+   Elevation is worth having on top of the surface shift, not instead of it. */
+.setup-section {
+    border-radius: .75rem;
+    background: var(--mud-palette-background);
+    border: 1px solid var(--mud-palette-divider);
+}
+
+.setup-section-title {
+    letter-spacing: .01em;
+}
+
+/* One card per game, so everything about a game is in one place. */
+.setup-game-card {
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: .75rem;
+    /* Lighter than the section it sits on. MudPaper defaults to the same surface colour as
+       its parent, so elevation alone left every card invisible. */
+    background: var(--mud-palette-surface);
+}
+
+/* Planned or voided: still editable, visibly not part of the night. */
+.setup-game-out {
+    opacity: .75;
+    border-style: dashed;
+}
+
+.setup-game-head {
+    display: grid;
+    grid-template-columns: auto minmax(8rem, 1fr) 7rem auto auto;
+    align-items: center;
+    gap: .5rem;
+}
+
+.setup-game-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 999px;
+    background: var(--mud-palette-action-default-hover);
+    font-size: .8rem;
+    font-weight: 700;
+}
+
+.setup-game-hint {
+    font-size: .75rem;
+    opacity: .7;
+    white-space: nowrap;
+}
+
+.setup-game-actions {
+    display: flex;
+    gap: .15rem;
+    justify-self: end;
+}
+
+.setup-team-count {
+    min-width: 1.75rem;
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.setup-teams {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: .6rem;
+}
+
+/* A card per team, keyed down its edge in the team's own colour: the colour is how a team
+   is found, and it should be readable without opening the picker. */
+.setup-team {
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+
+    padding: .6rem;
+    border: 1px solid var(--mud-palette-lines-default);
+    border-left: 5px solid var(--team);
+    border-radius: .5rem;
+    /* Raised off the recessed section, like the game cards. Note the spelling: there is no
+       --mud-palette-background-grey, so the British version silently painted nothing. */
+    background: var(--mud-palette-surface);
+}
+
+/* Off .setup-team, not off the class put on the MudTextField: a class on a MudBlazor
+   component's own markup gets no scope attribute, so that rule matched nothing. ::deep
+   works here because the wrapper is our own div. */
+.setup-team ::deep input {
+    color: var(--team);
+    font-weight: 700;
+}
+
+.setup-team-colour-row {
+    display: flex;
+    align-items: center;
+    gap: .25rem;
+}
+
+.setup-team-colour {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* Fixing a tapped game: one row per team, steppers plus the number itself. This page is
+   used on a desktop, so typing a score is allowed here where it is not on a phone. */
+.setup-scores {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: .35rem;
+}
+
+.setup-score {
+    display: grid;
+    grid-template-columns: minmax(3.5rem, 1fr) auto 4.5rem auto;
+    align-items: center;
+    gap: .35rem;
+
+    padding: .3rem .5rem;
+    border: 1px solid var(--mud-palette-divider);
+    border-left: 4px solid var(--team);
+    border-radius: .4rem;
+    /* Inset within the card, so a score reads as a field rather than as another card. The
+       row also needs a body at all: without one the coloured edge stood on nothing and read
+       as a stray tick hanging off the row before it. */
+    background: var(--mud-palette-background);
+}
+
+.setup-score-name {
+    color: var(--team);
+    font-size: .85rem;
+    font-weight: 700;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 700px) {
+    .setup-game-head {
+        grid-template-columns: auto 1fr auto;
+    }
+
+    .setup-game-hint {
+        grid-column: 2 / -1;
+    }
+}
+
+
+/* ---------- moved here with the markup ----------
+   Scoped CSS is stamped per component, so a rule left on the page it came from would
+   silently do nothing here: the elements exist, they just never match. */
+
+.totals-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+}
+
+.totals-table th,
+.totals-table td {
+    padding: .5rem .75rem;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.totals-table thead th {
+    font-size: .7rem;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    vertical-align: bottom;
+    border-bottom: 1px solid var(--mud-palette-divider);
+}
+
+.totals-head-name {
+    display: block;
+}
+
+/* The multiplier belongs with the column it applies to - a night with one game at 100
+   and the rest at 1000 is otherwise a column of numbers that look wrong. */
+.totals-head-sub {
+    display: block;
+    font-size: .65rem;
+    font-weight: 400;
+    opacity: .6;
+}
+
+.totals-table tbody tr:not(:last-child) td,
+.totals-table tbody tr:not(:last-child) th {
+    border-bottom: 1px solid var(--mud-palette-divider);
+}
+
+.totals-table tfoot td,
+.totals-table tfoot th {
+    border-top: 2px solid var(--mud-palette-divider);
+    font-size: .8rem;
+    opacity: .75;
+}
+
+.totals-place {
+    width: 3rem;
+    text-align: center !important;
+    font-size: 1.1rem;
+}
+
+/* Left aligned and colour keyed, so a row is found by its team rather than by counting
+   down from the top. */
+.totals-team {
+    text-align: left !important;
+    font-weight: 700;
+    border-left: 4px solid var(--team, transparent);
+}
+
+.totals-number {
+    font-variant-numeric: tabular-nums;
+}
+
+/* A game a team did not score in should read as empty, not as a number to compare. */
+.totals-zero {
+    opacity: .35;
+}
+
+.totals-total {
+    font-weight: 700;
+    font-size: 1.05rem;
+    background: var(--mud-palette-background-gray);
+}
+
+.setup-multiplier {
+    display: inline-block;
+    width: 7rem;
+}
+
+/* ---------- placings and rounds ---------- */
+
+.placing-game {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+
+.placing-game-name {
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.placing-game-hint {
+    font-size: .75rem;
+    opacity: .6;
+}
+
+/* A game nobody is placing gets one quiet line, not a card - most of a night is
+   tapping games and the list would otherwise be all boxes. */
+.placing-game-off {
+    opacity: .75;
+}
+
+.placing-game-card {
+    border: 1px solid var(--mud-palette-divider);
+    border-radius: .75rem;
+}
+
+.placing-values {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+
+/* Ordinal, then what it pays, then the steppers - the same shape the value has when it
+   is read out loud. */
+.placing-value {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+
+    padding: .25rem .5rem;
+    border: 1px solid var(--mud-palette-divider);
+    border-radius: .625rem;
+}
+
+.placing-value-ordinal {
+    min-width: 2.25rem;
+    font-size: .8rem;
+    font-weight: 700;
+    opacity: .8;
+}
+
+.placing-value-points {
+    min-width: 2rem;
+    text-align: right;
+    font-size: 1rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Rounds across, teams down - a tie is two identical cells side by side, and a team's
+   night reads straight across the row. */
+.rounds-table {
+    margin-top: .25rem;
+}
+
+.rounds-head-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: .1rem;
+}
+
+.round-place {
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+
+    padding: .5rem;
+    border: 1px solid var(--mud-palette-divider);
+    border-radius: .625rem;
+}
+
+.round-place-head {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+}
+
+.round-place-ordinal {
+    flex: 1 1 auto;
+    font-size: .85rem;
+    font-weight: 700;
+    letter-spacing: .03em;
+}
+
+.round-place-points {
+    min-width: 2rem;
+    text-align: right;
+    font-size: 1rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.round-team {
+    display: flex;
+    align-items: center;
+    gap: .25rem;
+
+    padding-left: .5rem;
+    border-left: 4px solid var(--team);
+}
+
+.round-team-name {
+    flex: 1 1 auto;
+    font-weight: 600;
+    color: var(--team);
+}
+
+.round-unplaced {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+
+/* Same tappable name chip the scoring page uses for combining teams - scoped CSS cannot
+   cross a component, so the rule lives here too rather than being shared. */
+.round-chip {
+    min-height: 2.5rem;
+    padding: 0 .75rem;
+
+    border: 2px solid var(--team);
+    border-radius: .625rem;
+    background: transparent;
+
+    color: var(--team);
+    font: inherit;
+    font-size: .85rem;
+    font-weight: 600;
+
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}

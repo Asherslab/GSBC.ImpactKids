@@ -1,3 +1,5 @@
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Games;
+
 namespace GSBC.ImpactKids.WASM.Features.Games;
 
 /// <summary>
@@ -165,25 +167,10 @@ public static class GameReveal
         step.Round >= 0 && step.Round < rounds.Count ? rounds[step.Round].Title : "Scores";
 
     /// <summary>
-    /// "1st", "7th", "11th". The teens are the trap - a board can hold more than ten
-    /// teams, and "11st" on the wall would be the only thing anyone remembers.
+    /// "1st", "7th", "11th". One implementation, shared with placement scoring - the wall
+    /// and the phone must word a placing identically.
     /// </summary>
-    public static string Ordinal(int place)
-    {
-        bool teen = place % 100 is >= 11 and <= 13;
-
-        string suffix = teen
-            ? "th"
-            : (place % 10) switch
-            {
-                1 => "st",
-                2 => "nd",
-                3 => "rd",
-                _ => "th"
-            };
-
-        return $"{place}{suffix}";
-    }
+    public static string Ordinal(int place) => GamePlacements.Ordinal(place);
 
     public static string Medal(int place) => place switch
     {

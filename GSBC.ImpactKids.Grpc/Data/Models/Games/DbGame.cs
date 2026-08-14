@@ -18,4 +18,17 @@ public class DbGame
     /// <see cref="Shared.Contracts.Entities.Features.Games.GameMultipliers"/>.
     /// </summary>
     public int? Multiplier { get; set; }
+
+    /// <summary>
+    /// Scored points per finishing place, index 0 being first, or null for a game scored
+    /// by tapping. See
+    /// <see cref="Shared.Contracts.Entities.Features.Games.GamePlacements"/>.
+    /// </summary>
+    public List<int>? PlacementPoints { get; set; }
+
+    /// <summary>Set up ahead of the night and not part of it yet.</summary>
+    public bool Planned { get; set; }
+
+    /// <summary>Voided - out of the tally, the wall and the reveal, and its points do not count.</summary>
+    public bool Hidden { get; set; }
 }

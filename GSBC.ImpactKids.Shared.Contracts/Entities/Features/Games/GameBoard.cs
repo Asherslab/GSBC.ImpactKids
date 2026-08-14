@@ -92,6 +92,74 @@ public record GameBoard : IIdentifiable
     public GameDefinition CurrentGameDefinition() => GameAt(CurrentGame);
 
     /// <summary>
+    /// The games that are part of the night, in order, out of the <paramref name="gamesPlayed"/>
+    /// the service has reached. Planned and hidden games are left out.
+    /// <para>
+    /// Everything that renders a game must go through this - the tally's columns, the
+    /// names and points sent to the wall, and the reveal's running order. The reveal
+    /// counts its steps from the length of those lists on both ends, so one end filtering
+    /// where the other does not slides every later step out of place.
+    /// </para>
+    /// </summary>
+    public IReadOnlyList<int> CountingGames(int gamesPlayed) =>
+    [
+        ..Enumerable
+            .Range(1, Math.Max(gamesPlayed, 0))
+            .Where(number => GameAt(number).CountsTowardNight())
+    ];
+
+    /// <summary>
+    /// The highest game the board knows about at all, planned ones included - what the set
+    /// up list runs to. A game planned for later exists here long before it is played.
+    /// </summary>
+    public int HighestDefinedGame() =>
+        Games.Count == 0 ? 0 : Games.Max(x => x.Number);
+
+    /// <summary>The next game number a planned game would be added at.</summary>
+    public int NextGameNumber(int gamesPlayed) =>
+        Math.Max(gamesPlayed, HighestDefinedGame()) + 1;
+
+    /// <summary>
+    /// The next game there is to move on to - one already played, or one set up ahead and
+    /// waiting - or null when this is the end of the night so far.
+    /// <para>
+    /// It is what decides whether the scoring page offers to step forward or to start a
+    /// new game: with a night planned out in advance, offering to create game 7 while game
+    /// 7 is sitting there named and waiting is how you end up with two of them.
+    /// </para>
+    /// <para>
+    /// Hidden games are stepped over. A voided game is not part of the night, and walking
+    /// into one from the arrow would score points that quietly do not count.
+    /// </para>
+    /// </summary>
+    public int? NextGameAfter(int current, int gamesPlayed)
+    {
+        int last = Math.Max(gamesPlayed, HighestDefinedGame());
+
+        for (int number = current + 1; number <= last; number++)
+        {
+            bool exists = number <= gamesPlayed || Games.Any(x => x.Number == number);
+
+            if (exists && !GameAt(number).Hidden)
+                return number;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// The planned game to play next, or null if none are waiting. "New game" picks this
+    /// up instead of opening a blank one, which is what makes planning the night ahead
+    /// worth doing.
+    /// </summary>
+    public int? NextPlannedGame(int after) =>
+        Games
+            .Where(x => x.Planned && x.Number > after)
+            .OrderBy(x => x.Number)
+            .Select(x => (int?)x.Number)
+            .FirstOrDefault();
+
+    /// <summary>
     /// What one point in a game is worth on screen - the game's own multiplier, or the
     /// last game before it that set one, or the board's.
     /// </summary>
@@ -118,7 +186,13 @@ public record GameBoard : IIdentifiable
 
         bool worthKeeping = !string.IsNullOrWhiteSpace(game.Name)
                             || game.Alliances.Count > 0
-                            || game.Multiplier != null;
+                            || game.Multiplier != null
+                            || game.IsPlacement()
+                            // A planned game is often nothing but a slot in the running
+                            // order, and a hidden one may hold nothing but the decision to
+                            // void it. Dropped as "plain", both would come straight back.
+                            || game.Planned
+                            || game.Hidden;
 
         return this with
         {

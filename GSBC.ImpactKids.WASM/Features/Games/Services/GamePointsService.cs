@@ -287,6 +287,217 @@ public sealed class GamePointsService(
         _ = FlushAsync();
     }
 
+    // ---------- placement ----------
+
+    /// <summary>
+    /// The heats of a game, oldest first. A round is the records of one award read back
+    /// together, so nothing here is stored as a round - see <see cref="GameRound"/>.
+    /// </summary>
+    public IReadOnlyList<GameRound> RoundsFor(Guid serviceId, int gameNumber) =>
+        _records.Values
+            .Where(x => !x.Deleted
+                        && x.ServiceId == serviceId
+                        && x.GameNumber == gameNumber
+                        && x.GroupId != null
+                        && x.Place != null
+            )
+            .GroupBy(x => x.GroupId!.Value)
+            .Select(group => new
+                {
+                    Key = group.Key,
+                    Awarded = group.Min(x => x.Awarded),
+                    Entries = group
+                        .OrderBy(x => x.Place)
+                        .ThenBy(x => x.TeamIndex)
+                        .Select(x => new GameRoundEntry
+                            {
+                                RecordId = x.Id,
+                                TeamIndex = x.TeamIndex,
+                                Place = x.Place!.Value,
+                                Points = x.Points
+                            }
+                        )
+                        .ToImmutableList()
+                }
+            )
+            .OrderBy(x => x.Awarded)
+            .Select((round, index) => new GameRound
+                {
+                    Key = round.Key,
+                    GameNumber = gameNumber,
+                    Awarded = round.Awarded,
+                    Entries = round.Entries,
+                    Number = index + 1
+                }
+            )
+            .ToList();
+
+    /// <summary>Rounds of every game of the night, keyed by game number.</summary>
+    public IReadOnlyDictionary<int, IReadOnlyList<GameRound>> RoundsByGame(Guid serviceId)
+    {
+        Dictionary<int, IReadOnlyList<GameRound>> rounds = [];
+
+        foreach (int game in _records.Values
+                     .Where(x => !x.Deleted && x.ServiceId == serviceId && x.GameNumber != null)
+                     .Select(x => x.GameNumber!.Value)
+                     .Distinct())
+        {
+            IReadOnlyList<GameRound> forGame = RoundsFor(serviceId, game);
+
+            if (forGame.Count > 0)
+                rounds[game] = forGame;
+        }
+
+        return rounds;
+    }
+
+    public Task AwardPlacementAsync(
+        Guid                              serviceId,
+        int                               gameNumber,
+        IReadOnlyList<GamePlacementAward> awards
+    ) =>
+        WritePlacementAsync(serviceId, gameNumber, Guid.NewGuid(), awards, DateTime.UtcNow);
+
+    /// <summary>
+    /// Rewrites a round that was already awarded - the totals page editing a placing, a
+    /// score, or who was in it at all.
+    /// <para>
+    /// The old records are taken back and new ones written under the same group id and
+    /// the same awarded time, so an edited round keeps its position among the heats
+    /// rather than jumping to the end of the game.
+    /// </para>
+    /// </summary>
+    public async Task ReplaceRoundAsync(
+        Guid                              serviceId,
+        int                               gameNumber,
+        Guid                              roundKey,
+        IReadOnlyList<GamePlacementAward> awards
+    )
+    {
+        DateTime awarded = _records.Values
+            .Where(x => !x.Deleted && x.ServiceId == serviceId && x.GroupId == roundKey)
+            .Select(x => (DateTime?)x.Awarded)
+            .Min() ?? DateTime.UtcNow;
+
+        await RemoveRecordsAsync(RecordsInRound(serviceId, roundKey), notify: false);
+
+        await WritePlacementAsync(serviceId, gameNumber, roundKey, awards, awarded);
+    }
+
+    public Task DeleteRoundAsync(Guid serviceId, Guid roundKey) =>
+        RemoveRecordsAsync(RecordsInRound(serviceId, roundKey), notify: true);
+
+    private List<GamePointRecord> RecordsInRound(Guid serviceId, Guid roundKey) =>
+        _records.Values
+            .Where(x => !x.Deleted && x.ServiceId == serviceId && x.GroupId == roundKey)
+            .ToList();
+
+    /// <summary>
+    /// One record per placed team, all sharing the round's group id and each carrying its
+    /// own place. A place worth nothing still gets a record - that is the difference
+    /// between coming last and not running.
+    /// </summary>
+    private async Task WritePlacementAsync(
+        Guid                              serviceId,
+        int                               gameNumber,
+        Guid                              roundKey,
+        IReadOnlyList<GamePlacementAward> awards,
+        DateTime                          awarded
+    )
+    {
+        bool wrote = false;
+
+        foreach (GamePlacementAward award in awards)
+        {
+            foreach (int teamIndex in award.TeamIndexes.Distinct())
+            {
+                Guid id = Guid.NewGuid();
+
+                _records[id] = new GamePointRecord
+                {
+                    Id = id,
+                    TeamIndex = teamIndex,
+                    Points = award.Points,
+                    GameNumber = gameNumber,
+                    GroupId = roundKey,
+                    Place = award.Place,
+                    Awarded = awarded,
+                    ServiceId = serviceId
+                };
+
+                _outbox[id] = new CreateGamePointRecordRequest
+                {
+                    Id = id,
+                    TeamIndex = teamIndex,
+                    Points = award.Points,
+                    GameNumber = gameNumber,
+                    GroupId = roundKey,
+                    Place = award.Place,
+                    Awarded = awarded,
+                    ServiceId = serviceId
+                };
+
+                wrote = true;
+            }
+        }
+
+        if (!wrote)
+            return;
+
+        Changed?.Invoke();
+
+        await PersistRecordsAsync();
+        await PersistOutboxAsync();
+
+        _ = Vibrate(20);
+        _ = FlushAsync();
+    }
+
+    /// <summary>
+    /// Sets what a team scored in a tapped game, by writing the difference rather than
+    /// rewriting history. The records stay append only, so a correction typed on a laptop
+    /// merges with a phone that is still scoring instead of fighting it.
+    /// <para>
+    /// A placement game is not corrected this way - its rounds are the record of what
+    /// happened, and an invisible adjustment sitting beside them would make the heats stop
+    /// adding up to the game.
+    /// </para>
+    /// </summary>
+    public async Task SetGamePointsAsync(Guid serviceId, int teamIndex, int gameNumber, int points)
+    {
+        int current = GamePointsFor(serviceId, teamIndex, gameNumber);
+        int delta   = points - current;
+
+        if (delta == 0)
+            return;
+
+        await AddPointsAsync(serviceId, [teamIndex], delta, gameNumber);
+    }
+
+    public async Task SetBehaviourPointsAsync(Guid serviceId, int teamIndex, int points)
+    {
+        int delta = points - BehaviourPointsFor(serviceId, teamIndex);
+
+        if (delta == 0)
+            return;
+
+        await AddPointsAsync(serviceId, [teamIndex], delta, gameNumber: null);
+    }
+
+    /// <summary>
+    /// Takes back everything scored in a game. Used when a game is deleted outright -
+    /// hiding one leaves its points alone so that it can come back.
+    /// </summary>
+    public Task ClearGameAsync(Guid serviceId, int gameNumber) =>
+        RemoveRecordsAsync(
+            _records.Values
+                .Where(x => !x.Deleted && x.ServiceId == serviceId && x.GameNumber == gameNumber)
+                .ToList(),
+            notify: true
+        );
+
+    // ---------- undo ----------
+
     public async Task UndoLastAsync(Guid serviceId)
     {
         GamePointRecord? last = LastRecordFor(serviceId);
@@ -302,28 +513,53 @@ public sealed class GamePointsService(
                 .Where(x => !x.Deleted && x.ServiceId == serviceId && x.GroupId == last.GroupId)
                 .ToList();
 
-        foreach (GamePointRecord record in undoing)
+        await RemoveRecordsAsync(undoing, notify: true);
+
+        _ = Vibrate(25);
+    }
+
+    /// <summary>
+    /// Takes records back. One never sent goes outright; one the server has is tombstoned
+    /// and queued for deletion, so a device that is offline still stops counting it.
+    /// <para>
+    /// <paramref name="notify"/> is false for the first half of a rewrite, where telling
+    /// the page in between would flash a round that is about to reappear.
+    /// </para>
+    /// </summary>
+    private async Task RemoveRecordsAsync(IReadOnlyList<GamePointRecord> records, bool notify)
+    {
+        if (records.Count == 0)
+            return;
+
+        foreach (GamePointRecord record in records)
         {
-            if (_outbox.Remove(record.Id))
-            {
-                // Never reached the server, so drop it outright rather than tombstoning it.
-                _records.Remove(record.Id);
-            }
-            else
-            {
-                _records[record.Id] = record with { Deleted = true };
-                _pendingDeletes.Add(record.Id);
-            }
+            // Take it out of the queue so it is not sent again, then tombstone it and ask
+            // the server to drop it - even when it looks like it never left this device.
+            //
+            // A flush that is already running holds its own snapshot of the queue, so a
+            // record pulled out here may be on the wire at this moment. Treating "still
+            // queued" as "the server never saw it" left the create to land with nothing
+            // ever deleting it: the client counts it once, the server keeps it for ever,
+            // and the team is scored twice. Rewriting several rounds in a row - what
+            // re-pricing a game does - hits that window nearly every time.
+            //
+            // The cost when the create really had not gone is one delete the server
+            // answers "not found" to, which the queue drops.
+            _outbox.Remove(record.Id);
+
+            _records[record.Id] = record with { Deleted = true };
+            _pendingDeletes.Add(record.Id);
         }
 
-        Changed?.Invoke();
+        if (notify)
+            Changed?.Invoke();
 
         await PersistRecordsAsync();
         await PersistOutboxAsync();
         await PersistDeletesAsync();
 
-        _ = Vibrate(25);
-        _ = FlushAsync();
+        if (notify)
+            _ = FlushAsync();
     }
 
     // ---------- sync ----------
@@ -382,6 +618,17 @@ public sealed class GamePointsService(
                     // this device does not show a total the others will never agree with.
                     _records.Remove(request.Id);
                     await PersistRecordsAsync();
+                }
+
+                // Undo, or a round being rewritten, can take a record back while its
+                // create is on the wire. The server now holds a record this device has
+                // already stopped counting, so say so straight away rather than leaving
+                // the two to disagree for ever.
+                if (outcome == SendOutcome.Accepted &&
+                    (!_records.TryGetValue(request.Id, out GamePointRecord? live) || live.Deleted))
+                {
+                    _pendingDeletes.Add(request.Id);
+                    await PersistDeletesAsync();
                 }
 
                 _outbox.Remove(request.Id);
@@ -508,8 +755,15 @@ public sealed class GamePointsService(
 
         foreach (GamePointRecord record in serverRecords)
         {
-            // The server is authoritative for anything it has seen.
-            _records[record.Id] = record;
+            // The server is authoritative for anything it has seen - except for a record
+            // this device has already taken back and not yet managed to say so. The
+            // server still has it as live, so taking its copy would put the points back
+            // on the board until the delete lands. Rewriting a round deletes and adds in
+            // one gesture, which makes that window trivial to hit and the team ends up
+            // counted twice.
+            _records[record.Id] = _pendingDeletes.Contains(record.Id)
+                ? record with { Deleted = true }
+                : record;
 
             // Seeing our own record come back means the create landed, even if we
             // never got the acknowledgement.
