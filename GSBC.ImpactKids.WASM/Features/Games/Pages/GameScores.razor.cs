@@ -29,6 +29,16 @@ public partial class GameScores
     private GameBoard Board => Points.BoardFor(ServiceKey);
 
     /// <summary>
+    /// The games that are part of the night, in order - planned and voided ones left out.
+    /// <para>
+    /// Everything on this page is positional over this list, and so is the board the server
+    /// streams to the wall. The reveal takes its step count from the length on both ends, so
+    /// one end counting a game the other does not slides every later step out of place.
+    /// </para>
+    /// </summary>
+    private IReadOnlyList<int> CountingGames => Board.CountingGames(GamesPlayed);
+
+    /// <summary>
     /// A team's night, both ways up: what it scored in each game and what that reads as on
     /// screen. Held together so the page can flip between them without recounting, and so
     /// placings always come off the display totals however the page is being read.
@@ -65,19 +75,26 @@ public partial class GameScores
     {
         get
         {
-            int   games       = GamesPlayed;
-            int[] multipliers = Board.MultipliersThrough(games);
+            IReadOnlyList<int> games = CountingGames;
+
+            int[] multipliers = Board.MultipliersThrough(GamesPlayed);
             int   behaviourMultiplier = Board.BehaviourMultiplier();
 
             return Board.EffectiveTeams()
                 .Select(team =>
                     {
-                        int[] perGame = Enumerable.Range(1, games)
+                        int[] perGame = games
                             .Select(game => Points.GamePointsFor(ServiceKey, team.Index, game))
                             .ToArray();
 
-                        int[] perGameDisplay = perGame
-                            .Select((points, index) => GameMultipliers.Multiply(points, multipliers[index]))
+                        // Indexed by game number, not by position: the list above holds only
+                        // the games that count, so the two no longer line up.
+                        int[] perGameDisplay = games
+                            .Select((game, index) => GameMultipliers.Multiply(
+                                    perGame[index],
+                                    multipliers[game - 1]
+                                )
+                            )
                             .ToArray();
 
                         int behaviour = Points.BehaviourPointsFor(ServiceKey, team.Index);
@@ -103,8 +120,13 @@ public partial class GameScores
 
     // ---------- reading the table ----------
 
-    private int GameValue(TeamStanding standing, int game) =>
-        _showMultiplied ? standing.PerGameDisplay[game - 1] : standing.PerGame[game - 1];
+    /// <summary>
+    /// A team's haul in one game. <paramref name="position"/> is where the game sits in
+    /// <see cref="CountingGames"/>, not its number - a night with a voided game in it has
+    /// no column for that game at all.
+    /// </summary>
+    private int GameValue(TeamStanding standing, int position) =>
+        _showMultiplied ? standing.PerGameDisplay[position] : standing.PerGame[position];
 
     private int BehaviourValue(TeamStanding standing) =>
         _showMultiplied ? standing.BehaviourDisplay : standing.Behaviour;
@@ -112,8 +134,8 @@ public partial class GameScores
     private int TotalValue(TeamStanding standing) =>
         _showMultiplied ? standing.DisplayTotal : standing.ScoredTotal;
 
-    private int GameTotal(IReadOnlyList<TeamStanding> standings, int game) =>
-        standings.Sum(x => GameValue(x, game));
+    private int GameTotal(IReadOnlyList<TeamStanding> standings, int position) =>
+        standings.Sum(x => GameValue(x, position));
 
     private int BehaviourTotal(IReadOnlyList<TeamStanding> standings) =>
         standings.Sum(BehaviourValue);
@@ -148,8 +170,12 @@ public partial class GameScores
             )
             .ToList();
 
+    /// <summary>
+    /// Round titles for the reveal, over the games that count - matching the names the
+    /// server puts in the streamed board, in the same order.
+    /// </summary>
     private IReadOnlyList<string> GameNames =>
-        Enumerable.Range(1, GamesPlayed).Select(x => Board.GameAt(x).DisplayName()).ToList();
+        CountingGames.Select(x => Board.GameAt(x).DisplayName()).ToList();
 
     private IReadOnlyList<GameReveal.RevealRound> RevealRounds => GameReveal.Rounds(GameNames, RevealTeams);
 
@@ -224,54 +250,6 @@ public partial class GameScores
 
         return game.Name ?? $"G{number}";
     }
-
-    // ---------- last minute changes ----------
-
-    /// <summary>
-    /// What a game runs at with no multiplier of its own: the game before it, or the
-    /// night's for game 1. Shown as the field's placeholder so an empty box reads as
-    /// "follows the others" rather than as missing.
-    /// </summary>
-    private int InheritedMultiplier(int gameNumber) => gameNumber <= 1
-        ? GameMultipliers.Normalise(Board.PointsMultiplier)
-        : Board.MultiplierFor(gameNumber - 1);
-
-    private Task SetPointsMultiplier(int multiplier) =>
-        Points.UpdateBoardAsync(ServiceKey, board => board with
-            {
-                PointsMultiplier = GameMultipliers.Normalise(multiplier)
-            }
-        );
-
-    private Task SetBehaviourMultiplier(int multiplier) =>
-        Points.UpdateBoardAsync(ServiceKey, board => board with
-            {
-                BehaviourPointsMultiplier = GameMultipliers.Normalise(multiplier)
-            }
-        );
-
-    /// <summary>Cleared puts the game back to following the one before it.</summary>
-    private Task SetGameMultiplier(int gameNumber, int? multiplier) =>
-        Points.UpdateBoardAsync(ServiceKey, board => board.WithGame(
-                board.GameAt(gameNumber) with { Multiplier = GameMultipliers.Normalise(multiplier) }
-            )
-        );
-
-    private Task SetGameName(int gameNumber, string? name) =>
-        Points.UpdateBoardAsync(ServiceKey, board => board.WithGame(
-                board.GameAt(gameNumber) with
-                {
-                    Name = string.IsNullOrWhiteSpace(name) ? null : name.Trim()
-                }
-            )
-        );
-
-    private Task RenameTeam(int index, string? name) =>
-        Points.UpdateBoardAsync(ServiceKey, board => board with
-            {
-                Teams = GameTeams.Rename(board.EffectiveTeams(), index, name)
-            }
-        );
 
     private static string Placing(int place) => place switch
     {

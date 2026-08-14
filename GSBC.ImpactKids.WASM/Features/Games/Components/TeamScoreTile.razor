@@ -1,18 +1,40 @@
+@using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Games
+
 @* The whole tile is the add button. The inner pill exists so that is obvious at a glance. *@
 <button type="button"
-        class="team-tile @(Compact ? "team-tile-compact" : "")"
+        class="team-tile @(Compact ? "team-tile-compact" : "") @(Placement && Place == null ? "team-tile-unplaced" : "")"
         style="@TileStyle"
-        aria-label="@($"Add {StepPoints} to {Label}")"
-        @onclick="@(() => Add(StepPoints))">
+        aria-label="@TileLabel"
+        @onclick="@Tap">
     <div class="team-tile-label">@Label</div>
 
-    @* Once the night has more than one game, the big number is this game and the
-       running total drops to a subtitle - otherwise they would be the same number. *@
-    <div class="team-tile-total">@(ShowCurrentGame ? CurrentGamePoints : Total)</div>
+    @if (Placement)
+    {
+        @* Mid race the game score is nothing but zeroes, so the placing takes the big
+           slot and the points it is worth sit under it - in scored points, the same
+           units the leader taps in everywhere else. *@
+        <div class="team-tile-total @(Place == null ? "team-tile-waiting" : "")">
+            @(Place == null ? "…" : GamePlacements.Ordinal(Place.Value))
+        </div>
+
+        <div class="team-tile-breakdown">
+            @(Place == null ? "not placed" : PlacePoints == 0 ? "no points" : $"+{PlacePoints}")
+        </div>
+    }
+    else
+    {
+        @* Once the night has more than one game, the big number is this game and the
+           running total drops to a subtitle - otherwise they would be the same number. *@
+        <div class="team-tile-total">@(ShowCurrentGame ? CurrentGamePoints : Total)</div>
+    }
 
     @if (Subtitle != null)
     {
         <div class="team-tile-breakdown">@Subtitle</div>
+    }
+    else if (Placement)
+    {
+        <div class="team-tile-breakdown">Total @Total</div>
     }
     else if (ShowCurrentGame)
     {
@@ -28,28 +50,63 @@
     @if (!Compact)
     {
         <div class="team-tile-cta">
-            <span class="team-tile-cta-plus">+@StepPoints</span>
-            <span class="team-tile-cta-hint">tap anywhere</span>
+            @if (Placement)
+            {
+                @* Says what this tap does before it is made - a race is scored while it is
+                   still being run and there is no time to work it out afterwards. One
+                   span, so the pill cannot break across two lines mid phrase. *@
+                <span class="team-tile-cta-hint">
+                    @(Place == null
+                        ? $"tap to place ({GamePlacements.Ordinal(NextPlace)})"
+                        : "tap to remove")
+                </span>
+            }
+            else
+            {
+                <span class="team-tile-cta-plus">+@StepPoints</span>
+                <span class="team-tile-cta-hint">tap anywhere</span>
+            }
         </div>
     }
 
     <div class="team-tile-actions">
-        <span role="button"
-              tabindex="0"
-              class="team-tile-action"
-              aria-label="@($"Remove {StepPoints} from {Label}")"
-              @onclick="@(() => Add(-StepPoints))"
-              @onclick:stopPropagation>
-            −@StepPoints
-        </span>
-        <span role="button"
-              tabindex="0"
-              class="team-tile-action"
-              aria-label="@($"Add {BonusPoints} to {Label}")"
-              @onclick="@(() => Add(BonusPoints))"
-              @onclick:stopPropagation>
-            +@BonusPoints
-        </span>
+        @if (Placement)
+        {
+            @* A dead heat: joins the placing that was last given out, which is named on
+               the button so nobody has to remember what it was. *@
+            @if (TiePlace != null && Place == null)
+            {
+                <span role="button"
+                      tabindex="0"
+                      class="team-tile-action"
+                      aria-label="@($"Tie {Label} for {GamePlacements.Ordinal(TiePlace.Value)}")"
+                      @onclick="@(() => OnTie.InvokeAsync())"
+                      @onclick:stopPropagation>
+                    @* Spelled out. "= 1st" is athletics shorthand and means nothing to
+                       somebody scoring a race for the first time. *@
+                    tie @GamePlacements.Ordinal(TiePlace.Value)
+                </span>
+            }
+        }
+        else
+        {
+            <span role="button"
+                  tabindex="0"
+                  class="team-tile-action"
+                  aria-label="@($"Remove {StepPoints} from {Label}")"
+                  @onclick="@(() => Add(-StepPoints))"
+                  @onclick:stopPropagation>
+                −@StepPoints
+            </span>
+            <span role="button"
+                  tabindex="0"
+                  class="team-tile-action"
+                  aria-label="@($"Add {BonusPoints} to {Label}")"
+                  @onclick="@(() => Add(BonusPoints))"
+                  @onclick:stopPropagation>
+                +@BonusPoints
+            </span>
+        }
     </div>
 </button>
 
@@ -99,7 +156,44 @@
     [Parameter]
     public required EventCallback<int> OnAdd { get; set; }
 
+    /// <summary>
+    /// This game is scored by finishing order, so a tap places rather than adds. The
+    /// grid, the colours and the tap target are all unchanged - only what a tap means.
+    /// </summary>
+    [Parameter]
+    public bool Placement { get; set; }
+
+    /// <summary>Where this side is standing in the round being built, or null if unplaced.</summary>
+    [Parameter]
+    public int? Place { get; set; }
+
+    /// <summary>Scored points that place is worth. Zero is a real answer.</summary>
+    [Parameter]
+    public int PlacePoints { get; set; }
+
+    /// <summary>The place the next tap would hand out.</summary>
+    [Parameter]
+    public int NextPlace { get; set; }
+
+    /// <summary>The place a tie would join, or null when nothing has been placed yet.</summary>
+    [Parameter]
+    public int? TiePlace { get; set; }
+
+    [Parameter]
+    public EventCallback OnPlace { get; set; }
+
+    [Parameter]
+    public EventCallback OnTie { get; set; }
+
     private string TileStyle => $"background: {Background};";
+
+    private string TileLabel => Placement
+        ? Place == null
+            ? $"Place {Label} {GamePlacements.Ordinal(NextPlace)}"
+            : $"Take {Label} out of {GamePlacements.Ordinal(Place.Value)}"
+        : $"Add {StepPoints} to {Label}";
+
+    private Task Tap() => Placement ? OnPlace.InvokeAsync() : Add(StepPoints);
 
     private Task Add(int points) => OnAdd.InvokeAsync(points);
 

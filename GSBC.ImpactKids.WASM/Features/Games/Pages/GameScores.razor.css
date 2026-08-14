@@ -113,69 +113,6 @@
 /* Collapsed on an ordinary night, so it must not look like part of the standings.
    ::deep because the panels are a MudBlazor component - a class put straight on one gets
    no scope attribute and the rule silently never matches. */
-.scores-setup ::deep .mud-expansion-panels {
-    border: 1px solid var(--mud-palette-divider);
-    border-radius: var(--mud-default-borderradius);
-}
-
-.setup-games {
-    display: flex;
-    flex-direction: column;
-    gap: .5rem;
-}
-
-.setup-game {
-    display: grid;
-    grid-template-columns: 1.5rem minmax(0, 1fr) 7rem;
-    align-items: center;
-    gap: .5rem;
-}
-
-@media (min-width: 40rem) {
-    .setup-game {
-        grid-template-columns: 1.5rem minmax(0, 1fr) 7rem minmax(6rem, auto);
-    }
-}
-
-.setup-game-number {
-    font-size: .8rem;
-    text-align: center;
-    opacity: .6;
-}
-
-.setup-game-hint {
-    font-size: .75rem;
-    opacity: .6;
-    /* Wraps under its row on a narrow screen rather than squeezing the name field. */
-    grid-column: 2 / -1;
-}
-
-@media (min-width: 40rem) {
-    .setup-game-hint {
-        grid-column: auto;
-    }
-}
-
-.setup-multiplier {
-    display: inline-block;
-    width: 7rem;
-}
-
-.setup-teams {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
-    gap: .5rem;
-}
-
-/* The team's own colour, so a rename is checked against the right team at a glance. The
-   var comes off the field's inline style; only the slot inside it needs reaching. */
-.setup-teams ::deep .mud-input-slot {
-    color: var(--team);
-    font-weight: 600;
-}
-
-/* The remote for the wall display. Set apart from the standings below it, because it
-   drives another screen rather than describing this one. */
 .reveal-control {
     border: 1px solid var(--mud-palette-divider);
 }

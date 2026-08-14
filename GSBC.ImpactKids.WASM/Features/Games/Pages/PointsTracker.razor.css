@@ -236,6 +236,46 @@
     color: #fff;
 }
 
+/* Which heat we are up to. Plain elements, not MudText - scoped CSS cannot reach into a
+   Mud component's own markup. */
+.rounds-list {
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+}
+
+.rounds-row {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    min-height: 2.25rem;
+}
+
+.rounds-number {
+    flex: 0 0 auto;
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    opacity: .7;
+}
+
+/* One line per round: a heat that wraps turns the strip into a wall of text and the
+   grid loses the room it needs. */
+.rounds-detail {
+    flex: 1 1 auto;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: .85rem;
+    font-weight: 600;
+}
+
+.rounds-hint {
+    margin-top: .25rem;
+    font-size: .7rem;
+    opacity: .6;
+}
+
 @media (min-width: 900px) {
     .points-grid {
         grid-template-columns: repeat(var(--cols-wide, 4), 1fr);

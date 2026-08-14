@@ -2,6 +2,8 @@ using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Games;
 
 namespace GSBC.ImpactKids.WASM.Features.Games.Services;
 
+// GameRound and GamePlacementAward live in the feature root, alongside the placement maths.
+
 public interface IGamePointsService : IAsyncDisposable
 {
     /// <summary>Raised whenever totals, board settings, pending count or connectivity change.</summary>
@@ -45,6 +47,42 @@ public interface IGamePointsService : IAsyncDisposable
     Task AddBehaviourPointsAsync(Guid serviceId, int teamIndex, int points);
 
     Task UndoLastAsync(Guid serviceId);
+
+    /// <summary>
+    /// The heats of one game, oldest first. Rounds all share the game's number, so the
+    /// tally and the reveal go on seeing one game with one total.
+    /// </summary>
+    IReadOnlyList<GameRound> RoundsFor(Guid serviceId, int gameNumber);
+
+    /// <summary>Rounds for every game of the night that has any, keyed by game number.</summary>
+    IReadOnlyDictionary<int, IReadOnlyList<GameRound>> RoundsByGame(Guid serviceId);
+
+    /// <summary>
+    /// Scores a whole heat at once: one record per placed team, sharing a group id so the
+    /// round can be undone, edited or read back as a finishing order.
+    /// </summary>
+    Task AwardPlacementAsync(Guid serviceId, int gameNumber, IReadOnlyList<GamePlacementAward> awards);
+
+    /// <summary>Rewrites a round that was already awarded, keeping its place among the heats.</summary>
+    Task ReplaceRoundAsync(
+        Guid                              serviceId,
+        int                               gameNumber,
+        Guid                              roundKey,
+        IReadOnlyList<GamePlacementAward> awards
+    );
+
+    Task DeleteRoundAsync(Guid serviceId, Guid roundKey);
+
+    /// <summary>
+    /// Corrects what a team scored in a tapped game by writing the difference, so the
+    /// records stay append only and a laptop correction merges with a phone still scoring.
+    /// </summary>
+    Task SetGamePointsAsync(Guid serviceId, int teamIndex, int gameNumber, int points);
+
+    Task SetBehaviourPointsAsync(Guid serviceId, int teamIndex, int points);
+
+    /// <summary>Takes back everything scored in a game - for deleting one outright.</summary>
+    Task ClearGameAsync(Guid serviceId, int gameNumber);
 
     Task FlushAsync();
 

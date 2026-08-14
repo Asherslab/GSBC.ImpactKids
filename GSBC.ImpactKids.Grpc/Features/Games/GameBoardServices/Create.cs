@@ -149,7 +149,18 @@ public partial class GameBoardService
 
             int? multiplier = GameMultipliers.Normalise(game.Multiplier);
 
-            if (name == null && alliances.Count == 0 && multiplier == null)
+            // Placement points are a game's whole way of being scored, so a game that has
+            // them is worth keeping even when it is otherwise a plain numbered game.
+            List<int>? placement = GamePlacements.Normalise(game.PlacementPoints)?.ToList();
+
+            // A planned or hidden game is a decision in its own right, so it is kept even
+            // when it holds nothing else at all.
+            if (name == null
+                && alliances.Count == 0
+                && multiplier == null
+                && placement == null
+                && !game.Planned
+                && !game.Hidden)
                 continue;
 
             normalised.Add(new DbGame
@@ -157,7 +168,10 @@ public partial class GameBoardService
                     Number = game.Number,
                     Name = name,
                     Alliances = alliances,
-                    Multiplier = multiplier
+                    Multiplier = multiplier,
+                    PlacementPoints = placement,
+                    Planned = game.Planned,
+                    Hidden = game.Hidden
                 }
             );
         }

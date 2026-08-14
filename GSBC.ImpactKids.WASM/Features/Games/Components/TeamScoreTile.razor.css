@@ -63,6 +63,28 @@
     font-size: .85rem;
 }
 
+/* A dash at score size and weight is a solid bar - it reads as redacted, not as "nothing
+   yet". An ellipsis, small and light, reads as waiting. */
+.team-tile-waiting {
+    font-size: clamp(1.5rem, 5vh, 2.5rem);
+    font-weight: 400;
+    opacity: .45;
+}
+
+.team-tile-cta-hint {
+    white-space: nowrap;
+}
+
+/* Waiting to be placed. Dimmed rather than greyed out - the colour is how a leader finds
+   the team, and a race is scored at a glance while it is still being run. */
+.team-tile-unplaced {
+    filter: saturate(.55) brightness(.8);
+}
+
+.team-tile-unplaced:active {
+    filter: saturate(1) brightness(1.12);
+}
+
 .team-tile-label {
     font-size: clamp(.85rem, 3.2vw, 1.15rem);
     font-weight: 600;

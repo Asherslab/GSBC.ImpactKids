@@ -27,8 +27,29 @@ public record GamePointRecord : IIdentifiable
     /// <summary>
     /// Set when the tap scored an alliance: one record per member team, all sharing this
     /// id. It is what lets undo take the whole award back rather than half of it.
+    /// <para>
+    /// A placement round shares one too - every side placed in the same race, whatever
+    /// each of them scored - which is what makes a round a thing that can be undone,
+    /// edited or read back as a finishing order.
+    /// </para>
     /// </summary>
     public Guid? GroupId { get; init; }
+
+    /// <summary>
+    /// Where this team finished, 1 based, for a game scored by placement. Null for
+    /// ordinary tapped points.
+    /// <para>
+    /// Stored rather than worked out from <see cref="Points"/>, because a placing and
+    /// what it is worth are not the same fact: when only the top three score, fourth
+    /// place is a real placing worth nothing, and inferring it from a zero would make it
+    /// indistinguishable from a team that never ran.
+    /// </para>
+    /// <para>
+    /// Competition ranking, matching the board and the reveal - two teams tied for first
+    /// are both 1, and the next one is 3.
+    /// </para>
+    /// </summary>
+    public int? Place { get; init; }
 
     [ProtoIgnore]
     [JsonIgnore]

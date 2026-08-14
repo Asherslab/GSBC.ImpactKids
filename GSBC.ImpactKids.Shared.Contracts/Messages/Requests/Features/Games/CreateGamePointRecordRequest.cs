@@ -16,8 +16,17 @@ public class CreateGamePointRecordRequest
     /// <summary>Null awards a behaviour point, which sits outside any game.</summary>
     public int? GameNumber { get; set; }
 
-    /// <summary>Shared by the sibling records written when an alliance is scored.</summary>
+    /// <summary>
+    /// Shared by the sibling records written when an alliance is scored, and by every
+    /// record of one placement round.
+    /// </summary>
     public Guid? GroupId { get; set; }
+
+    /// <summary>
+    /// Finishing place for a game scored by placement, 1 based. Null for tapped points.
+    /// See <see cref="GamePointRecord.Place"/>.
+    /// </summary>
+    public int? Place { get; set; }
 
     /// <summary>
     /// When the tap happened on the device, not when the server received it.
