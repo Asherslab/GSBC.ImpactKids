@@ -26,6 +26,29 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Yarp", "Yarp", "{228C2D05-2
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GSBC.ImpactKids.YARP", "GSBC.ImpactKids.YARP\GSBC.ImpactKids.YARP.csproj", "{90A9BD23-7AAF-4F52-8044-254163C0EA75}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{37B78F6A-D5C4-43D1-A538-369C8D28871C}"
+	ProjectSection(SolutionItems) = preProject
+		docs\AGENTS.md = docs\AGENTS.md
+		docs\README.md = docs\README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "modules", "modules", "{F4A8B397-B7CE-4595-B62A-73EC9CF5E767}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "auth", "auth", "{3D91E2B0-8339-49BD-ABD8-E054B7EDCBC5}"
+	ProjectSection(SolutionItems) = preProject
+		docs\modules\auth\sign-in.md = docs\modules\auth\sign-in.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "games", "games", "{3E50958D-93FD-47C7-9C44-16DFE9E898F0}"
+	ProjectSection(SolutionItems) = preProject
+		docs\modules\games\README.md = docs\modules\games\README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "people", "people", "{E9D30500-AC27-4C06-B150-B58F0E4B62DF}"
+	ProjectSection(SolutionItems) = preProject
+		docs\modules\people\school-grades-and-programs.md = docs\modules\people\school-grades-and-programs.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -62,6 +85,10 @@ Global
 		{90A9BD23-7AAF-4F52-8044-254163C0EA75}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{F4A8B397-B7CE-4595-B62A-73EC9CF5E767} = {37B78F6A-D5C4-43D1-A538-369C8D28871C}
+		{3D91E2B0-8339-49BD-ABD8-E054B7EDCBC5} = {F4A8B397-B7CE-4595-B62A-73EC9CF5E767}
+		{3E50958D-93FD-47C7-9C44-16DFE9E898F0} = {F4A8B397-B7CE-4595-B62A-73EC9CF5E767}
+		{E9D30500-AC27-4C06-B150-B58F0E4B62DF} = {F4A8B397-B7CE-4595-B62A-73EC9CF5E767}
 		{EB7128E4-9EA6-483C-9F74-F4323151F38D} = {E096085B-4612-481C-83EE-6866001AFA67}
 		{3160BE2C-572E-439B-92CF-947A93A48C51} = {E096085B-4612-481C-83EE-6866001AFA67}
 		{77F7EFC2-D264-4C6C-9999-C3218294AE4E} = {59BBCB4A-81E8-401E-B37F-53BAD31F2505}

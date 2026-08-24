@@ -43,6 +43,14 @@ builder.AddRedisDistributedCache("redis");
 
 builder.Services.AddTransient(typeof(IEventService<>), typeof(EventService<>));
 
+// The local sign in bypass mints its own tokens with a shared symmetric key instead of
+// Auth0's. Three things have to line up before one is accepted, and the key is generated
+// per run by the AppHost, so a token cannot outlive the process that issued it.
+bool devAuthEnabled = builder.Environment.IsDevelopment() &&
+                      builder.Configuration.GetValue<bool>("DevAuth:Enabled");
+string? devAuthSigningKey = builder.Configuration["DevAuth:SigningKey"];
+bool devAuthUsable = devAuthEnabled && (devAuthSigningKey?.Length ?? 0) >= 32;
+
 builder.Services.AddAuthentication()
     .AddJwtBearer("Bearer", jwtOptions =>
     {
@@ -52,6 +60,20 @@ builder.Services.AddAuthentication()
             ValidAudience = builder.Configuration["Auth0:Audience"],
             ValidIssuer = $"https://{builder.Configuration["Auth0:Domain"]}"
         };
+
+        if (!devAuthUsable)
+            return;
+
+        // Added to the Auth0 issuer and keys rather than replacing them, so a real token
+        // still validates exactly as before and a local one is the only thing gained.
+        jwtOptions.TokenValidationParameters.ValidIssuers =
+            [jwtOptions.TokenValidationParameters.ValidIssuer!, "gsbc-dev-bypass"];
+        jwtOptions.TokenValidationParameters.IssuerSigningKeys =
+        [
+            new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(
+                System.Text.Encoding.UTF8.GetBytes(devAuthSigningKey!)
+            )
+        ];
     });
 
 builder.Services.AddAuthorization(opts =>
@@ -105,6 +127,12 @@ if (elvantoConfig != null)
 // });
 
 var app = builder.Build();
+
+if (devAuthUsable)
+{
+    app.Logger.LogWarning(
+        "Dev auth bypass is ENABLED - locally signed tokens are accepted alongside Auth0. Development only");
+}
 
 // app.UseCors();
 app.MapDefaultEndpoints();
