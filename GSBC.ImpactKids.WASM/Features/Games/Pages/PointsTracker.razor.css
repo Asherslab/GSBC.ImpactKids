@@ -54,11 +54,6 @@
     .points-grid-scroll {
         grid-auto-rows: minmax(9rem, auto);
     }
-
-    .behaviour-row {
-        max-height: none;
-        overflow: visible;
-    }
 }
 
 .game-name {
@@ -81,10 +76,18 @@
     /* auto-fit, so four teams stretch across a desktop instead of huddling on the left. */
     grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
     gap: .5rem;
+}
 
-    max-height: 30vh;
-    overflow-y: auto;
-    overscroll-behavior: contain;
+/* Capped only where the page itself does not scroll. A phone flows the whole page, and a
+   cap here put ten teams in a 30vh scroller nested inside it - the last row sat clipped
+   and neither scroll would reach it. Written as min-width rather than undone in the phone
+   block above, because a later rule of equal specificity wins and that is what happened. */
+@media (min-width: 701px) {
+    .behaviour-row {
+        max-height: 30vh;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
 }
 
 .behaviour-cell {

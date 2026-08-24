@@ -486,3 +486,8 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Local development configuration. Holds real secrets - the Auth0 client secret, the Elvanto key -
+# so it stays on each developer's machine. Also excluded in .git/info/exclude, which is per-checkout
+# and not shared; this line is the one a fresh clone inherits.
+**/appsettings.Development.json
