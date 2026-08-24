@@ -123,10 +123,15 @@ used `dotnet run`, which [../../../AGENTS.md](../../../AGENTS.md) forbids, so it
 evidence.
 
 A second attempt on 2026-08-24 through the `GSBC.ImpactKids.AppHost: https PROD` run configuration did
-not get far enough to test: the AppHost started and the containers came up, but the gRPC service and the
-proxy never started and nothing was logged about why. A likely cause is that the Auth0 client secret
-lives in `appsettings.Development.json`, which a Production environment does not load, leaving the OIDC
-handler without a secret — worth confirming from the Aspire dashboard before concluding anything.
+not get far enough to test, for a reason unrelated to auth. The Aspire dashboard's MCP `list_resources`
+reports the `impact-kids` database unhealthy with
+`Npgsql.PostgresException 28P01: password authentication failed for user "postgres"`, which leaves
+`migrations`, `grpc` and `yarp` all `Waiting` — the gRPC service waits for migrations to complete and the
+proxy waits for the gRPC service, so neither ever starts.
+
+The Postgres container is `ContainerLifetime.Persistent` with a data volume, so its password was fixed
+when the volume was first created. A profile that resolves a different generated password cannot
+authenticate against it. Sort that out before reading anything about auth into a failed PROD run.
 
 ## Local configuration
 
