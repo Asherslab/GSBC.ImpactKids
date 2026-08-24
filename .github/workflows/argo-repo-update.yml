@@ -20,7 +20,7 @@ jobs:
           token: ${{ secrets.ARGO_REPO_TOKEN }}
 
       - name: Update Helm Chart Version
-        working-directory: argo/app-definitions
+        working-directory: argo/clusters/mini/app-definitions
         run: |
           # The current version is stored in inputs.version, we need to rewrite the charts.yaml file with the new version
           # However we can only replace the version: property if it is at the start of a line
@@ -39,7 +39,7 @@ jobs:
           git config --global user.email "${{ env.CI_COMMIT_EMAIL }}"
           if [[ `git status --porcelain --untracked-files=no` ]]; then
             # Changes
-            git add app-definitions/impact-kids.yaml
+            git add clusters/mini/app-definitions/impact-kids.yaml
             git commit -m "${{ env.CI_COMMIT_MESSAGE }}"
             git push
           else
