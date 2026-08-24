@@ -40,7 +40,15 @@ public class GsbcDbContextFactory : IDesignTimeDbContextFactory<GsbcDbContext>
             MemoryVerseLists = null!,
             MemoryVerses = null!,
             MemorisationEntries = null!,
-            VirtualMemorisationEntries = null!
+            VirtualMemorisationEntries = null!,
+
+            FieldChangeLogs       = null!,
+            ElvantoFieldSnapshots = null!,
+            SyncMetadata          = null!,
+            SyncOperations        = null!,
+            SyncAuditLogs         = null!,
+            SyncFieldConfigs      = null!,
+            PendingReviews        = null!
         };
     }
 }

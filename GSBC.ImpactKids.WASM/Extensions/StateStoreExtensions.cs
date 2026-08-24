@@ -14,11 +14,16 @@ using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
 using GSBC.ImpactKids.WASM.Features.Attendance;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Sync;
+using GSBC.ImpactKids.Shared.Contracts.Services.Base;
+using GSBC.ImpactKids.Shared.Contracts.Services.Features.Sync;
+using GSBC.ImpactKids.WASM.Services;
 using GSBC.ImpactKids.WASM.Features.Authentication;
 using GSBC.ImpactKids.WASM.Features.Calendar;
 using GSBC.ImpactKids.WASM.Features.Eventing;
 using GSBC.ImpactKids.WASM.Features.People;
 using GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services;
+using GSBC.ImpactKids.WASM.Features.Sync;
 using GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services.Features.ServiceTypes;
 using GSBC.ImpactKids.WASM.Features.Scripture.Features.Memorisation;
 using GSBC.ImpactKids.WASM.Features.Scripture.Features.Memorisation.Features.MemoryVerses;
@@ -67,7 +72,10 @@ public static class StateStoreExtensions
                 .AddEntityStore<AttendanceItemRecord>()
                 .AddEntityStore<GamePointRecord>()
                 .AddEntityStore<GameBoard>()
-                .AddEntityStore<User>();
+                .AddEntityStore<User>()
+                .AddEntityStore<SyncOperation>()
+                .AddEntityStore<SyncManualReviewEntry>()
+                .AddScoped<IBasicReadMultipleService<SyncManualReviewEntry>, SyncManualReviewReadAdapter>();
         }
 
         private IServiceCollection AddComponentStores()
@@ -88,7 +96,8 @@ public static class StateStoreExtensions
                 .AddPageStore<MemorisationToolState>()
                 .AddPageStore<AttendanceToolState>()
                 .AddPageStore<MultipleMemoryVersesState>()
-                .AddPageStore<MultipleUsersState>();
+                .AddPageStore<MultipleUsersState>()
+                .AddPageStore<IndividualSyncState>();
         }
 
         private IServiceCollection AddEntityStore<T>() where T : notnull

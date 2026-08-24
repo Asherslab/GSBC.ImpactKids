@@ -521,6 +521,9 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.Property<DateTimeOffset?>("DateOfBirth")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTimeOffset?>("DeletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("ElvantoId")
                         .HasColumnType("text");
 
@@ -659,6 +662,374 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.ToTable("Terms");
                 });
 
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Sync.DbElvantoFieldSnapshot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FieldName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("LastSeenAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastSeenHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("LastSeenValue")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EntityType", "EntityId", "FieldName")
+                        .IsUnique();
+
+                    b.ToTable("ElvantoFieldSnapshots");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Sync.DbFieldChangeLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("ChangedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FieldName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ValueHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EntityType", "EntityId", "FieldName", "ChangedAt");
+
+                    b.ToTable("FieldChangeLogs");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Sync.DbSyncAuditLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Direction")
+                        .HasColumnType("text");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FieldName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FromValue")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PersonId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("SyncOperationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ToValue")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PersonId", "OccurredAt");
+
+                    b.HasIndex("SyncOperationId", "OccurredAt");
+
+                    b.ToTable("SyncAuditLogs");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Sync.DbSyncFieldConfig", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Direction")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FieldName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PrecedenceOnTie")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EntityType", "FieldName")
+                        .IsUnique();
+
+                    b.ToTable("SyncFieldConfigs");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("a8b0fa9c-7d2f-c571-2dbb-575b6409e07d"),
+                            Direction = "Bidirectional",
+                            EntityType = "Person",
+                            FieldName = "FirstName",
+                            PrecedenceOnTie = "Elvanto"
+                        },
+                        new
+                        {
+                            Id = new Guid("e2ef7ea7-a11a-3123-dbf8-26fd3e8f826a"),
+                            Direction = "Bidirectional",
+                            EntityType = "Person",
+                            FieldName = "LastName",
+                            PrecedenceOnTie = "Elvanto"
+                        },
+                        new
+                        {
+                            Id = new Guid("bfcd1d0d-4275-70af-c5ba-038189177e39"),
+                            Direction = "Bidirectional",
+                            EntityType = "Person",
+                            FieldName = "Email",
+                            PrecedenceOnTie = "Elvanto"
+                        },
+                        new
+                        {
+                            Id = new Guid("0b002705-d332-f598-e7f1-958d18bfbc70"),
+                            Direction = "Bidirectional",
+                            EntityType = "Person",
+                            FieldName = "PhoneNumber",
+                            PrecedenceOnTie = "Elvanto"
+                        },
+                        new
+                        {
+                            Id = new Guid("d91dbee9-ebe0-c13f-47f4-cac9d901344f"),
+                            Direction = "Bidirectional",
+                            EntityType = "Person",
+                            FieldName = "DateOfBirth",
+                            PrecedenceOnTie = "Elvanto"
+                        },
+                        new
+                        {
+                            Id = new Guid("d6544c23-e195-93c9-62e1-c47a23089c82"),
+                            Direction = "Bidirectional",
+                            EntityType = "Person",
+                            FieldName = "FirstTime",
+                            PrecedenceOnTie = "Elvanto"
+                        },
+                        new
+                        {
+                            Id = new Guid("2f2ea444-7b57-9ffa-ac55-37b6f6c7b778"),
+                            Direction = "Bidirectional",
+                            EntityType = "Person",
+                            FieldName = "MediaConsent",
+                            PrecedenceOnTie = "Elvanto"
+                        },
+                        new
+                        {
+                            Id = new Guid("34b7454b-74ac-4a48-c0b2-89e8ef1d5698"),
+                            Direction = "Bidirectional",
+                            EntityType = "Person",
+                            FieldName = "SchoolGradeId",
+                            PrecedenceOnTie = "Elvanto"
+                        },
+                        new
+                        {
+                            Id = new Guid("b6fbd7e5-74d7-9cb4-5a3d-d3543f4468bb"),
+                            Direction = "InboundOnly",
+                            EntityType = "Person",
+                            FieldName = "FamilyId",
+                            PrecedenceOnTie = "Elvanto"
+                        },
+                        new
+                        {
+                            Id = new Guid("3ba3eb59-3a5d-dfc0-5434-696367590a7a"),
+                            Direction = "InboundOnly",
+                            EntityType = "Person",
+                            FieldName = "FamilyGuardian",
+                            PrecedenceOnTie = "Elvanto"
+                        },
+                        new
+                        {
+                            Id = new Guid("612124ce-e604-b8af-b118-4d61e47dfb7e"),
+                            Direction = "OutboundOnly",
+                            EntityType = "Person",
+                            FieldName = "Allergies",
+                            PrecedenceOnTie = "App"
+                        },
+                        new
+                        {
+                            Id = new Guid("859e2ffb-98c7-7799-8f6c-7316b37bde5e"),
+                            Direction = "OutboundOnly",
+                            EntityType = "Person",
+                            FieldName = "MedicalNotes",
+                            PrecedenceOnTie = "App"
+                        });
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Sync.DbSyncMetadata", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ElvantoId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("LastSyncAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastSyncStatus")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ManualReviewReason")
+                        .HasColumnType("text");
+
+                    b.Property<int>("MatchConfidence")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("MatchStrategy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("MatchedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PersonId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ElvantoId")
+                        .IsUnique();
+
+                    b.HasIndex("PersonId")
+                        .IsUnique();
+
+                    b.ToTable("SyncMetadata");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Sync.DbSyncOperation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FailureReason")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("FamilyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Mode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("PersonId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PersonId");
+
+                    b.HasIndex("Scope", "StartedAt");
+
+                    b.ToTable("SyncOperations");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Sync.DbSyncPendingReview", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ElvantoId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("MatchConfidence")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("MatchStrategy")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("PersonId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PersonName")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PersonId")
+                        .IsUnique();
+
+                    b.HasIndex("PersonId", "ElvantoId")
+                        .IsUnique();
+
+                    b.ToTable("PendingReviews");
+                });
+
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Attendance.DbAttendanceItemRecord", b =>
                 {
                     b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.Attendance.DbAttendanceItemType", "AttendanceItemType")
@@ -738,6 +1109,8 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                             b1.PrimitiveCollection<string>("Alliances")
                                 .IsRequired();
 
+                            b1.Property<bool>("Hidden");
+
                             b1.Property<int?>("Multiplier");
 
                             b1.Property<string>("Name");
@@ -745,6 +1118,8 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                             b1.Property<int>("Number");
 
                             b1.PrimitiveCollection<string>("PlacementPoints");
+
+                            b1.Property<bool>("Planned");
 
                             b1.HasKey("DbGameBoardId", "__synthesizedOrdinal");
 
@@ -967,6 +1342,48 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.Navigation("ServiceType");
                 });
 
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Sync.DbSyncAuditLog", b =>
+                {
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.Sync.DbSyncOperation", "SyncOperation")
+                        .WithMany("AuditLogs")
+                        .HasForeignKey("SyncOperationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("SyncOperation");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Sync.DbSyncMetadata", b =>
+                {
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.People.DbPerson", "Person")
+                        .WithOne()
+                        .HasForeignKey("GSBC.ImpactKids.Grpc.Data.Models.Sync.DbSyncMetadata", "PersonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Person");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Sync.DbSyncOperation", b =>
+                {
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.People.DbPerson", "Person")
+                        .WithMany()
+                        .HasForeignKey("PersonId");
+
+                    b.Navigation("Person");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Sync.DbSyncPendingReview", b =>
+                {
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.People.DbPerson", "Person")
+                        .WithOne()
+                        .HasForeignKey("GSBC.ImpactKids.Grpc.Data.Models.Sync.DbSyncPendingReview", "PersonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Person");
+                });
+
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses.DbMemoryVerse", b =>
                 {
                     b.Navigation("MemorisationEntries");
@@ -992,6 +1409,11 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.School.DbSchoolTerm", b =>
                 {
                     b.Navigation("Services");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Sync.DbSyncOperation", b =>
+                {
+                    b.Navigation("AuditLogs");
                 });
 #pragma warning restore 612, 618
         }

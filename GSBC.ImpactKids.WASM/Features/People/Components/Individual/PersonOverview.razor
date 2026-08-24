@@ -5,7 +5,12 @@
                 <DetailsModificationCard
                     Id="Id"
                     DetailsComponentType="@(typeof(PersonDetails))"
-                    ExtraParameters="_personDetailsExtraParams"/>
+                    ExtraParameters="_personDetailsExtraParams">
+                    <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                        <MudText Typo="Typo.h6" Align="Align.Start">Details</MudText>
+                        <PersonElvantoLink Id="Id"/>
+                    </MudStack>
+                </DetailsModificationCard>
             </MudItem>
             @if (!HideMemorisationEntries)
             {

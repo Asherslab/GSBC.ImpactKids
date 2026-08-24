@@ -18,3 +18,10 @@ P:GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People.CreatePerso
 P:GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People.CreatePersonRequest.FirstTime; Use LocalFirstTime Instead
 P:GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People.UpdatePersonRequest.DateOfBirth; Use LocalDateOfBirth Instead
 P:GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People.UpdatePersonRequest.FirstTime; Use LocalFirstTime Instead
+
+# Sync Operation
+P:GSBC.ImpactKids.Shared.Contracts.Entities.Features.Sync.SyncOperation.StartedAt; Use LocalStartedAt Instead
+P:GSBC.ImpactKids.Shared.Contracts.Entities.Features.Sync.SyncOperation.CompletedAt; Use LocalCompletedAt Instead
+
+# Sync Audit Log
+P:GSBC.ImpactKids.Shared.Contracts.Entities.Features.Sync.SyncAuditLog.OccurredAt; Use LocalOccurredAt Instead

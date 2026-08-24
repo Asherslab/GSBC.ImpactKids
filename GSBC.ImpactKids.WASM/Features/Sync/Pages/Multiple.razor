@@ -1,0 +1,129 @@
+@page "/Sync"
+@using GSBC.ImpactKids.WASM.Features.People.Components.Individual
+@inject ISyncService                     SyncService
+@inject IRefreshableStore<SyncOperation> SyncStore
+@inject IRefreshableStore<Person>        PeopleStore
+
+<PageTitle>Sync</PageTitle>
+
+<MudPaper Elevation="6" Class="mt-4 pa-6">
+    <MudText Typo="Typo.h6" Class="mb-4">Create Sync</MudText>
+    <MudGrid Spacing="4">
+        <MudItem xs="12" md="4">
+            <MudSelect T="ElvantoSyncMode"
+                       Label="Mode"
+                       Value="_mode"
+                       ValueChanged="@((v) => { _mode = v; StateHasChanged(); })"
+                       Variant="Variant.Filled">
+                @foreach (ElvantoSyncMode m in Enum.GetValues<ElvantoSyncMode>())
+                {
+                    <MudSelectItem T="ElvantoSyncMode" Value="m">@m.ToString()</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudSelect T="ElvantoSyncScope"
+                       Label="Scope"
+                       Value="_scope"
+                       ValueChanged="@((v) => { _scope = v; _personId = null; _familyId = null; StateHasChanged(); })"
+                       Variant="Variant.Filled">
+                @foreach (ElvantoSyncScope s in Enum.GetValues<ElvantoSyncScope>())
+                {
+                    <MudSelectItem T="ElvantoSyncScope" Value="s">@s.ToString()</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        @if (_scope == ElvantoSyncScope.Person)
+        {
+            <MudItem xs="12" md="4">
+                <MudSelect T="Guid?"
+                           Label="Person"
+                           Value="_personId"
+                           ValueChanged="@((v) => { _personId = v; StateHasChanged(); })"
+                           Variant="Variant.Filled">
+                    @foreach (Person p in _people.Data ?? [])
+                    {
+                        <MudSelectItem T="Guid?" Value="@((Guid?)p.Id)">@p.GetDisplayName()</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+        }
+        @if (_scope == ElvantoSyncScope.Family)
+        {
+            <MudItem xs="12" md="4">
+                <MudSelect T="Guid?"
+                           Label="Family"
+                           Value="_familyId"
+                           ValueChanged="@((v) => { _familyId = v; StateHasChanged(); })"
+                           Variant="Variant.Filled">
+                    @foreach (FamilyDefinition f in _families)
+                    {
+                        <MudSelectItem T="Guid?" Value="@((Guid?)f.Id)">@f.FamilyName (@f.FamilyCount)</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+        }
+        <MudItem xs="12">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       OnClick="@SubmitSync"
+                       Disabled="@(!CanSubmit || _isSubmitting)"
+                       StartIcon="@Icons.Material.Filled.Sync">
+                @(_isSubmitting ? "Syncing..." : "Run Sync")
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (PendingReviewCount > 0)
+{
+    <MudAlert Severity="Severity.Warning" Class="mt-4" Icon="@Icons.Material.Filled.RateReview">
+        <MudText>
+            <b>@PendingReviewCount</b> match@(PendingReviewCount == 1 ? "" : "es") pending manual review — open a sync operation to approve or deny.
+        </MudText>
+    </MudAlert>
+}
+
+<MudPaper Elevation="6" Class="mt-4 relative">
+    <MudOverlay Visible="@_operations.IsLoading" DarkBackground Absolute>
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+    @if (_operations.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="ma-4">@_operations.Error</MudAlert>
+    }
+    <MudTable Items="@(_operations.Data ?? [])" Hover Breakpoint="Breakpoint.None">
+        <HeaderContent>
+            <MudTh>Mode</MudTh>
+            <MudTh>Scope</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh>Started</MudTh>
+            <MudTh>Completed</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Mode">
+                <MudChip T="string" Color="@ModeColor(context.Mode)" Size="Size.Small">@context.Mode</MudChip>
+            </MudTd>
+            <MudTd DataLabel="Scope">@context.Scope</MudTd>
+            <MudTd DataLabel="Status">
+                @if (context.Status.HasValue)
+                {
+                    <MudChip T="string" Color="@StatusColor(context.Status.Value)" Size="Size.Small">@context.Status</MudChip>
+                }
+                else
+                {
+                    <MudChip T="string" Color="Color.Default" Size="Size.Small">Running</MudChip>
+                }
+            </MudTd>
+            <MudTd DataLabel="Started">@context.LocalStartedAt.ToString("dd/MM/yyyy HH:mm:ss")</MudTd>
+            <MudTd DataLabel="Completed">@(context.LocalCompletedAt?.ToString("dd/MM/yyyy HH:mm:ss") ?? "-")</MudTd>
+            <MudTd>
+                <MudButton Variant="Variant.Outlined" Href="@($"/Sync/{context.Id}")">View</MudButton>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText Class="pa-4">No sync operations yet.</MudText>
+        </NoRecordsContent>
+    </MudTable>
+</MudPaper>

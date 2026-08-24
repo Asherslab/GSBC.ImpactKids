@@ -1,0 +1,83 @@
+@using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Sync
+@using System.Collections.Immutable
+
+<MudTable Items="@Logs" Hover Breakpoint="Breakpoint.None" Dense RowsPerPage="25">
+    <HeaderContent>
+        <MudTh>Person</MudTh>
+        <MudTh>Event</MudTh>
+        <MudTh>Field</MudTh>
+        <MudTh>From</MudTh>
+        <MudTh>To</MudTh>
+        <MudTh>Reason</MudTh>
+        <MudTh>Time</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Person">
+            <MudLink Href="@($"/People/{context.PersonId}")">@GetPersonName(context.PersonId)</MudLink>
+        </MudTd>
+        <MudTd DataLabel="Event">
+            <MudChip T="string" Color="@EventColor(context.EventType)" Size="Size.Small">@FormatEventType(context.EventType)</MudChip>
+        </MudTd>
+        <MudTd DataLabel="Field">@(context.FieldName ?? "-")</MudTd>
+        <MudTd DataLabel="From">
+            @if (context.FromValue != null)
+            {
+                <MudText Typo="Typo.body2" Color="Color.Error">@context.FromValue</MudText>
+            }
+            else
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">-</MudText>
+            }
+        </MudTd>
+        <MudTd DataLabel="To">
+            @if (context.ToValue != null)
+            {
+                <MudText Typo="Typo.body2" Color="Color.Success">@context.ToValue</MudText>
+            }
+            else
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">-</MudText>
+            }
+        </MudTd>
+        <MudTd DataLabel="Reason">@context.Reason</MudTd>
+        <MudTd DataLabel="Time">@context.LocalOccurredAt.ToString("HH:mm:ss")</MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText Class="pa-4">No entries.</MudText>
+    </NoRecordsContent>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 25, 50, 100 }"/>
+    </PagerContent>
+</MudTable>
+
+@code {
+    [Parameter, EditorRequired]
+    public ImmutableList<SyncAuditLog> Logs { get; set; } = ImmutableList<SyncAuditLog>.Empty;
+
+    [Parameter, EditorRequired]
+    public Func<Guid, string> GetPersonName { get; set; } = _ => "Unknown";
+
+    private static Color EventColor(SyncEventType type) => type switch
+    {
+        SyncEventType.FieldUpdated         => Color.Info,
+        SyncEventType.Conflict             => Color.Warning,
+        SyncEventType.Created              => Color.Success,
+        SyncEventType.PushedToElvanto      => Color.Primary,
+        SyncEventType.WouldPushToElvanto   => Color.Secondary,
+        SyncEventType.WouldCreateInElvanto => Color.Secondary,
+        SyncEventType.ManualReviewQueued   => Color.Warning,
+        SyncEventType.Archived             => Color.Error,
+        SyncEventType.Match                => Color.Default,
+        _                                  => Color.Default
+    };
+
+    private static string FormatEventType(SyncEventType type) => type switch
+    {
+        SyncEventType.FieldUpdated         => "Updated",
+        SyncEventType.PushedToElvanto      => "Pushed",
+        SyncEventType.WouldPushToElvanto   => "Would Push",
+        SyncEventType.WouldCreateInElvanto => "Would Create",
+        SyncEventType.ManualReviewQueued   => "Manual Review",
+        _                                  => type.ToString()
+    };
+}
