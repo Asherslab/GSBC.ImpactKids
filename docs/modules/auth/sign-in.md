@@ -117,21 +117,32 @@ is working exactly as designed.
 Verified on 2026-08-24: a dev session drives the authed pages end to end, with every proxied gRPC call
 returning 200 and `/bff/user` reporting `permissions: user:enabled`.
 
-**The closed gate is reasoned from the code, not demonstrated.** It was checked once by running the
-proxy standalone under `ASPNETCORE_ENVIRONMENT=Production` — routes absent, no warning logged — but that
-used `dotnet run`, which [../../../AGENTS.md](../../../AGENTS.md) forbids, so it does not count as
-evidence.
+**The closed gate is verified**, through the `GSBC.ImpactKids.AppHost: https PROD` run configuration on
+2026-08-24, with the whole stack up:
 
-A second attempt on 2026-08-24 through the `GSBC.ImpactKids.AppHost: https PROD` run configuration did
-not get far enough to test, for a reason unrelated to auth. The Aspire dashboard's MCP `list_resources`
-reports the `impact-kids` database unhealthy with
-`Npgsql.PostgresException 28P01: password authentication failed for user "postgres"`, which leaves
-`migrations`, `grpc` and `yarp` all `Waiting` — the gRPC service waits for migrations to complete and the
-proxy waits for the gRPC service, so neither ever starts.
+| Request | Result |
+|---|---|
+| `/bff/dev-login`, `/bff/dev-logout` | 200 serving the WASM shell — the routes do not exist, so they fall through to the SPA catch-all. **No `Set-Cookie`, no session.** |
+| `/bff/login` | 302 to Auth0 — real sign in untouched |
+| `/bff/user` | 401 |
+| `/gRPC/...` | 401 |
 
-The Postgres container is `ContainerLifetime.Persistent` with a data volume, so its password was fixed
-when the volume was first created. A profile that resolves a different generated password cannot
-authenticate against it. Sort that out before reading anything about auth into a failed PROD run.
+**Which gate did the work matters.** The proxy and the gRPC service still report
+`ASPNETCORE_ENVIRONMENT=Development`, because Aspire honours each project's own launch profile. What shut
+the bypass was `DevAuth__Enabled` and `DevAuth__SigningKey` being **absent entirely** — the AppHost ran
+as Production, so it never injected them. The flag and key gates were exercised; the environment gate was
+not.
+
+The three gates are therefore not independent in practice: the AppHost's environment decides whether the
+other two are ever set. A real deployment has both properties — a Production service *and* no DevAuth
+configuration — but do not read this test as proof of the environment check itself.
+
+An earlier attempt was defeated by something unrelated to auth, worth knowing because it looks alarming:
+the `impact-kids` database came up unhealthy with
+`Npgsql.PostgresException 28P01: password authentication failed for user "postgres"`, leaving
+`migrations`, `grpc` and `yarp` all `Waiting`. See
+[../infrastructure/generated-passwords.md](../infrastructure/generated-passwords.md) — a failed PROD run
+is far more likely to be that than anything about auth.
 
 ## Local configuration
 
