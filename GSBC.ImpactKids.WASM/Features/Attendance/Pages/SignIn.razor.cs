@@ -50,6 +50,7 @@ public partial class SignIn
         HandleSubscriptionDisposal(ServicesStore, RetrieveService);
         HandleSubscriptionDisposal(PeopleStore, RetrievePerson);
         HandleSubscriptionDisposal(AttendanceRecordsStore, RetrieveAttendanceRecord);
+        HandleStateChangeSubscriptionDisposal(SchoolGradesStore);
         HandleStateChangeSubscriptionDisposal(AttendanceItemTypesStore);
         HandleStateChangeSubscriptionDisposal(AttendanceItemRecordsStore);
 
@@ -60,6 +61,7 @@ public partial class SignIn
             ServicesStore.RefreshAll(),
             PeopleStore.RefreshAll(),
             AttendanceRecordsStore.RefreshAll(),
+            SchoolGradesStore.RefreshAll(),
             AttendanceItemTypesStore.RefreshAll(),
             AttendanceItemRecordsStore.RefreshAll()
         );
@@ -169,6 +171,21 @@ public partial class SignIn
         _attendanceRecordId = _attendanceRecordId.ToSuccess(record?.Id);
 
         StateHasChanged();
+    }
+
+    /// <summary>
+    /// Why this child looks out of place for the night, or null when they fit. A warning
+    /// only - the desk still signs them in, because the grade on file is often the thing
+    /// that is wrong, not the child standing there.
+    /// </summary>
+    private string? ProgramWarning()
+    {
+        ImmutableList<SchoolGrade>? grades = SchoolGradesStore.GetState().Entities.Data;
+
+        if (_person.Data == null || grades == null)
+            return null;
+
+        return SchoolGradeTiers.OutOfProgramWarning(_person.Data, grades);
     }
 
     private async Task PreviousStepAsync(MudStepper stepper)

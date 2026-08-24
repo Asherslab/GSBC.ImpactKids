@@ -26,9 +26,15 @@ public record Person : IIdentifiable
     public required Guid FamilyId       { get; init; }
     public required bool FamilyGuardian { get; init; }
 
-    public int? GetAge() => LocalDateOfBirth == null
+    public int? GetAge() => CalculateAge(LocalDateOfBirth);
+
+    /// <summary>
+    /// Age today from a local date of birth. Static so a form can show the age of a date
+    /// still being typed, before there is a person to ask.
+    /// </summary>
+    public static int? CalculateAge(DateTime? localDateOfBirth) => localDateOfBirth == null
         ? null
-        : (int.Parse(DateTime.Now.ToString("yyyyMMdd")) - int.Parse(LocalDateOfBirth.Value.ToString("yyyyMMdd")))
+        : (int.Parse(DateTime.Now.ToString("yyyyMMdd")) - int.Parse(localDateOfBirth.Value.ToString("yyyyMMdd")))
           / 10000;
 
     public string GetDisplayName() => $"{FirstName} {LastName}";
