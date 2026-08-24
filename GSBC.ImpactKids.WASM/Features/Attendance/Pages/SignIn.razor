@@ -5,6 +5,7 @@
 @page "/Attendance/SignIn/{Id:guid}"
 @inject IRefreshableStore<Service>              ServicesStore
 @inject IRefreshableStore<Person>               PeopleStore
+@inject IRefreshableStore<SchoolGrade>          SchoolGradesStore
 @inject IRefreshableStore<AttendanceRecord>     AttendanceRecordsStore
 @inject IRefreshableStore<AttendanceItemType>   AttendanceItemTypesStore
 @inject IRefreshableStore<AttendanceItemRecord> AttendanceItemRecordsStore
@@ -24,6 +25,12 @@
     {
         <MudAlert Severity="Severity.Error" Class="mb-4">
             @_person.Error
+        </MudAlert>
+    }
+    @if (ProgramWarning() != null)
+    {
+        <MudAlert Severity="Severity.Warning" Class="mb-4 mt-4">
+            Outside the usual age range: @ProgramWarning() Sign in anyway if that is right.
         </MudAlert>
     }
     @if (_attendanceRecordId.Data != null)

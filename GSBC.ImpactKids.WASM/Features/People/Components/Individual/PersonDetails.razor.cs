@@ -36,6 +36,26 @@ public partial class PersonDetails
         );
     }
 
+    /// <summary>
+    /// Age of the date of birth currently in the form - the one being edited, not the one
+    /// last saved, so it moves as the picker does.
+    /// </summary>
+    private int? Age() => Person.CalculateAge(
+        State == ModificationState.Creating
+            ? CreateRequest.LocalDateOfBirth
+            : UpdateRequest.LocalDateOfBirth.Value
+    );
+
+    /// <summary>Set once the age alone puts them outside Prep to grade 6.</summary>
+    private string? AgeWarning()
+    {
+        int? age = Age();
+
+        return age == null || age >= SchoolGradeTiers.MinimumProgramAge
+            ? null
+            : $"Under {SchoolGradeTiers.MinimumProgramAge}";
+    }
+
     protected override async Task OnParametersSetAsync()
     {
         await base.OnParametersSetAsync();

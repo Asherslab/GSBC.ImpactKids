@@ -8,19 +8,6 @@ namespace GSBC.ImpactKids.Grpc.Features.Scripture.Memorisation.MemorisationEntri
 
 public partial class MemorisationEntriesService
 {
-    private static readonly string[] SchoolGrades =
-    [
-        "Nursery/Pre-school",
-        "Kindergarten",
-        "Prep",
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6"
-    ];
-
     public async IAsyncEnumerable<BasicReadMultipleResponse<MemorisationEntry>> BasicReadMultiple(
         BasicReadMultipleRequest request,
         CallContext              context = default
