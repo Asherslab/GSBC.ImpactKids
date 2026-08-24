@@ -487,7 +487,12 @@ $RECYCLE.BIN/
 # Vim temporary swap files
 *.swp
 
-# Local development configuration. Holds real secrets - the Auth0 client secret, the Elvanto key -
-# so it stays on each developer's machine. Also excluded in .git/info/exclude, which is per-checkout
-# and not shared; this line is the one a fresh clone inherits.
+# Local environment configuration. Holds real secrets - the Auth0 client secret, the Elvanto key -
+# so it stays on each developer's machine. Both are also excluded in .git/info/exclude, which is
+# per-checkout and not shared; these lines are the ones a fresh clone inherits.
+#
+# Production is here too because it is the local mirror of Development, used by the
+# "AppHost: https PROD" run configuration. Deployed configuration comes from the environment, not
+# from a file in the repo.
 **/appsettings.Development.json
+**/appsettings.Production.json
