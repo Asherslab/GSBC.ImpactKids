@@ -40,8 +40,8 @@ public partial class Tool
         _tieredFilters =
         [
             // TODO: HasAttendedThisYearPersonFilter,
-            ImpactPrimaryGradesPersonFilter,
-            NonImpactPrimaryGradesPersonFilter,
+            ProgramGradesPersonFilter,
+            EarlyYearsGradesPersonFilter,
             HighSchoolGradesPersonFilter,
             NoSchoolGradesPersonFilter
         ];
@@ -140,34 +140,40 @@ public partial class Tool
         StateHasChanged();
     }
 
-    private bool ImpactPrimaryGradesPersonFilter(Person person)
+    /// <summary>
+    /// Prep to grade 6 in one tier - the junior program takes five year olds, so a child
+    /// still labelled Kindergarten or Pre-school who has turned five belongs here too,
+    /// which is why this one asks <see cref="SchoolGradeTiers"/> instead of matching ids.
+    /// </summary>
+    private bool ProgramGradesPersonFilter(Person person)
     {
-        RetrieveSchoolGradeIds();
-        if (_firstTierSchoolGradeIds == null)
+        ImmutableList<SchoolGrade>? grades = SchoolGradesStore.GetState().Entities.Data;
+
+        if (grades == null)
             return true;
 
-        return person.SchoolGradeId != null &&
-               _firstTierSchoolGradeIds.Contains(person.SchoolGradeId.Value);
+        return SchoolGradeTiers.IsInProgram(person, grades);
     }
 
-    private bool NonImpactPrimaryGradesPersonFilter(Person person)
+    /// <summary>Below Prep and not yet five - the ones the program has not reached.</summary>
+    private bool EarlyYearsGradesPersonFilter(Person person)
     {
         RetrieveSchoolGradeIds();
-        if (_secondTierSchoolGradeIds == null)
+        if (_earlyYearsSchoolGradeIds == null)
             return true;
 
         return person.SchoolGradeId != null &&
-               _secondTierSchoolGradeIds.Contains(person.SchoolGradeId.Value);
+               _earlyYearsSchoolGradeIds.Contains(person.SchoolGradeId.Value);
     }
 
     private bool HighSchoolGradesPersonFilter(Person person)
     {
         RetrieveSchoolGradeIds();
-        if (_thirdTierSchoolGradeIds == null)
+        if (_highSchoolSchoolGradeIds == null)
             return true;
 
         return person.SchoolGradeId != null &&
-               _thirdTierSchoolGradeIds.Contains(person.SchoolGradeId.Value);
+               _highSchoolSchoolGradeIds.Contains(person.SchoolGradeId.Value);
     }
 
     private bool NoSchoolGradesPersonFilter(Person person)
@@ -184,59 +190,25 @@ public partial class Tool
     private void RetrieveSchoolGradeIds()
     {
         if (
-            (_firstTierSchoolGradeIds != null &&
-             _secondTierSchoolGradeIds != null &&
-             _thirdTierSchoolGradeIds != null) ||
+            (_earlyYearsSchoolGradeIds != null &&
+             _highSchoolSchoolGradeIds != null) ||
             SchoolGradesStore.GetState().Entities.Data == null
         )
             return;
 
-        _firstTierSchoolGradeIds = SchoolGradesStore.GetState().Entities.Data?
-            .Where(x => FirstTierSchoolGrades.Contains(x.Label))
+        _earlyYearsSchoolGradeIds = SchoolGradesStore.GetState().Entities.Data?
+            .Where(x => SchoolGradeTiers.EarlyYears.Contains(x.Label))
             .Select(x => x.Id)
             .ToArray();
 
-        _secondTierSchoolGradeIds = SchoolGradesStore.GetState().Entities.Data?
-            .Where(x => SecondTierSchoolGrades.Contains(x.Label))
-            .Select(x => x.Id)
-            .ToArray();
-
-        _thirdTierSchoolGradeIds = SchoolGradesStore.GetState().Entities.Data?
-            .Where(x => ThirdTierSchoolGrades.Contains(x.Label))
+        _highSchoolSchoolGradeIds = SchoolGradesStore.GetState().Entities.Data?
+            .Where(x => SchoolGradeTiers.HighSchool.Contains(x.Label))
             .Select(x => x.Id)
             .ToArray();
 
         StateHasChanged();
     }
 
-    private Guid[]? _firstTierSchoolGradeIds;
-    private Guid[]? _secondTierSchoolGradeIds;
-    private Guid[]? _thirdTierSchoolGradeIds;
-
-    private static readonly string[] FirstTierSchoolGrades =
-    [
-        "2",
-        "3",
-        "4",
-        "5",
-        "6"
-    ];
-
-    private static readonly string[] SecondTierSchoolGrades =
-    [
-        "Nursery/Pre-school",
-        "Kindergarten",
-        "Prep",
-        "1",
-    ];
-
-    private static readonly string[] ThirdTierSchoolGrades =
-    [
-        "7",
-        "8",
-        "9",
-        "10",
-        "11",
-        "12",
-    ];
+    private Guid[]? _earlyYearsSchoolGradeIds;
+    private Guid[]? _highSchoolSchoolGradeIds;
 }

@@ -48,6 +48,15 @@
         DateFormat="dd/MM/yyyy"
         Editable/>
 
+    @if (Age() != null)
+    {
+        <MudText Typo="Typo.caption"
+                 Class="mt-n3 mb-4 ml-3"
+                 Color="@(AgeWarning() == null ? Color.Default : Color.Warning)">
+            Currently @Age() years old
+        </MudText>
+    }
+
     @if (!BasicView)
     {
         <MudPaper Elevation="0" Class="d-flex flex-row flex-grow-1 mb-4">
