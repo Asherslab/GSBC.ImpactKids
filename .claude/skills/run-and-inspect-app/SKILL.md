@@ -44,15 +44,42 @@ ToolSearch  query: "select:mcp__rider__execute_run_configuration,mcp__rider__get
 - **Rider MCP** (`mcp__rider__*`) — runs the app. `get_run_configurations` lists what exists
   (pass `projectPath: /Users/asherp/Documents/Git/GSBC.ImpactKids`) if the name below has
   drifted. There is **no stop tool** — see the restart section, stopping is done with `pkill`.
+- **Aspire dashboard MCP** (`mcp__gsbc-impactkids-aspire__*`) — **the first thing to reach for when the
+  app does not come up.** `list_resources` gives every resource's state and its health report,
+  `list_console_logs` its output, plus `list_structured_logs`, `list_traces`,
+  `list_trace_structured_logs` and `execute_resource_command`. Configured in `.mcp.json` (gitignored:
+  its key is `AppHost:McpApiKey` from your own user secrets), served at `http://localhost:16036/mcp`
+  while the AppHost runs.
+
+  This exists because the alternative wasted an hour: `ps`, `lsof` and an almost-empty Rider log led to
+  "nothing logged about why", when `list_resources` had the answer all along — a resource `Running but
+  not in a healthy state` with the exception text in its health report. **Do not diagnose a
+  non-starting stack by poking at processes.** Ask the dashboard.
+
+  If the key rotates (a Production-profile run regenerates it), `/mcp` answers 404 rather than 401 —
+  re-read it from user secrets into `.mcp.json`.
 - **Claude Browser** (`mcp__Claude_Browser__*`) — already loaded, no ToolSearch needed.
   `preview_start`, `navigate`, `computer`, `read_page`, `javascript_tool`,
   `read_console_messages`, `read_network_requests`, `resize_window`.
 - **MudBlazor MCP** (`mcp__mudblazor__*`) — component API reference, for checking a
   parameter exists before guessing at it.
 
-If the Rider MCP is unavailable, fall back to
-`dotnet run --project GSBC.ImpactKids.AppHost --launch-profile https` backgrounded — but
-know it dies when the agent session is torn down, so expect to relaunch between turns.
+**Never `dotnet run` — run configurations only.** Building goes through `mcp__rider__build_solution`
+(`{projectPath: /Users/asherp/Documents/Git/GSBC.ImpactKids}` - returns
+`{isSuccess, problems}`, and works fine while the app is running; `rebuild: true` for a
+clean one). Per-file checks after an edit go through `mcp__rider__get_file_problems`, which
+runs Rider's inspections and so catches more than the compiler. Running goes through
+`execute_run_configuration`. Both build tools are deferred - ToolSearch them first.
+
+This holds for one-off side experiments too: spinning up a single project on a spare port
+to test a config gate is still `dotnet run`, and still not allowed — drive it through a run
+configuration, or ask the user.
+
+`dotnet ef` is fine to run directly — it is the CLI exception, since there is no MCP
+equivalent for migrations.
+
+If the Rider MCP is unavailable for *running*, say so and ask the user to start it from
+Rider rather than falling back to `dotnet run`.
 
 ## Start it
 
@@ -174,6 +201,31 @@ with no prior worker boots off the current manifest and will work while a stuck 
 Auth0 with **Google SSO only**. Never drive that sign-in — ask the user to complete it in
 the browser pane; the BFF cookie then persists for the session and authed pages work.
 
+### Dev bypass — sign yourself in without Auth0
+
+Development only. Navigate to it and you get a real session, cookie and bearer token both:
+
+```
+https://localhost:7263/bff/dev-login?returnUrl=/Attendance/Tool
+```
+
+`/bff/dev-logout` drops it (the real `/bff/logout` goes out to Auth0 to end a session that
+was never started there, and errors). Verify with `curl -sk -b jar .../bff/user` — a
+working bypass answers `isAuthenticated: true` with `permissions: user:enabled`.
+
+It signs in as the sub the gRPC claims transformation seeds as enabled. Any other
+`DevAuth:Subject` lands as a new *disabled* user, and every call comes back 403.
+
+Three things must line up or the routes 404: `Development`, `DevAuth:Enabled`, and a
+signing key ≥32 chars. The AppHost sets the flag and generates the key per run
+(`AppHost.cs`, run mode only — never in a published manifest), so tokens die with the
+process and no key is ever committed. The gRPC service accepts that key *alongside* Auth0,
+never instead of it.
+
+**Two layers, not one.** A cookie alone is not enough — proxied gRPC routes carry a bearer
+token that the gRPC service validates against Auth0. Anything that fakes only the cookie
+gets an authenticated SPA whose every call 401s.
+
 - `/Display/Scores` — `[AllowAnonymous]`, the wall display. Needs no login, so iterate here freely.
 - `/Games/Points`, `/Games/Scores` — `[Authorize]`, need the user to sign in first.
 
@@ -198,6 +250,13 @@ The nav drawer stays open when going desktop → mobile and overlays the page; i
 responsive bug.
 
 `read_page` is the fastest way to check accessibility — it lists every `aria-label`.
+
+**A blank-looking page is usually mid-load, not empty data.** The WASM app boots, then
+every store fetches over gRPC; read the page in that window and you get real chrome with
+empty slots — no service, no rows. This reads exactly like an empty database and has
+already produced a confident, wrong "the DB is empty" (it had 1731 people). Re-read after a
+beat, or check `read_network_requests` for the `BasicReadMultiple` calls returning 200,
+before concluding anything about the data.
 
 **MudMenu popovers do not open under synthetic clicks** (neither `computer left_click` nor
 `.click()`), so menu items and the dialogs behind them are hard to reach programmatically.

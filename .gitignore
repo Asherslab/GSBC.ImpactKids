@@ -486,3 +486,18 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Local environment configuration. Holds real secrets - the Auth0 client secret, the Elvanto key -
+# so it stays on each developer's machine. Both are also excluded in .git/info/exclude, which is
+# per-checkout and not shared; these lines are the ones a fresh clone inherits.
+#
+# Production is here too because it is the local mirror of Development, used by the
+# "AppHost: https PROD" run configuration. Deployed configuration comes from the environment, not
+# from a file in the repo.
+**/appsettings.Development.json
+**/appsettings.Production.json
+
+# MCP server config for agents. Points at the local Aspire dashboard and carries that dashboard's
+# api key, which comes from AppHost:McpApiKey in each developer's own user-secrets - so the file is
+# per-machine by nature and there is no shared version worth committing.
+.mcp.json

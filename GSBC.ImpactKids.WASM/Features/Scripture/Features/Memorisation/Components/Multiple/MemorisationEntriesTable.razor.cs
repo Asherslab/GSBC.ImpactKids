@@ -350,25 +350,12 @@ public partial class MemorisationEntriesTable
             return;
 
         SchoolGradeIds = SchoolGradesStore.GetState().Entities.Data?
-            .Where(x => SchoolGrades.Contains(x.Label))
+            .Where(x => SchoolGradeTiers.EarlyYearsAndProgram.Contains(x.Label))
             .Select(x => x.Id)
             .ToArray();
     }
 
     private Guid[]? SchoolGradeIds = null;
-
-    private static readonly string[] SchoolGrades =
-    [
-        "Nursery/Pre-school",
-        "Kindergarten",
-        "Prep",
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6"
-    ];
 }
 
 public record MemoryVerseRecord : MemoryVerse

@@ -1,0 +1,70 @@
+---
+title: Documentation map
+kind: reference
+status: current
+verified: 2026-08-24
+---
+
+# Documentation
+
+Start here. Every doc carries front-matter saying what it is (`kind`) and whether it is still true
+(`status`), so you can tell reference from a plan without reading it.
+
+Writing or moving a doc rather than reading one? [AGENTS.md](AGENTS.md) is the procedure — which
+directory, what front-matter, and how a doc leaves `work/`.
+
+Operating the repo — running the app, driving the browser, reading the database — is not here. That is
+`.claude/skills/run-and-inspect-app`, and the repo-wide rules are in [../AGENTS.md](../AGENTS.md).
+
+## For how something works, read `modules/` only
+
+Present tense, kept current, no dates.
+
+| Module | Docs |
+|---|---|
+| **games** | [team points, wall displays and the reveal](modules/games/README.md) |
+| **auth** | [the cookie, the bearer token, and the local bypass](modules/auth/sign-in.md) |
+| **people** | [school grades and who is in the program](modules/people/school-grades-and-programs.md) |
+| **infrastructure** | [generated passwords and persistent volumes](modules/infrastructure/generated-passwords.md) |
+
+## The other three directories
+
+| Directory | What is in it | Trust it for |
+|---|---|---|
+| `work/` | plans and discussions for changes not yet finished | what someone intends to do |
+| `open-questions/` | one unresolved question per file | knowing something is *not* settled |
+| `archive/` | finished, rejected or superseded work | history and reasoning only — **never** current behaviour |
+
+### In flight now
+
+Nothing. Add an entry when you open a `work/` doc.
+
+### Open
+
+Nothing. Add an entry when you open an `open-questions/` doc.
+
+## Lifecycle
+
+A doc has one `status`, and one way out of it.
+
+```
+proposed ──accepted──> in-progress ──landed──> folded ──> archive/
+    │                       │
+    └──rejected─────────────┴──superseded────> archive/
+```
+
+- `modules/` docs are always `status: current`. They are rewritten in place, never dated, never
+  superseded.
+- `work/` docs are `proposed`, `accepted`, `in-progress` or `landed`. When the change lands, the durable
+  facts move into `modules/` and the file moves to `archive/` with `folded_into:`.
+- `archive/` docs are `folded`, `rejected` or `superseded`. Never edited — supersede instead.
+- `open-questions/` docs are `open`. Closing one means deleting it and updating the module doc.
+
+`verified:` is the last date someone checked a doc against the code. If the code in `code:` has changed
+since, treat the doc as suspect and fix it while you are there.
+
+## Naming
+
+- `modules/<module>/<topic>.md` — no dates, no version words.
+- `work/YYYY-MM-<slug>.md` and `archive/YYYY-MM-<slug>.md` — dated by when the work opened.
+- `open-questions/<slug>.md` — no dates.
