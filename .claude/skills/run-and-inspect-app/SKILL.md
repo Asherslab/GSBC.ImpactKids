@@ -44,6 +44,20 @@ ToolSearch  query: "select:mcp__rider__execute_run_configuration,mcp__rider__get
 - **Rider MCP** (`mcp__rider__*`) — runs the app. `get_run_configurations` lists what exists
   (pass `projectPath: /Users/asherp/Documents/Git/GSBC.ImpactKids`) if the name below has
   drifted. There is **no stop tool** — see the restart section, stopping is done with `pkill`.
+- **Aspire dashboard MCP** (`mcp__gsbc-impactkids-aspire__*`) — **the first thing to reach for when the
+  app does not come up.** `list_resources` gives every resource's state and its health report,
+  `list_console_logs` its output, plus `list_structured_logs`, `list_traces`,
+  `list_trace_structured_logs` and `execute_resource_command`. Configured in `.mcp.json` (gitignored:
+  its key is `AppHost:McpApiKey` from your own user secrets), served at `http://localhost:16036/mcp`
+  while the AppHost runs.
+
+  This exists because the alternative wasted an hour: `ps`, `lsof` and an almost-empty Rider log led to
+  "nothing logged about why", when `list_resources` had the answer all along — a resource `Running but
+  not in a healthy state` with the exception text in its health report. **Do not diagnose a
+  non-starting stack by poking at processes.** Ask the dashboard.
+
+  If the key rotates (a Production-profile run regenerates it), `/mcp` answers 404 rather than 401 —
+  re-read it from user secrets into `.mcp.json`.
 - **Claude Browser** (`mcp__Claude_Browser__*`) — already loaded, no ToolSearch needed.
   `preview_start`, `navigate`, `computer`, `read_page`, `javascript_tool`,
   `read_console_messages`, `read_network_requests`, `resize_window`.
