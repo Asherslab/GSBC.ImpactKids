@@ -26,6 +26,8 @@ public record Person : IIdentifiable
     public required Guid FamilyId       { get; init; }
     public required bool FamilyGuardian { get; init; }
 
+    public string? ElvantoId { get; init; }
+
     public int? GetAge() => CalculateAge(LocalDateOfBirth);
 
     /// <summary>

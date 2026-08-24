@@ -16,6 +16,11 @@ public partial class ElvantoService(
     ILogger<ElvantoService> logger
 ) : IElvantoService
 {
+    private static readonly System.Text.Json.JsonSerializerOptions _jsonOptions = new()
+    {
+        NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString
+    };
+
     private async Task<TResponse?> SendMessage<TRequest, TResponse>(TRequest request, CancellationToken token = default)
         where TRequest : IRequestMessage
     {
@@ -27,11 +32,19 @@ public partial class ElvantoService(
 
         try
         {
-            HttpResponseMessage message = await httpClient.SendAsync(httpRequest, token);
-            return await message.Content.ReadFromJsonAsync<TResponse>(cancellationToken: token);
+            HttpResponseMessage message  = await httpClient.SendAsync(httpRequest, token);
+            string              rawBody  = await message.Content.ReadAsStringAsync(token);
+            TResponse?          response = System.Text.Json.JsonSerializer.Deserialize<TResponse>(rawBody, _jsonOptions);
+
+            if (response is PeopleResponse)
+                logger.LogWarning("Elvanto {Uri} returned null after deserialization. Raw body: {Body}",
+                    TRequest.RequestUri, rawBody);
+
+            return response;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            logger.LogWarning(ex, "Elvanto {Uri}: request failed", TRequest.RequestUri);
             return default;
         }
     }

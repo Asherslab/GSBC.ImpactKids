@@ -89,7 +89,6 @@ public partial class PersonService
             person.FamilyGuardian = request.FamilyGuardian.Value;
         }
 
-        db.People.Update(person);
         await db.SaveChangesAsync(token);
         await eventService.SendUpdatedEvent(token);
 
