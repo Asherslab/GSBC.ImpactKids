@@ -37,7 +37,9 @@ Present tense, kept current, no dates.
 
 ### In flight now
 
-Nothing. Add an entry when you open a `work/` doc.
+- [Elvanto sync — base values, plan-then-execute, and splitting the orchestrator](work/2026-08-elvanto-sync-refactor.md)
+  — the plan. Read [the findings register](work/2026-08-elvanto-sync-review.md) first if you want
+  the evidence rather than the response.
 
 ### Open
 
