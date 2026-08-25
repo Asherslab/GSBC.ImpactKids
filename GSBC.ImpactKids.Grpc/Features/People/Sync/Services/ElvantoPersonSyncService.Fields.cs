@@ -151,6 +151,18 @@ public partial class ElvantoPersonSyncService
         string? comparedApp = isFamily ? set.ResolveFamilyInElvanto(appPerson.FamilyId, appPerson.Id) : appValue;
         string? comparedElv = isFamily ? rawElvValue : inbound;
 
+        // A family with no resolvable Elvanto counterpart is unknown, not empty - unless the change
+        // log says the app moved this person, in which case the absence is the answer: their new
+        // family has no Elvanto counterpart and one has to be created. Without that distinction a
+        // person who is simply the only linked member of their family reads as having had their
+        // family deliberately cleared, and the run plans to clear it in Elvanto too.
+        bool appValueKnown = !isFamily || comparedApp is not null || appChangedAt != default;
+
+        // And the mirror: a blank family_id means Elvanto has no household for this person, not that
+        // they have none. Treating it as a value drove an inbound write of null, which SetOnApp turns
+        // into a fresh Guid - a brand new one-person household, for 411 people on a real run.
+        bool elvValueKnown = !isFamily || comparedElv is not null;
+
         return new FieldComparison
         {
             AppValue           = comparedApp,
@@ -160,6 +172,8 @@ public partial class ElvantoPersonSyncService
             BaseAppHash        = baseRow?.AppHash,
             BaseElvantoHash    = baseRow?.LastSeenHash,
             ElvantoValueUsable = desc.IsValidInboundValue(comparedElv),
+            AppValueKnown      = appValueKnown,
+            ElvantoValueKnown  = elvValueKnown,
             AppChangedAt       = appChangedAt == default ? null : appChangedAt,
             // Elvanto's own date_modified, not the base's timestamp. The base records when the two
             // sides last agreed; using it as Elvanto's edit time made the app win any conflict where

@@ -58,14 +58,16 @@ public partial class ElvantoPersonSyncService
 
         // Seed family map from already-linked people: Elvanto family ID string → local Guid
         Dictionary<string, Guid> familyIdMap = [];
-        foreach (ElvantoPerson e in elvantoPeople.Where(e => e.FamilyId is not null && e.Id is not null))
+        // Blank is not a family id. Elvanto returns one for people it has no household for, and a
+        // map keyed on "" pairs every such person with whichever local family got there first.
+        foreach (ElvantoPerson e in elvantoPeople.Where(e => !string.IsNullOrWhiteSpace(e.FamilyId) && e.Id is not null))
         {
             if (!familyIdMap.ContainsKey(e.FamilyId!) && appByElvantoId.TryGetValue(e.Id!, out DbPerson? linked))
                 familyIdMap[e.FamilyId!] = linked.FamilyId;
         }
 
         Dictionary<Guid, List<(Guid PersonId, string ElvantoFamilyId)>> familyMembership = elvantoPeople
-            .Where(e => e.FamilyId is not null && e.Id is not null)
+            .Where(e => !string.IsNullOrWhiteSpace(e.FamilyId) && e.Id is not null)
             .Select(e => (Elvanto: e.FamilyId!, App: appByElvantoId.GetValueOrDefault(e.Id!)))
             .Where(x => x.App is not null)
             .GroupBy(x => x.App!.FamilyId)

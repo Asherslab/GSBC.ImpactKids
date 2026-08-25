@@ -162,6 +162,27 @@ cause of anything. Descriptors decline a null and send an empty string; the base
 apart, because `A ≢ B.app` with `A` null is a deliberate clear while `A ≡ B.app` with both null is
 nothing to say.
 
+### An unknown side is not a value
+
+**Family is the one field either side can fail to state at all**, and the distinction is load
+bearing in both directions:
+
+- A local family's Elvanto counterpart is read off its members *other than the person being asked
+  about* (`SyncWorkingSet.ResolveFamilyInElvanto`), so the only linked member of a family has no
+  evidence either way. Read as a value, that null says "the app deliberately cleared this person's
+  family" — 107 planned clears on a real run against production data.
+- A blank `family_id` means Elvanto has no household for that person, not that they have none.
+  Applied inbound it runs `SetOnApp` with null, which mints a fresh Guid and puts them in a
+  brand-new one-person household — 411 people on the same run.
+
+Both are now reported as `Diverged` with reason `AppValueUnknown` or `ElvantoValueUnknown`, and
+neither side is touched. The app side has one exception: a `FieldChangeLogs` row for `FamilyId`
+means the app genuinely moved this person, so an unresolvable family is the answer rather than a
+gap — their new family has no Elvanto counterpart and one has to be created.
+
+**Known-empty and unknown are different answers.** A known-empty app value is still a deliberate
+clear and is still pushed, as `""`.
+
 ## Divergence is recorded, never implied
 
 `SyncEventType.Diverged` says "these two differ and the engine chose not to act", with both values

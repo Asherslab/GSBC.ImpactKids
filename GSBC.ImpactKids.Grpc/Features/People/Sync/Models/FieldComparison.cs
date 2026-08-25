@@ -47,6 +47,29 @@ public sealed record FieldComparison
     /// <summary>Elvanto's own <c>date_modified</c>. Per person, so an upper bound, which only a conflict tolerates.</summary>
     public required DateTimeOffset? ElvantoChangedAt { get; init; }
 
+    /// <summary>
+    /// False when the app side could not be established at all — <b>which is not the same as the app
+    /// holding nothing</b>.
+    ///
+    /// Only family is ever unknown. A local family's Elvanto counterpart is read off its members
+    /// <i>other than the person being asked about</i>, so a person who is the only linked member of
+    /// their family has no evidence either way. Comparing that null as if it were a value reads as
+    /// "the app deliberately cleared this person's family" and plans a clear — 107 of them on a real
+    /// run, which with writes on would have emptied 107 people's family in Elvanto.
+    /// </summary>
+    public bool AppValueKnown { get; init; } = true;
+
+    /// <summary>
+    /// False when Elvanto's side could not be established — the mirror of <see cref="AppValueKnown"/>,
+    /// and again only family is ever unknown.
+    ///
+    /// A blank <c>family_id</c> means Elvanto has no household for this person. That is not evidence
+    /// that they have no family, and acting on it moves them into a brand-new one-person household
+    /// locally — <c>FamilyIdDescriptor.SetOnApp</c> mints a fresh Guid for a value it cannot parse.
+    /// 411 people on a real run.
+    /// </summary>
+    public bool ElvantoValueKnown { get; init; } = true;
+
     /// <summary>What <c>SetOnApp</c> should receive when Elvanto wins. Defaults to <see cref="ElvantoValue"/>.</summary>
     public string? InboundValue { get; init; }
 

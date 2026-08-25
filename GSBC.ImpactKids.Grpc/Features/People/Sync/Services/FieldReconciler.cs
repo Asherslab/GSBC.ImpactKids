@@ -48,6 +48,15 @@ public class FieldReconciler(IConflictResolver conflictResolver) : IFieldReconci
         if (string.IsNullOrWhiteSpace(comparison.AppValue) && !comparison.ElvantoValueUsable)
             return FieldDecision.Agreed("Match:NeitherSideSaysAnything");
 
+        // An unknown side is not a value, and must never be compared as one. The base cannot help
+        // here either: it records what the app held when the two sides agreed, and if the app cannot
+        // say what it holds now, "has it moved?" has no answer.
+        if (!comparison.AppValueKnown)
+            return FieldDecision.Diverged("AppValueUnknown");
+
+        if (!comparison.ElvantoValueKnown)
+            return FieldDecision.Diverged("ElvantoValueUnknown");
+
         FieldDecision decision = comparison.HasBase
             ? DecideAgainstBase(descriptor, comparison, config)
             : DecideFirstSync(descriptor, comparison);
