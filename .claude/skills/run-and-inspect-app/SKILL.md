@@ -56,8 +56,53 @@ ToolSearch  query: "select:mcp__rider__execute_run_configuration,mcp__rider__get
   not in a healthy state` with the exception text in its health report. **Do not diagnose a
   non-starting stack by poking at processes.** Ask the dashboard.
 
-  If the key rotates (a Production-profile run regenerates it), `/mcp` answers 404 rather than 401 —
-  re-read it from user secrets into `.mcp.json`.
+  **It only connects if the AppHost was already running when the Claude Code session started.**
+  This is the usual reason the tools are missing, and it is not a config fault — an `http` MCP server
+  is dialled once at session startup, so a stack you start *during* the session cannot be attached to
+  and no amount of fixing `.mcp.json` helps. Start the app first, then start the session. If you are
+  already mid-session without it, say so and work from `psql`, the browser console and
+  `read_network_requests` instead — do not conclude the config is stale.
+
+  Confirm reachability before blaming anything, and note the scheme — the endpoint is plain
+  **`http`**, so probing `https://localhost:16036` returns `000` (connection refused) and looks
+  exactly like a dead dashboard:
+
+  ```bash
+  curl -s -o /dev/null -w '%{http_code}\n' -m 3 http://localhost:16036/mcp                 # 404 = up, needs key
+  curl -s -o /dev/null -w '%{http_code}\n' -m 3 -X POST http://localhost:16036/mcp \
+    -H "x-mcp-api-key: $(dotnet user-secrets list --project GSBC.ImpactKids.AppHost \
+        | sed -n 's/^AppHost:McpApiKey = //p')" \
+    -H 'Accept: application/json, text/event-stream' -H 'Content-Type: application/json' \
+    -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"probe","version":"1"}}}'
+  # 200 = endpoint and key are both good
+  ```
+
+  **Both values have an authoritative source — read them, never guess or ask for them:**
+
+  - **Key** — `dotnet user-secrets list --project GSBC.ImpactKids.AppHost`, entry `AppHost:McpApiKey`.
+    (`secrets.json` is written with a UTF-8 BOM, so `json.load` on it throws
+    `Unexpected UTF-8 BOM`; use `encoding='utf-8-sig'` or just use the CLI.)
+  - **Port** — `ASPIRE_DASHBOARD_MCP_ENDPOINT_URL` in
+    `GSBC.ImpactKids.AppHost/Properties/launchSettings.json`, set on *both* the `http` and `https`
+    profiles. It is pinned there rather than allocated per run, so it does not normally move. Read it
+    from the running process instead if you want ground truth: `ps eww <apphost-pid> | tr ' ' '\n' |
+    grep ASPIRE_DASHBOARD_MCP`. Confirm something is actually bound with
+    `lsof -nP -iTCP:16036 -sTCP:LISTEN` — that shows `dcpctrl`, not a `dotnet` process.
+
+  Either value *can* change — a Production-profile run regenerates the key, and editing
+  `launchSettings.json` moves the port — so if `/mcp` answers 404 to a keyed request, or the port is
+  not listening, re-read both from the sources above and write them into `.mcp.json`:
+
+  ```json
+  { "mcpServers": { "gsbc-impactkids-aspire": {
+      "type": "http", "url": "http://localhost:<port>/mcp",
+      "headers": { "x-mcp-api-key": "<AppHost:McpApiKey>" } } } }
+  ```
+
+  A **404 to a keyed request** means a stale key; **401** means the key was rejected; **000** means
+  nothing is listening (or you used `https`). `.mcp.json` is gitignored — the key stays out of git,
+  so never paste it into a doc, a commit or a summary. The edit only takes effect on the **next**
+  session, per the startup rule above.
 - **Claude Browser** (`mcp__Claude_Browser__*`) — already loaded, no ToolSearch needed.
   `preview_start`, `navigate`, `computer`, `read_page`, `javascript_tool`,
   `read_console_messages`, `read_network_requests`, `resize_window`.
