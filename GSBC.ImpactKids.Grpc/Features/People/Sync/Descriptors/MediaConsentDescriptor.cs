@@ -26,10 +26,18 @@ public class MediaConsentDescriptor : BaseFieldSyncDescriptor
     public override bool IsValidInboundValue(string? elvValue) =>
         elvValue is not null && elvValue != nameof(PeopleMediaConsent.NotRequested);
 
-    public override void ApplyToElvantoRequest(ElvantoUpdatePersonRequest req, string? value)
+    public override bool ApplyToElvantoRequest(ElvantoUpdatePersonRequest req, string? value)
     {
-        if (value is null) return;
-        if (Enum.TryParse<PeopleMediaConsent>(value, out PeopleMediaConsent mc))
-            req.MediaConsent = PeopleMediaConsentHelper.ToDisplay(mc);
+        // An empty string is the only thing Elvanto accepts as a clear on this select field; the
+        // option-id lookup passes an unknown name straight through, so "" reaches the wire as "".
+        if (value is not null && value.Length == 0)
+            return Set(value, v => req.MediaConsent = v);
+
+        // Anything that is not one of the four options is not a consent answer, and pushing it
+        // would be refused. Declining is correct; reporting that as a successful push was not.
+        if (value is null || !Enum.TryParse(value, out PeopleMediaConsent mc))
+            return false;
+
+        return Set(PeopleMediaConsentHelper.ToDisplay(mc), v => req.MediaConsent = v);
     }
 }

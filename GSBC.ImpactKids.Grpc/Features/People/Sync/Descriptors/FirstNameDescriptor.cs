@@ -13,5 +13,5 @@ public class FirstNameDescriptor : BaseFieldSyncDescriptor
     public override string? GetFromApp(DbPerson person) => person.FirstName;
     public override void SetOnApp(DbPerson person, string? value) => person.FirstName = value ?? "";
     public override string? GetFromElvanto(ElvantoPerson elv) => elv.FirstName;
-    public override void ApplyToElvantoRequest(ElvantoUpdatePersonRequest req, string? value) => req.FirstName = value;
+    public override bool ApplyToElvantoRequest(ElvantoUpdatePersonRequest req, string? value) => Set(value, v => req.FirstName = v);
 }

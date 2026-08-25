@@ -43,7 +43,7 @@ public class FamilyIdDescriptor : BaseFieldSyncDescriptor
     /// answer "which Elvanto family is this person's local family?" without being told. The
     /// orchestrator sets family_id directly; see ElvantoPersonSyncService.
     /// </summary>
-    public override void ApplyToElvantoRequest(ElvantoUpdatePersonRequest req, string? value) { }
+    public override bool ApplyToElvantoRequest(ElvantoUpdatePersonRequest req, string? value) => false;
 }
 
 public class FamilyGuardianDescriptor : BaseFieldSyncDescriptor
@@ -62,5 +62,9 @@ public class FamilyGuardianDescriptor : BaseFieldSyncDescriptor
         return isGuardian.ToString();
     }
 
-    public override void ApplyToElvantoRequest(ElvantoUpdatePersonRequest req, string? value) { }
+    /// <summary>
+    /// Nothing to push: Elvanto derives guardianship from family_relationship, which this app has no
+    /// mechanism for. Says false rather than quietly no-opping, so a base can never advance on it.
+    /// </summary>
+    public override bool ApplyToElvantoRequest(ElvantoUpdatePersonRequest req, string? value) => false;
 }

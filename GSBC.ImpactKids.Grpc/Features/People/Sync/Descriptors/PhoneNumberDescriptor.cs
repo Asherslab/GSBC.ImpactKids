@@ -38,5 +38,5 @@ public class PhoneNumberDescriptor : BaseFieldSyncDescriptor
         return digits.Length == 0 ? null : plus ? $"+{digits}" : digits;
     }
 
-    public override void ApplyToElvantoRequest(ElvantoUpdatePersonRequest req, string? value) => req.Mobile = value;
+    public override bool ApplyToElvantoRequest(ElvantoUpdatePersonRequest req, string? value) => Set(value, v => req.Mobile = v);
 }

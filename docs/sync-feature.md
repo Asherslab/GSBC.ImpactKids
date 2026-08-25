@@ -81,6 +81,53 @@ Note that a field's direction comes from the seeded `SyncFieldConfigs` row, **no
 descriptor — `DefaultDirection` is only a fallback for fields with no row. Changing a direction
 means editing the seed and adding a migration.
 
+## The base value
+
+**A field's two sides are compared against what they both held the last time they agreed, never
+against a clock.** `ElvantoFieldSnapshots` holds both legs — `LastSeenHash`/`LastSeenValue` for
+Elvanto and `AppHash`/`AppValue` for the app — and `FieldReconciler` is the three-way merge over
+them. A **null `AppHash` means there is no base**, which is deliberate: the column was added without
+a backfill, so the first run after it lands re-applies first-sync rules to everything and surfaces
+every divergence that was invisible before.
+
+`FieldChangeLogs` is no longer a gate. It supplies the app-side timestamp `ConflictResolver` needs,
+and only when both sides have genuinely moved. A missing row means "app timestamp unknown", not "the
+app did not change" — the second reading is what made a real, visible difference permanently
+invisible on any database restored from a dump, because every edit predating the table has no row.
+
+Two rules give the reconciler its shape:
+
+- **Decide first, then let direction filter.** Direction used to be part of change detection, so a
+  field the direction refused was never compared. Now the comparison is unconditional and a
+  direction refuses an *outcome*, which can be named in an audit row.
+- **A base may advance only when the field has no outstanding app-side change, or when the request
+  that was actually sent carried that field and landed.** With writes off nothing lands, so every
+  outbound change stays outstanding and is offered again next run.
+
+`IFieldSyncDescriptor.ApplyToElvantoRequest` returns `bool` for that last rule: whether the payload
+genuinely carries the field. A descriptor that declines — `SchoolGradeId`, `FamilyGuardian`, a
+media-consent value that is not one of the four options — must say `false`, because a base advanced
+on a field that was never sent buries the change it was given.
+
+### Clearing a field
+
+Verified against the live API on 2026-08-26: Elvanto **ignores an explicit `null` and an omitted
+field alike**, answers `ok`, and moves `date_modified` without changing the value. Only an **empty
+string** clears — on `email`, `mobile`, the standard `birthday` date, and the `select`, `datepicker`
+and `textarea` custom fields.
+
+So a clear has to be sent deliberately, as `""`, and `[JsonIgnore(WhenWritingNull)]` is not the
+cause of anything. Descriptors decline a null and send an empty string; the base is what tells them
+apart, because `A ≢ B.app` with `A` null is a deliberate clear while `A ≡ B.app` with both null is
+nothing to say.
+
+## Divergence is recorded, never implied
+
+`SyncEventType.Diverged` says "these two differ and the engine chose not to act", with both values
+and a reason on the row. Nine paths through the field decision used to end in no action, no audit
+row and no counter, which made a real divergence indistinguishable from nothing to do. The operation
+page gives them their own tab and stat tile, because they are a work-list rather than a footnote.
+
 ## Never trust a partial Elvanto fetch
 
 `RetrieveElvantoPeople` returns the whole roll or throws `ElvantoFetchException`; there is no

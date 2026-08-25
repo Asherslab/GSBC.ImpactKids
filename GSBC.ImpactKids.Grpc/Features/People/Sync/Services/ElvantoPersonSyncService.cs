@@ -19,7 +19,7 @@ public partial class ElvantoPersonSyncService(
     ElvantoService                    elvantoService,
     IEnumerable<IFieldSyncDescriptor> descriptors,
     IPersonMatcher                    matcher,
-    IConflictResolver                 conflictResolver,
+    IFieldReconciler                  fieldReconciler,
     ISyncContextAccessor              syncContext,
     ILogger<ElvantoPersonSyncService> logger
 ) : IElvantoPersonSyncService
@@ -400,10 +400,7 @@ public partial class ElvantoPersonSyncService(
                 );
                 bool hadConflict = fieldResult.HadConflict;
 
-                // 5. Update snapshots
-                await UpdateSnapshotsAsync(elv, appPerson, snapshots, fieldResult.HoldSnapshotFields, token);
-
-                // 6. Sync metadata
+                // 5. Sync metadata
                 if (metadata.TryGetByElvantoId(elv.Id, out DbSyncMetadata? meta))
                 {
                     meta!.LastSyncAt = DateTimeOffset.UtcNow;

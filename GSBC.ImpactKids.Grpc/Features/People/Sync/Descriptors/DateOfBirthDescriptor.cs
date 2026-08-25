@@ -37,5 +37,5 @@ public class DateOfBirthDescriptor : BaseFieldSyncDescriptor
             : null;
     }
 
-    public override void ApplyToElvantoRequest(ElvantoUpdatePersonRequest req, string? value) => req.Birthday = value;
+    public override bool ApplyToElvantoRequest(ElvantoUpdatePersonRequest req, string? value) => Set(value, v => req.Birthday = v);
 }
