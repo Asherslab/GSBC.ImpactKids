@@ -14,6 +14,73 @@ Bidirectional sync between the app and Elvanto, with a manual-review workflow fo
 3. Approve / Deny buttons call `ISyncService.ApproveReview` / `DenyReview` (by review `Guid`).
 4. Next wet run → engine checks the `pendingReviews` dictionary → **Approved** = link + field sync; **Denied** = skip both sides.
 
+### Two kinds of review, asking opposite questions
+
+`MatchStrategy` distinguishes them, and the same word means opposite things:
+
+| | `LowConfidence:*` | `PotentialDuplicate:*` |
+|---|---|---|
+| Raised from | the matching loop, on a fuzzy candidate | the create path, when an unlinked person shares first+last name with someone already linked |
+| **Approved** | **link** the two records, sync fields onward | **suppress the create** — they already exist in Elvanto |
+| **Denied** | never link this pair | **create** them in Elvanto as a separate person |
+
+Approving a duplicate deliberately does **not** link them: two app people cannot share one
+`ElvantoId`, because `appByElvantoId` is built with `ToDictionary` on that key and would throw.
+Merging the two app records is a separate, manual job — see the merge notes in
+[the Full-run handover](./sync-full-run-handover.md).
+
+The UI states the question on each card and labels the buttons accordingly ("Same person" /
+"Different people" for duplicates), because "Approve"/"Deny" for both was genuinely ambiguous.
+
+`PendingReviews` is mapped **one-to-many** on Person. It was one-to-one, which put a unique index
+on `PersonId` alone and allowed a person only one review for all time — and since decided reviews
+are never deleted, anyone judged a duplicate occupied that slot permanently, so a later
+low-confidence review for them would fail the whole sync run.
+
+## Writes to Elvanto are gated
+
+`Elvanto:AllowWrites` (default `false` — no initializer, so absent config binds off) gates every
+mutation. Request types declare `static abstract bool IsMutation`; `ElvantoService.SendMessage`
+refuses a mutation above the line that touches `HttpClient` and logs the payload it would have
+sent. Only `people/create.json` and `people/edit.json` mutate; the three read endpoints are
+unaffected.
+
+The gate is per-transport rather than per-caller on purpose: a new push added later cannot reach
+the network without flipping the flag.
+
+## The medical/allergy field
+
+Elvanto gives one free-text custom field where the app holds structured allergy and medical rows,
+so `MedicalAllergyFormat` defines a shape that survives a round trip:
+
+```
+Allergies: Peanuts (SEVERE) - carries EpiPen; Dairy
+Medical: Asthma (SEVERE) - inhaler in bag; ADHD
+```
+
+One descriptor owns the field in both directions. Text that does not fit the grammar is never
+discarded or guessed at — it returns as unrecognised and becomes an "Other" medical note holding
+the raw words. Values that say nothing ("None", "nil", "no known allergies") are neither pushed
+nor read back.
+
+On a first sync the app wins, but not by deleting: Elvanto text the app does not already say is
+carried across verbatim, so a free-text note listing more allergens than the app knows about
+cannot be silently dropped.
+
+Note that a field's direction comes from the seeded `SyncFieldConfigs` row, **not** from the
+descriptor — `DefaultDirection` is only a fallback for fields with no row. Changing a direction
+means editing the seed and adding a migration.
+
+## Never trust a partial Elvanto fetch
+
+`RetrieveElvantoPeople` returns the whole roll or throws `ElvantoFetchException`; there is no
+partial-success outcome, and it holds Elvanto to its own reported total. A full-scope sync also
+aborts before the archive step if the roll covers under 90% of the linked people.
+
+Both guards exist because absence from the fetched list is treated as proof of deletion: a single
+dropped page once archived 726 children, and six of the seven tables referencing a person are
+`ON DELETE CASCADE`.
+
 ## gRPC methods on `ISyncService`
 
 - `ReadPendingReviews()` — streams all `SyncManualReviewEntry`.
@@ -35,4 +102,10 @@ A user needs to approve low-confidence matches from a DryRun before running the 
 
 ## Extending the review UX
 
-Follow the outside-transaction save pattern. An approved review remains a permanent record; once the wet run assigns the person's `ElvantoId`, the review becomes irrelevant to future syncs.
+Follow the outside-transaction save pattern.
+
+An approved review remains a permanent record. For a low-confidence match it does become
+irrelevant once the wet run assigns the person's `ElvantoId`. For a **potential duplicate** it
+does not: the row stays meaningful indefinitely, because it is the durable statement that two app
+records are the same person, and the future merge feature reads exactly those rows to find its
+work. Do not add cleanup that deletes decided reviews.
