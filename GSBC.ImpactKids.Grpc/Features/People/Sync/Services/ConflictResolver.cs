@@ -1,4 +1,3 @@
-using GSBC.ImpactKids.Grpc.Data.Models.Sync;
 using GSBC.ImpactKids.Grpc.Data.Models.Sync.Enums;
 using GSBC.ImpactKids.Grpc.Features.People.Sync.Interfaces;
 using GSBC.ImpactKids.Grpc.Features.People.Sync.Models;
@@ -13,7 +12,7 @@ public class ConflictResolver : IConflictResolver
         DateTimeOffset?   appChangedAt,
         string?           elvantoValue,
         DateTimeOffset?   elvantoChangedAt,
-        DbSyncFieldConfig config
+        PrecedenceOnTie   precedenceOnTie
     )
     {
         // Both timestamps present and unequal → last-write-wins (intentional clears included)
@@ -34,7 +33,7 @@ public class ConflictResolver : IConflictResolver
             return new ConflictResolution(SyncSource.Elvanto, elvantoValue, "NonNullWins:ElvantoHasValue");
 
         // Both have values (or both null) and timestamps don't decide → use configured precedence
-        return config.PrecedenceOnTie == PrecedenceOnTie.App
+        return precedenceOnTie == PrecedenceOnTie.App
             ? new ConflictResolution(SyncSource.App,     appValue,     "PrecedenceOnTie:App")
             : new ConflictResolution(SyncSource.Elvanto, elvantoValue, "PrecedenceOnTie:Elvanto");
     }

@@ -8,7 +8,24 @@ public interface IFieldSyncDescriptor
 {
     string        EntityType        { get; }
     string        FieldName         { get; }
+
+    /// <summary>
+    /// Which way this field is allowed to move. This is the only authority on it.
+    ///
+    /// It used to be a database row that overrode the descriptor entirely, seeded with eleven values
+    /// that all matched their descriptor exactly and read by nothing else — no settings UI, no gRPC
+    /// method, no admin page. Its whole behavioural contribution was to make the answer live in two
+    /// places, and two corrective migrations were needed to get it back in step with the code, one of
+    /// which cost a family move dropped with no audit row.
+    /// </summary>
     SyncDirection DefaultDirection  { get; }
+
+    /// <summary>
+    /// Who wins when both sides changed and the timestamps cannot separate them. Elvanto by default;
+    /// the medical/allergy box is the app's, because the app holds structured records a leader
+    /// entered rather than whatever text happened to be in the field.
+    /// </summary>
+    PrecedenceOnTie PrecedenceOnTie => PrecedenceOnTie.Elvanto;
 
     string? GetFromApp(DbPerson person);
     void    SetOnApp(DbPerson person, string? value);

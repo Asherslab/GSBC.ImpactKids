@@ -340,6 +340,28 @@ first.** What each step actually turned out to need is recorded under it.
    `Scope=Family` hole (**F6**), and the destructive migrations that need asking first — dropping
    `SyncFieldConfigs` (**F13**) and demoting `DbSyncMetadata` to an audit record (**F14**).
 
+   *Landed. The sync feature has never been deployed — the production dump contains none of its
+   tables — so the destructive migrations touch no production data.*
+
+   *`DbSyncMetadata` is **dropped**, not demoted. The plan said demote because it still had two
+   readers when it was written; those two were **F3** and **F5**, and step 2 removed both. Nothing
+   read it after that. The link it stored is `DbPerson.ElvantoId` and the history is in
+   `SyncAuditLogs` and the plan, so keeping it would have meant maintaining a third copy of facts
+   two other tables already hold — which is what made it dangerous in the first place.*
+
+   *The family oscillation left open by step 5 is closed here too, and it took four goes to find the
+   real shape of it. In order: `TranslateElvantoValue` now excludes the asking person (the rule
+   `ResolveFamilyInElvanto` already had, without which a person alone in their household mapped it
+   straight back to the family they were already in); it ranks candidate families by membership
+   rather than taking whichever the dictionary yielded first (397 people moved into a relative's
+   family at random); a blank `family_id` is unreadable rather than empty; and **family is compared
+   in the app's terms, not Elvanto's**. That last one is the substantive change — comparing in
+   Elvanto's terms asks "which household does this person's local family mostly correspond to?", so
+   a family split across two households disagreed with itself forever.*
+
+   *Verified idempotent afterwards: Decide, Execute with writes off, Decide again produces **zero**
+   family items. Before, the same 14 people were moved inbound and then planned straight back out.*
+
 ## Verification
 
 There is no test project in the solution, and this is a state machine. That is the binding

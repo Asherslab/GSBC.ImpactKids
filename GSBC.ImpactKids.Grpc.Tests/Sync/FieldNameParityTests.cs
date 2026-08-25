@@ -1,7 +1,6 @@
 using System.Reflection;
 using GSBC.ImpactKids.Grpc.Data;
 using GSBC.ImpactKids.Grpc.Data.Models.People;
-using GSBC.ImpactKids.Grpc.Data.Models.Sync;
 using GSBC.ImpactKids.Grpc.Features.People.Sync.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -12,12 +11,14 @@ namespace GSBC.ImpactKids.Grpc.Tests.Sync;
 /// <summary>
 /// Three independent authorities have to agree on every field name, and nothing asserted it.
 ///
-/// A descriptor's <c>FieldName</c> is the key the seeded <c>SyncFieldConfigs</c> row is looked up
-/// by, and it is also the name <c>FieldChangeTrackingInterceptor</c> writes into
+/// A descriptor's <c>FieldName</c> is the name <c>FieldChangeTrackingInterceptor</c> writes into
 /// <c>FieldChangeLogs</c> — which it takes from EF's property name on <c>DbPerson</c>. Rename
-/// <c>DbPerson.FirstTime</c> and that field's sync breaks silently and permanently: no config row
-/// matches, so it falls back to a default direction, and no change-log row is ever found for it.
-/// There is no error anywhere. This is the test that turns that into a red build.
+/// <c>DbPerson.FirstTime</c> and no change-log row is ever found for that field again, so it can
+/// never win a conflict. There is no error anywhere. This is the test that turns that into a red
+/// build.
+///
+/// The third authority, a seeded <c>SyncFieldConfigs</c> row, is gone: direction and tie-breaking
+/// now live on the descriptor, which is where the code already had them.
 /// </summary>
 public class FieldNameParityTests
 {
@@ -79,45 +80,4 @@ public class FieldNameParityTests
             + "edits would never be found and its sync would break silently.");
     }
 
-    [Theory]
-    [MemberData(nameof(DescriptorFieldNames))]
-    public void EveryDescriptorHasASeededFieldConfigRow(string fieldName)
-    {
-        Assert.Contains(fieldName, SeededFieldNames());
-    }
-
-    [Fact]
-    public void EverySeededFieldConfigRowHasADescriptor()
-    {
-        // The other direction, and not symmetric noise: a config row overrides a descriptor's
-        // DefaultDirection outright, so a row naming a descriptor that no longer exists silently
-        // decides behaviour for a field nothing reads. Two migrations were needed to clear the last
-        // pair of those, one of which cost a family move dropped with no audit row.
-        HashSet<string> descriptorNames = Descriptors.Select(d => d.FieldName).ToHashSet(StringComparer.Ordinal);
-
-        foreach (string seeded in SeededFieldNames())
-            Assert.Contains(seeded, descriptorNames);
-    }
-
-    [Fact]
-    public void SeededDirectionsMatchTheDescriptorDefaults()
-    {
-        // Not a rule, a tripwire. A seed row that disagrees with its descriptor is legitimate - the
-        // row is what actually decides - but every one of the eleven agrees today, so a new
-        // disagreement is far more likely to be a mistake than a decision.
-        IEntityType config = Model.FindEntityType(typeof(DbSyncFieldConfig))!;
-
-        foreach (IDictionary<string, object?> row in config.GetSeedData())
-        {
-            string name = (string)row["FieldName"]!;
-            IFieldSyncDescriptor descriptor = Descriptors.Single(d => d.FieldName == name);
-
-            Assert.Equal(descriptor.DefaultDirection.ToString(), row["Direction"]!.ToString());
-        }
-    }
-
-    private static IEnumerable<string> SeededFieldNames() =>
-        Model.FindEntityType(typeof(DbSyncFieldConfig))!
-            .GetSeedData()
-            .Select(row => (string)row["FieldName"]!);
 }

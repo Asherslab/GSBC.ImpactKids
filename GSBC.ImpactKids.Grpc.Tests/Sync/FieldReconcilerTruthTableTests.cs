@@ -1,4 +1,3 @@
-using GSBC.ImpactKids.Grpc.Data.Models.Sync;
 using GSBC.ImpactKids.Grpc.Data.Models.Sync.Enums;
 using GSBC.ImpactKids.Grpc.Features.People.Sync.Interfaces;
 using GSBC.ImpactKids.Grpc.Features.People.Sync.Models;
@@ -22,13 +21,22 @@ public class FieldReconcilerTruthTableTests
 {
     private static readonly IFieldReconciler Reconciler = new FieldReconciler(new ConflictResolver());
 
-    private static DbSyncFieldConfig Config(
-        SyncDirection direction,
-        PrecedenceOnTie tie = PrecedenceOnTie.Elvanto) => new()
-    {
-        Id = Guid.Empty, EntityType = "Person", FieldName = "TestField",
-        Direction = direction, PrecedenceOnTie = tie
-    };
+    /// <summary>
+    /// Direction and tie-breaking now live on the descriptor, which is the only authority on them.
+    /// A test that wants a direction makes a descriptor that declares it.
+    /// </summary>
+    private static TruthTableDescriptor With(
+        TruthTableDescriptor desc,
+        SyncDirection        direction,
+        PrecedenceOnTie      tie = PrecedenceOnTie.Elvanto) =>
+        new()
+        {
+            Usable           = desc.Usable,
+            FirstSync        = desc.FirstSync,
+            MergeOnFirstSync = desc.MergeOnFirstSync,
+            Direction        = direction,
+            Tie              = tie
+        };
 
     /// <summary>
     /// Builds a comparison from the app and Elvanto values plus, optionally, what the base holds.
@@ -74,9 +82,8 @@ public class FieldReconcilerTruthTableTests
         // Was: nothing happened, no audit row, and the snapshot advanced anyway - so a pending app
         // change on a disabled field was consumed by a run that had decided not to look at it.
         FieldDecision d = Reconciler.Decide(
-            Plain,
-            Compare(Plain, "app", "elvanto", "app", "app", hasBase: true),
-            Config(SyncDirection.Disabled));
+                With(Plain, SyncDirection.Disabled),
+                Compare(Plain, "app", "elvanto", "app", "app", hasBase: true));
 
         Assert.Equal(FieldDecisionKind.Skipped, d.Kind);
         Assert.Equal("Direction:Disabled", d.Reason);
@@ -88,7 +95,8 @@ public class FieldReconcilerTruthTableTests
     public void Row2_SidesAlreadyAgree_WritesTheBase()
     {
         FieldDecision d = Reconciler.Decide(
-            Plain, Compare(Plain, "same", "same"), Config(SyncDirection.Bidirectional));
+                With(Plain, SyncDirection.Bidirectional),
+                Compare(Plain, "same", "same"));
 
         Assert.Equal(FieldDecisionKind.Agreed, d.Kind);
     }
@@ -99,7 +107,9 @@ public class FieldReconcilerTruthTableTests
         // An agreed field on an InboundOnly config still settles: there is nothing to refuse.
         Assert.Equal(
             FieldDecisionKind.Agreed,
-            Reconciler.Decide(Plain, Compare(Plain, "same", "same"), Config(SyncDirection.InboundOnly)).Kind);
+            Reconciler.Decide(
+                With(Plain, SyncDirection.InboundOnly),
+                Compare(Plain, "same", "same")).Kind);
     }
 
     // ---------------------------------------------------------------- row 3
@@ -110,9 +120,8 @@ public class FieldReconcilerTruthTableTests
         // Was: a bare continue. The single most durable silent divergence - identical on every run,
         // forever, with no audit row, which reads exactly like success.
         FieldDecision d = Reconciler.Decide(
-            Plain,
-            Compare(Plain, "app", "elvanto", baseApp: "app", baseElvanto: "elvanto", hasBase: true),
-            Config(SyncDirection.Bidirectional));
+                With(Plain, SyncDirection.Bidirectional),
+                Compare(Plain, "app", "elvanto", baseApp: "app", baseElvanto: "elvanto", hasBase: true));
 
         Assert.Equal(FieldDecisionKind.Diverged, d.Kind);
         Assert.Equal("BaseDisagreesWithBothSides", d.Reason);
@@ -126,9 +135,8 @@ public class FieldReconcilerTruthTableTests
         // Was: nothing, plus a snapshot created with LastSeenAt = now, which burned appChanged for
         // every future run. This row is the restored-dump backlog: an app value Elvanto never had.
         FieldDecision d = Reconciler.Decide(
-            SaysNothingIsUnusable,
-            Compare(SaysNothingIsUnusable, "0435862120", null),
-            Config(SyncDirection.Bidirectional));
+                With(SaysNothingIsUnusable, SyncDirection.Bidirectional),
+                Compare(SaysNothingIsUnusable, "0435862120", null));
 
         Assert.Equal(FieldDecisionKind.Outbound, d.Kind);
         Assert.Equal("FirstSync:ElvantoHasNothing", d.Reason);
@@ -141,7 +149,8 @@ public class FieldReconcilerTruthTableTests
     public void Row5_NoBaseAndElvantoHasAUsableValue_IsInbound()
     {
         FieldDecision d = Reconciler.Decide(
-            Plain, Compare(Plain, null, "elvanto"), Config(SyncDirection.Bidirectional));
+                With(Plain, SyncDirection.Bidirectional),
+                Compare(Plain, null, "elvanto"));
 
         Assert.Equal(FieldDecisionKind.Inbound, d.Kind);
         Assert.Equal("FirstSync:ElvantoPrecedence", d.Reason);
@@ -152,7 +161,8 @@ public class FieldReconcilerTruthTableTests
     {
         // Was: silent. Nothing matched any branch and nothing was written.
         FieldDecision d = Reconciler.Decide(
-            Plain, Compare(Plain, null, "elvanto"), Config(SyncDirection.OutboundOnly));
+                With(Plain, SyncDirection.OutboundOnly),
+                Compare(Plain, null, "elvanto"));
 
         Assert.Equal(FieldDecisionKind.Diverged, d.Kind);
         Assert.Equal("DirectionRefused:OutboundOnly:Inbound:FirstSync:ElvantoPrecedence", d.Reason);
@@ -164,9 +174,8 @@ public class FieldReconcilerTruthTableTests
     public void Row7_ElvantoMovedAlone_IsInbound()
     {
         FieldDecision d = Reconciler.Decide(
-            Plain,
-            Compare(Plain, "app", "moved", baseApp: "app", baseElvanto: "app", hasBase: true),
-            Config(SyncDirection.Bidirectional));
+                With(Plain, SyncDirection.Bidirectional),
+                Compare(Plain, "app", "moved", baseApp: "app", baseElvanto: "app", hasBase: true));
 
         Assert.Equal(FieldDecisionKind.Inbound, d.Kind);
         Assert.Equal("ElvantoChangedAlone", d.Reason);
@@ -179,9 +188,8 @@ public class FieldReconcilerTruthTableTests
         // Was: Elvanto's change was discarded AND the snapshot advanced, so the divergence was
         // recorded as having been seen. The caller must not settle a base on a Diverged decision.
         FieldDecision d = Reconciler.Decide(
-            Plain,
-            Compare(Plain, "app", "moved", baseApp: "app", baseElvanto: "app", hasBase: true),
-            Config(SyncDirection.OutboundOnly));
+                With(Plain, SyncDirection.OutboundOnly),
+                Compare(Plain, "app", "moved", baseApp: "app", baseElvanto: "app", hasBase: true));
 
         Assert.Equal(FieldDecisionKind.Diverged, d.Kind);
         Assert.Contains("DirectionRefused:OutboundOnly:Inbound", d.Reason);
@@ -192,9 +200,8 @@ public class FieldReconcilerTruthTableTests
     {
         // Was: the app kept its value silently and the snapshot advanced anyway.
         FieldDecision d = Reconciler.Decide(
-            SaysNothingIsUnusable,
-            Compare(SaysNothingIsUnusable, "Yes", "None", baseApp: "Yes", baseElvanto: "Yes", hasBase: true),
-            Config(SyncDirection.Bidirectional));
+                With(SaysNothingIsUnusable, SyncDirection.Bidirectional),
+                Compare(SaysNothingIsUnusable, "Yes", "None", baseApp: "Yes", baseElvanto: "Yes", hasBase: true));
 
         Assert.Equal(FieldDecisionKind.Diverged, d.Kind);
         Assert.Equal("InvalidInboundValue:ElvantoChangedAlone", d.Reason);
@@ -206,9 +213,8 @@ public class FieldReconcilerTruthTableTests
     public void Row10_AppMovedAlone_IsOutbound()
     {
         FieldDecision d = Reconciler.Decide(
-            Plain,
-            Compare(Plain, "new", "elvanto", baseApp: "elvanto", baseElvanto: "elvanto", hasBase: true),
-            Config(SyncDirection.Bidirectional));
+                With(Plain, SyncDirection.Bidirectional),
+                Compare(Plain, "new", "elvanto", baseApp: "elvanto", baseElvanto: "elvanto", hasBase: true));
 
         Assert.Equal(FieldDecisionKind.Outbound, d.Kind);
         Assert.Equal("AppChangedAlone", d.Reason);
@@ -222,9 +228,8 @@ public class FieldReconcilerTruthTableTests
         // expressed as an empty string, by the descriptor, deliberately. Naming it in the reason is
         // what keeps "cleared" distinguishable from "had nothing to say" once the value is gone.
         FieldDecision d = Reconciler.Decide(
-            Plain,
-            Compare(Plain, null, "elvanto", baseApp: "elvanto", baseElvanto: "elvanto", hasBase: true),
-            Config(SyncDirection.Bidirectional));
+                With(Plain, SyncDirection.Bidirectional),
+                Compare(Plain, null, "elvanto", baseApp: "elvanto", baseElvanto: "elvanto", hasBase: true));
 
         Assert.Equal(FieldDecisionKind.Outbound, d.Kind);
         Assert.Equal("AppClearedTheField", d.Reason);
@@ -238,9 +243,8 @@ public class FieldReconcilerTruthTableTests
         // Was: outbound was reported and a snapshot was created regardless, so the change was
         // invisible forever if the push did not land.
         FieldDecision d = Reconciler.Decide(
-            SaysNothingIsUnusable,
-            Compare(SaysNothingIsUnusable, "edited", "None"),
-            Config(SyncDirection.Bidirectional));
+                With(SaysNothingIsUnusable, SyncDirection.Bidirectional),
+                Compare(SaysNothingIsUnusable, "edited", "None"));
 
         Assert.Equal(FieldDecisionKind.Outbound, d.Kind);
         Assert.Equal("FirstSync:ElvantoHasNothing", d.Reason);
@@ -252,7 +256,8 @@ public class FieldReconcilerTruthTableTests
         // Was: the app's edit took the outbound branch and FirstSyncPrecedence was bypassed
         // entirely. With no base neither side has a history, which is exactly what that hook is for.
         FieldDecision d = Reconciler.Decide(
-            Plain, Compare(Plain, "edited", "elvanto"), Config(SyncDirection.Bidirectional));
+                With(Plain, SyncDirection.Bidirectional),
+                Compare(Plain, "edited", "elvanto"));
 
         Assert.Equal(FieldDecisionKind.Inbound, d.Kind);
         Assert.Equal("FirstSync:ElvantoPrecedence", d.Reason);
@@ -266,9 +271,8 @@ public class FieldReconcilerTruthTableTests
         // Was: the merge was computed, reported, and then destroyed by the same run creating a
         // snapshot - one writes-off run was enough to lose the documented first-sync behaviour.
         FieldDecision d = Reconciler.Decide(
-            AppWinsFirstSync,
-            Compare(AppWinsFirstSync, "Allergies: Peanuts", "Eggs & Milk"),
-            Config(SyncDirection.Bidirectional));
+                With(AppWinsFirstSync, SyncDirection.Bidirectional),
+                Compare(AppWinsFirstSync, "Allergies: Peanuts", "Eggs & Milk"));
 
         Assert.Equal(FieldDecisionKind.Outbound, d.Kind);
         Assert.Equal("FirstSync:AppPrecedence", d.Reason);
@@ -279,9 +283,8 @@ public class FieldReconcilerTruthTableTests
     public void Rows13And14_AppPrecedenceNeedsTheAppToActuallyHaveSomething()
     {
         FieldDecision d = Reconciler.Decide(
-            AppWinsFirstSync,
-            Compare(AppWinsFirstSync, "   ", "Eggs & Milk"),
-            Config(SyncDirection.Bidirectional));
+                With(AppWinsFirstSync, SyncDirection.Bidirectional),
+                Compare(AppWinsFirstSync, "   ", "Eggs & Milk"));
 
         Assert.Equal(FieldDecisionKind.Inbound, d.Kind);
         Assert.Equal("FirstSync:ElvantoPrecedence", d.Reason);
@@ -294,9 +297,8 @@ public class FieldReconcilerTruthTableTests
     {
         // Was: silent. No branch matched, nothing logged, nothing counted.
         FieldDecision d = Reconciler.Decide(
-            Plain,
-            Compare(Plain, "new", "elvanto", baseApp: "elvanto", baseElvanto: "elvanto", hasBase: true),
-            Config(SyncDirection.InboundOnly));
+                With(Plain, SyncDirection.InboundOnly),
+                Compare(Plain, "new", "elvanto", baseApp: "elvanto", baseElvanto: "elvanto", hasBase: true));
 
         Assert.Equal(FieldDecisionKind.Diverged, d.Kind);
         Assert.Equal("DirectionRefused:InboundOnly:Outbound:AppChangedAlone", d.Reason);
@@ -308,7 +310,8 @@ public class FieldReconcilerTruthTableTests
         // Was: nothing happened AND a snapshot was created, so the app's change was consumed and
         // Elvanto's value was not applied either.
         FieldDecision d = Reconciler.Decide(
-            Plain, Compare(Plain, "edited", "elvanto"), Config(SyncDirection.InboundOnly));
+                With(Plain, SyncDirection.InboundOnly),
+                Compare(Plain, "edited", "elvanto"));
 
         Assert.Equal(FieldDecisionKind.Inbound, d.Kind);
     }
@@ -319,11 +322,10 @@ public class FieldReconcilerTruthTableTests
     public void Row17_BothMoved_GoesToTheResolverAndElvantosNewerEditWins()
     {
         FieldDecision d = Reconciler.Decide(
-            Plain,
-            Compare(Plain, "appNew", "elvNew", baseApp: "old", baseElvanto: "old", hasBase: true,
+                With(Plain, SyncDirection.Bidirectional),
+                Compare(Plain, "appNew", "elvNew", baseApp: "old", baseElvanto: "old", hasBase: true,
                 appChangedAt: new DateTimeOffset(2026, 8, 1, 0, 0, 0, TimeSpan.Zero),
-                elvantoChangedAt: new DateTimeOffset(2026, 8, 20, 0, 0, 0, TimeSpan.Zero)),
-            Config(SyncDirection.Bidirectional));
+                elvantoChangedAt: new DateTimeOffset(2026, 8, 20, 0, 0, 0, TimeSpan.Zero)));
 
         Assert.Equal(FieldDecisionKind.Inbound, d.Kind);
         Assert.True(d.WasConflict);
@@ -334,11 +336,10 @@ public class FieldReconcilerTruthTableTests
     public void Row17_BothMovedAndTheAppEditedLater_PushesTheApp()
     {
         FieldDecision d = Reconciler.Decide(
-            Plain,
-            Compare(Plain, "appNew", "elvNew", baseApp: "old", baseElvanto: "old", hasBase: true,
+                With(Plain, SyncDirection.Bidirectional),
+                Compare(Plain, "appNew", "elvNew", baseApp: "old", baseElvanto: "old", hasBase: true,
                 appChangedAt: new DateTimeOffset(2026, 8, 20, 0, 0, 0, TimeSpan.Zero),
-                elvantoChangedAt: new DateTimeOffset(2026, 8, 1, 0, 0, 0, TimeSpan.Zero)),
-            Config(SyncDirection.Bidirectional));
+                elvantoChangedAt: new DateTimeOffset(2026, 8, 1, 0, 0, 0, TimeSpan.Zero)));
 
         Assert.Equal(FieldDecisionKind.Outbound, d.Kind);
         Assert.True(d.WasConflict);
@@ -351,11 +352,10 @@ public class FieldReconcilerTruthTableTests
         // The change log is a tiebreak now, not an admission gate. With no row for the app the
         // conflict still happens, and falls through to whichever side actually has a value.
         FieldDecision d = Reconciler.Decide(
-            Plain,
-            Compare(Plain, "appNew", "elvNew", baseApp: "old", baseElvanto: "old", hasBase: true,
+                With(Plain, SyncDirection.Bidirectional, PrecedenceOnTie.App),
+                Compare(Plain, "appNew", "elvNew", baseApp: "old", baseElvanto: "old", hasBase: true,
                 appChangedAt: null,
-                elvantoChangedAt: new DateTimeOffset(2026, 8, 20, 0, 0, 0, TimeSpan.Zero)),
-            Config(SyncDirection.Bidirectional, PrecedenceOnTie.App));
+                elvantoChangedAt: new DateTimeOffset(2026, 8, 20, 0, 0, 0, TimeSpan.Zero)));
 
         Assert.True(d.WasConflict);
         Assert.Equal(FieldDecisionKind.Outbound, d.Kind);
@@ -368,11 +368,10 @@ public class FieldReconcilerTruthTableTests
         // Was: neither change was applied and the snapshot advanced anyway - on a field whose whole
         // declared point is that Elvanto wins.
         FieldDecision d = Reconciler.Decide(
-            Plain,
-            Compare(Plain, "appNew", "elvNew", baseApp: "old", baseElvanto: "old", hasBase: true,
+                With(Plain, SyncDirection.InboundOnly),
+                Compare(Plain, "appNew", "elvNew", baseApp: "old", baseElvanto: "old", hasBase: true,
                 appChangedAt: new DateTimeOffset(2026, 8, 1, 0, 0, 0, TimeSpan.Zero),
-                elvantoChangedAt: new DateTimeOffset(2026, 8, 20, 0, 0, 0, TimeSpan.Zero)),
-            Config(SyncDirection.InboundOnly));
+                elvantoChangedAt: new DateTimeOffset(2026, 8, 20, 0, 0, 0, TimeSpan.Zero)));
 
         Assert.Equal(FieldDecisionKind.Inbound, d.Kind);
         Assert.True(d.WasConflict);
@@ -382,11 +381,10 @@ public class FieldReconcilerTruthTableTests
     public void Row18_BothMovedOnAnInboundOnlyFieldAndTheAppWins_IsARefusalWithAName()
     {
         FieldDecision d = Reconciler.Decide(
-            Plain,
-            Compare(Plain, "appNew", "elvNew", baseApp: "old", baseElvanto: "old", hasBase: true,
+                With(Plain, SyncDirection.InboundOnly),
+                Compare(Plain, "appNew", "elvNew", baseApp: "old", baseElvanto: "old", hasBase: true,
                 appChangedAt: new DateTimeOffset(2026, 8, 20, 0, 0, 0, TimeSpan.Zero),
-                elvantoChangedAt: new DateTimeOffset(2026, 8, 1, 0, 0, 0, TimeSpan.Zero)),
-            Config(SyncDirection.InboundOnly));
+                elvantoChangedAt: new DateTimeOffset(2026, 8, 1, 0, 0, 0, TimeSpan.Zero)));
 
         Assert.Equal(FieldDecisionKind.Diverged, d.Kind);
         Assert.Contains("DirectionRefused:InboundOnly:Outbound:LastWriteWins:AppNewer", d.Reason);
@@ -400,9 +398,8 @@ public class FieldReconcilerTruthTableTests
         // Was: outbound was reported and the snapshot advanced, consuming the app's change if the
         // push did not land.
         FieldDecision d = Reconciler.Decide(
-            SaysNothingIsUnusable,
-            Compare(SaysNothingIsUnusable, "appNew", "None", baseApp: "old", baseElvanto: "old", hasBase: true),
-            Config(SyncDirection.Bidirectional));
+                With(SaysNothingIsUnusable, SyncDirection.Bidirectional),
+                Compare(SaysNothingIsUnusable, "appNew", "None", baseApp: "old", baseElvanto: "old", hasBase: true));
 
         Assert.Equal(FieldDecisionKind.Outbound, d.Kind);
         Assert.Equal("Conflict:ElvantoValueNotUsable", d.Reason);
@@ -419,9 +416,8 @@ public class FieldReconcilerTruthTableTests
         // per run forever - 89 rows on the first real run, in exactly the place the divergences are
         // supposed to be a work-list.
         FieldDecision d = Reconciler.Decide(
-            SaysNothingIsUnusable,
-            Compare(SaysNothingIsUnusable, null, "None"),
-            Config(SyncDirection.Bidirectional));
+                With(SaysNothingIsUnusable, SyncDirection.Bidirectional),
+                Compare(SaysNothingIsUnusable, null, "None"));
 
         Assert.Equal(FieldDecisionKind.Agreed, d.Kind);
         Assert.Equal("Match:NeitherSideSaysAnything", d.Reason);
@@ -435,39 +431,11 @@ public class FieldReconcilerTruthTableTests
         Assert.Equal(
             FieldDecisionKind.Outbound,
             Reconciler.Decide(
-                SaysNothingIsUnusable,
-                Compare(SaysNothingIsUnusable, "0435862120", "None"),
-                Config(SyncDirection.Bidirectional)).Kind);
+                With(SaysNothingIsUnusable, SyncDirection.Bidirectional),
+                Compare(SaysNothingIsUnusable, "0435862120", "None")).Kind);
     }
 
     // ------------------------------------------------- an unknown side is not a value
-
-    [Fact]
-    public void AnUnknownAppSideIsReported_NotReadAsADeliberateClear()
-    {
-        // Family is the only field this can happen to: a local family's Elvanto counterpart is read
-        // off its members OTHER than the person being asked about, so the only linked member of a
-        // family has no evidence either way. Comparing that null as a value planned an outbound
-        // clear for 107 people on a real run.
-        FieldComparison c = new()
-        {
-            AppValue           = null,
-            ElvantoValue       = "4615",
-            AppHash            = Plain.Hash(null),
-            ElvantoHash        = Plain.Hash("4615"),
-            BaseAppHash        = Plain.Hash("4615"),
-            BaseElvantoHash    = Plain.Hash("4615"),
-            ElvantoValueUsable = true,
-            AppValueKnown      = false,
-            AppChangedAt       = null,
-            ElvantoChangedAt   = null
-        };
-
-        FieldDecision d = Reconciler.Decide(Plain, c, Config(SyncDirection.Bidirectional));
-
-        Assert.Equal(FieldDecisionKind.Diverged, d.Kind);
-        Assert.Equal("AppValueUnknown", d.Reason);
-    }
 
     [Fact]
     public void AnUnknownElvantoSideIsReportedToo_NotAppliedAsAClearedFamily()
@@ -489,7 +457,9 @@ public class FieldReconcilerTruthTableTests
             ElvantoChangedAt   = null
         };
 
-        FieldDecision d = Reconciler.Decide(Plain, c, Config(SyncDirection.Bidirectional));
+        FieldDecision d = Reconciler.Decide(
+                With(Plain, SyncDirection.Bidirectional),
+                c);
 
         Assert.Equal(FieldDecisionKind.Diverged, d.Kind);
         Assert.Equal("ElvantoValueUnknown", d.Reason);
@@ -501,9 +471,8 @@ public class FieldReconcilerTruthTableTests
         // The other half: when the app genuinely holds nothing and we know it, that is a clear and
         // must still be pushed. Unknown and empty are different answers.
         FieldDecision d = Reconciler.Decide(
-            Plain,
-            Compare(Plain, null, "4615", baseApp: "4615", baseElvanto: "4615", hasBase: true),
-            Config(SyncDirection.Bidirectional));
+                With(Plain, SyncDirection.Bidirectional),
+                Compare(Plain, null, "4615", baseApp: "4615", baseElvanto: "4615", hasBase: true));
 
         Assert.Equal(FieldDecisionKind.Outbound, d.Kind);
         Assert.Equal("AppClearedTheField", d.Reason);
@@ -532,7 +501,9 @@ public class FieldReconcilerTruthTableTests
 
         Assert.False(c.HasBase);
         Assert.Equal(FieldDecisionKind.Inbound,
-            Reconciler.Decide(Plain, c, Config(SyncDirection.Bidirectional)).Kind);
+            Reconciler.Decide(
+                With(Plain, SyncDirection.Bidirectional),
+                c).Kind);
     }
 
     // ------------------------------------------------- no path may end in nothing
@@ -554,14 +525,13 @@ public class FieldReconcilerTruthTableTests
             string? elvValue = usable ? "elvanto" : "None";
 
             FieldDecision d = Reconciler.Decide(
-                desc,
+                With(desc, direction),
                 Compare(desc,
                     appValue: appMoved ? "appMoved" : "appBase",
                     elvValue: elvValue,
                     baseApp: "appBase",
                     baseElvanto: elvMoved ? "elvBase" : elvValue,
-                    hasBase: hasBase),
-                Config(direction));
+                    hasBase: hasBase));
 
             Assert.True(
                 d.Kind is FieldDecisionKind.Agreed or FieldDecisionKind.Inbound

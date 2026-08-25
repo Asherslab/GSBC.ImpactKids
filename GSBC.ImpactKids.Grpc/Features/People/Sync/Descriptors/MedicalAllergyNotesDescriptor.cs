@@ -36,6 +36,9 @@ public class MedicalAllergyNotesDescriptor : BaseFieldSyncDescriptor
     /// </summary>
     public override SyncSource FirstSyncPrecedence => SyncSource.App;
 
+    /// <inheritdoc cref="BaseFieldSyncDescriptor.PrecedenceOnTie"/>
+    public override PrecedenceOnTie PrecedenceOnTie => PrecedenceOnTie.App;
+
     /// <summary>
     /// Lookups needed to turn text back into rows. Primed once per sync run by
     /// ElvantoPersonSyncService, because a descriptor cannot reach the database itself.

@@ -163,11 +163,7 @@ public partial class ElvantoPersonSyncService
 
     private static string DisplayName(DbPerson person) => $"{person.FirstName} {person.LastName}".Trim();
 
-    private DbPerson CreatePersonFromElvanto(
-        ElvantoPerson            elv,
-        List<DbSchoolGrade>      grades,
-        Dictionary<string, Guid> familyIdMap
-    )
+    private DbPerson CreatePersonFromElvanto(ElvantoPerson elv, SyncWorkingSet set)
     {
         // Placeholder values for required properties; all overwritten by the descriptor loop below
         DbPerson p = new()
@@ -188,8 +184,12 @@ public partial class ElvantoPersonSyncService
 
         foreach (IFieldSyncDescriptor desc in _descriptors)
         {
-            string? elvValue = TranslateElvantoValue(desc.FieldName, desc.GetFromElvanto(elv), grades, familyIdMap);
-            desc.SetOnApp(p, elvValue);
+            Translated value = TranslateElvantoValue(desc.FieldName, desc.GetFromElvanto(elv), set, p.Id);
+
+            // A value we could not read is left off the new person rather than guessed at. They are
+            // created without a school grade rather than with someone else's, and in their own new
+            // family rather than in a household they may not belong to.
+            if (value.Known) desc.SetOnApp(p, value.Value);
         }
 
         return p;

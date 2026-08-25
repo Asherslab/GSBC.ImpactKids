@@ -75,14 +75,10 @@ public partial class ElvantoPersonSyncService
 
         return (new SyncWorkingSet
         {
-            ElvantoPeople = elvantoPeople,
+            ElvantoPeople        = elvantoPeople,
+            MayCreateLocalPeople = request.Scope == ElvantoSyncScope.All,
             AppPeople     = appPeople,
             SchoolGrades  = await db.SchoolGrades.ToListAsync(token),
-            Metadata      = new SyncMetadataIndex(await db.SyncMetadata.ToListAsync(token)),
-
-            FieldConfigs = await db.SyncFieldConfigs
-                .Where(x => x.EntityType == "Person")
-                .ToDictionaryAsync(x => x.FieldName, token),
 
             Bases = await db.ElvantoFieldSnapshots
                 .Where(x => x.EntityType == "Person")

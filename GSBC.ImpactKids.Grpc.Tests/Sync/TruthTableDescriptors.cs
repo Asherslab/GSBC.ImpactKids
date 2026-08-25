@@ -14,14 +14,17 @@ public sealed class TruthTableDescriptor : BaseFieldSyncDescriptor
 {
     public override string        EntityType       => "Person";
     public override string        FieldName        => "TestField";
-    public override SyncDirection DefaultDirection => SyncDirection.Bidirectional;
+    public override SyncDirection DefaultDirection => Direction;
 
-    public Func<string?, bool> Usable          { get; init; } = _ => true;
-    public SyncSource          FirstSync       { get; init; } = SyncSource.Elvanto;
+    public Func<string?, bool> Usable           { get; init; } = _ => true;
+    public SyncSource          FirstSync        { get; init; } = SyncSource.Elvanto;
     public bool                MergeOnFirstSync { get; init; }
+    public SyncDirection       Direction        { get; init; } = SyncDirection.Bidirectional;
+    public PrecedenceOnTie     Tie              { get; init; } = PrecedenceOnTie.Elvanto;
 
-    public override bool       IsValidInboundValue(string? elvValue) => Usable(elvValue);
-    public override SyncSource FirstSyncPrecedence                   => FirstSync;
+    public override bool            IsValidInboundValue(string? elvValue) => Usable(elvValue);
+    public override SyncSource      FirstSyncPrecedence                   => FirstSync;
+    public override PrecedenceOnTie PrecedenceOnTie                       => Tie;
 
     public override string? MergeForFirstSync(string? appValue, string? elvValue) =>
         MergeOnFirstSync && !string.IsNullOrWhiteSpace(elvValue)

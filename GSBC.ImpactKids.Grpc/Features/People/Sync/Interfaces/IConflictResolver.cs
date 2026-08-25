@@ -1,4 +1,3 @@
-using GSBC.ImpactKids.Grpc.Data.Models.Sync;
 using GSBC.ImpactKids.Grpc.Data.Models.Sync.Enums;
 using GSBC.ImpactKids.Grpc.Features.People.Sync.Models;
 
@@ -16,6 +15,6 @@ public interface IConflictResolver
         DateTimeOffset?   appChangedAt,
         string?           elvantoValue,
         DateTimeOffset?   elvantoChangedAt,
-        DbSyncFieldConfig config
+        PrecedenceOnTie   precedenceOnTie
     );
 }

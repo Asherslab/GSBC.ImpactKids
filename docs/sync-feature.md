@@ -5,10 +5,12 @@ Bidirectional sync between the app and Elvanto, with a manual-review workflow fo
 ## Key entities
 
 - `DbSyncPendingReview` — keyed on `(PersonId, ElvantoId)`. Persisted **outside** the main transaction (after `audit.FlushAsync`) so DryRun results survive the rollback.
-- `DbSyncMetadata` — the link between a person and an Elvanto record. Unique on `ElvantoId` **and**
-  on `PersonId`, so `UpsertMetadata` asks both before adding a row; asking only `ElvantoId` added a
-  second row for a person who had been compared to someone else's id and failed the whole run.
-  `LastSyncStatus` is written but read by nothing — do not gate behaviour on it.
+- `DbSyncPlannedChange` — one row per decision, and the thing a person reads before pressing Execute.
+- **There is no `DbSyncMetadata` and no `DbSyncFieldConfig`.** The link between a person and an
+  Elvanto record is `DbPerson.ElvantoId`; how they came to be linked is in `SyncAuditLogs` and the
+  plan. A field's direction and tie-breaking are on its descriptor. Both tables were write-only
+  duplicates of facts held elsewhere, and each cost a whole-run failure or a silently dropped change
+  while it existed.
 
 ## Review workflow
 
@@ -77,9 +79,12 @@ On a first sync the app wins, but not by deleting: Elvanto text the app does not
 carried across verbatim, so a free-text note listing more allergens than the app knows about
 cannot be silently dropped.
 
-Note that a field's direction comes from the seeded `SyncFieldConfigs` row, **not** from the
-descriptor — `DefaultDirection` is only a fallback for fields with no row. Changing a direction
-means editing the seed and adding a migration.
+A field's direction and its tie-breaking side come from **the descriptor**, and nowhere else.
+They used to live in a seeded `SyncFieldConfigs` row that overrode the descriptor entirely, with
+eleven rows that all matched their descriptor exactly and no reader outside the engine — no settings
+UI, no gRPC method, no admin page. Its only behavioural contribution was to put the answer in two
+places, and two corrective migrations were needed to get them back in step, one of which cost a
+family move dropped with no audit row.
 
 ## Every run is Decide, then Apply
 
@@ -164,21 +169,20 @@ nothing to say.
 
 ### An unknown side is not a value
 
-**Family is the one field either side can fail to state at all**, and the distinction is load
-bearing in both directions:
+**"Elvanto holds nothing" and "I cannot read what Elvanto holds" are different answers.** Collapsing
+them into one null is a data-loss bug rather than a tidiness one, and `TranslateElvantoValue` now
+reports which it is. A value it could not read is `Diverged: ElvantoValueUnknown`, and neither side
+is touched.
 
-- A local family's Elvanto counterpart is read off its members *other than the person being asked
-  about* (`SyncWorkingSet.ResolveFamilyInElvanto`), so the only linked member of a family has no
-  evidence either way. Read as a value, that null says "the app deliberately cleared this person's
-  family" — 107 planned clears on a real run against production data.
-- A blank `family_id` means Elvanto has no household for that person, not that they have none.
-  Applied inbound it runs `SetOnApp` with null, which mints a fresh Guid and puts them in a
-  brand-new one-person household — 411 people on the same run.
+Two things are unreadable:
 
-Both are now reported as `Diverged` with reason `AppValueUnknown` or `ElvantoValueUnknown`, and
-neither side is touched. The app side has one exception: a `FieldChangeLogs` row for `FamilyId`
-means the app genuinely moved this person, so an unresolvable family is the answer rather than a
-gap — their new family has no Elvanto counterpart and one has to be created.
+- **A blank `family_id`.** Elvanto has no household for that person; that is not evidence they have
+  none. Read as a value it drove an inbound write of null — which the descriptor turned into a fresh
+  Guid and a brand-new one-person household. On real data it proposed to move 397 people out of the
+  app's "no family yet" bucket in a single run.
+- **An Elvanto household with no other member this app knows**, and **an Elvanto school grade with no
+  `DbSchoolGrade` row**. Neither can be turned into an app value without inventing one. The grade
+  case used to clear the child's grade, with an audit row that read as a legitimate clear.
 
 **Known-empty and unknown are different answers.** A known-empty app value is still a deliberate
 clear and is still pushed, as `""`.
@@ -189,6 +193,41 @@ clear and is still pushed, as `""`.
 and a reason on the row. Nine paths through the field decision used to end in no action, no audit
 row and no counter, which made a real divergence indistinguishable from nothing to do. The operation
 page gives them their own tab and stat tile, because they are a work-list rather than a footnote.
+
+## Family, and what the sync will not guess at
+
+**A scoped run never creates local people.** Asking Elvanto about one person or one family pulls the
+*whole* roll the moment any member is unlinked, so the matcher can find them — while the app side
+loads only that person or family. Nothing then separates "the person this run is about" from the
+other seventeen hundred, and every one of them read as somebody to create.
+
+**Family is compared in the app's terms** — "is this person in the right local family?", which is a
+fact the app owns. `person.FamilyId` on one side, and on the other the local family Elvanto's
+household corresponds to.
+
+It was compared the other way round, in Elvanto's terms, because the household-to-family map was
+self-confirming: it was seeded from every linked person, so a person alone in their Elvanto
+household mapped it straight back to the local family they were already in. `TranslateElvantoValue`
+now **excludes the person being asked about**, exactly as `ResolveFamilyInElvanto` always has, which
+closes that at the source — and it ranks candidate families by how many members they have in the
+household, because one household can span two local families and picking whichever came first moved
+people into a relative's family at random.
+
+Comparing in Elvanto's terms had its own failure once the map was fixed: it asked "which household
+does this person's local family *mostly* correspond to?", so a family split across two households
+disagreed with itself forever. The inbound move was a no-op that settled the base anyway, and the
+next run read the app's own grouping as a fresh change and planned to push the person back.
+
+Outbound still speaks Elvanto's language: the household this person's local family sits in, or
+`"new"` when it has none — **which is a household to create, not a family to clear**.
+
+`FamilyIdDescriptor.SetOnApp` only ever assigns a family it was given. It used to fall back to
+`Guid.NewGuid()`, so an unreadable value moved the person into a brand-new one-person household —
+and since the field then had no Elvanto value to record, it recurred on every run.
+
+The same distinction applies to school grade: an Elvanto grade with no `DbSchoolGrade` row is
+unreadable, not absent, and clearing a child's grade because of it produced an audit row that read
+as a legitimate clear.
 
 ## Never trust a partial Elvanto fetch
 

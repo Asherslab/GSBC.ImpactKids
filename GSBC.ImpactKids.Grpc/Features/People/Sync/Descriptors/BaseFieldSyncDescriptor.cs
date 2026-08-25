@@ -11,6 +11,8 @@ public abstract class BaseFieldSyncDescriptor : IFieldSyncDescriptor
     public abstract string        FieldName        { get; }
     public abstract SyncDirection DefaultDirection { get; }
 
+    public virtual PrecedenceOnTie PrecedenceOnTie => PrecedenceOnTie.Elvanto;
+
     public abstract string? GetFromApp(DbPerson person);
     public abstract void    SetOnApp(DbPerson person, string? value);
     public abstract string? GetFromElvanto(ElvantoPerson elvantoPerson);

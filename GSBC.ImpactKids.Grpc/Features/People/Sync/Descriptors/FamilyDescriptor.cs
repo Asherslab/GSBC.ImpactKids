@@ -32,8 +32,22 @@ public class FamilyIdDescriptor : BaseFieldSyncDescriptor
     public IReadOnlyDictionary<Guid, string>? ElvantoFamilyIdByLocal { get; set; }
 
     public override string? GetFromApp(DbPerson person) => person.FamilyId.ToString();
-    public override void    SetOnApp(DbPerson person, string? value) =>
-        person.FamilyId = Guid.TryParse(value, out Guid g) ? g : Guid.NewGuid();
+
+    /// <summary>
+    /// Only ever assigns a family it was actually given. This used to fall back to
+    /// <c>Guid.NewGuid()</c>, so a value it could not read moved the person into a brand-new
+    /// one-person household — and because the field then had no Elvanto value to record, the
+    /// snapshot never advanced and it happened again on every run.
+    /// </summary>
+    public override void SetOnApp(DbPerson person, string? value)
+    {
+        if (Guid.TryParse(value, out Guid g)) person.FamilyId = g;
+    }
+
+    // Deliberately NOT overriding IsValidInboundValue. Family is compared in Elvanto's terms, so the
+    // value this hook is handed is an Elvanto family id like "4873" - never a Guid. Whether that
+    // household can be turned into a local family is answered by the translation, which reports it
+    // as unknown rather than as a value.
 
     /// <summary>
     /// A blank <c>family_id</c> is not a family. Elvanto returns one for people it has no household
