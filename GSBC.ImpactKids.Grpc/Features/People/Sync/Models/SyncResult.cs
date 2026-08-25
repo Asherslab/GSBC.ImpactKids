@@ -20,6 +20,12 @@ public sealed class SyncResult
     public required int       ManualReviewQueued { get; init; }
     public required int       Archived           { get; init; }
 
+    /// <summary>
+    /// Fields whose two sides differ and which the engine chose not to act on. A non-zero count is
+    /// not a failure; a count that never moves while people report missing changes is.
+    /// </summary>
+    public required int       Diverged           { get; init; }
+
     public List<ManualReviewItem>  ManualReviewItems { get; init; } = [];
     public List<DbSyncAuditLog>    AuditLog          { get; init; } = [];
 }

@@ -101,7 +101,8 @@ public partial class ElvantoPersonSyncService(
                     Conflicts = 0,
                     AutoLinked = 0,
                     ManualReviewQueued = 0,
-                    Archived = 0
+                    Archived = 0,
+                    Diverged = 0
                 };
             }
 
@@ -153,7 +154,8 @@ public partial class ElvantoPersonSyncService(
                         Conflicts = 0,
                         AutoLinked = 0,
                         ManualReviewQueued = 0,
-                        Archived = 0
+                        Archived = 0,
+                        Diverged = 0
                     };
                 }
             }
@@ -693,11 +695,11 @@ public partial class ElvantoPersonSyncService(
             }
 
             logger.LogInformation(
-                "Sync {OperationId} complete | Processed={Processed} InboundPeople={InboundPeople} InboundFields={InboundFields} OutboundPeople={OutboundPeople} OutboundFields={OutboundFields} Conflicts={Conflicts} AutoLinked={AutoLinked} ManualReview={ManualReview} Archived={Archived}",
+                "Sync {OperationId} complete | Processed={Processed} InboundPeople={InboundPeople} InboundFields={InboundFields} OutboundPeople={OutboundPeople} OutboundFields={OutboundFields} Conflicts={Conflicts} AutoLinked={AutoLinked} ManualReview={ManualReview} Archived={Archived} Diverged={Diverged}",
                 operationId, elvantoPeople.Count,
                 counters.InboundPeople, counters.InboundFields,
                 counters.OutboundPeople, counters.OutboundFields,
-                counters.Conflicts, autoLinked, manualReview, archived);
+                counters.Conflicts, autoLinked, manualReview, archived, counters.Diverged);
 
             return new SyncResult
             {
@@ -713,6 +715,7 @@ public partial class ElvantoPersonSyncService(
                 AutoLinked = autoLinked,
                 ManualReviewQueued = manualReview,
                 Archived = archived,
+                Diverged = counters.Diverged,
                 ManualReviewItems = reviewItems,
                 AuditLog = audit.GetAll().ToList()
             };
@@ -787,7 +790,8 @@ public partial class ElvantoPersonSyncService(
                 Conflicts = 0,
                 AutoLinked = 0,
                 ManualReviewQueued = 0,
-                Archived = 0
+                Archived = 0,
+                Diverged = 0
             };
         }
     }
@@ -799,5 +803,6 @@ public partial class ElvantoPersonSyncService(
         public int OutboundPeople;
         public int OutboundFields;
         public int Conflicts;
+        public int Diverged;
     }
 }

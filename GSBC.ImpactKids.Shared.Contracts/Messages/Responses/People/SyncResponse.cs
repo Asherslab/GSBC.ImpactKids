@@ -18,6 +18,7 @@ public class SyncResponse : ISuccessResponse, IErrorResponse
     public required int     AutoLinked          { get; init; }
     public required int     ManualReviewQueued  { get; init; }
     public required int     Archived            { get; init; }
+    public required int     Diverged            { get; init; }
     public List<SyncManualReviewItem> ManualReviewItems { get; init; } = [];
 }
 

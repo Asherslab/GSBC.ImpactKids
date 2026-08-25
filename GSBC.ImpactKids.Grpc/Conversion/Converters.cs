@@ -259,6 +259,7 @@ public class SyncResultConverter : IConverter<SyncResult, SyncResponse>
         AutoLinked = result.AutoLinked,
         ManualReviewQueued = result.ManualReviewQueued,
         Archived = result.Archived,
+        Diverged = result.Diverged,
         ManualReviewItems = result.ManualReviewItems.Select(m => new SyncManualReviewItem
         {
             PersonId = m.PersonId.ToString(),

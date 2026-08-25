@@ -80,6 +80,10 @@
             <MudItem xs="6" sm="4">
                 <StatTile Label="Archived" Value="@s.Archived" Color="@(s.Archived > 0 ? Color.Error : Color.Default)"/>
             </MudItem>
+            <MudItem xs="6" sm="4">
+                <StatTile Label="Diverged" Value="@s.Diverged"
+                          Color="@(s.Diverged > 0 ? Color.Warning : Color.Default)"/>
+            </MudItem>
         </MudGrid>
         <MudDivider Class="mb-4"/>
     }
@@ -152,6 +156,9 @@
             </MudTabPanel>
             <MudTabPanel Text="Matches & Conflicts" Icon="@Icons.Material.Filled.CompareArrows">
                 <AuditLogTable Logs="@MatchConflictLogs" GetPersonName="@GetPersonName"/>
+            </MudTabPanel>
+            <MudTabPanel Text="Diverged" Icon="@Icons.Material.Filled.CallSplit">
+                <AuditLogTable Logs="@DivergedLogs" GetPersonName="@GetPersonName"/>
             </MudTabPanel>
             @if (ManualReviewItems.Count > 0)
             {
