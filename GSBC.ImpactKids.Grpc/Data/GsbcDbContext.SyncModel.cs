@@ -121,11 +121,18 @@ public partial class GsbcDbContext
             Cfg("DateOfBirth", SyncDirection.Bidirectional, PrecedenceOnTie.Elvanto),
             Cfg("FirstTime", SyncDirection.Bidirectional, PrecedenceOnTie.Elvanto),
             Cfg("MediaConsent", SyncDirection.Bidirectional, PrecedenceOnTie.Elvanto),
-            Cfg("SchoolGradeId", SyncDirection.Bidirectional, PrecedenceOnTie.Elvanto),
+            // Elvanto owns school grade IDs and SchoolGradeDescriptor pushes nothing, so
+            // Bidirectional here made a grade change take the outbound branch and write a
+            // "would push" row naming the local Guid, for a request body that never carried it.
+            Cfg("SchoolGradeId", SyncDirection.InboundOnly, PrecedenceOnTie.Elvanto),
             Cfg("FamilyId", SyncDirection.InboundOnly, PrecedenceOnTie.Elvanto),
             Cfg("FamilyGuardian", SyncDirection.InboundOnly, PrecedenceOnTie.Elvanto),
-            Cfg("Allergies", SyncDirection.OutboundOnly, PrecedenceOnTie.App),
-            Cfg("MedicalNotes", SyncDirection.OutboundOnly, PrecedenceOnTie.App)
+            // One row for the one Elvanto field. The old Allergies/MedicalNotes rows named
+            // descriptors that no longer exist - both wrote to this same custom field - and a
+            // stale row is not harmless: a config row overrides the descriptor's
+            // DefaultDirection entirely, so it silently decides behaviour for a field nothing
+            // reads any more.
+            Cfg("MedicalAllergyNotes", SyncDirection.Bidirectional, PrecedenceOnTie.App)
         );
     }
 
