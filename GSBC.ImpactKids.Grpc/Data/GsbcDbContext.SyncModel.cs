@@ -88,11 +88,17 @@ public partial class GsbcDbContext
         modelBuilder.Entity<DbSyncFieldConfig>()
             .Property(x => x.PrecedenceOnTie).HasConversion<string>();
 
-        // DbSyncPendingReview — unique per (PersonId, ElvantoId) pair
+        // DbSyncPendingReview — unique per (PersonId, ElvantoId) pair, and deliberately
+        // one-to-MANY. WithOne() put a unique index on PersonId alone, so a person could hold
+        // only a single review for all time. Decided reviews are never deleted (an approved
+        // duplicate is the record that two people are the same, and the merge feature will read
+        // exactly those rows), so that slot is permanently occupied the moment anyone is judged
+        // a duplicate. A later low-confidence match for the same person against a different
+        // Elvanto record would then violate the index and fail the entire sync run.
         modelBuilder.Entity<DbSyncPendingReview>()
             .HasOne(x => x.Person)
-            .WithOne()
-            .HasForeignKey<DbSyncPendingReview>(x => x.PersonId);
+            .WithMany()
+            .HasForeignKey(x => x.PersonId);
         modelBuilder.Entity<DbSyncPendingReview>()
             .HasIndex(x => new { x.PersonId, x.ElvantoId })
             .IsUnique();
