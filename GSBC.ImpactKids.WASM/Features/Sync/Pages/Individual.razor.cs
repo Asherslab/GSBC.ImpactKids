@@ -31,7 +31,14 @@ public partial class Individual
     private AsyncData<SyncOperation>                        _operation      = AsyncData<SyncOperation>.NotAsked();
     private AsyncData<ImmutableList<SyncAuditLog>>          _auditLogs      = AsyncData<ImmutableList<SyncAuditLog>>.NotAsked();
     private AsyncData<ImmutableList<SyncManualReviewEntry>> _pendingReviews = AsyncData<ImmutableList<SyncManualReviewEntry>>.NotAsked();
+    private AsyncData<ImmutableList<SyncPlannedChange>>     _plan           = AsyncData<ImmutableList<SyncPlannedChange>>.NotAsked();
     private bool                                            _reviewLoading  = false;
+
+    private ImmutableList<SyncPlannedChange> PlanItems =>
+        (_plan.Data ?? []).Where(MatchesSearch).ToImmutableList();
+
+    private int PendingPlanItems =>
+        (_plan.Data ?? []).Count(x => x.Status == PlannedChangeStatus.Pending);
 
     private ImmutableList<SyncAuditLog> ToElvantoLogs =>
         ApplyFilters((_auditLogs.Data ?? []).Where(x => x.Direction == SyncSource.App).OrderBy(x => x.PersonId).ThenBy(x => x.EventType))
@@ -86,7 +93,8 @@ public partial class Individual
         State.SelectedEventTypes.Count > 0 ||
         State.SelectedFields.Count > 0;
 
-    private SyncStats? Stats => _auditLogs.HasData ? new SyncStats(_auditLogs.Data!) : null;
+    private SyncStats? Stats =>
+        _auditLogs.HasData ? new SyncStats(_auditLogs.Data!, _plan.Data ?? []) : null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -103,6 +111,7 @@ public partial class Individual
         RefreshOperation();
         RefreshPendingReviews();
         await LoadAuditLogs();
+        await LoadPlan();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -144,6 +153,72 @@ public partial class Individual
 
         StateHasChanged();
     }
+
+    private async Task LoadPlan()
+    {
+        _plan = AsyncData<ImmutableList<SyncPlannedChange>>.Loading();
+        StateHasChanged();
+
+        try
+        {
+            List<SyncPlannedChange> items = [];
+            await foreach (BasicReadMultipleResponse<SyncPlannedChange> response in
+                           SyncService.ReadPlannedChanges(new BasicReadRequest { Id = Id.ToString() }))
+            {
+                if (!response.Success)
+                {
+                    _plan = _plan.ToFailure(response.Error ?? "Failed to load the plan");
+                    StateHasChanged();
+                    return;
+                }
+                items.AddRange(response.Entities);
+            }
+            _plan = _plan.ToSuccess(items.ToImmutableList());
+        }
+        catch (Exception ex)
+        {
+            _plan = _plan.ToFailure(ex.Message);
+        }
+
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// The plan shares the page's search box but not its event-type or field filters: those name
+    /// audit vocabulary a plan row does not have.
+    /// </summary>
+    private bool MatchesSearch(SyncPlannedChange item)
+    {
+        if (string.IsNullOrWhiteSpace(State.Search)) return true;
+
+        string search = State.Search.Trim();
+        return GetPersonName(item.PersonId ?? Guid.Empty).Contains(search, StringComparison.OrdinalIgnoreCase)
+               || (item.FieldName?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false)
+               || (item.ObservedAppValue?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false)
+               || (item.ObservedElvantoValue?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false)
+               || (item.ProposedValue?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false)
+               || item.Reason.Contains(search, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static Color PlanStatusColor(PlannedChangeStatus status) => status switch
+    {
+        PlannedChangeStatus.Applied => Color.Success,
+        PlannedChangeStatus.Pending => Color.Warning,
+        PlannedChangeStatus.Stale   => Color.Info,
+        PlannedChangeStatus.Failed  => Color.Error,
+        _                           => Color.Default
+    };
+
+    private static string FormatPlanKind(PlannedChangeKind kind) => kind switch
+    {
+        PlannedChangeKind.InboundField    => "Field from Elvanto",
+        PlannedChangeKind.OutboundField   => "Field to Elvanto",
+        PlannedChangeKind.CreateInElvanto => "Create in Elvanto",
+        PlannedChangeKind.CreateLocally   => "Create locally",
+        PlannedChangeKind.Archive         => "Archive",
+        PlannedChangeKind.LinkPerson      => "Link",
+        _                                 => kind.ToString()
+    };
 
     private void RefreshPendingReviews()
     {
@@ -329,17 +404,36 @@ public partial class Individual
     };
 }
 
-public record SyncStats(ImmutableList<SyncAuditLog> Logs)
+/// <summary>
+/// The headline numbers for one operation.
+///
+/// Each is <b>what happened plus what is still waiting to</b>. Deciding writes a plan and no
+/// past-tense audit row, so counting audit rows alone showed a dry run as all zeros while its plan
+/// held two hundred items — every tile reading "nothing to do" for the run whose entire job is to
+/// say what there is to do. A plan item stops being Pending once Apply has dealt with it, and the
+/// audit row appears in the same moment, so nothing is counted twice.
+/// </summary>
+public record SyncStats(ImmutableList<SyncAuditLog> Logs, ImmutableList<SyncPlannedChange> Plan)
 {
-    public int Total           => Logs.Count;
-    public int InboundPeople   => Logs.Count(x => x.EventType == SyncEventType.Created && x.Direction == SyncSource.Elvanto);
-    public int InboundFields   => Logs.Count(x => x.EventType == SyncEventType.FieldUpdated && x.Direction == SyncSource.Elvanto);
+    private int Waiting(PlannedChangeKind kind) =>
+        Plan.Count(x => x.Kind == kind && x.Status == PlannedChangeStatus.Pending);
+
+    public int Total           => Logs.Count + Plan.Count;
+    public int InboundPeople   => Logs.Count(x => x.EventType == SyncEventType.Created && x.Direction == SyncSource.Elvanto)
+                                  + Waiting(PlannedChangeKind.CreateLocally);
+    public int InboundFields   => Logs.Count(x => x.EventType == SyncEventType.FieldUpdated && x.Direction == SyncSource.Elvanto)
+                                  + Waiting(PlannedChangeKind.InboundField);
     public int OutboundPeople  => Logs.Where(x => x.EventType is SyncEventType.WouldCreateInElvanto
-                                                   || (x.EventType is SyncEventType.PushedToElvanto && string.IsNullOrEmpty(x.FieldName))).Select(x => x.PersonId).Distinct().Count();
-    public int OutboundFields  => Logs.Count(x => x.EventType is SyncEventType.PushedToElvanto or SyncEventType.WouldPushToElvanto);
+                                                   || (x.EventType is SyncEventType.PushedToElvanto && string.IsNullOrEmpty(x.FieldName))).Select(x => x.PersonId).Distinct().Count()
+                                  + Waiting(PlannedChangeKind.CreateInElvanto);
+    public int OutboundFields  => Logs.Count(x => x.EventType is SyncEventType.PushedToElvanto or SyncEventType.WouldPushToElvanto)
+                                  + Waiting(PlannedChangeKind.OutboundField);
     public int Conflicts       => Logs.Count(x => x.EventType == SyncEventType.Conflict);
-    public int AutoLinked      => Logs.Count(x => x.EventType == SyncEventType.Match);
+    public int AutoLinked      => Logs.Count(x => x.EventType == SyncEventType.Match)
+                                  + Waiting(PlannedChangeKind.LinkPerson);
     public int ManualReview    => Logs.Count(x => x.EventType == SyncEventType.ManualReviewQueued);
-    public int Archived        => Logs.Count(x => x.EventType == SyncEventType.Archived);
+    public int Archived        => Logs.Count(x => x.EventType == SyncEventType.Archived)
+                                  + Waiting(PlannedChangeKind.Archive);
     public int Diverged        => Logs.Count(x => x.EventType == SyncEventType.Diverged);
+    public int Stale           => Plan.Count(x => x.Status == PlannedChangeStatus.Stale);
 }

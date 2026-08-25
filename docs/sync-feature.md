@@ -81,6 +81,47 @@ Note that a field's direction comes from the seeded `SyncFieldConfigs` row, **no
 descriptor — `DefaultDirection` is only a fallback for fields with no row. Changing a direction
 means editing the seed and adding a migration.
 
+## Every run is Decide, then Apply
+
+| Phase | Reads | Writes | Sends |
+|---|---|---|---|
+| **Decide** | Elvanto + app | the plan, the divergences, the pending reviews, and the bases of fields that already agree | nothing |
+| **Apply** | the plan + live state | app people, bases, the audit trail | Elvanto |
+
+So the three modes are two calls: **DryRun** is Decide and stop, **Full** is Decide then immediately
+Apply, and **Execute** (`ISyncService.ExecutePlan`) applies a plan someone has read. That last one is
+the point of the split. Full and DryRun used to walk *different* create paths, so a dry run was a
+plan preview rather than a rehearsal — it structurally could not exercise `SaveChanges`, the change
+interceptor, the payload builder, the `"new"`-family chain or the failure branch.
+
+**Decide touches nothing in `People`.** A dry run is genuinely read-only on the app side, so the
+audit trail no longer records `Created`, `Match`, `FieldUpdated` or `Archived` in the past tense for
+a run that did none of them. Decide writes only `Diverged` and `ManualReviewQueued` rows; the plan
+carries everything else, and Apply writes the past-tense rows when it acts.
+
+An agreement settles its base during Decide rather than waiting for Apply, because there is nothing
+to apply: recording that two sides already say the same thing changes neither of them.
+
+### `DbSyncPlannedChange`
+
+One row per decision, with both observed hashes on it — the same base primitive at a different
+moment. **Apply re-reads both sides and compares against them.** An item whose reading has moved is
+marked `Stale`, skipped and reported; nothing is clobbered on the strength of a stale observation.
+
+**Apply executes only what the plan contains and never discovers new work.** Anything that appeared
+since Decide belongs to the next plan, and saying so plainly is what makes the button safe to press.
+
+`DbSyncOperation.PlanExpiresAt` defaults to four hours (`Elvanto:PlanExpiryHours`). Past it Apply
+refuses the whole plan rather than any part of it. The per-item check is the real protection; expiry
+guards against a failure it cannot catch — a stale *item* is one whose values moved, while expiry
+guards against the *set* of items being wrong, because people created, deleted or merged in Elvanto
+since Decide ran are not in the plan for any per-item check to look at.
+
+`DbSyncPendingReview.SyncOperationId` is a real foreign key. A review used to be found by joining
+through the operation's audit rows, so one failed flush made it unreachable from the page meant to
+action it — and that flush shared a `try` with the review save, logged as "audit logs", so a failure
+discarded every review from the run while the method still returned `Success`.
+
 ## The base value
 
 **A field's two sides are compared against what they both held the last time they agreed, never

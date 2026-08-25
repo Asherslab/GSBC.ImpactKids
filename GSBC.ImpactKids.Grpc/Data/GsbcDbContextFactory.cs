@@ -48,7 +48,8 @@ public class GsbcDbContextFactory : IDesignTimeDbContextFactory<GsbcDbContext>
             SyncOperations        = null!,
             SyncAuditLogs         = null!,
             SyncFieldConfigs      = null!,
-            PendingReviews        = null!
+            PendingReviews        = null!,
+            PlannedChanges        = null!
         };
     }
 }

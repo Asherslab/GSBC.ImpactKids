@@ -5,68 +5,34 @@ using GSBC.ImpactKids.Grpc.Features.Elvanto.ElvantoServices;
 using GSBC.ImpactKids.Grpc.Features.Elvanto.ElvantoServices.Models;
 using GSBC.ImpactKids.Grpc.Features.People.Sync.Interfaces;
 using GSBC.ImpactKids.Grpc.Features.People.Sync.Models;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People.Sync;
 
 namespace GSBC.ImpactKids.Grpc.Features.People.Sync.Services;
 
 public partial class ElvantoPersonSyncService
 {
     /// <summary>
-    /// Decides every field for one person, sends whatever the decisions add up to, and settles the
-    /// bases the send actually earned.
+    /// Decides every field for one person and records what it decided.
     ///
-    /// This is one loop on purpose. It used to be two - a decision loop that defaulted to <i>skip</i>
-    /// and a separate snapshot loop that defaulted to <i>advance</i>, bridged by a hold list with one
-    /// entry - and the two disagreed. The snapshot loop ignored the field config entirely, so a run
-    /// could discard a change and mark the divergence seen in the same pass, which is how a pending
-    /// change was reported as "would push" and then buried by the very run that reported it.
+    /// One loop, on purpose. It used to be two — a decision loop that defaulted to <i>skip</i> and a
+    /// separate snapshot loop that defaulted to <i>advance</i>, bridged by a hold list with one entry
+    /// — and the two disagreed. The snapshot loop ignored the field config entirely, so a run could
+    /// discard a change and mark the divergence seen in the same pass.
     /// </summary>
-    private async Task<FieldProcessResult> ProcessFieldsAsync(
-        Guid                                               operationId,
-        ElvantoPerson                                      elv,
-        DbPerson                                           appPerson,
-        Dictionary<string, DbSyncFieldConfig>              fieldConfigs,
-        Dictionary<(Guid, string), DbElvantoFieldSnapshot> snapshots,
-        Dictionary<(Guid, string), DateTimeOffset>         lastAppChange,
-        SyncAuditLogger                                    audit,
-        ElvantoSyncMode                                    mode,
-        List<DbSchoolGrade>                                schoolGrades,
-        Dictionary<string, Guid>                           familyIdMap,
-        Dictionary<Guid, string>                           elvantoFamilyIdByLocal,
-        Func<Guid, Guid, string?>                          resolveFamilyInElvanto,
-        SyncCounters                                       counters,
-        CancellationToken                                  token
-    )
+    private async Task PlanFieldsAsync(
+        Guid                      operationId,
+        ElvantoPerson             elv,
+        DbPerson                  appPerson,
+        SyncWorkingSet            set,
+        List<DbSyncPlannedChange> plan,
+        SyncCounters              counters,
+        SyncAuditLogger           audit,
+        CancellationToken         token)
     {
-        ElvantoUpdatePersonRequest? outboundReq = null;
-        bool                        hadConflict = false;
-
-        // Bases that may be written once this person's work is done, and what each one is waiting on.
-        List<PendingBase> pendingBases = [];
-
-        // Both gates, so an excluded person's changes are reported as "would push" rather than
-        // pushed, and nothing is sent for them at all.
-        bool pushPossible = mode == ElvantoSyncMode.Full
-                            && elvantoService.UpdatesEnabled
-                            && elvantoService.MayUpdate(appPerson.Id);
-
         foreach (IFieldSyncDescriptor desc in _descriptors)
         {
-            if (!fieldConfigs.TryGetValue(desc.FieldName, out DbSyncFieldConfig? config))
-                config = new DbSyncFieldConfig
-                {
-                    Id = Guid.Empty, EntityType = desc.EntityType, FieldName = desc.FieldName,
-                    Direction = desc.DefaultDirection, PrecedenceOnTie = PrecedenceOnTie.Elvanto
-                };
-
-            snapshots.TryGetValue((appPerson.Id, desc.FieldName), out DbElvantoFieldSnapshot? baseRow);
-            lastAppChange.TryGetValue((appPerson.Id, desc.FieldName), out DateTimeOffset appChangedAt);
-
-            FieldComparison comparison = BuildComparison(
-                desc, elv, appPerson, baseRow, appChangedAt, schoolGrades, familyIdMap,
-                resolveFamilyInElvanto);
-
-            FieldDecision decision = fieldReconciler.Decide(desc, comparison, config);
+            DbSyncFieldConfig config    = ConfigFor(desc, set);
+            FieldComparison   comparison = BuildComparison(desc, elv, appPerson, set);
+            FieldDecision     decision   = fieldReconciler.Decide(desc, comparison, config);
 
             switch (decision.Kind)
             {
@@ -74,7 +40,11 @@ public partial class ElvantoPersonSyncService
                     continue;
 
                 case FieldDecisionKind.Agreed:
-                    pendingBases.Add(new PendingBase(desc, comparison.AppValue, comparison.ElvantoValue));
+                    // Settled here rather than in Apply: there is nothing to apply. Recording that
+                    // the two sides already say the same thing changes neither of them, and it is
+                    // what stops the next run re-deriving every field from first-sync rules.
+                    await SettleBaseAsync(appPerson.Id, desc, comparison.AppValue, comparison.ElvantoValue,
+                        set.Bases, token);
                     continue;
 
                 case FieldDecisionKind.Diverged:
@@ -83,69 +53,77 @@ public partial class ElvantoPersonSyncService
                     continue;
 
                 case FieldDecisionKind.Inbound:
-                    desc.SetOnApp(appPerson, decision.Value);
-                    logger.LogInformation(
-                        "Sync {OperationId}: field {Field} inbound update for person {PersonId} ({FirstName} {LastName}) | {OldValue} -> {NewValue}",
-                        operationId, desc.FieldName, appPerson.Id, appPerson.FirstName, appPerson.LastName,
-                        comparison.AppValue, comparison.ElvantoValue);
+                    plan.Add(PlannedField(operationId, PlannedChangeKind.InboundField,
+                        appPerson.Id, elv.Id, desc.FieldName, comparison, decision.Value, decision.Reason));
 
-                    await audit.Log(operationId, appPerson.Id,
-                        decision.WasConflict ? SyncEventType.Conflict : SyncEventType.FieldUpdated,
-                        decision.WasConflict ? decision.Reason : "InboundFromElvanto",
-                        desc.FieldName, comparison.AppValue, comparison.ElvantoValue, SyncSource.Elvanto,
-                        token: token);
-
-                    // The app now holds Elvanto's value, so both legs settle on it. Nothing is
-                    // outstanding on the app side - the reconciler only chose inbound because the
-                    // app had not moved, or because Elvanto won a conflict outright.
-                    pendingBases.Add(new PendingBase(desc, comparison.ElvantoValue, comparison.ElvantoValue));
-
-                    if (decision.WasConflict) { counters.Conflicts++; hadConflict = true; }
+                    if (decision.WasConflict) counters.Conflicts++;
                     else counters.InboundFields++;
                     continue;
 
                 case FieldDecisionKind.Outbound:
-                    outboundReq ??= new ElvantoUpdatePersonRequest { Id = elv.Id! };
+                    // "Carried" means the payload genuinely holds this field, not that the descriptor
+                    // was asked. Elvanto answers ok to an omitted field and to an explicit null alike
+                    // and changes nothing, so planning a push the payload cannot express would
+                    // promise a change that can never happen.
+                    if (!WouldCarry(desc, decision.Value, comparison.AppValue))
+                    {
+                        await LogDiverged(operationId, appPerson, desc, comparison,
+                            $"NotCarried:{decision.Reason}", counters, audit, token);
+                        continue;
+                    }
 
-                    // "Carried" means the built payload genuinely holds this field, not that the
-                    // descriptor was asked. Elvanto answers ok to an omitted field and to an explicit
-                    // null alike and changes nothing, so a descriptor that declines and is treated as
-                    // having pushed buries the change it was given.
-                    bool carried = ApplyOutbound(desc, outboundReq, decision.Value, comparison.AppValue);
+                    plan.Add(PlannedField(operationId, PlannedChangeKind.OutboundField,
+                        appPerson.Id, elv.Id, desc.FieldName, comparison, decision.Value, decision.Reason));
 
-                    bool willSend = pushPossible;
-                    logger.LogInformation(
-                        "Sync {OperationId}: field {Field} {Action} for person {PersonId} ({FirstName} {LastName}) | {OldValue} -> {NewValue} (carried={Carried})",
-                        operationId, desc.FieldName, willSend ? "outbound update" : "would push",
-                        appPerson.Id, appPerson.FirstName, appPerson.LastName,
-                        comparison.ElvantoValue, decision.Value, carried);
-
-                    await audit.Log(operationId, appPerson.Id,
-                        willSend ? SyncEventType.PushedToElvanto : SyncEventType.WouldPushToElvanto,
-                        DescribeOutbound(decision, willSend, carried, mode),
-                        desc.FieldName, comparison.ElvantoValue, decision.Value, SyncSource.App,
-                        token: token);
-
-                    // Waiting on the send. Nothing settles until the request that carried this field
-                    // has actually landed - which with writes off it never does, so the change stays
-                    // outstanding and is offered again next run instead of being marked seen.
-                    if (carried)
-                        pendingBases.Add(new PendingBase(desc, comparison.AppValue, decision.Value, AwaitsSend: true));
-
-                    if (decision.WasConflict) { counters.Conflicts++; hadConflict = true; }
+                    if (decision.WasConflict) counters.Conflicts++;
                     else counters.OutboundFields++;
                     continue;
             }
         }
-
-        bool pushLanded = await SendOutboundAsync(
-            operationId, elv, appPerson, outboundReq, pushPossible, mode,
-            elvantoFamilyIdByLocal, familyIdMap, audit, token);
-
-        await SettleBasesAsync(appPerson, pendingBases, pushLanded, snapshots, token);
-
-        return new FieldProcessResult(hadConflict);
     }
+
+    private DbSyncFieldConfig ConfigFor(IFieldSyncDescriptor desc, SyncWorkingSet set) =>
+        set.FieldConfigs.TryGetValue(desc.FieldName, out DbSyncFieldConfig? config)
+            ? config
+            : new DbSyncFieldConfig
+            {
+                Id = Guid.Empty, EntityType = desc.EntityType, FieldName = desc.FieldName,
+                Direction = desc.DefaultDirection, PrecedenceOnTie = PrecedenceOnTie.Elvanto
+            };
+
+    /// <summary>
+    /// Whether the built payload would genuinely carry this field. Asked against a throwaway request
+    /// rather than trusting the descriptor to be asked, which is the same question Apply answers
+    /// against the real one.
+    /// </summary>
+    private static bool WouldCarry(IFieldSyncDescriptor desc, string? value, string? appFamilyInElvanto) =>
+        ApplyOutbound(desc, new ElvantoUpdatePersonRequest { Id = "probe" }, value, appFamilyInElvanto);
+
+    private static DbSyncPlannedChange PlannedField(
+        Guid              operationId,
+        PlannedChangeKind kind,
+        Guid              personId,
+        string?           elvantoId,
+        string            fieldName,
+        FieldComparison   comparison,
+        string?           proposedValue,
+        string            reason) => new()
+    {
+        Id                   = Guid.NewGuid(),
+        SyncOperationId      = operationId,
+        PersonId             = personId,
+        ElvantoId            = elvantoId,
+        Kind                 = kind,
+        FieldName            = fieldName,
+        ObservedAppHash      = comparison.AppHash,
+        ObservedAppValue     = comparison.AppValue,
+        ObservedElvantoHash  = comparison.ElvantoHash,
+        ObservedElvantoValue = comparison.ElvantoValue,
+        ProposedValue        = proposedValue,
+        Reason               = reason,
+        Status               = PlannedChangeStatus.Pending,
+        DecidedAt            = DateTimeOffset.UtcNow
+    };
 
     /// <summary>
     /// Puts one field's two sides and their base into a single comparison space.
@@ -157,25 +135,21 @@ public partial class ElvantoPersonSyncService
     /// owns the grade ids and the app owns the rows they point at.
     /// </summary>
     private FieldComparison BuildComparison(
-        IFieldSyncDescriptor      desc,
-        ElvantoPerson             elv,
-        DbPerson                  appPerson,
-        DbElvantoFieldSnapshot?   baseRow,
-        DateTimeOffset            appChangedAt,
-        List<DbSchoolGrade>       schoolGrades,
-        Dictionary<string, Guid>  familyIdMap,
-        Func<Guid, Guid, string?> resolveFamilyInElvanto)
+        IFieldSyncDescriptor desc,
+        ElvantoPerson        elv,
+        DbPerson             appPerson,
+        SyncWorkingSet       set)
     {
+        set.Bases.TryGetValue((appPerson.Id, desc.FieldName), out DbElvantoFieldSnapshot? baseRow);
+        set.LastAppChange.TryGetValue((appPerson.Id, desc.FieldName), out DateTimeOffset appChangedAt);
+
         string? rawElvValue = desc.GetFromElvanto(elv);
         string? appValue    = desc.GetFromApp(appPerson);
-        string? inbound     = TranslateElvantoValue(desc.FieldName, rawElvValue, schoolGrades, familyIdMap);
+        string? inbound     = TranslateElvantoValue(desc.FieldName, rawElvValue, set.SchoolGrades, set.FamilyIdMap);
 
-        // Family: both sides named as Elvanto family ids. The value written onto the app is still
-        // the translated local Guid, and the outbound value is resolved by the orchestrator, which
-        // is the only thing that can answer "which Elvanto family is this person's local family?".
-        bool    isFamily     = desc.FieldName == "FamilyId";
-        string? comparedApp  = isFamily ? resolveFamilyInElvanto(appPerson.FamilyId, appPerson.Id) : appValue;
-        string? comparedElv  = isFamily ? rawElvValue : inbound;
+        bool    isFamily    = desc.FieldName == "FamilyId";
+        string? comparedApp = isFamily ? set.ResolveFamilyInElvanto(appPerson.FamilyId, appPerson.Id) : appValue;
+        string? comparedElv = isFamily ? rawElvValue : inbound;
 
         return new FieldComparison
         {
@@ -196,134 +170,49 @@ public partial class ElvantoPersonSyncService
         };
     }
 
-    private static string DescribeOutbound(FieldDecision decision, bool willSend, bool carried, ElvantoSyncMode mode)
-    {
-        if (!carried) return $"NotCarried:{decision.Reason}";
-        return willSend ? decision.Reason : $"WouldPush:{mode}:{decision.Reason}";
-    }
-
     /// <summary>
-    /// Sends the person's accumulated edit, if anything is going out at all. Returns whether it
-    /// landed - the one fact the bases are allowed to settle on.
-    /// </summary>
-    private async Task<bool> SendOutboundAsync(
-        Guid                        operationId,
-        ElvantoPerson               elv,
-        DbPerson                    appPerson,
-        ElvantoUpdatePersonRequest? outboundReq,
-        bool                        pushPossible,
-        ElvantoSyncMode             mode,
-        Dictionary<Guid, string>    elvantoFamilyIdByLocal,
-        Dictionary<string, Guid>    familyIdMap,
-        SyncAuditLogger             audit,
-        CancellationToken           token)
-    {
-        if (outboundReq is null) return false;
-
-        if (!(mode == ElvantoSyncMode.Full && pushPossible))
-        {
-            // Log the built payload here too. A dry run is the run that gets reviewed, so it should
-            // show the same evidence a full run does rather than just a headline.
-            logger.LogInformation(
-                "Sync {OperationId}: would send outbound update to Elvanto for person {PersonId} ({FirstName} {LastName}) (mode={Mode}). Payload: {Payload}",
-                operationId, appPerson.Id, appPerson.FirstName, appPerson.LastName, mode,
-                ElvantoService.DescribePayload(outboundReq));
-            return false;
-        }
-
-        logger.LogInformation(
-            "Sync {OperationId}: sending outbound update to Elvanto for person {PersonId} ({FirstName} {LastName})",
-            operationId, appPerson.Id, appPerson.FirstName, appPerson.LastName);
-
-        ElvantoService.UpdateOutcome outcome = await elvantoService.UpdatePersonAsync(outboundReq, token);
-
-        // Elvanto created the family this person was moved into. Recorded both ways so the rest of
-        // this run treats it as existing: another member moved into the same local family joins this
-        // one, and an inbound person carrying the id maps back to it.
-        if (outcome.NewFamilyId is not null)
-        {
-            elvantoFamilyIdByLocal[appPerson.FamilyId] = outcome.NewFamilyId;
-            familyIdMap.TryAdd(outcome.NewFamilyId, appPerson.FamilyId);
-        }
-
-        // A push that was possible but did not land is a finding, not a shrug. Recorded with
-        // Elvanto's own words for the same reason the create path does it: the console is
-        // unreachable in some environments, and "the update failed" without a reason costs a cycle.
-        if (!outcome.Landed)
-            await audit.Log(operationId, appPerson.Id, SyncEventType.WouldPushToElvanto,
-                $"PushFailed: {elvantoService.LastUpdateError ?? "no reason given"}",
-                direction: SyncSource.App, token: token);
-
-        return outcome.Landed;
-    }
-
-    /// <summary>
-    /// Writes the bases the run earned, and only those.
+    /// Writes what both sides hold now as the field's new base.
     ///
     /// A base may advance when the field has no outstanding app-side change, <b>or</b> when the
-    /// request that was actually sent carried it and landed. There is no third case: with writes off
-    /// nothing lands, so every outbound change stays outstanding and is offered again next run. That
-    /// is the whole guarantee - the documented dry-fire procedure used to consume the very changes
-    /// it reported as "would push", an event that reads as a promise they will push next time.
+    /// request that was actually sent carried it and landed. There is no third case, and the caller
+    /// is the one that knows which — Decide settles agreements, Apply settles what it applied.
     /// </summary>
-    private async Task SettleBasesAsync(
-        DbPerson                                           appPerson,
-        List<PendingBase>                                  pending,
-        bool                                               pushLanded,
-        Dictionary<(Guid, string), DbElvantoFieldSnapshot> snapshots,
+    private async Task SettleBaseAsync(
+        Guid                                               personId,
+        IFieldSyncDescriptor                               desc,
+        string?                                            appValue,
+        string?                                            elvantoValue,
+        Dictionary<(Guid, string), DbElvantoFieldSnapshot> bases,
         CancellationToken                                  token)
     {
+        (Guid, string) key = (personId, desc.FieldName);
         DateTimeOffset now = DateTimeOffset.UtcNow;
 
-        foreach (PendingBase item in pending)
+        if (bases.TryGetValue(key, out DbElvantoFieldSnapshot? existing))
         {
-            if (item.AwaitsSend && !pushLanded)
-            {
-                logger.LogInformation(
-                    "Sync: holding the base for {Field} on person {PersonId} - the app's value has not "
-                    + "reached Elvanto, so the field is not settled",
-                    item.Descriptor.FieldName, appPerson.Id);
-                continue;
-            }
-
-            (Guid, string) key = (appPerson.Id, item.Descriptor.FieldName);
-
-            if (snapshots.TryGetValue(key, out DbElvantoFieldSnapshot? existing))
-            {
-                existing.AppHash       = item.Descriptor.Hash(item.AppValue);
-                existing.AppValue      = item.AppValue;
-                existing.LastSeenHash  = item.Descriptor.Hash(item.ElvantoValue);
-                existing.LastSeenValue = item.ElvantoValue;
-                existing.LastSeenAt    = now;
-                continue;
-            }
-
-            DbElvantoFieldSnapshot created = new()
-            {
-                Id            = Guid.NewGuid(),
-                EntityType    = "Person",
-                EntityId      = appPerson.Id,
-                FieldName     = item.Descriptor.FieldName,
-                AppHash       = item.Descriptor.Hash(item.AppValue),
-                AppValue      = item.AppValue,
-                LastSeenHash  = item.Descriptor.Hash(item.ElvantoValue),
-                LastSeenValue = item.ElvantoValue,
-                LastSeenAt    = now
-            };
-            await db.ElvantoFieldSnapshots.AddAsync(created, token);
-            snapshots[key] = created;
+            existing.AppHash       = desc.Hash(appValue);
+            existing.AppValue      = appValue;
+            existing.LastSeenHash  = desc.Hash(elvantoValue);
+            existing.LastSeenValue = elvantoValue;
+            existing.LastSeenAt    = now;
+            return;
         }
-    }
 
-    /// <summary>
-    /// A base waiting to be written. <paramref name="AwaitsSend"/> marks the ones that may only be
-    /// written if the request carrying them actually reached Elvanto.
-    /// </summary>
-    private sealed record PendingBase(
-        IFieldSyncDescriptor Descriptor,
-        string?              AppValue,
-        string?              ElvantoValue,
-        bool                 AwaitsSend = false);
+        DbElvantoFieldSnapshot created = new()
+        {
+            Id            = Guid.NewGuid(),
+            EntityType    = "Person",
+            EntityId      = personId,
+            FieldName     = desc.FieldName,
+            AppHash       = desc.Hash(appValue),
+            AppValue      = appValue,
+            LastSeenHash  = desc.Hash(elvantoValue),
+            LastSeenValue = elvantoValue,
+            LastSeenAt    = now
+        };
+        await db.ElvantoFieldSnapshots.AddAsync(created, token);
+        bases[key] = created;
+    }
 
     /// <summary>
     /// Records that two sides differ and the engine deliberately did nothing. Carries both values so
@@ -371,7 +260,4 @@ public partial class ElvantoPersonSyncService
         req.FamilyId = appFamilyInElvanto ?? ElvantoService.NewFamily;
         return true;
     }
-
-    /// <summary>Outcome of the per-field pass.</summary>
-    private record FieldProcessResult(bool HadConflict);
 }

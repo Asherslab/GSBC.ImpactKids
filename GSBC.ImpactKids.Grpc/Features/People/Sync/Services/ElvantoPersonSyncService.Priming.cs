@@ -81,4 +81,20 @@ public partial class ElvantoPersonSyncService
         ElvantoSyncScope.Family => SyncScope.Family,
         _                       => SyncScope.All
     };
+
+    // Apply reconstructs the request from the operation row, because a plan may be executed in a
+    // later process than the one that decided it.
+    private static ElvantoSyncMode UnmapMode(SyncMode mode) => mode switch
+    {
+        SyncMode.DryRun  => ElvantoSyncMode.DryRun,
+        SyncMode.AppOnly => ElvantoSyncMode.AppOnly,
+        _                => ElvantoSyncMode.Full
+    };
+
+    private static ElvantoSyncScope UnmapScope(SyncScope scope) => scope switch
+    {
+        SyncScope.Person => ElvantoSyncScope.Person,
+        SyncScope.Family => ElvantoSyncScope.Family,
+        _                => ElvantoSyncScope.All
+    };
 }

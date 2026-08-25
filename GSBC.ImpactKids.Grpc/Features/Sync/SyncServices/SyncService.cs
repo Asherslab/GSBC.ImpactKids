@@ -18,6 +18,7 @@ public partial class SyncService(
     IConverter<DbSyncOperation, SyncOperation>             operationConverter,
     IConverter<DbSyncAuditLog, SyncAuditLog>               auditLogConverter,
     IConverter<DbSyncPendingReview, SyncManualReviewEntry> pendingReviewConverter,
+    IConverter<DbSyncPlannedChange, SyncPlannedChange>     plannedChangeConverter,
     IConverter<SyncResult, SyncResponse>                   syncResultConverter,
     IElvantoPersonSyncService                              syncEngine,
     IEventService<SyncOperation>                           eventService,

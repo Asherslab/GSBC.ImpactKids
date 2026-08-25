@@ -39,17 +39,24 @@ public class SyncAuditLogger(
     }
 
     /// <summary>
-    /// Persists the operation record and all buffered audit logs in their own transaction,
-    /// independent of whether the main sync transaction committed or rolled back.
-    /// Clears the change tracker first so rolled-back entities are not re-saved.
+    /// Persists the buffered rows.
+    ///
+    /// The operation row is <b>not</b> written here. It is inserted by the caller before anything
+    /// references it, because the plan rows carry a foreign key to it — and because clearing the
+    /// change tracker to re-add it, which is what this used to do, would discard the plan and the
+    /// bases the same run had just decided.
     /// </summary>
-    public async Task FlushAsync(DbSyncOperation operation, CancellationToken token = default)
+    public async Task FlushAsync(CancellationToken token = default)
     {
-        db.ChangeTracker.Clear();
-        await db.SyncOperations.AddAsync(operation, token);
+        if (_pending.Count == 0) return;
+
         await db.SyncAuditLogs.AddRangeAsync(_pending, token);
         await db.SaveChangesAsync(token);
+        _flushed.AddRange(_pending);
+        _pending.Clear();
     }
 
-    public IReadOnlyList<DbSyncAuditLog> GetAll() => _pending.AsReadOnly();
+    private readonly List<DbSyncAuditLog> _flushed = [];
+
+    public IReadOnlyList<DbSyncAuditLog> GetAll() => [.._flushed, .._pending];
 }

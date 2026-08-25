@@ -208,8 +208,27 @@ public partial class SyncOperationConverter(
     private readonly IConverter<DateTimeOffset, DateTime> _dateTimeConverter = dateTimeConverter;
 
     [MapperIgnoreSource(nameof(DbSyncOperation.AuditLogs))]
+    [MapperIgnoreSource(nameof(DbSyncOperation.PlannedChanges))]
     [MapperIgnoreSource(nameof(DbSyncOperation.Person))]
+    // Not a column: the read fills it in, because "does this operation still have work waiting?" is
+    // the whole question the Execute button asks.
+    [MapperIgnoreTarget(nameof(SyncOperation.PendingPlanItems))]
     public partial SyncOperation Convert(DbSyncOperation input);
+}
+
+[Mapper]
+public partial class SyncPlannedChangeConverter(
+    IConverter<DateTimeOffset, DateTime> dateTimeConverter
+) : IConverter<DbSyncPlannedChange, SyncPlannedChange>
+{
+    [UseMapper]
+    private readonly IConverter<DateTimeOffset, DateTime> _dateTimeConverter = dateTimeConverter;
+
+    [MapperIgnoreSource(nameof(DbSyncPlannedChange.SyncOperation))]
+    [MapperIgnoreSource(nameof(DbSyncPlannedChange.Person))]
+    [MapperIgnoreSource(nameof(DbSyncPlannedChange.ObservedAppHash))]
+    [MapperIgnoreSource(nameof(DbSyncPlannedChange.ObservedElvantoHash))]
+    public partial SyncPlannedChange Convert(DbSyncPlannedChange input);
 }
 
 [Mapper]
@@ -260,6 +279,8 @@ public class SyncResultConverter : IConverter<SyncResult, SyncResponse>
         ManualReviewQueued = result.ManualReviewQueued,
         Archived = result.Archived,
         Diverged = result.Diverged,
+        PlannedChanges = result.PlannedChanges,
+        StaleItems = result.StaleItems,
         ManualReviewItems = result.ManualReviewItems.Select(m => new SyncManualReviewItem
         {
             PersonId = m.PersonId.ToString(),

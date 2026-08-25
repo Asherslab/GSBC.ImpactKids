@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-using System.Text;
 using GSBC.ImpactKids.Grpc.Data.Models.People;
 using GSBC.ImpactKids.Grpc.Data.Models.Sync.Enums;
 using GSBC.ImpactKids.Grpc.Features.Elvanto.ElvantoServices.Models;
@@ -36,10 +34,5 @@ public abstract class BaseFieldSyncDescriptor : IFieldSyncDescriptor
         return true;
     }
 
-    public string Hash(string? value)
-    {
-        if (value is null) return "null";
-        byte[] bytes = SHA256.HashData(Encoding.UTF8.GetBytes(value.Trim().ToLowerInvariant()));
-        return Convert.ToHexString(bytes)[..16];
-    }
+    public string Hash(string? value) => SyncHash.Of(value);
 }
