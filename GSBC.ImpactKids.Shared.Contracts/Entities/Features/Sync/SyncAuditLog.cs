@@ -29,7 +29,8 @@ public enum SyncEventType
     WouldPushToElvanto   = 5,
     WouldCreateInElvanto = 6,
     ManualReviewQueued   = 7,
-    Archived             = 8
+    Archived             = 8,
+    Diverged             = 9
 }
 
 [ProtoContract]

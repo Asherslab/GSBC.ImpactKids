@@ -50,8 +50,6 @@ public partial class ElvantoPersonSyncService
                     Direction = desc.DefaultDirection, PrecedenceOnTie = PrecedenceOnTie.Elvanto
                 };
 
-            if (config.Direction == SyncDirection.Disabled) continue;
-
             string? appValue = desc.GetFromApp(appPerson);
             string? elvValue = desc.GetFromElvanto(elv);
             string  appHash  = desc.Hash(appValue);
@@ -85,14 +83,35 @@ public partial class ElvantoPersonSyncService
 
             if (appHash == elvHash) continue; // values already identical — stale snapshot/log, nothing to do
 
+            // Past this line the two sides genuinely differ. Everything below either acts on that
+            // or records a Diverged row saying why it did not; there is no third way out.
+            if (config.Direction == SyncDirection.Disabled)
+            {
+                await LogDiverged(operationId, appPerson, desc, appValue, elvValue,
+                    "Direction:Disabled", counters, audit, token);
+                continue;
+            }
+
             // If the Elvanto value is semantically empty for this field (e.g. NotRequested for MediaConsent),
             // suppress elvChanged so it can never drive an inbound update or win a conflict.
-            if (!desc.IsValidInboundValue(elvValue))
+            bool elvValueUsable = desc.IsValidInboundValue(elvValue);
+            if (!elvValueUsable)
                 elvChanged = false;
 
             // Elvanto has a non-null value we have no snapshot for — treat as first-seen inbound
-            bool elvFirstSeen = snapshot is null && elvValue is not null && desc.IsValidInboundValue(elvValue);
-            if (!elvChanged && !appChanged && !elvFirstSeen) continue;
+            bool elvFirstSeen = snapshot is null && elvValue is not null && elvValueUsable;
+            if (!elvChanged && !appChanged && !elvFirstSeen)
+            {
+                // The single most common silent outcome, and the one that hides the whole restored-dump
+                // backlog: the values differ, the change log has no row postdating the snapshot, and
+                // Elvanto's hash matches what was last polled. Reported rather than skipped.
+                await LogDiverged(operationId, appPerson, desc, appValue, elvValue,
+                    elvValue is not null && !elvValueUsable
+                        ? "NoChangeDetected:ElvantoValueNotUsable"
+                        : "NoChangeDetected",
+                    counters, audit, token);
+                continue;
+            }
 
             // First sight of a field means no snapshot, so neither "changed at" is trustworthy.
             // Most fields let Elvanto win; medical/allergy notes are the app's to state, since it
@@ -175,6 +194,18 @@ public partial class ElvantoPersonSyncService
                 counters.Conflicts++;
                 hadConflict = true;
             }
+            else
+            {
+                // A side moved and the configured direction refuses to carry it. On InboundOnly with
+                // an app-side edit nothing is logged today; on InboundOnly or OutboundOnly with both
+                // sides moved, both changes are discarded AND the snapshot advances anyway. Naming
+                // the refusal is what makes those rows findable.
+                await LogDiverged(operationId, appPerson, desc, appValue, elvValue,
+                    $"DirectionRefused:{config.Direction}:"
+                    + $"app{(appChanged || firstSeenAppWins ? "Changed" : "Same")}:"
+                    + $"elv{(elvChanged || elvFirstSeen ? "Changed" : "Same")}",
+                    counters, audit, token);
+            }
         }
 
         bool pushLanded = false;
@@ -237,6 +268,33 @@ public partial class ElvantoPersonSyncService
                 string.Join(",", holdSnapshots));
 
         return new FieldProcessResult(hadConflict, holdSnapshots);
+    }
+
+    /// <summary>
+    /// Records that two sides differ and the engine deliberately did nothing. Carries both values so
+    /// the row is actionable on its own - a count alone would say a divergence exists without saying
+    /// which field, on whom, or what the two sides hold.
+    /// </summary>
+    private async Task LogDiverged(
+        Guid                 operationId,
+        DbPerson             appPerson,
+        IFieldSyncDescriptor desc,
+        string?              appValue,
+        string?              elvValue,
+        string               reason,
+        SyncCounters         counters,
+        SyncAuditLogger      audit,
+        CancellationToken    token)
+    {
+        logger.LogInformation(
+            "Sync {OperationId}: field {Field} DIVERGED for person {PersonId} ({FirstName} {LastName}) "
+            + "| app={AppValue} elvanto={ElvValue} reason={Reason}",
+            operationId, desc.FieldName, appPerson.Id, appPerson.FirstName, appPerson.LastName,
+            appValue, elvValue, reason);
+
+        await audit.Log(operationId, appPerson.Id, SyncEventType.Diverged, reason,
+            desc.FieldName, appValue, elvValue, token: token);
+        counters.Diverged++;
     }
 
     /// <summary>

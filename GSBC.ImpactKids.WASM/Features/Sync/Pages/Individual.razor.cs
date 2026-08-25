@@ -43,8 +43,19 @@ public partial class Individual
 
     private ImmutableList<SyncAuditLog> MatchConflictLogs =>
         ApplyFilters((_auditLogs.Data ?? [])
-                .Where(x => x.Direction == null && x.EventType != SyncEventType.ManualReviewQueued)
+                .Where(x => x.Direction == null
+                            && x.EventType != SyncEventType.ManualReviewQueued
+                            && x.EventType != SyncEventType.Diverged)
                 .OrderBy(x => x.PersonId).ThenBy(x => x.EventType))
+            .ToImmutableList();
+
+    // Its own tab rather than a corner of "Matches & Conflicts". These are the rows where the two
+    // sides differ and the run chose not to act, so they are the work-list a person reads to find
+    // changes that have been going missing - not a footnote to the conflicts that were resolved.
+    private ImmutableList<SyncAuditLog> DivergedLogs =>
+        ApplyFilters((_auditLogs.Data ?? [])
+                .Where(x => x.EventType == SyncEventType.Diverged)
+                .OrderBy(x => x.FieldName).ThenBy(x => x.PersonId))
             .ToImmutableList();
 
     private ImmutableList<SyncManualReviewEntry> ManualReviewItems
@@ -251,6 +262,7 @@ public partial class Individual
         SyncEventType.Created              => "Created",
         SyncEventType.Archived             => "Archived",
         SyncEventType.Match                => "Matched",
+        SyncEventType.Diverged             => "Diverged",
         _                                  => type.ToString()
     };
 
@@ -329,4 +341,5 @@ public record SyncStats(ImmutableList<SyncAuditLog> Logs)
     public int AutoLinked      => Logs.Count(x => x.EventType == SyncEventType.Match);
     public int ManualReview    => Logs.Count(x => x.EventType == SyncEventType.ManualReviewQueued);
     public int Archived        => Logs.Count(x => x.EventType == SyncEventType.Archived);
+    public int Diverged        => Logs.Count(x => x.EventType == SyncEventType.Diverged);
 }
