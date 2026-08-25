@@ -6,9 +6,14 @@ public partial class ElvantoService
 {
     public async Task<bool> UpdatePersonAsync(ElvantoUpdatePersonRequest request, CancellationToken token = default)
     {
-        return false;
-        // noop for testing
-        
+        if (!WritesEnabled)
+        {
+            logger.LogWarning(
+                "ELVANTO UPDATE SUPPRESSED for Elvanto person {ElvantoId}. Would POST {Uri} with: {Payload}",
+                request.Id, ElvantoUpdatePersonRequest.RequestUri, DescribePayload(request));
+            return false;
+        }
+
         ElvantoMutationResponse? response =
             await SendMessage<ElvantoUpdatePersonRequest, ElvantoMutationResponse>(request, token);
 

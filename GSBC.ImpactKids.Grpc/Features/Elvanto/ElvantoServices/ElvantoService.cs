@@ -21,9 +21,36 @@ public partial class ElvantoService(
         NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString
     };
 
+    /// <summary>
+    /// Whether writes to Elvanto are permitted. Callers use this to report what they *would*
+    /// have done instead of reporting a failure.
+    /// </summary>
+    public bool WritesEnabled => config.AllowWrites;
+
+    /// <summary>
+    /// The exact JSON body that would be POSTed for this request. Serialized with the same
+    /// options JsonContent.Create uses, so what gets logged is what would go on the wire -
+    /// null-valued fields omitted included.
+    /// </summary>
+    internal static string DescribePayload<TRequest>(TRequest request) =>
+        System.Text.Json.JsonSerializer.Serialize(request);
+
     private async Task<TResponse?> SendMessage<TRequest, TResponse>(TRequest request, CancellationToken token = default)
         where TRequest : IRequestMessage
     {
+        // The single gate every Elvanto call passes through. Callers are expected to check
+        // WritesEnabled and log their own context first, but this is what actually makes a
+        // push impossible: nothing below this line runs for a mutation while writes are off,
+        // so a new caller that forgets the check still cannot reach the network.
+        if (TRequest.IsMutation && !config.AllowWrites)
+        {
+            logger.LogWarning(
+                "ELVANTO WRITE BLOCKED (Elvanto:AllowWrites=false). Nothing was sent to {Uri}. "
+                + "Payload that would have been sent: {Payload}",
+                TRequest.RequestUri, DescribePayload(request));
+            return default;
+        }
+
         HttpRequestMessage httpRequest = new(HttpMethod.Post, TRequest.RequestUri);
         string             encoded     = Convert.ToBase64String(Encoding.UTF8.GetBytes(config.Authentication));
         httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Basic", encoded);
