@@ -131,7 +131,11 @@ public partial class GsbcDbContext
             // Bidirectional here made a grade change take the outbound branch and write a
             // "would push" row naming the local Guid, for a request body that never carried it.
             Cfg("SchoolGradeId", SyncDirection.InboundOnly, PrecedenceOnTie.Elvanto),
-            Cfg("FamilyId", SyncDirection.InboundOnly, PrecedenceOnTie.Elvanto),
+            // Family membership moves both ways now that Elvanto's date_modified makes "which side
+            // changed later" answerable. This row is what actually decides it: FamilyIdDescriptor
+            // being Bidirectional counted for nothing while this said InboundOnly, and the move was
+            // dropped with no audit row to say so.
+            Cfg("FamilyId", SyncDirection.Bidirectional, PrecedenceOnTie.Elvanto),
             Cfg("FamilyGuardian", SyncDirection.InboundOnly, PrecedenceOnTie.Elvanto),
             // One row for the one Elvanto field. The old Allergies/MedicalNotes rows named
             // descriptors that no longer exist - both wrote to this same custom field - and a

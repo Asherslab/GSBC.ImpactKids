@@ -7,7 +7,7 @@ public class ElvantoUpdatePersonRequest : IRequestMessage
 {
     public static Uri RequestUri { get; } = new("https://api.elvanto.com/v1/people/edit.json");
 
-    public static bool IsMutation => true;
+    public static ElvantoMutation Mutation => ElvantoMutation.Update;
 
     [JsonPropertyName("id")]
     public required string Id { get; set; }
@@ -28,6 +28,14 @@ public class ElvantoUpdatePersonRequest : IRequestMessage
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Mobile { get; set; }
 
+    /// <summary>
+    /// Elvanto's numeric family id. Only sent when a family move actually wins the last-write-wins
+    /// comparison - a family_id on every edit would keep re-asserting a grouping nobody changed.
+    /// </summary>
+    [JsonPropertyName("family_id")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? FamilyId { get; set; }
+
     [JsonPropertyName("fields")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ElvantoPersonFields? Fields { get; set; }
@@ -39,11 +47,19 @@ public class ElvantoUpdatePersonRequest : IRequestMessage
         set => (Fields ??= new ElvantoPersonFields()).Birthday = value;
     }
 
+    /// <summary>
+    /// Set with the display name ("Yes"); stored as the option id Elvanto requires for a select
+    /// custom field, in the array that a select or checkbox field must be given. Reading it back
+    /// returns the name again, so a caller never has to know about the ids.
+    /// </summary>
     [JsonIgnore]
     public string? MediaConsent
     {
-        get => Fields?.MediaConsent?.FirstOrDefault();
-        set => (Fields ??= new ElvantoPersonFields()).MediaConsent = value is null ? null : [value];
+        get => Fields?.MediaConsent is { } id
+                   ? MediaConsentOptions.NameForId(id) ?? id
+                   : null;
+        set => (Fields ??= new ElvantoPersonFields()).MediaConsent =
+            value is null ? null : MediaConsentOptions.IdForName(value);
     }
 
     [JsonIgnore]

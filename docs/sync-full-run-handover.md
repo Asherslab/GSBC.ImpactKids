@@ -1,152 +1,198 @@
-# Elvanto sync — handover for Full-run testing
+# Elvanto sync — handover
 
-Branch: `feature/bidirectional-elvanto-sync`. Everything below was established by running it
-against a restored production dump, not by reading the code.
+Branch: `feature/bidirectional-elvanto-sync`. Everything below was established by running it against
+a restored production dump and against the church's real Elvanto account, not by reading the code.
 
-**Writes to Elvanto have never happened. Not once, in any run.** Keep it that way until the
-checks in "Before turning writes on" pass.
+**Writes now work and have been used.** Nine people were created in Elvanto and a dozen field
+changes pushed, all deliberately and under guards. Writes are off again — see "The write guards".
 
 ---
 
 ## Where things stand
 
-Dry runs are in good shape. A clean run against 1772 people / 1726 linked produces:
-
 | | |
 |---|---|
-| Processed | 1719 |
-| Fields from Elvanto | 42 |
-| Fields to Elvanto | 40 |
-| People to Elvanto (would create) | 29 |
-| Manual review | 17 |
-| Archived | 7 |
-| Conflicts | 0 |
+| Full runs | many, all `Success` |
+| Creates to Elvanto | proven (5 test people + 1 real child, since deleted) |
+| Updates to Elvanto | proven (7 fields across 4 people) |
+| Conflicts / last-write-wins | proven in both directions |
+| Family create, move, and "new" family | proven |
+| Suppressed-change bug | **open** — see "The one open bug" |
 
-Those numbers are the current baseline. A run that differs sharply from them is worth
-understanding before going further.
+### Verified working, end to end
 
-### Verified working
-
-- **Every outbound field.** Each was edited through the UI and confirmed to produce an outbound
-  entry: first name, last name, email, phone, date of birth, first time, media consent, and the
-  medical/allergy text. School grade correctly produces none (Elvanto owns those IDs).
-- **Dates** convert AEST↔UTC correctly — a person edited to 15/10 stores as 14/10 14:00Z and
-  pushes back as `2016-10-15`.
-- **Medical notes and allergies**, which previously never pushed at all. Allergen and condition
-  *names* now travel, not just free-text notes, and severity comes through as `(SEVERE)`.
-- **First-sync merge**: Elvanto text the app does not already say is carried across verbatim, so
-  "Eggs & Milk & Nuts" cannot be replaced by "Allergies: Eggs" and lose the rest. Elvanto text
-  dropped is down from 28 cases to 1, and that one is correct (Elvanto says "No known allergies"
-  where the app knows about a real pollen allergy).
-- **Change tracking** on allergies and medical notes, including deletes — these live in their own
-  tables and were invisible to the interceptor before.
-- **Manual review queue**: potential duplicates are queued, actionable, and durable.
-  Approving keeps the create suppressed; denying releases it. Both survive later runs.
-- **Partial-fetch protection** (see below).
-
-### Never exercised
-
-1. **A Full run.** Zero exist: `SELECT count(*) FROM "SyncOperations" WHERE "Mode"='Full'` = 0.
-2. **The last-write-wins path.** Dry runs roll back, so `ElvantoFieldSnapshots` and
-   `SyncMetadata` are both still empty. Every run so far has therefore been a *first* sync.
-   Nothing has ever taken the "both sides changed, newest wins" branch.
-3. **Any real write to Elvanto** — no `people/create` or `people/edit` call has been attempted.
-4. **Creating a person in Elvanto**, and the ID coming back and being stored.
+- **Create.** Payload accepted, Elvanto id returned and stored locally, person linked. Category,
+  family, relationship, birthday, first-time and media consent all land.
+- **The `"new"` family chain on create.** The first member of a family with no Elvanto presence
+  sends `family_id: "new"`; the id that comes back is recorded mid-run so the rest of the family
+  joins it. Proven with a four-person family that landed as one household, not four.
+- **Update.** Names, email, phone, date of birth, first time, media consent and the medical/allergy
+  text all push and are visible in Elvanto.
+- **Family move**, including into a family Elvanto has never seen (which creates it).
+- **Last-write-wins in both directions**, decided on Elvanto's own `date_modified`.
+- **Scoping.** A run can be restricted to named people for creates and updates independently, with
+  a hard ceiling on how many writes may leave the process.
 
 ---
 
-## The write kill switch
+## The write guards
 
-Two independent locks, both on by default.
+Four independent layers. The first three sit above the line that touches `HttpClient`, in the single
+`ElvantoService.SendMessage` choke point every call passes through — there is exactly one
+`httpClient.SendAsync` in the project.
 
-`Elvanto:AllowWrites` is a plain `bool` on `ElvantoConfig` with no initializer, so absent
-configuration binds to `false`. No `appsettings*.json` mentions it.
+| Setting | Effect |
+|---|---|
+| `Elvanto:AllowWrites` | master switch; absent binds to `false` |
+| `Elvanto:AllowCreates` / `Elvanto:AllowUpdates` | which *kind* of write may leave; both default `false` |
+| `Elvanto:MaxWrites` | hard ceiling on mutations for the life of the **process**; null = no ceiling |
+| `Elvanto:AllowedCreatePersonIds` / `AllowedUpdatePersonIds` | *which people*; empty = no restriction |
 
-1. **The choke point.** Every Elvanto call goes through `ElvantoService.SendMessage`. Request
-   types declare `static abstract bool IsMutation`, and a mutation is refused above the line
-   that touches `HttpClient`, with the payload logged. This is per-transport, not per-caller: new
-   push code added later still cannot get out.
-2. **Each call site.** `CreatePersonAsync` and `UpdatePersonAsync` check `WritesEnabled` and
-   return early, logging the exact JSON they would have sent.
+`AllowWrites: true` alone sends nothing — a write must also name its kind. That is deliberate.
 
-Only two endpoints mutate: `people/create.json` and `people/edit.json`. The three read endpoints
-are unaffected and do hit Elvanto for real.
+The budget is consumed **after** every other check, so a refused write never spends the allowance,
+and it never replenishes: restarting the process is the only reset. Note the restart caveat — a
+restart re-arms it.
 
-To confirm nothing leaked after any run:
+The allow lists gate different things: creates are gated in the sync loop (everyone else is audited
+as `WouldCreate:NotInAllowList`), updates are gated before the request is built so an excluded
+person is reported as *would* push rather than pushed.
 
-```bash
-# in the grpc console log
-grep -c 'ELVANTO WRITE BLOCKED\|SUPPRESSED' ...    # expect > 0 on a Full run with writes off
-```
+**Current state: everything off.** `AllowWrites`, `AllowCreates`, `AllowUpdates` all `false`,
+`MaxWrites: 0`, both allow lists empty, and the app is stopped.
 
----
+### Running a controlled write test
 
-## The dangerous bug that was found, and its guards
+1. Set the kind you want on, `MaxWrites` to the exact number of expected calls, and the allow list
+   to the specific app person ids.
+2. **Dry-fire first**: identical config except `MaxWrites: 0`. Nothing can physically leave, and the
+   audit records one `CreateAttempted` row per attempt *with the exact request body*. That is how you
+   confirm both the number of writes and their contents before any of them happen.
+3. Flip `MaxWrites` to the real number and run once.
+4. Read the people back out of Elvanto and check the fields actually landed.
 
-A dry run archived **726 children**. Archiving sets `DeletedAtUtc`, and six of the seven tables
-that reference a person are `ON DELETE CASCADE`.
-
-Cause: the Elvanto paging loop gave up on a failed page and returned what it had. Nothing
-downstream could tell a truncated roll from a complete one, so every linked person missing from
-the partial list looked deleted. The only guard caught a fetch of exactly zero; 1000 of 1719
-sailed through.
-
-Two guards now:
-
-1. `RetrieveElvantoPeople` retries a page three times then **throws** `ElvantoFetchException`.
-   It also holds Elvanto to its own reported total. There is no partial-success outcome.
-2. A full-scope sync aborts if the roll covers under `MinimumElvantoCoverage` (90%) of the linked
-   people — *before* the archive step, recording `Status=Failed` with the reason.
-
-**The truncation was intermittent**: same code, same data, one run got 1719 and the next got
-1000. The retry should absorb it but has only been seen to succeed, never observed recovering
-from the failure it exists for. Watch `Processed=` on every run. Anything other than ~1719 with
-this dataset deserves a stop.
+Updates batch per person, so budget = number of people, not number of fields.
 
 ---
 
-## Testing the Full run
+## The one open bug — a change that did not land is treated as settled
 
-Suggested order. Do not skip to step 3.
+**This is the thing to fix next.** It has now appeared three separate times, each with a different
+cause and the same shape: *the app's pending change silently becomes invisible, forever.*
 
-### 1. Full run with writes still off
+The mechanism: `appChanged` is true only while the app's change is **newer** than the field's
+snapshot. If the snapshot advances while a change is still pending, that change can never be seen
+again. Nothing reports it. The two sides just stay different.
 
-Purpose: lay down `SyncMetadata` and `ElvantoFieldSnapshots`, which no run has ever committed,
-and confirm a Full run commits cleanly.
+Three ways it has happened:
 
-Expect: same counts as the dry-run baseline, `Archived=7`, and afterwards non-zero snapshots and
-metadata. Audit rows should say `WouldPushToElvanto` (not `PushedToElvanto`) because writes are
-off — if any row says `Pushed`, stop, that means a write was attempted.
+1. **Writes suppressed.** The app won a conflict, the push was blocked, the snapshot advanced.
+   *Fixed* — the snapshot is now held for fields the app won whose push did not land.
+2. **The field was skipped entirely.** Never entered the change logic, so the hold never engaged.
+   *Not fixed.*
+3. **The request was sent but did not carry the field.** Elvanto answered `ok`, so `pushLanded` was
+   true, the hold was skipped and the snapshot advanced. *The specific cause is fixed (both outbound
+   branches now share one `ApplyOutbound` helper) but the class is not.*
 
-Suppressed creates deliberately leave `ElvantoId` unset. A create cannot be faked: there is no
-ID to store, and inventing one would link a child to nothing and poison the real sync later. So
-`WouldCreateInElvanto` stays at 29 rather than becoming real links.
+The hold is too narrow: it only covers app-won conflicts, and it trusts the call's return value.
+A sounder rule is to advance a field's snapshot only when the request **actually carried that
+field** — check the built payload, rather than trusting that the call succeeded.
 
-### 2. Second Full run — the untested path
+Recovery, when it does happen: only a fresh app-side edit. Re-saving the same value does not help
+(no change is logged). Clearing the field and setting it back does, as long as no sync runs in
+between.
 
-Purpose: with snapshots now present, this is the first run that is *not* a first sync.
+---
 
-Expect near-silence: the same people should not re-push. Any field that pushes on every run is
-churn and a bug — that is exactly how the phone-number formatting problem was found (five people
-re-syncing forever because the app renders `0435 862 120` and Elvanto stores `0435862120`).
+## Bugs found and fixed this round
 
-Then, to reach the conflict branch: edit a field in the app **and** the same field in Elvanto,
-then run again. Newest edit should win. `Conflicts` has been 0 in every run so far, so this
-branch has never executed.
+Each of these would have hit the first production write.
 
-### 3. Only then, writes on
+**`Guid.NewGuid()` on navigation-added children.** New `DbAllergy`/`DbMedicalNote` rows were created
+with a key already set. They reach the context through a navigation collection, not a `DbSet`, and
+EF reads a set key as "this row exists" — so it issued an `UPDATE` matching nothing and the whole
+save died with a concurrency error. Invisible until the first Full run, because **a dry run never
+calls `SaveChanges` at all**. Fixed by using `Guid.Empty`, matching the house idiom.
 
-Add `"AllowWrites": true` under the `Elvanto` section, and start with `Scope=Person` on one
-volunteer record you do not mind changing — not `Scope=All`.
+**Elvanto's `id`/`name` never deserialised.** `MediaConsent` and `SchoolGrade` had no
+`[JsonPropertyName]` and the response options don't set `PropertyNameCaseInsensitive`. Elvanto sends
+lowercase keys, so both properties bound to null on every read — the object itself wasn't null, so it
+failed silently and **media consent always read as "Not Requested" whatever Elvanto held**. Inbound
+consent changes could never be seen. Fixed with explicit attributes.
 
-**Before turning writes on:**
-- Read the 40 outbound field pushes. First sync overwrites Elvanto for this field set.
-- Decide about the 17 duplicates. Denying one creates that person in Elvanto.
+**A `select` custom field wants the option id as a plain string.** Elvanto's docs say Drop Down and
+Checkbox fields must be arrays; that is wrong for `select` (this account has no checkbox or
+multi-select type at all). Rejected: `["Yes"]` and `["<option id>"]`. Accepted: `"<option id>"`.
+Option ids come from `people/customFields/getAll`, which is the authority; they are constants in
+`MediaConsentOptions`. This affected `people/edit` identically — every media-consent push would have
+failed.
 
-**Guardians among the would-creates are correct — confirmed, not an open question.** New
-guardians are recorded alongside new children and both belong in Elvanto, so the church can
-contact a guardian when it needs to. Several of the 29 are adults for exactly that reason. No
-filtering rule is missing; do not add one.
+**`"Allergies: \nMedical: "` written as real content.** The legacy fallback tested row *count*, and a
+person recorded as having no known allergies still has rows (pointing at "None"). Fixed by judging
+emptiness on the joined text.
+
+**Failures were unreadable.** A failed create reported no reason, and the console was unreachable.
+Elvanto's own error text now goes into the audit trail, distinguishing "refused before sending" from
+"Elvanto rejected the payload". This is what turned a blind retry loop into two targeted fixes.
+
+**`FailureReason` was left null** on the exception path, so a failed run showed `Failed` with no
+reason. Now recorded, including the conflicting entity for a concurrency failure (type and key only —
+property values would carry medical text into a column people read casually).
+
+---
+
+## Family sync — how it works, and the trap in it
+
+Family is **bidirectional** with last-write-wins, decided on `date_modified`. Getting there needed
+three fixes, all the same idea: **a family's Elvanto identity is evidenced by its other members,
+never by the person being checked.**
+
+- `familyIdMap` (Elvanto → local) is seeded from linked members. A person who is the *sole* member of
+  their Elvanto family teaches the map their own pairing — so translating back gave their own value,
+  the hashes compared equal, and the field was skipped before any change logic ran. A lone member
+  could never disagree with themselves.
+- `ResolveFamilyInElvanto(localFamily, askingPerson)` excludes the asker. A lone mover therefore has
+  no evidence, which is correct: their new family genuinely has no Elvanto counterpart, so one must
+  be created (`family_id: "new"`).
+- Comparison for this field happens **in Elvanto's terms**, not by translating back into the app's.
+- `family_id` is set by the orchestrator, not the descriptor: a descriptor instance is shared across
+  everyone in the run, so it structurally cannot answer a question whose answer depends on who is
+  asking.
+
+Asymmetry worth knowing: on a **create**, an unresolvable family sends `"new"`. On an **update** it
+also sends `"new"` now — dropping it silently was worse, and it does not scatter households, because
+once the push lands Elvanto reports the person in the new family and the next run resolves it from
+them. Within a single run, the id that comes back is recorded so a second mover joins rather than
+asking for another `"new"`.
+
+### The trap: a DB config row overrides the descriptor
+
+`SyncFieldConfigs` rows override a descriptor's `DefaultDirection` entirely. Making
+`FamilyIdDescriptor` `Bidirectional` did nothing while the seeded row still said `InboundOnly` — the
+move was dropped **with no audit row at all**. Fixed by migration `20260825101023_FamilyIdBidirectional`.
+
+**Changing a descriptor's direction requires a matching migration, or the change does nothing and
+says nothing.**
+
+`SchoolGradeId` and `FamilyGuardian` remain `InboundOnly` in both places. School grade is correct and
+intended — Elvanto owns those ids, and a created child therefore arrives in Elvanto without a grade.
+
+---
+
+## Elvanto API notes
+
+- `date_modified` is returned on **every** people response and is **UTC** (verified against a known
+  edit). It cannot be requested via `fields` — asking for it by name is rejected as a field that does
+  not exist. Empty for a person never edited; fall back to `date_added`.
+- It is **per person, not per field**, so for a single field it is an upper bound.
+- `people/create` returns both the new person id **and** `family_id`. `people/edit` does **not**
+  report the family, so a create-a-family edit reads the person back to learn it.
+- `family_id` is documented as an integer but is sent as a string; `"new"` is a valid value for the
+  same parameter. Both work.
+- Custom fields are `custom_<id>` nested under `fields`. `datepicker` and `textarea` take plain
+  strings; `select` takes the option id as a plain string.
+- Mobile numbers are normalised by Elvanto on the way in (`0400 000 001` → `0400000001`). This is why
+  the phone descriptor strips spacing before comparing.
 
 ---
 
@@ -157,58 +203,69 @@ filtering rule is missing; do not add one.
 ```
 
 Discovers the container and password from Docker; force-drops, restores, then applies pending
-migrations. `*.dump` is gitignored — the dumps are real people's data, keep them out of git and
-delete local copies when done.
+migrations. `*.dump` is gitignored — real people's data, keep it out of git and delete local copies.
 
-Run the app via the Rider run configuration `GSBC.ImpactKids.AppHost: https` — never
-`dotnet run`. App is at `https://localhost:7263`. Sign in with
-`https://localhost:7263/bff/dev-login?returnUrl=/Sync`.
+Run via the Rider run configuration `GSBC.ImpactKids.AppHost: https` — never `dotnet run`. App is at
+`https://localhost:7263`. Sign in with `https://localhost:7263/bff/dev-login?returnUrl=/Sync`.
 
-Migrations on this branch: `20260824165215_AddSyncTables`,
-`20260825041947_SyncFieldConfigCorrections`, `20260825045004_AllowMultipleReviewsPerPerson`.
+Migrations on this branch: `20260824165215_AddSyncTables`, `20260825041947_SyncFieldConfigCorrections`,
+`20260825045004_AllowMultipleReviewsPerPerson`, `20260825101023_FamilyIdBidirectional`.
 
 ### Traps that have already cost time
 
-- **Drive the UI as a user.** Never `.click()`, never `form_input`. A JS-set value shows on
-  screen and never reaches Blazor — this produced a "saved" edit that never saved and a
-  change-tracking interceptor wrongly declared broken. Clicks via `computer left_click`, text via
-  `computer type`. MudSelect dropdowns do not open on click; focus them and press Enter.
-- **Verify the DLL timestamp before `dotnet ef migrations add`.** `build_solution` can report
-  success without recompiling, and EF then reads a stale assembly and writes an empty migration.
-  Rebuild with `{rebuild: true}`.
-- **The console log is tail-truncated.** Payload lines from a full-scope run scroll off. Read the
-  audit tables instead; they are authoritative and are what the UI shows.
-- **The Aspire dashboard MCP only connects if the app was already running when the session
-  started.** Not a config fault, and editing `.mcp.json` will not help mid-session. Its endpoint
-  is plain `http` on 16036 — probing `https` returns `000` and looks like a dead dashboard.
-- **`GsbcDbContextFactory` hardcodes port 60536** but a persistent container keeps the port it
-  was created with (currently 61645). Direct `dotnet ef` commands that need the database will
-  fail; `db-restore.sh` passes the discovered port explicitly.
-
-### State the database is currently in
-
-`people=1772 linked=1726 reviews=18 snapshots=0 metadata=0 fullruns=0`
-
-Test edits left behind deliberately, so the change-tracking path has something to push:
-
-- **Abigail Escuyos** (`019a1025-1d34-72e9-a4bc-6bad2a2ac90d`) — first name, last name, DOB,
-  first time, media consent, school grade all altered; allergy "Nuts" marked severe with a note.
-- **Jocelyn Lukey** (`019a58df-dbe7-7a55-aba1-a5144ec3cdd9`) — email and phone altered.
-- **Isabel Roberts** — duplicate review Approved. **Sophie Lawless** — Denied.
-
-Re-running `db-restore.sh` wipes all of that and returns to a clean first-sync state.
+- **Drive the UI as a user.** Never `.click()`, never `form_input`. JS is for *reading* facts only
+  (and for scrolling a 525-item dropdown into view — the family and person pickers have no search,
+  which makes them unusable for targeting by hand).
+- **Verify the DLL timestamp before `dotnet ef migrations add`.** `build_solution` can report success
+  without recompiling, and EF then reads a stale assembly and writes an empty migration. Rebuild with
+  `{rebuild: true}` and check the timestamp. Migrations live in `Data/Migrations`, not `Migrations`.
+- **The console log is unreachable in some sessions.** The Aspire dashboard MCP only connects if the
+  app was already running when the session started, and the Rider run log carries no child output.
+  This is why failures now record their reason in the audit tables — they are authoritative and are
+  what the UI shows.
+- **A false "Somebody has made modifications, your edit has been cancelled" toast** appears on saves
+  that do succeed. Verify in the database before believing it. Not sync-related.
+- **`GsbcDbContextFactory` hardcodes port 60536** but a persistent container keeps the port it was
+  created with. `db-restore.sh` passes the discovered port explicitly.
+- **`Scope=Person` on an *unlinked* person is dangerous and unfixed.** It fetches the whole Elvanto
+  roll so the matcher can run, then the main loop creates a local app person for every row that does
+  not match — roughly 1718 spurious people. Local only, no Elvanto writes, but it would wreck the
+  database. Use `Scope=All` with the allow lists instead.
 
 ---
 
+## State the database is currently in
+
+Restored from the production dump, then: 4 test people created and linked, 1 real child (Amina Tran)
+created and since deleted from Elvanto and unlinked locally.
+
+- `test user - 1` … `test user - 4`, all in one family (Elvanto `4903`), all linked. Two guardians,
+  two children, with bogus emails/phones/DOBs, media consent, first-time dates, and medical/allergy
+  rows including a severe allergy and an unlinked allergen.
+- `test user - 5` was created and then deleted, in Elvanto and locally.
+- Elvanto families `4904` and `4905` were created during testing and are now empty.
+- **Jocelyn Lukey's email change is still pending outbound** and was deliberately excluded from every
+  write test by the update allow list. It will push the moment updates are enabled without a list.
+- Deliberate edits remain on Abigail Escuyos and others from the earlier round.
+
+`db-restore.sh` wipes all of that and returns to a clean first-sync state. It does **not** clean up
+Elvanto — the test people and empty families are still there.
+
+---
+
+## Uncommitted work
+
+Nothing is committed. 19 modified files, 4 new (`ElvantoWriteBudget`, `MediaConsentOptions`, and the
+migration pair), ~660 insertions.
+
 ## Open questions, none blocking
 
-- **Confidence on duplicate reviews reads 50%**, which is a hard-coded placeholder, not a
-  computed score. Showing which person the name collides with would be more use.
-- **Merge feature** is agreed for later: survivor is the linked person, attendance collisions
-  merge into one visit, and "Same person" queues a merge with a preview rather than merging
-  immediately. The sync side is already ready for it — approved duplicate rows are durable and
-  are the work-list — but the row records the loser's `PersonId` and the winner's `ElvantoId`, so
-  the survivor is resolved by lookup. Storing the survivor's `PersonId` explicitly is a column
-  and a migration, cheapest now while nothing depends on the shape.
-- A false **"Somebody has made modifications, your edit has been cancelled"** toast appears on
-  saves that do succeed. Not sync-related.
+- **The suppressed-change bug above.** The one to fix next.
+- **Merge feature** is agreed for later; the sync side is ready for it.
+
+Closed, no action needed:
+
+- Guardian family relationship being guessed as `Spouse` (grandparent/aunt included) — accepted as-is.
+- Created people landing in the Visitor category, diverging from existing siblings — correct behaviour.
+- Duplicate-review confidence reading a hard-coded 50% — accepted as-is.
+- Family audit rows showing local Guids for a field compared in Elvanto's terms — accepted as-is.

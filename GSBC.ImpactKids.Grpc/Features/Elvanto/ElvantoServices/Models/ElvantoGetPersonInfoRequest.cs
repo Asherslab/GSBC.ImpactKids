@@ -7,7 +7,7 @@ public class ElvantoGetPersonInfoRequest : IRequestMessage
 {
     public static Uri RequestUri { get; } = new("https://api.elvanto.com/v1/people/getInfo.json");
 
-    public static bool IsMutation => false;
+    public static ElvantoMutation Mutation => ElvantoMutation.None;
 
     [JsonPropertyName("id")]
     public required string Id { get; set; }

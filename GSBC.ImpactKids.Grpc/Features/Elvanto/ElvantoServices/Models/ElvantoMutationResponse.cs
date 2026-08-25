@@ -21,6 +21,14 @@ public class ElvantoCreatedPerson
 {
     [JsonPropertyName("id")]
     public string? Id { get; set; }
+
+    /// <summary>
+    /// The family the new person landed in. Elvanto returns this as a number, and it is the only
+    /// way to learn the id of a family created by passing <c>family_id: "new"</c> - without it the
+    /// next sibling would ask for "new" again and end up in a second family of their own.
+    /// </summary>
+    [JsonPropertyName("family_id")]
+    public long? FamilyId { get; set; }
 }
 
 public class ElvantoApiError

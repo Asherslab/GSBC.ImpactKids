@@ -504,3 +504,6 @@ $RECYCLE.BIN/
 
 # local DB dumps
 *.dump
+
+# Nodeterm tool config, per-machine
+.nodeterm/
