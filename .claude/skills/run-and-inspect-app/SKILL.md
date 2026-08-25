@@ -123,6 +123,30 @@ configuration, or ask the user.
 `dotnet ef` is fine to run directly — it is the CLI exception, since there is no MCP
 equivalent for migrations.
 
+**Check the DLL is actually newer than your edit before generating a migration.**
+`build_solution` can return `{isSuccess: true, problems: []}` without recompiling the project
+you just changed, and `dotnet ef migrations add` reads the built assembly, not your source. The
+result is a migration file with an empty `Up()` — which looks like "EF found no model change"
+and invites you to go hunting for a modelling mistake that isn't there. This has already
+happened twice, once on a `HasData` seed change and once on an index change.
+
+```bash
+stat -f '%Sm  %N' -t '%H:%M:%S' GSBC.ImpactKids.Grpc/bin/Debug/net10.0/GSBC.ImpactKids.Grpc.dll
+```
+
+If that timestamp predates your edit, rebuild with `mcp__rider__build_solution {rebuild: true}`
+and check again. An empty migration is the symptom; a stale assembly is the cause.
+
+Two related traps in the same area:
+
+- `dotnet ef migrations add --no-build` is safe *only* after you have verified the timestamp.
+  Without `--no-build` it builds itself, which is slower but cannot go stale.
+- `dotnet ef migrations remove` needs a working database connection, and
+  `GsbcDbContextFactory` hardcodes port 60536 while a persistent container keeps whatever port
+  it was first created with. When it fails with `28P01: password authentication failed` or a
+  refused connection, delete the migration's two `.cs` files and
+  `git checkout -- .../GsbcDbContextModelSnapshot.cs` instead.
+
 If the Rider MCP is unavailable for *running*, say so and ask the user to start it from
 Rider rather than falling back to `dotnet run`.
 
