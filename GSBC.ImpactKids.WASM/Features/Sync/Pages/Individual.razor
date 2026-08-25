@@ -188,6 +188,9 @@
                                                     </MudText>
                                                 }
                                             </MudStack>
+                                            <MudText Typo="Typo.body2">
+                                                @ReviewQuestion(review, review.PersonName ?? GetPersonName(review.PersonId))
+                                            </MudText>
                                             <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
                                                 <MudText Typo="Typo.body2">Confidence:</MudText>
                                                 <MudProgressLinear Value="@review.MatchConfidence"
@@ -209,16 +212,18 @@
                                                            Size="Size.Small"
                                                            StartIcon="@Icons.Material.Filled.CheckCircle"
                                                            Disabled="@_reviewLoading"
+                                                           Title="@ApproveHint(review)"
                                                            OnClick="@(() => ApproveReview(review))">
-                                                    Approve
+                                                    @ApproveLabel(review)
                                                 </MudButton>
                                                 <MudButton Variant="Variant.Outlined"
                                                            Color="Color.Error"
                                                            Size="Size.Small"
                                                            StartIcon="@Icons.Material.Filled.Cancel"
                                                            Disabled="@_reviewLoading"
+                                                           Title="@DenyHint(review)"
                                                            OnClick="@(() => DenyReview(review))">
-                                                    Deny
+                                                    @DenyLabel(review)
                                                 </MudButton>
                                             }
                                         </MudStack>

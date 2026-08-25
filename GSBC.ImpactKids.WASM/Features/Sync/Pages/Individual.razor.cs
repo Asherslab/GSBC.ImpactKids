@@ -257,6 +257,34 @@ public partial class Individual
     private Task ShowPersonDetails(Guid personId) =>
         DetailsComponentDialog.Open<PersonDetails>(DialogService, "Person", ModificationState.Reading, personId);
 
+    // The two kinds of review ask genuinely different questions, and the buttons used to read
+    // "Approve"/"Deny" for both. Approving a low-confidence match links two records together;
+    // approving a duplicate says the opposite - that the app person already exists in Elvanto and
+    // must NOT be pushed. Same word, opposite outcome, so the card now spells out the question.
+    private static bool IsDuplicateReview(SyncManualReviewEntry review) =>
+        review.MatchStrategy?.StartsWith("PotentialDuplicate", StringComparison.OrdinalIgnoreCase) == true;
+
+    private static string ReviewQuestion(SyncManualReviewEntry review, string personName) =>
+        IsDuplicateReview(review)
+            ? $"Is {personName} the same person as this Elvanto record? They share a first and last name with someone already linked."
+            : $"Link {personName} to this Elvanto record?";
+
+    private static string ApproveLabel(SyncManualReviewEntry review) =>
+        IsDuplicateReview(review) ? "Same person" : "Link";
+
+    private static string DenyLabel(SyncManualReviewEntry review) =>
+        IsDuplicateReview(review) ? "Different people" : "Don't link";
+
+    private static string ApproveHint(SyncManualReviewEntry review) =>
+        IsDuplicateReview(review)
+            ? "Keeps them out of Elvanto — no new record is created."
+            : "Links the two records and syncs their fields from now on.";
+
+    private static string DenyHint(SyncManualReviewEntry review) =>
+        IsDuplicateReview(review)
+            ? "Creates them in Elvanto as a new, separate person."
+            : "Never links this pair; both sides are skipped each run.";
+
     private static Color ConfidenceColor(int confidence) => confidence switch
     {
         >= 70 => Color.Warning,
