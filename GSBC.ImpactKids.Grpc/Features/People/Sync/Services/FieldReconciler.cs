@@ -1,4 +1,3 @@
-using GSBC.ImpactKids.Grpc.Data.Models.Sync;
 using GSBC.ImpactKids.Grpc.Data.Models.Sync.Enums;
 using GSBC.ImpactKids.Grpc.Features.People.Sync.Interfaces;
 using GSBC.ImpactKids.Grpc.Features.People.Sync.Models;
@@ -29,12 +28,9 @@ namespace GSBC.ImpactKids.Grpc.Features.People.Sync.Services;
 /// </summary>
 public class FieldReconciler(IConflictResolver conflictResolver) : IFieldReconciler
 {
-    public FieldDecision Decide(
-        IFieldSyncDescriptor descriptor,
-        FieldComparison      comparison,
-        DbSyncFieldConfig    config)
+    public FieldDecision Decide(IFieldSyncDescriptor descriptor, FieldComparison comparison)
     {
-        if (config.Direction == SyncDirection.Disabled)
+        if (descriptor.DefaultDirection == SyncDirection.Disabled)
             return FieldDecision.Skipped("Direction:Disabled");
 
         if (comparison.AppHash == comparison.ElvantoHash)
@@ -49,19 +45,16 @@ public class FieldReconciler(IConflictResolver conflictResolver) : IFieldReconci
             return FieldDecision.Agreed("Match:NeitherSideSaysAnything");
 
         // An unknown side is not a value, and must never be compared as one. The base cannot help
-        // here either: it records what the app held when the two sides agreed, and if the app cannot
-        // say what it holds now, "has it moved?" has no answer.
-        if (!comparison.AppValueKnown)
-            return FieldDecision.Diverged("AppValueUnknown");
-
+        // here either: it records what both sides held when they agreed, and if one cannot say what
+        // it holds now, "has it moved?" has no answer.
         if (!comparison.ElvantoValueKnown)
             return FieldDecision.Diverged("ElvantoValueUnknown");
 
         FieldDecision decision = comparison.HasBase
-            ? DecideAgainstBase(descriptor, comparison, config)
+            ? DecideAgainstBase(descriptor, comparison)
             : DecideFirstSync(descriptor, comparison);
 
-        return ApplyDirection(decision, comparison, config);
+        return ApplyDirection(decision, comparison, descriptor.DefaultDirection);
     }
 
     /// <summary>
@@ -88,10 +81,7 @@ public class FieldReconciler(IConflictResolver conflictResolver) : IFieldReconci
         return FieldDecision.Outbound(c.EffectiveOutboundValue, "FirstSync:ElvantoHasNothing");
     }
 
-    private FieldDecision DecideAgainstBase(
-        IFieldSyncDescriptor descriptor,
-        FieldComparison      c,
-        DbSyncFieldConfig    config)
+    private FieldDecision DecideAgainstBase(IFieldSyncDescriptor descriptor, FieldComparison c)
     {
         bool appMoved = c.AppHash     != c.BaseAppHash;
         bool elvMoved = c.ElvantoHash != c.BaseElvantoHash;
@@ -114,7 +104,7 @@ public class FieldReconciler(IConflictResolver conflictResolver) : IFieldReconci
 
         ConflictResolution resolution = conflictResolver.Resolve(
             descriptor.FieldName, c.AppValue, c.AppChangedAt,
-            c.ElvantoValue, c.ElvantoChangedAt, config);
+            c.ElvantoValue, c.ElvantoChangedAt, descriptor.PrecedenceOnTie);
 
         return resolution.WinningSide == SyncSource.Elvanto
             ? FieldDecision.Inbound(c.EffectiveInboundValue, resolution.Reason, conflict: true)
@@ -135,18 +125,18 @@ public class FieldReconciler(IConflictResolver conflictResolver) : IFieldReconci
     /// refusal is a finding with both values attached, not a field that was never looked at.
     /// </summary>
     private static FieldDecision ApplyDirection(
-        FieldDecision     decision,
-        FieldComparison   c,
-        DbSyncFieldConfig config) => decision.Kind switch
+        FieldDecision   decision,
+        FieldComparison c,
+        SyncDirection   direction) => decision.Kind switch
     {
         FieldDecisionKind.Inbound when !c.ElvantoValueUsable =>
             FieldDecision.Diverged($"InvalidInboundValue:{decision.Reason}"),
 
-        FieldDecisionKind.Inbound when config.Direction is not (SyncDirection.Bidirectional or SyncDirection.InboundOnly) =>
-            FieldDecision.Diverged($"DirectionRefused:{config.Direction}:Inbound:{decision.Reason}"),
+        FieldDecisionKind.Inbound when direction is not (SyncDirection.Bidirectional or SyncDirection.InboundOnly) =>
+            FieldDecision.Diverged($"DirectionRefused:{direction}:Inbound:{decision.Reason}"),
 
-        FieldDecisionKind.Outbound when config.Direction is not (SyncDirection.Bidirectional or SyncDirection.OutboundOnly) =>
-            FieldDecision.Diverged($"DirectionRefused:{config.Direction}:Outbound:{decision.Reason}"),
+        FieldDecisionKind.Outbound when direction is not (SyncDirection.Bidirectional or SyncDirection.OutboundOnly) =>
+            FieldDecision.Diverged($"DirectionRefused:{direction}:Outbound:{decision.Reason}"),
 
         _ => decision
     };

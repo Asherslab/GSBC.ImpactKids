@@ -102,7 +102,7 @@ public partial class ElvantoPersonSyncService
                     continue;
                 }
 
-                DbPerson created = CreatePersonFromElvanto(elv, set.SchoolGrades, set.FamilyIdMap);
+                DbPerson created = CreatePersonFromElvanto(elv, set);
                 await db.People.AddAsync(created, token);
                 set.AppByElvantoId[item.ElvantoId] = created;
                 appById[created.Id] = created;
@@ -112,7 +112,6 @@ public partial class ElvantoPersonSyncService
 
                 await audit.Log(operationId, created.Id, SyncEventType.Created, "NewFromElvanto",
                     direction: SyncSource.Elvanto, token: token);
-                await UpsertMetadata(created, item.ElvantoId, 100, "DirectElvantoId", set.Metadata, token);
                 counters.InboundPeople++;
             }
 
@@ -149,7 +148,6 @@ public partial class ElvantoPersonSyncService
                 MarkApplied(item);
 
                 await audit.Log(operationId, person.Id, SyncEventType.Match, item.Reason, token: token);
-                await UpsertMetadata(person, item.ElvantoId, 100, item.Reason, set.Metadata, token);
                 autoLinked++;
             }
 
@@ -317,7 +315,7 @@ public partial class ElvantoPersonSyncService
                     continue;
                 }
 
-                if (!ApplyOutbound(desc!, request, item.ProposedValue, now!.AppValue))
+                if (!ApplyOutbound(desc!, request, item.ProposedValue))
                 {
                     MarkSkipped(item, "The payload did not carry this field");
                     continue;
@@ -483,7 +481,6 @@ public partial class ElvantoPersonSyncService
                 set.FamilyIdMap.TryAdd(result.FamilyId, local.FamilyId);
             }
 
-            await UpsertMetadata(local, result.Id, 100, "CreatedOutbound", set.Metadata, token);
             await audit.Log(operationId, local.Id, SyncEventType.PushedToElvanto, "CreatedNewInElvanto",
                 direction: SyncSource.App, token: token);
             created++;

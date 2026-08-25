@@ -13,11 +13,20 @@ namespace GSBC.ImpactKids.Grpc.Features.People.Sync.Models;
 public sealed class SyncWorkingSet
 {
     public required List<ElvantoPerson>       ElvantoPeople { get; init; }
+
+    /// <summary>
+    /// Whether this run is allowed to bring new people into the app.
+    ///
+    /// <b>False for every scoped run.</b> A scoped fetch is not a scoped roll: asking Elvanto about
+    /// one person or one family pulls the <i>whole</i> roll the moment any member is unlinked, so the
+    /// matcher can find them — while the app side loads only that person or family. Nothing then
+    /// distinguishes "an Elvanto person this run is about" from "the other seventeen hundred", and
+    /// every one of them became a person to create. A `Scope=Person` dry run planned ~1718 creates.
+    /// </summary>
+    public required bool MayCreateLocalPeople { get; init; }
     public required List<DbPerson>            AppPeople     { get; init; }
     public required List<DbSchoolGrade>       SchoolGrades  { get; init; }
-    public required SyncMetadataIndex         Metadata      { get; init; }
 
-    public required Dictionary<string, DbSyncFieldConfig>              FieldConfigs   { get; init; }
     public required Dictionary<(Guid, string), DbElvantoFieldSnapshot> Bases          { get; init; }
     public required Dictionary<(Guid, string), DateTimeOffset>         LastAppChange  { get; init; }
     public required Dictionary<(Guid, string), DbSyncPendingReview>    PendingReviews { get; init; }

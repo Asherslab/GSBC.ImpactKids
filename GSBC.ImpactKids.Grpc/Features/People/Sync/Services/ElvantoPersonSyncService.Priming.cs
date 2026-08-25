@@ -1,6 +1,7 @@
 using GSBC.ImpactKids.Grpc.Data.Models.People;
 using GSBC.ImpactKids.Grpc.Data.Models.Sync.Enums;
 using GSBC.ImpactKids.Grpc.Features.People.Sync.Descriptors;
+using GSBC.ImpactKids.Grpc.Features.People.Sync.Models;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People.Sync;
 using Microsoft.EntityFrameworkCore;
 
@@ -42,30 +43,83 @@ public partial class ElvantoPersonSyncService
         };
     }
 
-    private string? TranslateElvantoValue(
-        string                   fieldName,
-        string?                  elvValue,
-        List<DbSchoolGrade>      schoolGrades,
-        Dictionary<string, Guid> familyIdMap
+    /// <summary>
+    /// Turns an Elvanto value into the app's terms, and says whether it could.
+    ///
+    /// <b>"Elvanto holds nothing" and "I cannot read this" are different answers</b>, and collapsing
+    /// them into a single null is a data-loss bug rather than a tidiness one. A school grade with no
+    /// <c>DbSchoolGrade</c> row read as "Elvanto has no grade for this child" and cleared the grade
+    /// they had, with an audit row that looked like a legitimate clear.
+    /// </summary>
+    private Translated TranslateElvantoValue(
+        string          fieldName,
+        string?         elvValue,
+        SyncWorkingSet  set,
+        Guid            askingPersonId
     )
     {
-        if (elvValue is null) return null;
+        // Family first, because for family "Elvanto said nothing" is not the same answer it is for
+        // every other field. A blank family_id means Elvanto has no household for this person, which
+        // is not evidence that they have none - and the app's own "no family yet" bucket holds
+        // hundreds of people, so reading it as a value proposes to move all of them.
+        if (fieldName == "FamilyId")
+            return elvValue is null ? Translated.Unreadable : TranslateFamily(elvValue, set, askingPersonId);
+
+        if (elvValue is null) return Translated.Nothing;
 
         if (fieldName == "SchoolGradeId")
-            return schoolGrades.FirstOrDefault(g => g.ElvantoId == elvValue)?.Id.ToString();
-
-        if (fieldName == "FamilyId")
         {
-            if (!familyIdMap.TryGetValue(elvValue, out Guid localId))
-            {
-                localId = Guid.NewGuid();
-                familyIdMap[elvValue] = localId;
-            }
-
-            return localId.ToString();
+            DbSchoolGrade? grade = set.SchoolGrades.FirstOrDefault(g => g.ElvantoId == elvValue);
+            return grade is null
+                ? Translated.Unreadable
+                : new Translated(grade.Id.ToString(), Known: true);
         }
 
-        return elvValue;
+        return new Translated(elvValue, Known: true);
+    }
+
+    /// <summary>
+    /// The local family an Elvanto household corresponds to, <b>as evidenced by its members other
+    /// than the person being asked about</b>.
+    ///
+    /// Excluding the asker matters here for the same reason it matters in
+    /// <see cref="SyncWorkingSet.ResolveFamilyInElvanto"/>, and leaving it out was a live bug: the
+    /// map is seeded from every linked person, so a person alone in their Elvanto household mapped
+    /// that household straight back to the local family they are already in. The inbound "move" was
+    /// a no-op that settled the base anyway, and the next run read the app's own grouping as a fresh
+    /// change and planned to push them back. Fourteen people ping-ponging, on a real run.
+    ///
+    /// With no other evidence the answer is unknown, not "make a new household" — a person whose
+    /// Elvanto family this app knows nothing about, whose relatives say otherwise, is a genuine
+    /// conflict for a human rather than something to guess at.
+    /// </summary>
+    private static Translated TranslateFamily(string elvantoFamilyId, SyncWorkingSet set, Guid askingPersonId)
+    {
+        // Ranked, not first-found. An Elvanto household can have members in more than one local
+        // family, and picking whichever the dictionary happened to yield first moved people into a
+        // relative's family at random - 397 of them. Most members wins, ties broken on the id so the
+        // answer does not change between runs, which mirrors ResolveFamilyInElvanto exactly.
+        Guid? local = set.FamilyMembership
+            .Select(kv => (
+                Family: kv.Key,
+                Members: kv.Value.Count(m => m.PersonId != askingPersonId && m.ElvantoFamilyId == elvantoFamilyId)))
+            .Where(x => x.Members > 0)
+            .OrderByDescending(x => x.Members)
+            .ThenBy(x => x.Family)
+            .Select(x => (Guid?)x.Family)
+            .FirstOrDefault();
+
+        return local is null ? Translated.Unreadable : new Translated(local.Value.ToString(), Known: true);
+    }
+
+    /// <summary>
+    /// An Elvanto value in the app's terms. <paramref name="Known"/> is false when the value could
+    /// not be read at all, which is not the same as Elvanto holding nothing.
+    /// </summary>
+    private readonly record struct Translated(string? Value, bool Known)
+    {
+        public static Translated Nothing    => new(null, true);
+        public static Translated Unreadable => new(null, false);
     }
 
     private static SyncMode MapMode(ElvantoSyncMode mode) => mode switch

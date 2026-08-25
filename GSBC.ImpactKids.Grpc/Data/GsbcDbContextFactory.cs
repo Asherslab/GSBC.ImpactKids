@@ -44,10 +44,8 @@ public class GsbcDbContextFactory : IDesignTimeDbContextFactory<GsbcDbContext>
 
             FieldChangeLogs       = null!,
             ElvantoFieldSnapshots = null!,
-            SyncMetadata          = null!,
             SyncOperations        = null!,
             SyncAuditLogs         = null!,
-            SyncFieldConfigs      = null!,
             PendingReviews        = null!,
             PlannedChanges        = null!
         };

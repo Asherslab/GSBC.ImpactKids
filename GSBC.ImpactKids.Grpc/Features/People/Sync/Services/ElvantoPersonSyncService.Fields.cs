@@ -30,9 +30,8 @@ public partial class ElvantoPersonSyncService
     {
         foreach (IFieldSyncDescriptor desc in _descriptors)
         {
-            DbSyncFieldConfig config    = ConfigFor(desc, set);
-            FieldComparison   comparison = BuildComparison(desc, elv, appPerson, set);
-            FieldDecision     decision   = fieldReconciler.Decide(desc, comparison, config);
+            FieldComparison comparison = BuildComparison(desc, elv, appPerson, set);
+            FieldDecision   decision   = fieldReconciler.Decide(desc, comparison);
 
             switch (decision.Kind)
             {
@@ -65,7 +64,7 @@ public partial class ElvantoPersonSyncService
                     // was asked. Elvanto answers ok to an omitted field and to an explicit null alike
                     // and changes nothing, so planning a push the payload cannot express would
                     // promise a change that can never happen.
-                    if (!WouldCarry(desc, decision.Value, comparison.AppValue))
+                    if (!WouldCarry(desc, decision.Value))
                     {
                         await LogDiverged(operationId, appPerson, desc, comparison,
                             $"NotCarried:{decision.Reason}", counters, audit, token);
@@ -82,22 +81,13 @@ public partial class ElvantoPersonSyncService
         }
     }
 
-    private DbSyncFieldConfig ConfigFor(IFieldSyncDescriptor desc, SyncWorkingSet set) =>
-        set.FieldConfigs.TryGetValue(desc.FieldName, out DbSyncFieldConfig? config)
-            ? config
-            : new DbSyncFieldConfig
-            {
-                Id = Guid.Empty, EntityType = desc.EntityType, FieldName = desc.FieldName,
-                Direction = desc.DefaultDirection, PrecedenceOnTie = PrecedenceOnTie.Elvanto
-            };
-
     /// <summary>
     /// Whether the built payload would genuinely carry this field. Asked against a throwaway request
     /// rather than trusting the descriptor to be asked, which is the same question Apply answers
     /// against the real one.
     /// </summary>
-    private static bool WouldCarry(IFieldSyncDescriptor desc, string? value, string? appFamilyInElvanto) =>
-        ApplyOutbound(desc, new ElvantoUpdatePersonRequest { Id = "probe" }, value, appFamilyInElvanto);
+    private static bool WouldCarry(IFieldSyncDescriptor desc, string? value) =>
+        ApplyOutbound(desc, new ElvantoUpdatePersonRequest { Id = "probe" }, value);
 
     private static DbSyncPlannedChange PlannedField(
         Guid              operationId,
@@ -143,25 +133,35 @@ public partial class ElvantoPersonSyncService
         set.Bases.TryGetValue((appPerson.Id, desc.FieldName), out DbElvantoFieldSnapshot? baseRow);
         set.LastAppChange.TryGetValue((appPerson.Id, desc.FieldName), out DateTimeOffset appChangedAt);
 
-        string? rawElvValue = desc.GetFromElvanto(elv);
-        string? appValue    = desc.GetFromApp(appPerson);
-        string? inbound     = TranslateElvantoValue(desc.FieldName, rawElvValue, set.SchoolGrades, set.FamilyIdMap);
+        string?    rawElvValue = desc.GetFromElvanto(elv);
+        string?    appValue    = desc.GetFromApp(appPerson);
+        Translated inbound     = TranslateElvantoValue(desc.FieldName, rawElvValue, set, appPerson.Id);
 
-        bool    isFamily    = desc.FieldName == "FamilyId";
-        string? comparedApp = isFamily ? set.ResolveFamilyInElvanto(appPerson.FamilyId, appPerson.Id) : appValue;
-        string? comparedElv = isFamily ? rawElvValue : inbound;
+        bool isFamily = desc.FieldName == "FamilyId";
 
-        // A family with no resolvable Elvanto counterpart is unknown, not empty - unless the change
-        // log says the app moved this person, in which case the absence is the answer: their new
-        // family has no Elvanto counterpart and one has to be created. Without that distinction a
-        // person who is simply the only linked member of their family reads as having had their
-        // family deliberately cleared, and the run plans to clear it in Elvanto too.
-        bool appValueKnown = !isFamily || comparedApp is not null || appChangedAt != default;
+        // Family is compared in the APP's terms - "is this person in the right local family?" - which
+        // is a fact the app owns. Comparing in Elvanto's terms instead asked "which Elvanto household
+        // does this person's local family mostly correspond to?", and a family split across two
+        // Elvanto households then disagreed with itself forever: the inbound move was a no-op that
+        // settled the base anyway, and the next run planned to push the person back.
+        //
+        // The reason it was ever compared the other way round was a self-confirming map, and that is
+        // fixed at the source: TranslateFamily excludes the person being asked about, exactly as
+        // ResolveFamilyInElvanto always has.
+        string? comparedApp = appValue;
+        string? comparedElv = inbound.Value;
 
-        // And the mirror: a blank family_id means Elvanto has no household for this person, not that
-        // they have none. Treating it as a value drove an inbound write of null, which SetOnApp turns
-        // into a fresh Guid - a brand new one-person household, for 411 people on a real run.
-        bool elvValueKnown = !isFamily || comparedElv is not null;
+        // Unreadable covers both: an Elvanto household this app has no other member of, and a school
+        // grade with no local row. Neither may drive a write in either direction, and neither is the
+        // same as the other side holding nothing.
+        bool elvValueKnown = inbound.Known;
+
+        // Outbound has to speak Elvanto's language even though the comparison speaks the app's: the
+        // Elvanto household this person's local family sits in, or "new" when it has none - which is
+        // a household to create, not a family to clear.
+        string? outboundValue = isFamily
+            ? set.ResolveFamilyInElvanto(appPerson.FamilyId, appPerson.Id) ?? ElvantoService.NewFamily
+            : comparedApp;
 
         return new FieldComparison
         {
@@ -172,15 +172,14 @@ public partial class ElvantoPersonSyncService
             BaseAppHash        = baseRow?.AppHash,
             BaseElvantoHash    = baseRow?.LastSeenHash,
             ElvantoValueUsable = desc.IsValidInboundValue(comparedElv),
-            AppValueKnown      = appValueKnown,
             ElvantoValueKnown  = elvValueKnown,
             AppChangedAt       = appChangedAt == default ? null : appChangedAt,
             // Elvanto's own date_modified, not the base's timestamp. The base records when the two
             // sides last agreed; using it as Elvanto's edit time made the app win any conflict where
             // it had been edited since, whatever Elvanto did afterwards.
             ElvantoChangedAt   = elv.LastChangedAtUtc ?? baseRow?.LastSeenAt,
-            InboundValue       = inbound,
-            OutboundValue      = comparedApp
+            InboundValue       = inbound.Value,
+            OutboundValue      = outboundValue
         };
     }
 
@@ -265,13 +264,12 @@ public partial class ElvantoPersonSyncService
     private static bool ApplyOutbound(
         IFieldSyncDescriptor       desc,
         ElvantoUpdatePersonRequest req,
-        string?                    value,
-        string?                    appFamilyInElvanto)
+        string?                    value)
     {
         if (desc.FieldName != "FamilyId")
             return desc.ApplyToElvantoRequest(req, value);
 
-        req.FamilyId = appFamilyInElvanto ?? ElvantoService.NewFamily;
+        req.FamilyId = value ?? ElvantoService.NewFamily;
         return true;
     }
 }

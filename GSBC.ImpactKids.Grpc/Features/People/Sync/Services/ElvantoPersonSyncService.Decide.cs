@@ -88,6 +88,12 @@ public partial class ElvantoPersonSyncService
 
                     if (match is null)
                     {
+                        // Out of scope, and silently so on purpose: a scoped run pulls the whole
+                        // Elvanto roll so the matcher can work, and every unmatched row in it is
+                        // somebody this run was never asked about. Auditing them would write ~1718
+                        // rows for a sync of one person.
+                        if (!set.MayCreateLocalPeople) continue;
+
                         // New in Elvanto. Nothing is created now - the plan names the Elvanto record
                         // and Apply makes the person, so a dry run and a full run walk one path.
                         plan.Add(Planned(operationId, PlannedChangeKind.CreateLocally,

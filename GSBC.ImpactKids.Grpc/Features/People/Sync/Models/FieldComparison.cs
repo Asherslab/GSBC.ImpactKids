@@ -48,18 +48,6 @@ public sealed record FieldComparison
     public required DateTimeOffset? ElvantoChangedAt { get; init; }
 
     /// <summary>
-    /// False when the app side could not be established at all — <b>which is not the same as the app
-    /// holding nothing</b>.
-    ///
-    /// Only family is ever unknown. A local family's Elvanto counterpart is read off its members
-    /// <i>other than the person being asked about</i>, so a person who is the only linked member of
-    /// their family has no evidence either way. Comparing that null as if it were a value reads as
-    /// "the app deliberately cleared this person's family" and plans a clear — 107 of them on a real
-    /// run, which with writes on would have emptied 107 people's family in Elvanto.
-    /// </summary>
-    public bool AppValueKnown { get; init; } = true;
-
-    /// <summary>
     /// False when Elvanto's side could not be established — the mirror of <see cref="AppValueKnown"/>,
     /// and again only family is ever unknown.
     ///
