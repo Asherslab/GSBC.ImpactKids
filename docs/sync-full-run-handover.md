@@ -166,7 +166,8 @@ asking for another `"new"`.
 
 `SyncFieldConfigs` rows override a descriptor's `DefaultDirection` entirely. Making
 `FamilyIdDescriptor` `Bidirectional` did nothing while the seeded row still said `InboundOnly` — the
-move was dropped **with no audit row at all**. Fixed by migration `20260825101023_FamilyIdBidirectional`.
+move was dropped **with no audit row at all**. The config table that caused it no longer exists — a
+field's direction is on its descriptor.
 
 **Changing a descriptor's direction requires a matching migration, or the change does nothing and
 says nothing.**
@@ -205,8 +206,10 @@ migrations. `*.dump` is gitignored — real people's data, keep it out of git an
 Run via the Rider run configuration `GSBC.ImpactKids.AppHost: https` — never `dotnet run`. App is at
 `https://localhost:7263`. Sign in with `https://localhost:7263/bff/dev-login?returnUrl=/Sync`.
 
-Migrations on this branch: `20260824165215_AddSyncTables`, `20260825041947_SyncFieldConfigCorrections`,
-`20260825045004_AllowMultipleReviewsPerPerson`, `20260825101023_FamilyIdBidirectional`.
+Migrations on this branch: one, `20260825155128_ElvantoSyncEngine`. The sync work went through seven
+before it settled — three of them corrections to a table the seventh dropped — and since none had
+ever been deployed they were collapsed into a single migration rather than shipping a history that
+creates and drops tables nobody ever used.
 
 ### Traps that have already cost time
 
