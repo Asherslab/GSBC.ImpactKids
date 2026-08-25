@@ -29,6 +29,6 @@ public class FirstTimeDescriptor : BaseFieldSyncDescriptor
     public override string? GetFromElvanto(ElvantoPerson elv) =>
         string.IsNullOrWhiteSpace(elv.FirstTimeAtImpactKids) ? null : elv.FirstTimeAtImpactKids;
 
-    public override void ApplyToElvantoRequest(ElvantoUpdatePersonRequest req, string? value) =>
-        req.FirstTimeAtImpactKids = value;
+    public override bool ApplyToElvantoRequest(ElvantoUpdatePersonRequest req, string? value) =>
+        Set(value, v => req.FirstTimeAtImpactKids = v);
 }

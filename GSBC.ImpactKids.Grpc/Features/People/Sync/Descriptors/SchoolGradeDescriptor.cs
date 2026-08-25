@@ -31,5 +31,5 @@ public class SchoolGradeDescriptor : BaseFieldSyncDescriptor
 
     // School grade inbound is handled via ElvantoId → local Guid lookup in orchestrator;
     // outbound is not supported (Elvanto school grade IDs are managed by Elvanto).
-    public override void ApplyToElvantoRequest(ElvantoUpdatePersonRequest req, string? value) { }
+    public override bool ApplyToElvantoRequest(ElvantoUpdatePersonRequest req, string? value) => false;
 }

@@ -17,7 +17,7 @@ changes pushed, all deliberately and under guards. Writes are off again — see 
 | Updates to Elvanto | proven (7 fields across 4 people) |
 | Conflicts / last-write-wins | proven in both directions |
 | Family create, move, and "new" family | proven |
-| Suppressed-change bug | **open** — see "The one open bug" |
+| Suppressed-change bug | **closed** — see "The suppressed-change bug, and what closed it" |
 
 ### Verified working, end to end
 
@@ -75,32 +75,29 @@ Updates batch per person, so budget = number of people, not number of fields.
 
 ---
 
-## The one open bug — a change that did not land is treated as settled
+## The suppressed-change bug, and what closed it
 
-**This is the thing to fix next.** It has now appeared three separate times, each with a different
-cause and the same shape: *the app's pending change silently becomes invisible, forever.*
+It appeared three separate times, each with a different cause and the same shape: *the app's pending
+change silently becomes invisible, forever.*
 
-The mechanism: `appChanged` is true only while the app's change is **newer** than the field's
-snapshot. If the snapshot advances while a change is still pending, that change can never be seen
-again. Nothing reports it. The two sides just stay different.
+The mechanism was `appChanged` — true only while the app's change was **newer** than the field's
+snapshot. Advancing the snapshot while a change was still pending buried it permanently. Nothing
+reported it; the two sides just stayed different. It happened when writes were suppressed, when the
+field never entered the change logic at all, and when a request was sent that did not carry the
+field (Elvanto answers `ok` either way).
 
-Three ways it has happened:
+Three patches for one missing concept. What closed the class is the **base value**: the snapshot row
+now holds what *both* sides held at the last agreement, so "has the app moved?" is answered by
+comparing against the app leg rather than by comparing an edit timestamp against a poll timestamp.
+See "The base value" in [sync-feature.md](./sync-feature.md).
 
-1. **Writes suppressed.** The app won a conflict, the push was blocked, the snapshot advanced.
-   *Fixed* — the snapshot is now held for fields the app won whose push did not land.
-2. **The field was skipped entirely.** Never entered the change logic, so the hold never engaged.
-   *Not fixed.*
-3. **The request was sent but did not carry the field.** Elvanto answered `ok`, so `pushLanded` was
-   true, the hold was skipped and the snapshot advanced. *The specific cause is fixed (both outbound
-   branches now share one `ApplyOutbound` helper) but the class is not.*
+The rule that replaces the hold: **a base may advance only when the field has no outstanding
+app-side change, or when the request that was actually sent carried that field and landed.**
+"Carried" is read off the built payload — `IFieldSyncDescriptor.ApplyToElvantoRequest` returns
+`bool` for exactly this — not off the descriptor being asked and not off the call returning `ok`.
 
-The hold is too narrow: it only covers app-won conflicts, and it trusts the call's return value.
-A sounder rule is to advance a field's snapshot only when the request **actually carried that
-field** — check the built payload, rather than trusting that the call succeeded.
-
-Recovery, when it does happen: only a fresh app-side edit. Re-saving the same value does not help
-(no change is logged). Clearing the field and setting it back does, as long as no sync runs in
-between.
+Recovery for anything already buried: none is needed. A null app leg reads as "no base", nothing was
+backfilled, and the first run after the migration re-derives every field from scratch.
 
 ---
 

@@ -40,6 +40,7 @@ public static class ServiceExtensions
         // Scoped sync services
         services.AddScoped<IPersonMatcher, PersonMatcher>();
         services.AddScoped<IConflictResolver, ConflictResolver>();
+        services.AddScoped<IFieldReconciler, FieldReconciler>();
         services.AddScoped<IElvantoPersonSyncService, ElvantoPersonSyncService>();
 
         // Auto-register all IFieldSyncDescriptor implementations (mirrors AddConverters pattern)

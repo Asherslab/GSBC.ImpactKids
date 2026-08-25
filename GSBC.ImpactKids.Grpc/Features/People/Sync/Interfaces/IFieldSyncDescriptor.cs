@@ -14,7 +14,20 @@ public interface IFieldSyncDescriptor
     void    SetOnApp(DbPerson person, string? value);
 
     string? GetFromElvanto(ElvantoPerson elvantoPerson);
-    void    ApplyToElvantoRequest(ElvantoUpdatePersonRequest req, string? value);
+
+    /// <summary>
+    /// Puts this field's value on an outbound request, and reports whether it actually set anything.
+    ///
+    /// <b>The return value is what lets the base advance honestly.</b> A base may only move for a
+    /// field the request genuinely carried - not one the descriptor was merely asked about, and not
+    /// because the call came back ok. Elvanto answers ok to an omitted field and to an explicit
+    /// null alike, and changes nothing, so a descriptor that quietly declines and reports success
+    /// buries the pending change it was asked to send.
+    ///
+    /// A null <paramref name="value"/> means "nothing to say" and must return false. An empty string
+    /// means "clear this", which is the only thing Elvanto accepts as a clear, and must be sent.
+    /// </summary>
+    bool    ApplyToElvantoRequest(ElvantoUpdatePersonRequest req, string? value);
 
     string Hash(string? value);
 

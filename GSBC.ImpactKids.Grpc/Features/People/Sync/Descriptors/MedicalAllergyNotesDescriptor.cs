@@ -143,8 +143,8 @@ public class MedicalAllergyNotesDescriptor : BaseFieldSyncDescriptor
             ? null
             : elvantoPerson.MedicalAllergyNotes;
 
-    public override void ApplyToElvantoRequest(ElvantoUpdatePersonRequest req, string? value) =>
-        req.MedicalAllergyNotes = value;
+    public override bool ApplyToElvantoRequest(ElvantoUpdatePersonRequest req, string? value) =>
+        Set(value, v => req.MedicalAllergyNotes = v);
 
     public override void SetOnApp(DbPerson person, string? value)
     {
