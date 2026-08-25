@@ -35,7 +35,14 @@ public class FamilyIdDescriptor : BaseFieldSyncDescriptor
     public override void    SetOnApp(DbPerson person, string? value) =>
         person.FamilyId = Guid.TryParse(value, out Guid g) ? g : Guid.NewGuid();
 
-    public override string? GetFromElvanto(ElvantoPerson elv)  => elv.FamilyId;
+    /// <summary>
+    /// A blank <c>family_id</c> is not a family. Elvanto returns one for people it has no household
+    /// for, and carrying it through as a value made an empty string the answer to "which Elvanto
+    /// family is this person's local family?" — which then read as a deliberate clear and planned to
+    /// empty the family of everyone whose relatives happened to have no Elvanto household.
+    /// </summary>
+    public override string? GetFromElvanto(ElvantoPerson elv) =>
+        string.IsNullOrWhiteSpace(elv.FamilyId) ? null : elv.FamilyId;
 
     /// <summary>
     /// Deliberately empty. Family is the one field whose outbound value depends on who is being

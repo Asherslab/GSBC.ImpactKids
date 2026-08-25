@@ -371,6 +371,26 @@ Only after all five does the question of enabling writes arise, and that follows
 dry-fire procedure in the Full-run handover, with one correction: that procedure currently consumes
 pending changes (**F2**), and Part 1 is what makes it safe.
 
+## What running it against production data turned up
+
+Verification steps 1–5 all pass. Three things the design did not anticipate, all found by running
+the sequence rather than by reading:
+
+1. **Two sides that both say nothing are agreement, not divergence.** 89 rows per run. Fixed.
+2. **An unresolvable app-side family is unknown, not empty.** 107 planned outbound *clears* of real
+   people's Elvanto family, from people who were simply the only linked member of their household.
+   With writes on this would have emptied 107 families. Fixed: `AppValueUnknown`.
+3. **A blank Elvanto `family_id` is unknown, not empty.** The first attempt at (2) exposed it — 411
+   planned inbound family moves, each of which would have minted a fresh Guid and put the person in
+   a brand-new one-person household (**F7**'s mechanism). Fixed: `ElvantoValueUnknown`.
+
+**Left for step 6, and it is a real finding:** applying an inbound family move and then planning the
+reverse outbound move for the same 14 people in the next run. The person is moved into the local
+family Elvanto says, and then the app's own grouping — read off their relatives — disagrees and
+would push them back. It converges after one outbound rather than looping, and with writes off it
+simply sits in the plan, but it means **family is the one field where Decide/Apply is not yet
+idempotent**. It belongs with **F6** and **F7**, which are the family rework.
+
 ## Out of scope
 
 - Any change to the write guards, the budget or the allow lists.

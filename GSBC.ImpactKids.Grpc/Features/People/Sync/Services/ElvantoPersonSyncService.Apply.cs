@@ -339,11 +339,17 @@ public partial class ElvantoPersonSyncService
                     operationId, person.Id, person.FirstName, person.LastName, mode,
                     ElvantoService.DescribePayload(request));
 
+                // Named by what actually stopped it, not by the mode the plan happened to be decided
+                // in. An Execute of a plan a dry run produced is not itself a dry run, and a row
+                // saying "WouldPush:DryRun" for it is the same kind of tense-lie the audit trail is
+                // being cleaned of.
+                string suppression = SuppressionReason(mode, person.Id, elvantoService.UpdatesEnabled);
+
                 foreach ((DbSyncPlannedChange item, _, _) in carried)
                 {
-                    MarkSkipped(item, mode == ElvantoSyncMode.AppOnly ? "AppOnly run" : "Elvanto writes are disabled");
+                    MarkSkipped(item, suppression);
                     await audit.Log(operationId, person.Id, SyncEventType.WouldPushToElvanto,
-                        $"WouldPush:{mode}:{item.Reason}", item.FieldName,
+                        $"WouldPush:{suppression}:{item.Reason}", item.FieldName,
                         item.ObservedElvantoValue, item.ProposedValue, SyncSource.App, token: token);
                 }
 
@@ -438,9 +444,13 @@ public partial class ElvantoPersonSyncService
 
             if (mode == ElvantoSyncMode.AppOnly || !elvantoService.CreatesEnabled)
             {
-                MarkSkipped(item, mode == ElvantoSyncMode.AppOnly ? "AppOnly run" : "Elvanto creates are disabled");
+                string suppression = mode == ElvantoSyncMode.AppOnly
+                    ? "AppOnly run"
+                    : "Elvanto:AllowCreates=false";
+
+                MarkSkipped(item, suppression);
                 await audit.Log(operationId, local.Id, SyncEventType.WouldCreateInElvanto,
-                    $"WouldCreate:{mode}", direction: SyncSource.App, toValue: payload, token: token);
+                    $"WouldCreate:{suppression}", direction: SyncSource.App, toValue: payload, token: token);
                 continue;
             }
 
@@ -517,6 +527,20 @@ public partial class ElvantoPersonSyncService
         { why = "Elvanto changed this field after the plan was decided"; return false; }
 
         return true;
+    }
+
+    /// <summary>
+    /// Why an outbound change did not go, in the words of the thing that stopped it. The write guards
+    /// are layered, so which one refused is the difference between "turn on AllowUpdates" and "this
+    /// person is not on the allow list".
+    /// </summary>
+    private string SuppressionReason(ElvantoSyncMode mode, Guid personId, bool updatesEnabled)
+    {
+        if (mode == ElvantoSyncMode.AppOnly)          return "AppOnly run";
+        if (!elvantoService.WritesEnabled)            return "Elvanto:AllowWrites=false";
+        if (!updatesEnabled)                          return "Elvanto:AllowUpdates=false";
+        if (!elvantoService.MayUpdate(personId))      return "Not in Elvanto:AllowedUpdatePersonIds";
+        return "Elvanto writes are disabled";
     }
 
     private static Dictionary<string, ElvantoPerson> ElvantoById(SyncWorkingSet set) =>

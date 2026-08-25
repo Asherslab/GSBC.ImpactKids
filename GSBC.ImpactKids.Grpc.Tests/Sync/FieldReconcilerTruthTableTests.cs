@@ -440,6 +440,75 @@ public class FieldReconcilerTruthTableTests
                 Config(SyncDirection.Bidirectional)).Kind);
     }
 
+    // ------------------------------------------------- an unknown side is not a value
+
+    [Fact]
+    public void AnUnknownAppSideIsReported_NotReadAsADeliberateClear()
+    {
+        // Family is the only field this can happen to: a local family's Elvanto counterpart is read
+        // off its members OTHER than the person being asked about, so the only linked member of a
+        // family has no evidence either way. Comparing that null as a value planned an outbound
+        // clear for 107 people on a real run.
+        FieldComparison c = new()
+        {
+            AppValue           = null,
+            ElvantoValue       = "4615",
+            AppHash            = Plain.Hash(null),
+            ElvantoHash        = Plain.Hash("4615"),
+            BaseAppHash        = Plain.Hash("4615"),
+            BaseElvantoHash    = Plain.Hash("4615"),
+            ElvantoValueUsable = true,
+            AppValueKnown      = false,
+            AppChangedAt       = null,
+            ElvantoChangedAt   = null
+        };
+
+        FieldDecision d = Reconciler.Decide(Plain, c, Config(SyncDirection.Bidirectional));
+
+        Assert.Equal(FieldDecisionKind.Diverged, d.Kind);
+        Assert.Equal("AppValueUnknown", d.Reason);
+    }
+
+    [Fact]
+    public void AnUnknownElvantoSideIsReportedToo_NotAppliedAsAClearedFamily()
+    {
+        // The mirror. A blank family_id means Elvanto has no household for this person; applying it
+        // inbound runs SetOnApp with null, which mints a fresh Guid and puts them in a brand-new
+        // one-person household — 411 people on a real run.
+        FieldComparison c = new()
+        {
+            AppValue           = "4901",
+            ElvantoValue       = null,
+            AppHash            = Plain.Hash("4901"),
+            ElvantoHash        = Plain.Hash(null),
+            BaseAppHash        = null,
+            BaseElvantoHash    = null,
+            ElvantoValueUsable = true,
+            ElvantoValueKnown  = false,
+            AppChangedAt       = null,
+            ElvantoChangedAt   = null
+        };
+
+        FieldDecision d = Reconciler.Decide(Plain, c, Config(SyncDirection.Bidirectional));
+
+        Assert.Equal(FieldDecisionKind.Diverged, d.Kind);
+        Assert.Equal("ElvantoValueUnknown", d.Reason);
+    }
+
+    [Fact]
+    public void AKnownEmptyAppSideIsStillADeliberateClear()
+    {
+        // The other half: when the app genuinely holds nothing and we know it, that is a clear and
+        // must still be pushed. Unknown and empty are different answers.
+        FieldDecision d = Reconciler.Decide(
+            Plain,
+            Compare(Plain, null, "4615", baseApp: "4615", baseElvanto: "4615", hasBase: true),
+            Config(SyncDirection.Bidirectional));
+
+        Assert.Equal(FieldDecisionKind.Outbound, d.Kind);
+        Assert.Equal("AppClearedTheField", d.Reason);
+    }
+
     // ------------------------------------------------------- the migration's own case
 
     [Fact]
