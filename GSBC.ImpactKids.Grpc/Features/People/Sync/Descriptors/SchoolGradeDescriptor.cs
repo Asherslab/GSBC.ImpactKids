@@ -14,7 +14,12 @@ public class SchoolGradeDescriptor : BaseFieldSyncDescriptor
 {
     public override string        EntityType       => "Person";
     public override string        FieldName        => "SchoolGradeId";
-    public override SyncDirection DefaultDirection => SyncDirection.Bidirectional;
+    // Inbound only, matching the empty ApplyToElvantoRequest below: Elvanto owns school grade
+    // IDs, so there is nothing to push. Declaring Bidirectional made a grade change take the
+    // outbound branch, count towards OutboundFields and write a "would push" audit row naming
+    // the *local* Guid - a row a reviewer would read as "this will reach Elvanto" when the
+    // request body never carried it.
+    public override SyncDirection DefaultDirection => SyncDirection.InboundOnly;
 
     public override string? GetFromApp(DbPerson person) => person.SchoolGradeId?.ToString();
 
