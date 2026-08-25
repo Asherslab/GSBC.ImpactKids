@@ -20,6 +20,10 @@ public abstract class BaseFieldSyncDescriptor : IFieldSyncDescriptor
 
     public virtual bool IsValidInboundValue(string? elvValue) => true;
 
+    public virtual SyncSource FirstSyncPrecedence => SyncSource.Elvanto;
+
+    public virtual string? MergeForFirstSync(string? appValue, string? elvValue) => appValue;
+
     public string Hash(string? value)
     {
         if (value is null) return "null";

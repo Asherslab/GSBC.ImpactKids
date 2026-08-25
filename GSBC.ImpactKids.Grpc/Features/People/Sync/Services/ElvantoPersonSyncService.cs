@@ -4,6 +4,7 @@ using GSBC.ImpactKids.Grpc.Data.Models.Sync;
 using GSBC.ImpactKids.Grpc.Data.Models.Sync.Enums;
 using GSBC.ImpactKids.Grpc.Features.Elvanto.ElvantoServices;
 using GSBC.ImpactKids.Grpc.Features.Elvanto.ElvantoServices.Models;
+using GSBC.ImpactKids.Grpc.Features.People.Sync.Descriptors;
 using GSBC.ImpactKids.Grpc.Features.People.Sync.Interfaces;
 using GSBC.ImpactKids.Grpc.Features.People.Sync.Models;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People.Sync;
@@ -24,6 +25,13 @@ public class ElvantoPersonSyncService(
 ) : IElvantoPersonSyncService
 {
     private readonly IReadOnlyList<IFieldSyncDescriptor> _descriptors = descriptors.ToList();
+
+    /// <summary>
+    /// How much of the linked roll Elvanto must return before a full-scope sync is willing to
+    /// archive anything. People genuinely leave, so this is not 100%, but a real week's
+    /// departures are a handful out of seventeen hundred - not hundreds.
+    /// </summary>
+    private const double MinimumElvantoCoverage = 0.9;
 
     public async Task<SyncResult> SyncAsync(
         SyncWithElvantoRequest request,
@@ -103,7 +111,59 @@ public class ElvantoPersonSyncService(
                 "Sync {OperationId}: loaded {Count} app people",
                 operationId, appPeople.Count);
 
+            // Second line of defence behind the fetch itself. Archiving reads "not in the Elvanto
+            // list" as "deleted from Elvanto", so a roll that comes back short - for any reason,
+            // including one nobody has thought of yet - must stop the run rather than delete
+            // people. A dry run once archived 726 children off a single dropped page.
+            int linkedCount = appPeople.Count(p => p.ElvantoId is not null && p.DeletedAtUtc is null);
+            if (request.Scope == ElvantoSyncScope.All && linkedCount > 0)
+            {
+                double coverage = (double)elvantoPeople.Count / linkedCount;
+                if (coverage < MinimumElvantoCoverage)
+                {
+                    string reason =
+                        $"Elvanto returned {elvantoPeople.Count} people but {linkedCount} app people are linked "
+                        + $"({coverage:P0} coverage, minimum {MinimumElvantoCoverage:P0}). Aborting before archive "
+                        + "— a short roll would archive everyone missing from it.";
+                    logger.LogError("Sync {OperationId}: {Reason}", operationId, reason);
+                    await tx.RollbackAsync(token);
+                    operation.CompletedAt   = DateTimeOffset.UtcNow;
+                    operation.Status        = SyncStatus.Failed;
+                    operation.FailureReason = reason;
+                    try
+                    {
+                        await audit.FlushAsync(operation, token);
+                    }
+                    catch (Exception flushEx)
+                    {
+                        logger.LogWarning(flushEx, "Sync {OperationId}: failed to persist audit logs", operationId);
+                    }
+
+                    return new SyncResult
+                    {
+                        OperationId = operationId,
+                        Mode = request.Mode,
+                        Success = false,
+                        Error = reason,
+                        PeopleProcessed = 0,
+                        InboundPeople = 0,
+                        InboundFields = 0,
+                        OutboundPeople = 0,
+                        OutboundFields = 0,
+                        Conflicts = 0,
+                        AutoLinked = 0,
+                        ManualReviewQueued = 0,
+                        Archived = 0
+                    };
+                }
+            }
+
             List<DbSchoolGrade> schoolGrades = await db.SchoolGrades.ToListAsync(token);
+
+            // The medical/allergy descriptor turns Elvanto's free text back into rows, which
+            // needs the allergen and medical-type tables. It cannot reach the database itself,
+            // so it is primed here, once, rather than per person.
+            await PrimeMedicalAllergyLookupsAsync(token);
 
             Dictionary<string, DbSyncMetadata> metaByElvantoId = await db.SyncMetadata
                 .ToDictionaryAsync(x => x.ElvantoId, token);
@@ -329,11 +389,36 @@ public class ElvantoPersonSyncService(
             // 9. Push new App people to Elvanto (people with no ElvantoId, not needing review)
             // Helper: detect app-side duplicates — another person already linked to Elvanto in this sync
             // shares the same first+last name, meaning we'd create a duplicate in Elvanto if we push this one.
-            bool IsPotentialDuplicate(DbPerson local) =>
-                appByElvantoId.Values.Any(linked =>
+            // Returns the already-linked person this one looks like, rather than just "yes".
+            // The counterpart's ElvantoId is what makes the skip reviewable: without it there is
+            // nothing to approve or deny against.
+            DbPerson? FindPotentialDuplicate(DbPerson local) =>
+                appByElvantoId.Values.FirstOrDefault(linked =>
                     linked.Id != local.Id &&
                     string.Equals(linked.FirstName?.Trim(), local.FirstName?.Trim(), StringComparison.OrdinalIgnoreCase) &&
                     string.Equals(linked.LastName?.Trim(), local.LastName?.Trim(), StringComparison.OrdinalIgnoreCase));
+
+            // Queues a duplicate skip for human review. Previously these bumped the manual-review
+            // counter and wrote an audit row but created nothing to act on, so the operation page
+            // promised a queue that was always empty and the same people were skipped every run.
+            void QueueDuplicateForReview(DbPerson local, DbPerson duplicate)
+            {
+                if (duplicate.ElvantoId is null) return;
+                if (pendingReviews.ContainsKey((local.Id, duplicate.ElvantoId))) return;
+                if (newPendingReviews.Any(r => r.PersonId == local.Id && r.ElvantoId == duplicate.ElvantoId)) return;
+
+                newPendingReviews.Add(new DbSyncPendingReview
+                {
+                    Id              = Guid.NewGuid(),
+                    PersonId        = local.Id,
+                    ElvantoId       = duplicate.ElvantoId,
+                    MatchConfidence = 50,
+                    MatchStrategy   = "PotentialDuplicate:ExactName",
+                    Status          = GrpcReviewStatus.Pending,
+                    CreatedAt       = DateTimeOffset.UtcNow,
+                    PersonName      = $"{local.FirstName} {local.LastName}".Trim()
+                });
+            }
 
             if (request.Mode == ElvantoSyncMode.Full)
             {
@@ -345,23 +430,42 @@ public class ElvantoPersonSyncService(
                             m.PersonId == local.Id && m.LastSyncStatus == SyncStatus.ManualReview))
                         continue;
 
-                    if (IsPotentialDuplicate(local))
+                    DbPerson? duplicate = FindPotentialDuplicate(local);
+                    if (duplicate is not null)
                     {
                         logger.LogWarning(
-                            "Sync {OperationId}: skipping outbound create for app person {PersonId} ({FirstName} {LastName}) — potential duplicate of already-linked person",
-                            operationId, local.Id, local.FirstName, local.LastName);
+                            "Sync {OperationId}: skipping outbound create for app person {PersonId} ({FirstName} {LastName}) — potential duplicate of already-linked person {DuplicateId} (Elvanto {ElvantoId})",
+                            operationId, local.Id, local.FirstName, local.LastName, duplicate.Id, duplicate.ElvantoId);
                         await audit.Log(operationId, local.Id, SyncEventType.ManualReviewQueued,
                             "PotentialDuplicate:AlreadyLinkedInElvanto",
                             toValue: $"{local.FirstName} {local.LastName}".Trim(),
                             token: token);
+                        QueueDuplicateForReview(local, duplicate);
                         manualReview++;
+                        continue;
+                    }
+
+                    // With writes off there is no Elvanto id to come back, so this cannot be
+                    // treated as a real create: writing a placeholder onto local.ElvantoId would
+                    // link the person to nothing and corrupt the eventual real sync. Record it the
+                    // same way a dry run does, so the two runs report the same numbers.
+                    if (!elvantoService.WritesEnabled)
+                    {
+                        logger.LogWarning(
+                            "Sync {OperationId}: create SUPPRESSED (writes disabled) for app person {PersonId} ({FirstName} {LastName}) - payload logged, ElvantoId left unset",
+                            operationId, local.Id, local.FirstName, local.LastName);
+                        await elvantoService.CreatePersonAsync(local, ComposeMedicalAllergyText(local), token); // builds + logs the payload, sends nothing
+                        await audit.Log(operationId, local.Id, SyncEventType.WouldCreateInElvanto,
+                            "WouldCreate:WritesDisabled", direction: SyncSource.App, token: token);
+                        counters.OutboundPeople++;
                         continue;
                     }
 
                     logger.LogInformation(
                         "Sync {OperationId}: pushing new app person {PersonId} ({FirstName} {LastName}) to Elvanto",
                         operationId, local.Id, local.FirstName, local.LastName);
-                    string? newElvantoId = await elvantoService.CreatePersonAsync(local, token);
+                    string? newElvantoId =
+                        await elvantoService.CreatePersonAsync(local, ComposeMedicalAllergyText(local), token);
                     if (newElvantoId is not null)
                     {
                         local.ElvantoId = newElvantoId;
@@ -392,15 +496,17 @@ public class ElvantoPersonSyncService(
                             m.PersonId == local.Id && m.LastSyncStatus == SyncStatus.ManualReview))
                         continue;
 
-                    if (IsPotentialDuplicate(local))
+                    DbPerson? duplicate = FindPotentialDuplicate(local);
+                    if (duplicate is not null)
                     {
                         logger.LogWarning(
-                            "Sync {OperationId}: would-create skipped for app person {PersonId} ({FirstName} {LastName}) — potential duplicate of already-linked person",
-                            operationId, local.Id, local.FirstName, local.LastName);
+                            "Sync {OperationId}: would-create skipped for app person {PersonId} ({FirstName} {LastName}) — potential duplicate of already-linked person {DuplicateId} (Elvanto {ElvantoId})",
+                            operationId, local.Id, local.FirstName, local.LastName, duplicate.Id, duplicate.ElvantoId);
                         await audit.Log(operationId, local.Id, SyncEventType.ManualReviewQueued,
                             "PotentialDuplicate:AlreadyLinkedInElvanto",
                             toValue: $"{local.FirstName} {local.LastName}".Trim(),
                             token: token);
+                        QueueDuplicateForReview(local, duplicate);
                         manualReview++;
                         continue;
                     }
@@ -584,7 +690,14 @@ public class ElvantoPersonSyncService(
             bool elvFirstSeen = snapshot is null && elvValue is not null && desc.IsValidInboundValue(elvValue);
             if (!elvChanged && !appChanged && !elvFirstSeen) continue;
 
-            if ((elvChanged || elvFirstSeen) && !appChanged &&
+            // First sight of a field means no snapshot, so neither "changed at" is trustworthy.
+            // Most fields let Elvanto win; medical/allergy notes are the app's to state, since it
+            // holds structured records rather than whatever text was in the box.
+            bool firstSeenAppWins = elvFirstSeen && !elvChanged &&
+                                    desc.FirstSyncPrecedence == SyncSource.App &&
+                                    !string.IsNullOrWhiteSpace(appValue);
+
+            if ((elvChanged || elvFirstSeen) && !appChanged && !firstSeenAppWins &&
                 config.Direction is SyncDirection.Bidirectional or SyncDirection.InboundOnly)
             {
                 desc.SetOnApp(appPerson, elvValue);
@@ -596,21 +709,30 @@ public class ElvantoPersonSyncService(
                     "InboundFromElvanto", desc.FieldName, appValue, elvValue, SyncSource.Elvanto, token: token);
                 counters.InboundFields++;
             }
-            else if (appChanged && !elvChanged &&
+            else if ((appChanged || firstSeenAppWins) && !elvChanged &&
                      config.Direction is SyncDirection.Bidirectional or SyncDirection.OutboundOnly)
             {
-                outboundReq ??= new ElvantoUpdatePersonRequest { Id = elv.Id! };
-                desc.ApplyToElvantoRequest(outboundReq, appValue);
+                // On a first sync the app wins, but a plain overwrite would delete free text
+                // Elvanto holds and the app has no record of. The descriptor decides what
+                // survives; every other field keeps the app value untouched.
+                string? outboundValue = firstSeenAppWins
+                    ? desc.MergeForFirstSync(appValue, elvValue)
+                    : appValue;
 
-                bool willSend = mode == ElvantoSyncMode.Full;
+                outboundReq ??= new ElvantoUpdatePersonRequest { Id = elv.Id! };
+                desc.ApplyToElvantoRequest(outboundReq, outboundValue);
+
+                // Writes off means nothing leaves, so the audit trail must say "would push".
+                // Otherwise a review of these entries reads as though Elvanto was changed.
+                bool willSend = mode == ElvantoSyncMode.Full && elvantoService.WritesEnabled;
                 logger.LogInformation(
                     "Sync {OperationId}: field {Field} {Action} for person {PersonId} ({FirstName} {LastName}) | {OldValue} -> {NewValue}",
                     operationId, desc.FieldName, willSend ? "outbound update" : "would push",
-                    appPerson.Id, appPerson.FirstName, appPerson.LastName, elvValue, appValue);
+                    appPerson.Id, appPerson.FirstName, appPerson.LastName, elvValue, outboundValue);
                 await audit.Log(operationId, appPerson.Id,
                     willSend ? SyncEventType.PushedToElvanto : SyncEventType.WouldPushToElvanto,
                     willSend ? "OutboundToElvanto" : $"WouldPush:{mode}",
-                    desc.FieldName, elvValue, appValue, SyncSource.App, token: token);
+                    desc.FieldName, elvValue, outboundValue, SyncSource.App, token: token);
 
                 counters.OutboundFields++;
             }
@@ -646,15 +768,20 @@ public class ElvantoPersonSyncService(
             if (mode == ElvantoSyncMode.Full)
             {
                 logger.LogInformation(
-                    "Sync {OperationId}: sending outbound update to Elvanto for person {PersonId} ({FirstName} {LastName})",
-                    operationId, appPerson.Id, appPerson.FirstName, appPerson.LastName);
+                    "Sync {OperationId}: {Action} outbound update to Elvanto for person {PersonId} ({FirstName} {LastName})",
+                    operationId, elvantoService.WritesEnabled ? "sending" : "SUPPRESSING",
+                    appPerson.Id, appPerson.FirstName, appPerson.LastName);
+                // Called either way: with writes off this only builds and logs the payload.
                 await elvantoService.UpdatePersonAsync(outboundReq, token);
             }
             else
             {
+                // Log the built payload here too. A dry run is the run that gets reviewed, so it
+                // should show the same evidence a full run does rather than just a headline.
                 logger.LogInformation(
-                    "Sync {OperationId}: would send outbound update to Elvanto for person {PersonId} ({FirstName} {LastName}) (mode={Mode})",
-                    operationId, appPerson.Id, appPerson.FirstName, appPerson.LastName, mode);
+                    "Sync {OperationId}: would send outbound update to Elvanto for person {PersonId} ({FirstName} {LastName}) (mode={Mode}). Payload: {Payload}",
+                    operationId, appPerson.Id, appPerson.FirstName, appPerson.LastName, mode,
+                    ElvantoService.DescribePayload(outboundReq));
             }
         }
 
@@ -844,6 +971,47 @@ public class ElvantoPersonSyncService(
         ElvantoSyncScope.Family => SyncScope.Family,
         _                       => SyncScope.All
     };
+
+    /// <summary>
+    /// The medical/allergy text for a person, in the same format an update would push.
+    /// Null when the descriptor is absent, which falls the create back to its own merge.
+    /// </summary>
+    private string? ComposeMedicalAllergyText(DbPerson person) =>
+        _descriptors.OfType<MedicalAllergyNotesDescriptor>().FirstOrDefault()?.GetFromApp(person);
+
+    /// <summary>
+    /// Loads the allergen and medical-type tables into the medical/allergy descriptor so it can
+    /// map Elvanto's text back onto rows. Also guarantees an "Other" medical type exists, which
+    /// is where text that does not fit the agreed format is parked rather than dropped.
+    /// </summary>
+    private async Task PrimeMedicalAllergyLookupsAsync(CancellationToken token)
+    {
+        MedicalAllergyNotesDescriptor? descriptor =
+            _descriptors.OfType<MedicalAllergyNotesDescriptor>().FirstOrDefault();
+        if (descriptor is null) return;
+
+        List<DbAllergen>    allergens    = await db.Allergens.ToListAsync(token);
+        List<DbMedicalType> medicalTypes = await db.MedicalTypes.ToListAsync(token);
+
+        const string otherLabel = "Other";
+        DbMedicalType? other = medicalTypes
+            .FirstOrDefault(t => string.Equals(t.Label, otherLabel, StringComparison.OrdinalIgnoreCase));
+
+        if (other is null)
+        {
+            other = new DbMedicalType { Id = Guid.NewGuid(), Label = otherLabel };
+            db.MedicalTypes.Add(other);
+            medicalTypes.Add(other);
+            logger.LogInformation("Sync: created the \"{Label}\" medical type to hold unparsed Elvanto text", otherLabel);
+        }
+
+        descriptor.Lookups = new MedicalAllergyLookups
+        {
+            AllergenLabels     = allergens.ToDictionary(a => a.Id, a => a.Label),
+            MedicalTypeLabels  = medicalTypes.ToDictionary(m => m.Id, m => m.Label),
+            OtherMedicalTypeId = other.Id
+        };
+    }
 
     private async Task<List<DbPerson>> LoadAppPeopleAsync(SyncWithElvantoRequest request, CancellationToken ct)
     {

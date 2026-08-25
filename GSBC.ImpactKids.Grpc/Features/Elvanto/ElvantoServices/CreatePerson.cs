@@ -13,11 +13,17 @@ public partial class ElvantoService
     private static string? ToAestDate(DateTimeOffset? utc) =>
         utc.HasValue ? TimeZoneInfo.ConvertTime(utc.Value, AestZone).ToString("yyyy-MM-dd") : null;
 
-    public async Task<string?> CreatePersonAsync(DbPerson person, CancellationToken token = default)
+    /// <summary>
+    /// <paramref name="medicalAllergyNotes"/> is composed by MedicalAllergyNotesDescriptor so a
+    /// created person carries the same round-trippable text an updated one does. Without it a
+    /// create pushed free-text notes only, losing every allergen and condition name, and the
+    /// result could not be read back on the next sync.
+    /// </summary>
+    public async Task<string?> CreatePersonAsync(
+        DbPerson          person,
+        string?           medicalAllergyNotes = null,
+        CancellationToken token               = default)
     {
-        return null;
-        // noop for testing
-        
         ElvantoCreatePersonRequest req = new()
         {
             FirstName             = person.FirstName,
@@ -29,8 +35,20 @@ public partial class ElvantoService
             MediaConsent          = Enum.TryParse<PeopleMediaConsent>(person.MediaConsent, out PeopleMediaConsent mc)
                                         ? PeopleMediaConsentHelper.ToDisplay(mc)
                                         : null,
-            MedicalAllergyNotes   = MergeAllergyAndMedicalNotes(person)
+            MedicalAllergyNotes   = medicalAllergyNotes ?? MergeAllergyAndMedicalNotes(person)
         };
+
+        // Build first, then decide. The payload is the thing worth reviewing, so it is logged
+        // whether or not it is sent - that is the whole point of running with writes off.
+        if (!WritesEnabled)
+        {
+            logger.LogWarning(
+                "ELVANTO CREATE SUPPRESSED for {FirstName} {LastName} (app person {PersonId}). "
+                + "Would POST {Uri} with: {Payload}",
+                person.FirstName, person.LastName, person.Id,
+                ElvantoCreatePersonRequest.RequestUri, DescribePayload(req));
+            return null;
+        }
 
         ElvantoCreatePersonResponse? response =
             await SendMessage<ElvantoCreatePersonRequest, ElvantoCreatePersonResponse>(req, token);

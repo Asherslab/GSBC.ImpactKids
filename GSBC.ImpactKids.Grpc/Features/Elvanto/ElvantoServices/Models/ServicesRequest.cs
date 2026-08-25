@@ -7,6 +7,8 @@ public class ServicesRequest : IRequestMessage
 {
     public static Uri RequestUri { get; } = new("https://api.elvanto.com/v1/services/getAll.json");
 
+    public static bool IsMutation => false;
+
     [JsonPropertyName("start")]
     public DateOnly Start { get; set; }
 

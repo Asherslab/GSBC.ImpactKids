@@ -7,6 +7,8 @@ public class ElvantoUpdatePersonRequest : IRequestMessage
 {
     public static Uri RequestUri { get; } = new("https://api.elvanto.com/v1/people/edit.json");
 
+    public static bool IsMutation => true;
+
     [JsonPropertyName("id")]
     public required string Id { get; set; }
 

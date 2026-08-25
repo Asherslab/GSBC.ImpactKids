@@ -7,6 +7,8 @@ public class ElvantoCreatePersonRequest : IRequestMessage
 {
     public static Uri RequestUri { get; } = new("https://api.elvanto.com/v1/people/create.json");
 
+    public static bool IsMutation => true;
+
     [JsonPropertyName("firstname")]
     public required string FirstName { get; set; }
 

@@ -13,6 +13,16 @@ public class FieldChangeTrackingInterceptor(ISyncContextAccessor syncContext) : 
 {
     private static readonly HashSet<Type> TrackedTypes = [typeof(DbPerson)];
 
+    // Allergies and medical notes live in their own tables, so they never appear in
+    // DbPerson's scalar properties and were invisible to this interceptor. That made
+    // appChanged permanently false for them, and the sync never pushed a single one.
+    // They are logged against the parent person under the field name the descriptor owns,
+    // because that is what the sync looks up.
+    private static readonly HashSet<Type> ChildTypesLoggedAgainstPerson =
+        [typeof(DbAllergy), typeof(DbMedicalNote)];
+
+    private const string MedicalAllergyFieldName = "MedicalAllergyNotes";
+
     public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData      eventData,
         InterceptionResult<int> result,
@@ -27,7 +37,35 @@ public class FieldChangeTrackingInterceptor(ISyncContextAccessor syncContext) : 
         List<DbFieldChangeLog> logs = [];
         foreach (var entry in eventData.Context.ChangeTracker.Entries())
         {
-            if (!TrackedTypes.Contains(entry.Entity.GetType()))
+            Type entityType = entry.Entity.GetType();
+
+            if (ChildTypesLoggedAgainstPerson.Contains(entityType))
+            {
+                // Deleted matters here in a way it does not for scalar fields: removing an
+                // allergy is an edit that must reach Elvanto, and a delete carries no
+                // meaningful CurrentValue to hash.
+                if (entry.State is not (EntityState.Added or EntityState.Modified or EntityState.Deleted))
+                    continue;
+
+                Guid? ownerId = OwningPersonId(entry);
+                if (ownerId is null) continue;
+
+                logs.Add(new DbFieldChangeLog
+                {
+                    Id         = Guid.NewGuid(),
+                    EntityType = nameof(DbPerson).Replace("Db", ""),
+                    EntityId   = ownerId.Value,
+                    FieldName  = MedicalAllergyFieldName,
+                    // The composed text is rebuilt from the person at sync time, so the hash
+                    // of one child row would be meaningless. Only the timestamp is used.
+                    ValueHash  = Hash($"{entityType.Name}:{entry.State}"),
+                    ChangedAt  = now,
+                    Source     = source
+                });
+                continue;
+            }
+
+            if (!TrackedTypes.Contains(entityType))
                 continue;
             if (entry.State != EntityState.Modified && entry.State != EntityState.Added)
                 continue;
@@ -63,6 +101,18 @@ public class FieldChangeTrackingInterceptor(ISyncContextAccessor syncContext) : 
             eventData.Context.Set<DbFieldChangeLog>().Add(log);
 
         return base.SavingChangesAsync(eventData, result, cancellationToken);
+    }
+
+    // A deleted row's PersonId has to be read from its original values - CurrentValue is
+    // gone by the time SaveChanges runs.
+    private static Guid? OwningPersonId(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry)
+    {
+        Microsoft.EntityFrameworkCore.ChangeTracking.PropertyEntry? prop =
+            entry.Properties.FirstOrDefault(p => p.Metadata.Name == "PersonId");
+        if (prop is null) return null;
+
+        object? value = entry.State == EntityState.Deleted ? prop.OriginalValue : prop.CurrentValue;
+        return value as Guid?;
     }
 
     private static string Hash(string? value)
