@@ -140,11 +140,13 @@ Add `"AllowWrites": true` under the `Elvanto` section, and start with `Scope=Per
 volunteer record you do not mind changing — not `Scope=All`.
 
 **Before turning writes on:**
-- Confirm the 29 would-creates are people who genuinely should exist in Elvanto. Several look
-  like guardians rather than children; if guardians should not be pushed, that is a missing rule
-  and 29 new records in production.
 - Read the 40 outbound field pushes. First sync overwrites Elvanto for this field set.
 - Decide about the 17 duplicates. Denying one creates that person in Elvanto.
+
+**Guardians among the would-creates are correct — confirmed, not an open question.** New
+guardians are recorded alongside new children and both belong in Elvanto, so the church can
+contact a guardian when it needs to. Several of the 29 are adults for exactly that reason. No
+filtering rule is missing; do not add one.
 
 ---
 
@@ -200,7 +202,6 @@ Re-running `db-restore.sh` wipes all of that and returns to a clean first-sync s
 
 ## Open questions, none blocking
 
-- **Guardians among the 29 would-creates.** Needs a decision before writes go on.
 - **Confidence on duplicate reviews reads 50%**, which is a hard-coded placeholder, not a
   computed score. Showing which person the name collides with would be more use.
 - **Merge feature** is agreed for later: survivor is the linked person, attendance collisions

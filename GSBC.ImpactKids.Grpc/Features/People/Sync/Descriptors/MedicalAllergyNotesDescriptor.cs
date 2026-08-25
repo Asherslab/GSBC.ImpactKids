@@ -56,15 +56,6 @@ public class MedicalAllergyNotesDescriptor : BaseFieldSyncDescriptor
     }
 
     /// <summary>
-    /// The label is the thing worth pushing - "Peanuts" matters far more than a blank note.
-    /// The old descriptors read only the free-text Notes, so a severe peanut allergy recorded
-    /// with no typed note produced null and was never sent at all.
-    ///
-    /// When a row has no linked allergen or medical type, the note is all we know, so it
-    /// becomes the name and the notes section is dropped. Emitting both produced
-    /// "Medical: No citrus - rash reaction - No citrus - rash reaction".
-    /// </summary>
-    /// <summary>
     /// Labels that carry no information. The app models "no known allergies" as a row pointing
     /// at a "None" allergen, so composing it verbatim rewrote 91 people's Elvanto field with
     /// "Allergies: None / Medical: None" - pure churn against text that already said None.
@@ -77,6 +68,15 @@ public class MedicalAllergyNotesDescriptor : BaseFieldSyncDescriptor
         !string.IsNullOrWhiteSpace(item.Name) &&
         (!NoInformationLabels.Contains(item.Name.Trim()) || !string.IsNullOrWhiteSpace(item.Notes));
 
+    /// <summary>
+    /// The label is the thing worth pushing - "Peanuts" matters far more than a blank note.
+    /// The old descriptors read only the free-text Notes, so a severe peanut allergy recorded
+    /// with no typed note produced null and was never sent at all.
+    ///
+    /// When a row has no linked allergen or medical type, the note is all we know, so it
+    /// becomes the name and the notes section is dropped. Emitting both produced
+    /// "Medical: No citrus - rash reaction - No citrus - rash reaction".
+    /// </summary>
     private static MedicalAllergyFormat.Item ToItem(
         Guid?                              id,
         string?                            notes,
