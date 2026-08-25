@@ -322,10 +322,9 @@ first.** What each step actually turned out to need is recorded under it.
    rule the design missed: **two sides that both say nothing are agreement, not divergence**. The app
    holding null against an Elvanto box reading "None" hashes as a difference and reported as one on
    every run forever — 89 rows on the first real run, in exactly the place the divergences are
-   supposed to be a work-list. The migration is `20260825143330_SyncFieldBaseAppLeg`; `AppHash` is
-   deliberately not backfilled.*
-5. **Part 2**, Decide/Apply split, plan table, staleness check, expiry, then the UI. *Landed as
-   `20260825144050_SyncPlannedChanges`. Two things the design did not settle:*
+   supposed to be a work-list. `AppHash` is deliberately not backfilled.*
+5. **Part 2**, Decide/Apply split, plan table, staleness check, expiry, then the UI. *Landed. Two
+   things the design did not settle:*
 
    - *Where the base of an **agreed** field is written. Decide has to do it — there is nothing to
      apply, and leaving it to Apply means a Decide-only run never settles anything and re-derives
@@ -412,6 +411,23 @@ family Elvanto says, and then the app's own grouping — read off their relative
 would push them back. It converges after one outbound rather than looping, and with writes off it
 simply sits in the plan, but it means **family is the one field where Decide/Apply is not yet
 idempotent**. It belongs with **F6** and **F7**, which are the family rework.
+
+## The migration history was collapsed
+
+The work went through **seven** migrations before it settled: `AddSyncTables`, two corrections to the
+`SyncFieldConfigs` seed, a direction change, the base-value columns, the plan table, and finally a
+migration dropping `SyncFieldConfigs` and `DbSyncMetadata` outright. Three of the seven corrected a
+table the seventh deleted.
+
+None had ever been deployed — the production dump's `__EFMigrationsHistory` ends at
+`20260809062024_PlacementScoring`, and the dump contains none of the sync tables — so they were
+replaced by a single `20260825155128_ElvantoSyncEngine`. Shipping a history that creates a table,
+corrects its seed twice, and then drops it is a permanent record of a design that was changed before
+anyone ran it.
+
+Verified by comparing the schema built the two ways: **identical** columns, indexes and constraints
+on every table. The only textual difference is column ordering, because `AppHash`/`AppValue` and
+`PendingReviews.SyncOperationId` were `ALTER TABLE ADD` before and are now created inline.
 
 ## Out of scope
 

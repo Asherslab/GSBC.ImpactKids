@@ -106,7 +106,7 @@ is exactly the reported symptom.
 
 ### F1 — On a restored dump, every app value Elvanto lacks is invisible. Permanently.
 
-Two facts meet. `FieldChangeLogs` was created by `20260824165215_AddSyncTables`, so every edit
+Two facts meet. `FieldChangeLogs` did not exist before this branch, so every edit
 predating it — the entire production dump — has no row and `appChanged` is false forever. And
 `UpdateSnapshotsAsync:1043` (`if (elvValue is null) continue`) means a field Elvanto holds nothing
 for **never gets a snapshot created either**.

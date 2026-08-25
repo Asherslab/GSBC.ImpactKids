@@ -3,12 +3,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
-
 namespace GSBC.ImpactKids.Grpc.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class AddSyncTables : Migration
+    public partial class ElvantoSyncEngine : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -29,6 +27,8 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     FieldName = table.Column<string>(type: "text", nullable: false),
                     LastSeenHash = table.Column<string>(type: "text", nullable: false),
                     LastSeenValue = table.Column<string>(type: "text", nullable: true),
+                    AppHash = table.Column<string>(type: "text", nullable: true),
+                    AppValue = table.Column<string>(type: "text", nullable: true),
                     LastSeenAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
@@ -54,6 +54,31 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "SyncOperations",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Mode = table.Column<string>(type: "text", nullable: false),
+                    Scope = table.Column<string>(type: "text", nullable: false),
+                    PersonId = table.Column<Guid>(type: "uuid", nullable: true),
+                    FamilyId = table.Column<Guid>(type: "uuid", nullable: true),
+                    StartedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    CompletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    Status = table.Column<string>(type: "text", nullable: true),
+                    FailureReason = table.Column<string>(type: "text", nullable: true),
+                    PlanExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SyncOperations", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SyncOperations_People_PersonId",
+                        column: x => x.PersonId,
+                        principalTable: "People",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "PendingReviews",
                 columns: table => new
                 {
@@ -63,6 +88,7 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     MatchConfidence = table.Column<int>(type: "integer", nullable: false),
                     MatchStrategy = table.Column<string>(type: "text", nullable: true),
                     Status = table.Column<string>(type: "text", nullable: false),
+                    SyncOperationId = table.Column<Guid>(type: "uuid", nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     ReviewedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     PersonName = table.Column<string>(type: "text", nullable: true)
@@ -76,70 +102,49 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                         principalTable: "People",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "SyncFieldConfigs",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    EntityType = table.Column<string>(type: "text", nullable: false),
-                    FieldName = table.Column<string>(type: "text", nullable: false),
-                    Direction = table.Column<string>(type: "text", nullable: false),
-                    PrecedenceOnTie = table.Column<string>(type: "text", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SyncFieldConfigs", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "SyncMetadata",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    PersonId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ElvantoId = table.Column<string>(type: "text", nullable: false),
-                    LastSyncAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    LastSyncStatus = table.Column<string>(type: "text", nullable: true),
-                    MatchConfidence = table.Column<int>(type: "integer", nullable: false),
-                    MatchedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    MatchStrategy = table.Column<string>(type: "text", nullable: true),
-                    ManualReviewReason = table.Column<string>(type: "text", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SyncMetadata", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_SyncMetadata_People_PersonId",
+                        name: "FK_PendingReviews_SyncOperations_SyncOperationId",
+                        column: x => x.SyncOperationId,
+                        principalTable: "SyncOperations",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PlannedChanges",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    SyncOperationId = table.Column<Guid>(type: "uuid", nullable: false),
+                    PersonId = table.Column<Guid>(type: "uuid", nullable: true),
+                    ElvantoId = table.Column<string>(type: "text", nullable: true),
+                    Kind = table.Column<string>(type: "text", nullable: false),
+                    FieldName = table.Column<string>(type: "text", nullable: true),
+                    ObservedAppValue = table.Column<string>(type: "text", nullable: true),
+                    ObservedAppHash = table.Column<string>(type: "text", nullable: true),
+                    ObservedElvantoValue = table.Column<string>(type: "text", nullable: true),
+                    ObservedElvantoHash = table.Column<string>(type: "text", nullable: true),
+                    ProposedValue = table.Column<string>(type: "text", nullable: true),
+                    Reason = table.Column<string>(type: "text", nullable: false),
+                    Status = table.Column<string>(type: "text", nullable: false),
+                    StatusReason = table.Column<string>(type: "text", nullable: true),
+                    DecidedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    AppliedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PlannedChanges", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PlannedChanges_People_PersonId",
                         column: x => x.PersonId,
                         principalTable: "People",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "SyncOperations",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Mode = table.Column<string>(type: "text", nullable: false),
-                    Scope = table.Column<string>(type: "text", nullable: false),
-                    PersonId = table.Column<Guid>(type: "uuid", nullable: true),
-                    FamilyId = table.Column<Guid>(type: "uuid", nullable: true),
-                    StartedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    CompletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    Status = table.Column<string>(type: "text", nullable: true),
-                    FailureReason = table.Column<string>(type: "text", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SyncOperations", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_SyncOperations_People_PersonId",
-                        column: x => x.PersonId,
-                        principalTable: "People",
-                        principalColumn: "Id");
+                        name: "FK_PlannedChanges_SyncOperations_SyncOperationId",
+                        column: x => x.SyncOperationId,
+                        principalTable: "SyncOperations",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -168,25 +173,6 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.InsertData(
-                table: "SyncFieldConfigs",
-                columns: new[] { "Id", "Direction", "EntityType", "FieldName", "PrecedenceOnTie" },
-                values: new object[,]
-                {
-                    { new Guid("0b002705-d332-f598-e7f1-958d18bfbc70"), "Bidirectional", "Person", "PhoneNumber", "Elvanto" },
-                    { new Guid("2f2ea444-7b57-9ffa-ac55-37b6f6c7b778"), "Bidirectional", "Person", "MediaConsent", "Elvanto" },
-                    { new Guid("34b7454b-74ac-4a48-c0b2-89e8ef1d5698"), "Bidirectional", "Person", "SchoolGradeId", "Elvanto" },
-                    { new Guid("3ba3eb59-3a5d-dfc0-5434-696367590a7a"), "InboundOnly", "Person", "FamilyGuardian", "Elvanto" },
-                    { new Guid("612124ce-e604-b8af-b118-4d61e47dfb7e"), "OutboundOnly", "Person", "Allergies", "App" },
-                    { new Guid("859e2ffb-98c7-7799-8f6c-7316b37bde5e"), "OutboundOnly", "Person", "MedicalNotes", "App" },
-                    { new Guid("a8b0fa9c-7d2f-c571-2dbb-575b6409e07d"), "Bidirectional", "Person", "FirstName", "Elvanto" },
-                    { new Guid("b6fbd7e5-74d7-9cb4-5a3d-d3543f4468bb"), "InboundOnly", "Person", "FamilyId", "Elvanto" },
-                    { new Guid("bfcd1d0d-4275-70af-c5ba-038189177e39"), "Bidirectional", "Person", "Email", "Elvanto" },
-                    { new Guid("d6544c23-e195-93c9-62e1-c47a23089c82"), "Bidirectional", "Person", "FirstTime", "Elvanto" },
-                    { new Guid("d91dbee9-ebe0-c13f-47f4-cac9d901344f"), "Bidirectional", "Person", "DateOfBirth", "Elvanto" },
-                    { new Guid("e2ef7ea7-a11a-3123-dbf8-26fd3e8f826a"), "Bidirectional", "Person", "LastName", "Elvanto" }
-                });
-
             migrationBuilder.CreateIndex(
                 name: "IX_ElvantoFieldSnapshots_EntityType_EntityId_FieldName",
                 table: "ElvantoFieldSnapshots",
@@ -199,16 +185,25 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                 columns: new[] { "EntityType", "EntityId", "FieldName", "ChangedAt" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_PendingReviews_PersonId",
-                table: "PendingReviews",
-                column: "PersonId",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
                 name: "IX_PendingReviews_PersonId_ElvantoId",
                 table: "PendingReviews",
                 columns: new[] { "PersonId", "ElvantoId" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PendingReviews_SyncOperationId",
+                table: "PendingReviews",
+                column: "SyncOperationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PlannedChanges_PersonId_DecidedAt",
+                table: "PlannedChanges",
+                columns: new[] { "PersonId", "DecidedAt" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PlannedChanges_SyncOperationId_Status",
+                table: "PlannedChanges",
+                columns: new[] { "SyncOperationId", "Status" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_SyncAuditLogs_PersonId_OccurredAt",
@@ -219,24 +214,6 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                 name: "IX_SyncAuditLogs_SyncOperationId_OccurredAt",
                 table: "SyncAuditLogs",
                 columns: new[] { "SyncOperationId", "OccurredAt" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SyncFieldConfigs_EntityType_FieldName",
-                table: "SyncFieldConfigs",
-                columns: new[] { "EntityType", "FieldName" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SyncMetadata_ElvantoId",
-                table: "SyncMetadata",
-                column: "ElvantoId",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SyncMetadata_PersonId",
-                table: "SyncMetadata",
-                column: "PersonId",
-                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_SyncOperations_PersonId",
@@ -262,13 +239,10 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                 name: "PendingReviews");
 
             migrationBuilder.DropTable(
+                name: "PlannedChanges");
+
+            migrationBuilder.DropTable(
                 name: "SyncAuditLogs");
-
-            migrationBuilder.DropTable(
-                name: "SyncFieldConfigs");
-
-            migrationBuilder.DropTable(
-                name: "SyncMetadata");
 
             migrationBuilder.DropTable(
                 name: "SyncOperations");
