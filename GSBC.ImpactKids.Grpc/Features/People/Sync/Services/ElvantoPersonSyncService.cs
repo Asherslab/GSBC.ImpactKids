@@ -165,8 +165,7 @@ public partial class ElvantoPersonSyncService(
             // so it is primed here, once, rather than per person.
             await PrimeMedicalAllergyLookupsAsync(token);
 
-            Dictionary<string, DbSyncMetadata> metaByElvantoId = await db.SyncMetadata
-                .ToDictionaryAsync(x => x.ElvantoId, token);
+            SyncMetadataIndex metadata = new(await db.SyncMetadata.ToListAsync(token));
 
             Dictionary<(Guid, string), DbSyncPendingReview> pendingReviews = await db.PendingReviews
                 .ToDictionaryAsync(x => (x.PersonId, x.ElvantoId), token);
@@ -243,6 +242,18 @@ public partial class ElvantoPersonSyncService(
             // Tracks app people that are the candidate in a low-confidence review — they must not
             // be pushed to Elvanto as new, since doing so would create a duplicate alongside the placeholder.
             HashSet<Guid>              reviewCandidateIds = [];
+            // App people whose only review was denied. Kept apart from reviewCandidateIds because
+            // the two mean opposite things for the create loop below.
+            HashSet<Guid>              deniedPairIds      = [];
+
+            // People with a review still awaiting a human. This is the live signal, and it is the
+            // one the create loop asks. It used to ask DbSyncMetadata.LastSyncStatus instead, which
+            // is set to ManualReview once and never reset by anything - so a person queued for
+            // review a single time was skipped by every later run, for all time, with no audit row.
+            HashSet<Guid> awaitingReviewIds = pendingReviews.Values
+                .Where(r => r.Status == GrpcReviewStatus.Pending)
+                .Select(r => r.PersonId)
+                .ToHashSet();
 
             // 3. Process each Elvanto person
             foreach (ElvantoPerson elv in elvantoPeople)
@@ -272,7 +283,7 @@ public partial class ElvantoPersonSyncService(
                             token: token);
                         appByElvantoId[elv.Id] = appPerson;
                         counters.InboundPeople++;
-                        await UpsertMetadata(appPerson, elv.Id, 100, "DirectElvantoId", metaByElvantoId,
+                        await UpsertMetadata(appPerson, elv.Id, 100, "DirectElvantoId", metadata,
                             token);
                     }
                     else if (match.Confidence >= 80)
@@ -284,7 +295,7 @@ public partial class ElvantoPersonSyncService(
                             operationId, elv.Id, appPerson.Id, match.Confidence, match.Strategy);
                         await audit.Log(operationId, appPerson.Id, SyncEventType.Match,
                             $"AutoLinked:Confidence={match.Confidence}:{match.Strategy}", token: token);
-                        await UpsertMetadata(appPerson, elv.Id, match.Confidence, match.Strategy, metaByElvantoId,
+                        await UpsertMetadata(appPerson, elv.Id, match.Confidence, match.Strategy, metadata,
                             token);
                         unlinkedApp.Remove(appPerson);
                         appByElvantoId[elv.Id] = appPerson;
@@ -307,7 +318,7 @@ public partial class ElvantoPersonSyncService(
                             await audit.Log(operationId, appPerson.Id, SyncEventType.Match,
                                 $"ApprovedReview:Confidence={match.Confidence}:{match.Strategy}", token: token);
                             await UpsertMetadata(appPerson, elv.Id, match.Confidence, match.Strategy,
-                                metaByElvantoId, token);
+                                metadata, token);
                             unlinkedApp.Remove(appPerson);
                             appByElvantoId[elv.Id] = appPerson;
                             autoLinked++;
@@ -315,9 +326,13 @@ public partial class ElvantoPersonSyncService(
                         }
                         else if (existingReview?.Status == GrpcReviewStatus.Denied)
                         {
-                            // Denied — skip both sides of this pair
+                            // Denied — never link this pair, so neither side is matched again.
+                            // Deliberately NOT a reviewCandidate: denying a low-confidence match
+                            // says these are two different people, which is the case where the app
+                            // person genuinely needs creating in Elvanto. Suppressing the create
+                            // here is what made a denial permanent and silent.
                             unlinkedApp.Remove(match.Person);
-                            reviewCandidateIds.Add(match.Person.Id);
+                            deniedPairIds.Add(match.Person.Id);
                             logger.LogInformation(
                                 "Sync {OperationId}: skipping denied review pair — Elvanto {ElvantoId} / app person {PersonId} ({Name})",
                                 operationId, elv.Id, match.Person.Id, reviewName);
@@ -334,7 +349,7 @@ public partial class ElvantoPersonSyncService(
                             reviewCandidateIds.Add(match.Person.Id);
 
                             DbSyncMetadata reviewMeta = await UpsertMetadata(match.Person, elv.Id, match.Confidence,
-                                match.Strategy, metaByElvantoId, token);
+                                match.Strategy, metadata, token);
                             reviewMeta.LastSyncStatus     = SyncStatus.ManualReview;
                             reviewMeta.ManualReviewReason = $"LowConfidenceMatch:{match.Strategy}:{match.Confidence}";
 
@@ -387,9 +402,9 @@ public partial class ElvantoPersonSyncService(
                 await UpdateSnapshotsAsync(elv, appPerson, snapshots, fieldResult.HoldSnapshotFields, token);
 
                 // 6. Sync metadata
-                if (metaByElvantoId.TryGetValue(elv.Id, out DbSyncMetadata? meta))
+                if (metadata.TryGetByElvantoId(elv.Id, out DbSyncMetadata? meta))
                 {
-                    meta.LastSyncAt = DateTimeOffset.UtcNow;
+                    meta!.LastSyncAt = DateTimeOffset.UtcNow;
                     meta.LastSyncStatus = hadConflict ? SyncStatus.Conflict : SyncStatus.Success;
                 }
             }
@@ -485,9 +500,17 @@ public partial class ElvantoPersonSyncService(
                 {
                     if (reviewCandidateIds.Contains(local.Id)) continue;
 
-                    if (metaByElvantoId.Values.Any(m =>
-                            m.PersonId == local.Id && m.LastSyncStatus == SyncStatus.ManualReview))
+                    // Still waiting on a human. Audited rather than skipped in silence: the run
+                    // reports the full work-list, and a person sitting behind an unanswered review
+                    // is a finding rather than nothing to do.
+                    if (awaitingReviewIds.Contains(local.Id) && !deniedPairIds.Contains(local.Id))
+                    {
+                        await audit.Log(operationId, local.Id, SyncEventType.ManualReviewQueued,
+                            "CreateSuppressed:AwaitingReview", direction: SyncSource.App,
+                            toValue: $"{local.FirstName} {local.LastName}".Trim(), token: token);
+                        manualReview++;
                         continue;
+                    }
 
                     DbPerson? duplicate = FindPotentialDuplicate(local);
                     if (duplicate is not null)
@@ -585,7 +608,7 @@ public partial class ElvantoPersonSyncService(
                             familyIdMap.TryAdd(created.FamilyId, local.FamilyId);
                         }
 
-                        await UpsertMetadata(local, newElvantoId, 100, "CreatedOutbound", metaByElvantoId,
+                        await UpsertMetadata(local, newElvantoId, 100, "CreatedOutbound", metadata,
                             token);
                         await audit.Log(operationId, local.Id, SyncEventType.PushedToElvanto, "CreatedNewInElvanto",
                             token: token);
@@ -608,9 +631,17 @@ public partial class ElvantoPersonSyncService(
                 {
                     if (reviewCandidateIds.Contains(local.Id)) continue;
 
-                    if (metaByElvantoId.Values.Any(m =>
-                            m.PersonId == local.Id && m.LastSyncStatus == SyncStatus.ManualReview))
+                    // Still waiting on a human. Audited rather than skipped in silence: the run
+                    // reports the full work-list, and a person sitting behind an unanswered review
+                    // is a finding rather than nothing to do.
+                    if (awaitingReviewIds.Contains(local.Id) && !deniedPairIds.Contains(local.Id))
+                    {
+                        await audit.Log(operationId, local.Id, SyncEventType.ManualReviewQueued,
+                            "CreateSuppressed:AwaitingReview", direction: SyncSource.App,
+                            toValue: $"{local.FirstName} {local.LastName}".Trim(), token: token);
+                        manualReview++;
                         continue;
+                    }
 
                     DbPerson? duplicate = FindPotentialDuplicate(local);
                     if (duplicate is not null)
