@@ -392,15 +392,38 @@ public class ElvantoPersonSyncService(
             // Returns the already-linked person this one looks like, rather than just "yes".
             // The counterpart's ElvantoId is what makes the skip reviewable: without it there is
             // nothing to approve or deny against.
-            DbPerson? FindPotentialDuplicate(DbPerson local) =>
-                appByElvantoId.Values.FirstOrDefault(linked =>
+            DbPerson? FindPotentialDuplicate(DbPerson local)
+            {
+                DbPerson? candidate = appByElvantoId.Values.FirstOrDefault(linked =>
                     linked.Id != local.Id &&
                     string.Equals(linked.FirstName?.Trim(), local.FirstName?.Trim(), StringComparison.OrdinalIgnoreCase) &&
                     string.Equals(linked.LastName?.Trim(), local.LastName?.Trim(), StringComparison.OrdinalIgnoreCase));
 
+                if (candidate?.ElvantoId is null) return candidate;
+
+                // A reviewer answering "no, these are two different people" is what releases the
+                // create. Without this the decision changed a row's status and nothing else: these
+                // reviews are raised outside the matching loop, which is the only place review
+                // status was ever read, so approving or denying one had no effect on any sync.
+                if (pendingReviews.TryGetValue((local.Id, candidate.ElvantoId), out DbSyncPendingReview? decided) &&
+                    decided.Status == GrpcReviewStatus.Denied)
+                {
+                    logger.LogInformation(
+                        "Sync {OperationId}: duplicate review denied for app person {PersonId} ({FirstName} {LastName}) — treating as a different person and allowing the create",
+                        operationId, local.Id, local.FirstName, local.LastName);
+                    return null;
+                }
+
+                return candidate;
+            }
+
             // Queues a duplicate skip for human review. Previously these bumped the manual-review
             // counter and wrote an audit row but created nothing to act on, so the operation page
             // promised a queue that was always empty and the same people were skipped every run.
+            // Note there is deliberately no "approve = link" here. Two app people cannot share one
+            // ElvantoId: appByElvantoId is built with ToDictionary on that key and would throw.
+            // Approving means "yes, same human", which keeps the create suppressed; merging the
+            // two app records is a separate, manual job.
             void QueueDuplicateForReview(DbPerson local, DbPerson duplicate)
             {
                 if (duplicate.ElvantoId is null) return;
