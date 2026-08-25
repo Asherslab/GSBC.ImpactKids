@@ -180,7 +180,12 @@ public class MedicalAllergyNotesDescriptor : BaseFieldSyncDescriptor
         {
             person.Allergies.Add(new DbAllergy
             {
-                Id         = Guid.NewGuid(),
+                // Empty, not a fresh Guid. These rows are discovered through the navigation
+                // rather than added to a DbSet, and EF reads a key that is already set as
+                // "this row exists" - so it issues an UPDATE that matches nothing and the whole
+                // save dies with a concurrency error. A dry run never reaches SaveChanges, which
+                // is why this only surfaced on the first Full run.
+                Id         = Guid.Empty,
                 PersonId   = person.Id,
                 AllergenId = allergenId,
                 // An unknown allergen keeps its name in the note, so nothing is lost even
@@ -208,7 +213,8 @@ public class MedicalAllergyNotesDescriptor : BaseFieldSyncDescriptor
         {
             person.MedicalNotes.Add(new DbMedicalNote
             {
-                Id            = Guid.NewGuid(),
+                // Empty so EF treats this as a new row - see ApplyAllergy.
+                Id            = Guid.Empty,
                 PersonId      = person.Id,
                 MedicalTypeId = typeId ?? Lookups.OtherMedicalTypeId,
                 Notes         = typeId is null ? Describe(item) : item.Notes,
@@ -231,7 +237,8 @@ public class MedicalAllergyNotesDescriptor : BaseFieldSyncDescriptor
 
         person.MedicalNotes.Add(new DbMedicalNote
         {
-            Id            = Guid.NewGuid(),
+            // Empty so EF treats this as a new row - see ApplyAllergy.
+            Id            = Guid.Empty,
             PersonId      = person.Id,
             MedicalTypeId = Lookups!.OtherMedicalTypeId,
             Notes         = rawText,

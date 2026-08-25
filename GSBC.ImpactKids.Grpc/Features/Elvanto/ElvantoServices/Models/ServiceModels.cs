@@ -130,16 +130,59 @@ public class ElvantoPerson
     [JsonPropertyName("school_grade")]
     [JsonConverter(typeof(NullableStringConverter<SchoolGrade?>))]
     public SchoolGrade? SchoolGrade { get; set; }
+
+    /// <summary>
+    /// When Elvanto last changed this person, as "yyyy-MM-dd HH:mm:ss" in UTC (verified against a
+    /// known edit). Returned on every people response and cannot be asked for through "fields" -
+    /// requesting it by name is rejected as a field that does not exist.
+    /// Empty for a person never edited since creation, which is what <see cref="DateAdded"/> covers.
+    /// This is the real edit time, so it replaces "when we last polled" when resolving a conflict.
+    /// It is per person, not per field: for one field it is an upper bound on when that field moved.
+    /// </summary>
+    [JsonPropertyName("date_modified")]
+    public string? DateModified { get; set; }
+
+    [JsonPropertyName("date_added")]
+    public string? DateAdded { get; set; }
+
+    /// <summary>
+    /// <see cref="DateModified"/>, falling back to <see cref="DateAdded"/> for a person that has
+    /// never been edited. Null when neither parses, which leaves the caller on its old behaviour
+    /// rather than inventing a time.
+    /// </summary>
+    public DateTimeOffset? LastChangedAtUtc =>
+        ParseElvantoUtc(DateModified) ?? ParseElvantoUtc(DateAdded);
+
+    private static DateTimeOffset? ParseElvantoUtc(string? value) =>
+        DateTime.TryParseExact(value?.Trim(), "yyyy-MM-dd HH:mm:ss",
+            System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.None, out DateTime parsed)
+            ? new DateTimeOffset(DateTime.SpecifyKind(parsed, DateTimeKind.Utc))
+            : null;
 }
 
+/// <summary>
+/// A "select" custom field value as Elvanto returns it. The attributes are load-bearing: Elvanto
+/// sends lowercase "id"/"name", the response options do not set PropertyNameCaseInsensitive, so
+/// without them both properties bound to null. That failed quietly - the object itself was not
+/// null, so every read of media consent looked like a deliberate "Not Requested" whatever Elvanto
+/// actually held, and no inbound consent change could ever be seen.
+/// </summary>
 public class MediaConsent
 {
-    public string? Id   { get; set; }
+    [JsonPropertyName("id")]
+    public string? Id { get; set; }
+
+    [JsonPropertyName("name")]
     public string? Name { get; set; }
 }
 
+/// <inheritdoc cref="MediaConsent"/>
 public class SchoolGrade
 {
-    public string? Id   { get; set; }
+    [JsonPropertyName("id")]
+    public string? Id { get; set; }
+
+    [JsonPropertyName("name")]
     public string? Name { get; set; }
 }

@@ -201,6 +201,41 @@ public class ElvantoPersonSyncService(
                     familyIdMap[e.FamilyId!] = linked.FamilyId;
             }
 
+            // Where each local family's linked members actually sit in Elvanto. Kept as the raw
+            // membership rather than a single answer per family, because who is asking matters.
+            Dictionary<Guid, List<(Guid PersonId, string ElvantoFamilyId)>> familyMembership = elvantoPeople
+                .Where(e => e.FamilyId is not null && e.Id is not null)
+                .Select(e => (Elvanto: e.FamilyId!, App: appByElvantoId.GetValueOrDefault(e.Id!)))
+                .Where(x => x.App is not null)
+                .GroupBy(x => x.App!.FamilyId)
+                .ToDictionary(g => g.Key, g => g.Select(x => (x.App!.Id, x.Elvanto)).ToList());
+
+            // The Elvanto family a local family corresponds to, as evidenced by its members other
+            // than the one asking. Excluding the asker is the whole point: a person is the only
+            // evidence for their own family when they are its sole member, so including them makes
+            // any answer self-confirming - a person moved into a brand new local family would be
+            // read as that family's Elvanto pairing and compare equal to itself, and the move would
+            // never be seen. Excluding them, a lone mover has no evidence, which is exactly right:
+            // their new family has no Elvanto counterpart and one has to be created.
+            string? ResolveFamilyInElvanto(Guid localFamilyId, Guid askingPersonId) =>
+                familyMembership.TryGetValue(localFamilyId, out List<(Guid PersonId, string ElvantoFamilyId)>? members)
+                    ? members.Where(m => m.PersonId != askingPersonId)
+                        .GroupBy(m => m.ElvantoFamilyId)
+                        .OrderByDescending(g => g.Count())
+                        .ThenBy(g => g.Key, StringComparer.Ordinal)
+                        .FirstOrDefault()?.Key
+                    : null;
+
+            // Still needed by the create loop, where the person has no Elvanto record yet and so
+            // cannot be their own evidence. Recorded mid-run when Elvanto makes a family.
+            Dictionary<Guid, string> elvantoFamilyIdByLocal = familyMembership
+                .ToDictionary(
+                    kv => kv.Key,
+                    kv => kv.Value.GroupBy(m => m.ElvantoFamilyId)
+                        .OrderByDescending(g => g.Count())
+                        .ThenBy(g => g.Key, StringComparer.Ordinal)
+                        .First().Key);
+
             SyncCounters               counters          = new();
             int                        autoLinked        = 0, manualReview = 0, archived = 0;
             List<ManualReviewItem>     reviewItems       = [];
@@ -341,14 +376,15 @@ public class ElvantoPersonSyncService(
                 }
 
                 // 4. Per-field decisions
-                bool hadConflict = await ProcessFieldsAsync(
+                FieldProcessResult fieldResult = await ProcessFieldsAsync(
                     operationId, elv, appPerson, fieldConfigs, snapshots, lastAppChange,
-                    audit, request.Mode, schoolGrades, familyIdMap,
-                    counters, token
+                    audit, request.Mode, schoolGrades, familyIdMap, elvantoFamilyIdByLocal,
+                    ResolveFamilyInElvanto, counters, token
                 );
+                bool hadConflict = fieldResult.HadConflict;
 
                 // 5. Update snapshots
-                await UpdateSnapshotsAsync(elv, appPerson, snapshots, token);
+                await UpdateSnapshotsAsync(elv, appPerson, snapshots, fieldResult.HoldSnapshotFields, token);
 
                 // 6. Sync metadata
                 if (metaByElvantoId.TryGetValue(elv.Id, out DbSyncMetadata? meta))
@@ -468,33 +504,87 @@ public class ElvantoPersonSyncService(
                         continue;
                     }
 
-                    // With writes off there is no Elvanto id to come back, so this cannot be
-                    // treated as a real create: writing a placeholder onto local.ElvantoId would
-                    // link the person to nothing and corrupt the eventual real sync. Record it the
-                    // same way a dry run does, so the two runs report the same numbers.
-                    if (!elvantoService.WritesEnabled)
+                    // Narrowed to named people for a controlled first write. Everyone else is
+                    // recorded exactly as a suppressed create, so the run still reports the full
+                    // work-list rather than pretending the others do not exist.
+                    if (!elvantoService.MayCreate(local.Id))
                     {
-                        logger.LogWarning(
-                            "Sync {OperationId}: create SUPPRESSED (writes disabled) for app person {PersonId} ({FirstName} {LastName}) - payload logged, ElvantoId left unset",
+                        logger.LogInformation(
+                            "Sync {OperationId}: create SKIPPED for app person {PersonId} ({FirstName} {LastName}) "
+                            + "- not in Elvanto:AllowedCreatePersonIds",
                             operationId, local.Id, local.FirstName, local.LastName);
-                        await elvantoService.CreatePersonAsync(local, ComposeMedicalAllergyText(local), token); // builds + logs the payload, sends nothing
                         await audit.Log(operationId, local.Id, SyncEventType.WouldCreateInElvanto,
-                            "WouldCreate:WritesDisabled", direction: SyncSource.App, token: token);
+                            "WouldCreate:NotInAllowList", direction: SyncSource.App, token: token);
                         counters.OutboundPeople++;
                         continue;
                     }
 
+                    // With writes off there is no Elvanto id to come back, so this cannot be
+                    // treated as a real create: writing a placeholder onto local.ElvantoId would
+                    // link the person to nothing and corrupt the eventual real sync. Record it the
+                    // same way a dry run does, so the two runs report the same numbers.
+                    // Known family id when any member is already linked, otherwise ask Elvanto to
+                    // make the family. Only the first member of that family asks: the id comes back
+                    // on the create and is recorded below, so siblings later in this same loop join
+                    // them instead of each starting a household of their own.
+                    bool knownFamily =
+                        elvantoFamilyIdByLocal.TryGetValue(local.FamilyId, out string? elvantoFamilyId);
+                    if (!knownFamily)
+                    {
+                        elvantoFamilyId = ElvantoService.NewFamily;
+                        logger.LogInformation(
+                            "Sync {OperationId}: app person {PersonId} ({FirstName} {LastName}) is the first of "
+                            + "local family {FamilyId} to reach Elvanto - requesting a new family",
+                            operationId, local.Id, local.FirstName, local.LastName, local.FamilyId);
+                    }
+
+                    // The body is recorded whether or not it is sent, so what gets reviewed before
+                    // approving a write is the same string the transport would post.
+                    string createPayload = elvantoService.DescribeCreatePayload(
+                        local, ComposeMedicalAllergyText(local), elvantoFamilyId);
+
+                    if (!elvantoService.CreatesEnabled)
+                    {
+                        logger.LogWarning(
+                            "Sync {OperationId}: create SUPPRESSED (writes disabled) for app person {PersonId} ({FirstName} {LastName}) - payload logged, ElvantoId left unset",
+                            operationId, local.Id, local.FirstName, local.LastName);
+                        await audit.Log(operationId, local.Id, SyncEventType.WouldCreateInElvanto,
+                            "WouldCreate:WritesDisabled", direction: SyncSource.App,
+                            toValue: createPayload, token: token);
+                        counters.OutboundPeople++;
+                        continue;
+                    }
+
+                    // Recorded before the call, so an attempt leaves a trace even if the write is
+                    // refused at the transport or the process dies mid-send. Counting these is how
+                    // "only one person was written" stops being a claim about the loop above.
+                    await audit.Log(operationId, local.Id, SyncEventType.WouldCreateInElvanto,
+                        "CreateAttempted", direction: SyncSource.App,
+                        toValue: createPayload, token: token);
+
                     logger.LogInformation(
                         "Sync {OperationId}: pushing new app person {PersonId} ({FirstName} {LastName}) to Elvanto",
                         operationId, local.Id, local.FirstName, local.LastName);
-                    string? newElvantoId =
-                        await elvantoService.CreatePersonAsync(local, ComposeMedicalAllergyText(local), token);
-                    if (newElvantoId is not null)
+                    ElvantoService.CreatedPerson? created = await elvantoService.CreatePersonAsync(
+                        local, ComposeMedicalAllergyText(local), elvantoFamilyId, token);
+                    if (created is not null)
                     {
+                        string newElvantoId = created.Id;
                         local.ElvantoId = newElvantoId;
                         logger.LogInformation(
-                            "Sync {OperationId}: created Elvanto person {ElvantoId} for app person {PersonId}",
-                            operationId, newElvantoId, local.Id);
+                            "Sync {OperationId}: created Elvanto person {ElvantoId} for app person {PersonId} "
+                            + "in Elvanto family {FamilyId}",
+                            operationId, newElvantoId, local.Id, created.FamilyId ?? "(unknown)");
+
+                        // Recorded both ways so the rest of this run treats the family as existing:
+                        // the next sibling is given this id, and an inbound person carrying it maps
+                        // back to the same local family rather than a new one.
+                        if (created.FamilyId is not null)
+                        {
+                            elvantoFamilyIdByLocal[local.FamilyId] = created.FamilyId;
+                            familyIdMap.TryAdd(created.FamilyId, local.FamilyId);
+                        }
+
                         await UpsertMetadata(local, newElvantoId, 100, "CreatedOutbound", metaByElvantoId,
                             token);
                         await audit.Log(operationId, local.Id, SyncEventType.PushedToElvanto, "CreatedNewInElvanto",
@@ -506,6 +596,9 @@ public class ElvantoPersonSyncService(
                         logger.LogWarning(
                             "Sync {OperationId}: failed to create Elvanto person for app person {PersonId}",
                             operationId, local.Id);
+                        await audit.Log(operationId, local.Id, SyncEventType.WouldCreateInElvanto,
+                            $"CreateRefusedOrFailed: {elvantoService.LastCreateError ?? "no reason given"}",
+                            direction: SyncSource.App, token: token);
                     }
                 }
             }
@@ -598,6 +691,24 @@ public class ElvantoPersonSyncService(
             await tx.RollbackAsync(token);
             logger.LogError(ex, "Sync operation {OperationId} failed", operationId);
 
+            // A concurrency failure says "0 rows affected" and nothing about which row, which is
+            // useless from the audit table alone. The entries carry the entity type and its key,
+            // so name them here - this is the only place they still exist.
+            string? conflictDetail = null;
+            if (ex is DbUpdateConcurrencyException concurrency)
+            {
+                // Type, state and key only. The property values would identify a child and carry
+                // their medical text into a column that is read by anyone looking at the run.
+                List<string> conflicts = concurrency.Entries.Select(entry =>
+                    $"{entry.Metadata.ShortName()}[{entry.State}] "
+                    + string.Join(",", entry.Metadata.FindPrimaryKey()?.Properties
+                        .Select(k => $"{k.Name}={entry.Property(k.Name).CurrentValue}") ?? [])).ToList();
+
+                conflictDetail = string.Join(" | ", conflicts);
+                logger.LogError("Sync {OperationId}: concurrency conflicts: {Conflicts}",
+                    operationId, conflictDetail);
+            }
+
             if (fetchedIds is { Count: > 0 })
             {
                 try
@@ -618,6 +729,9 @@ public class ElvantoPersonSyncService(
 
             operation.CompletedAt = DateTimeOffset.UtcNow;
             operation.Status = SyncStatus.Failed;
+            // Without this the row reads Failed with an empty reason, and the only account of why
+            // is a console log that is tail-truncated by the next run.
+            operation.FailureReason = conflictDetail is null ? ex.Message : $"{ex.Message} || Conflicting entries: {conflictDetail}";
             try
             {
                 await audit.FlushAsync(operation, token);
@@ -656,7 +770,7 @@ public class ElvantoPersonSyncService(
         public int Conflicts;
     }
 
-    private async Task<bool> ProcessFieldsAsync(
+    private async Task<FieldProcessResult> ProcessFieldsAsync(
         Guid                                               operationId,
         ElvantoPerson                                      elv,
         DbPerson                                           appPerson,
@@ -667,12 +781,23 @@ public class ElvantoPersonSyncService(
         ElvantoSyncMode                                    mode,
         List<DbSchoolGrade>                                schoolGrades,
         Dictionary<string, Guid>                           familyIdMap,
+        Dictionary<Guid, string>                           elvantoFamilyIdByLocal,
+        Func<Guid, Guid, string?>                          resolveFamilyInElvanto,
         SyncCounters                                       counters,
         CancellationToken                                  token
     )
     {
         ElvantoUpdatePersonRequest? outboundReq = null;
         bool                        hadConflict = false;
+
+        // Fields where the app won a conflict, so the app's value only survives if it actually
+        // reaches Elvanto. Until it does, their snapshots must not move - see the hold below.
+        List<string> appWonConflictFields = [];
+        // Both gates, so an excluded person's changes are reported as "would push" rather than
+        // pushed, and nothing is sent for them at all.
+        bool         pushPossible         = mode == ElvantoSyncMode.Full
+                                            && elvantoService.UpdatesEnabled
+                                            && elvantoService.MayUpdate(appPerson.Id);
 
         foreach (IFieldSyncDescriptor desc in _descriptors)
         {
@@ -701,6 +826,20 @@ public class ElvantoPersonSyncService(
 
             elvValue = TranslateElvantoValue(desc.FieldName, elvValue, schoolGrades, familyIdMap);
             elvHash = desc.Hash(elvValue);
+
+            // Family is compared in Elvanto's terms, not the app's. Translating Elvanto's family id
+            // into a local Guid asks familyIdMap, which learns that pairing from the members - so a
+            // person alone in the wrong Elvanto family translated back to their own local family and
+            // compared equal to it. Naming the app's family as the Elvanto family its members agree
+            // on, and comparing that against where this person actually sits, makes the difference
+            // visible. Left alone when the app's family has no Elvanto id: nothing to compare with.
+            string? appFamilyInElvanto = null;
+            if (desc.FieldName == "FamilyId")
+            {
+                appFamilyInElvanto = resolveFamilyInElvanto(appPerson.FamilyId, appPerson.Id);
+                appHash = desc.Hash(appFamilyInElvanto);
+                elvHash = desc.Hash(desc.GetFromElvanto(elv));
+            }
 
             if (appHash == elvHash) continue; // values already identical — stale snapshot/log, nothing to do
 
@@ -743,11 +882,11 @@ public class ElvantoPersonSyncService(
                     : appValue;
 
                 outboundReq ??= new ElvantoUpdatePersonRequest { Id = elv.Id! };
-                desc.ApplyToElvantoRequest(outboundReq, outboundValue);
+                ApplyOutbound(desc, outboundReq, outboundValue, appFamilyInElvanto);
 
                 // Writes off means nothing leaves, so the audit trail must say "would push".
                 // Otherwise a review of these entries reads as though Elvanto was changed.
-                bool willSend = mode == ElvantoSyncMode.Full && elvantoService.WritesEnabled;
+                bool willSend = pushPossible;
                 logger.LogInformation(
                     "Sync {OperationId}: field {Field} {Action} for person {PersonId} ({FirstName} {LastName}) | {OldValue} -> {NewValue}",
                     operationId, desc.FieldName, willSend ? "outbound update" : "would push",
@@ -761,41 +900,65 @@ public class ElvantoPersonSyncService(
             }
             else if (elvChanged && appChanged && config.Direction == SyncDirection.Bidirectional)
             {
+                // Elvanto's own date_modified, not snapshot.LastSeenAt. LastSeenAt is when this
+                // app last polled, so using it made the app win any conflict where it had been
+                // edited since the last sync, whatever Elvanto did afterwards. Falls back to
+                // LastSeenAt only when Elvanto gives no usable timestamp.
+                DateTimeOffset? elvantoChangedAt = elv.LastChangedAtUtc ?? snapshot?.LastSeenAt;
+
                 ConflictResolution resolution = conflictResolver.Resolve(
                     desc.FieldName, appValue, appChangedAt == default ? null : appChangedAt,
-                    elvValue, snapshot?.LastSeenAt, config);
+                    elvValue, elvantoChangedAt, config);
 
                 logger.LogInformation(
-                    "Sync {OperationId}: field {Field} conflict for person {PersonId} ({FirstName} {LastName}) | appValue={AppValue} elvValue={ElvValue} winner={Winner} reason={Reason}",
+                    "Sync {OperationId}: field {Field} conflict for person {PersonId} ({FirstName} {LastName}) | appValue={AppValue} appChangedAt={AppChangedAt} elvValue={ElvValue} elvChangedAt={ElvChangedAt} winner={Winner} reason={Reason}",
                     operationId, desc.FieldName, appPerson.Id, appPerson.FirstName, appPerson.LastName, appValue,
-                    elvValue, resolution.WinningSide, resolution.Reason);
+                    appChangedAt, elvValue, elvantoChangedAt, resolution.WinningSide, resolution.Reason);
 
                 if (resolution.WinningSide == SyncSource.Elvanto)
                     desc.SetOnApp(appPerson, resolution.WinningValue);
                 else
                 {
                     outboundReq ??= new ElvantoUpdatePersonRequest { Id = elv.Id! };
-                    desc.ApplyToElvantoRequest(outboundReq, resolution.WinningValue);
+                    ApplyOutbound(desc, outboundReq, resolution.WinningValue, appFamilyInElvanto);
+                    appWonConflictFields.Add(desc.FieldName);
                 }
 
                 await audit.Log(operationId, appPerson.Id, SyncEventType.Conflict,
-                    resolution.Reason, desc.FieldName, appValue, elvValue,
+                    resolution.WinningSide == SyncSource.App && !pushPossible
+                        ? $"{resolution.Reason}:PushSuppressed"
+                        : resolution.Reason,
+                    desc.FieldName, appValue, elvValue,
                     resolution.WinningSide, token: token);
                 counters.Conflicts++;
                 hadConflict = true;
             }
         }
 
+        bool pushLanded = false;
+
         if (outboundReq is not null)
         {
-            if (mode == ElvantoSyncMode.Full)
+            if (mode == ElvantoSyncMode.Full && pushPossible)
             {
                 logger.LogInformation(
                     "Sync {OperationId}: {Action} outbound update to Elvanto for person {PersonId} ({FirstName} {LastName})",
-                    operationId, elvantoService.WritesEnabled ? "sending" : "SUPPRESSING",
+                    operationId, pushPossible ? "sending" : "SUPPRESSING",
                     appPerson.Id, appPerson.FirstName, appPerson.LastName);
                 // Called either way: with writes off this only builds and logs the payload.
-                await elvantoService.UpdatePersonAsync(outboundReq, token);
+                // The return distinguishes a write that actually landed from one that was
+                // suppressed or refused, which is what decides the snapshot hold below.
+                ElvantoService.UpdateOutcome outcome = await elvantoService.UpdatePersonAsync(outboundReq, token);
+                pushLanded = outcome.Landed;
+
+                // Elvanto created the family this person was moved into. Recorded both ways so the
+                // rest of this run treats it as existing: another member moved into the same local
+                // family joins this one, and an inbound person carrying the id maps back to it.
+                if (outcome.NewFamilyId is not null)
+                {
+                    elvantoFamilyIdByLocal[appPerson.FamilyId] = outcome.NewFamilyId;
+                    familyIdMap.TryAdd(outcome.NewFamilyId, appPerson.FamilyId);
+                }
             }
             else
             {
@@ -808,13 +971,63 @@ public class ElvantoPersonSyncService(
             }
         }
 
-        return hadConflict;
+        // A conflict the app won is only settled once Elvanto has the app's value. If the push was
+        // suppressed or failed, advancing the snapshot would push LastSeenAt past the app's change
+        // log entry, appChanged would read false on every later run, and the two sides would sit
+        // silently divergent forever. Holding the snapshot keeps the conflict visible until the
+        // write lands. UpdateSnapshotsAsync's own guard cannot cover this: a conflict is by
+        // definition a field where Elvanto changed, so its snapshot would otherwise have to move.
+        // A push that was possible but did not land is a finding, not a shrug. Recorded with
+        // Elvanto's own words for the same reason the create path does it: the console is
+        // unreachable in some environments, and "the update failed" without a reason costs a cycle.
+        if (outboundReq is not null && pushPossible && !pushLanded)
+            await audit.Log(operationId, appPerson.Id, SyncEventType.WouldPushToElvanto,
+                $"PushFailed: {elvantoService.LastUpdateError ?? "no reason given"}",
+                direction: SyncSource.App, token: token);
+
+        IReadOnlyCollection<string> holdSnapshots = pushLanded ? [] : appWonConflictFields;
+
+        if (holdSnapshots.Count > 0)
+            logger.LogWarning(
+                "Sync {OperationId}: holding snapshots for person {PersonId} ({FirstName} {LastName}) on {Fields} "
+                + "- the app won the conflict but its value did not reach Elvanto, so the field stays unsettled",
+                operationId, appPerson.Id, appPerson.FirstName, appPerson.LastName,
+                string.Join(",", holdSnapshots));
+
+        return new FieldProcessResult(hadConflict, holdSnapshots);
     }
+
+    /// <summary>
+    /// Puts a field's outbound value on the request. Family cannot go through the descriptor: a
+    /// descriptor instance is shared across everyone in the run, so it cannot answer "which Elvanto
+    /// family is this person's local family?" - the answer depends on who is asking. Both the plain
+    /// outbound branch and the conflict branch go through here, because they did not before: family
+    /// was special-cased in one of them only, so an app-won family conflict resolved correctly and
+    /// then sent an edit with no family on it, changing nothing and reporting success.
+    /// </summary>
+    private static void ApplyOutbound(
+        IFieldSyncDescriptor       desc,
+        ElvantoUpdatePersonRequest req,
+        string?                    value,
+        string?                    appFamilyInElvanto)
+    {
+        if (desc.FieldName == "FamilyId")
+            req.FamilyId = appFamilyInElvanto ?? ElvantoService.NewFamily;
+        else
+            desc.ApplyToElvantoRequest(req, value);
+    }
+
+    /// <summary>
+    /// Outcome of the per-field pass. <paramref name="HoldSnapshotFields"/> are fields whose
+    /// snapshot must not advance this run, because the app's winning value has not reached Elvanto.
+    /// </summary>
+    private record FieldProcessResult(bool HadConflict, IReadOnlyCollection<string> HoldSnapshotFields);
 
     private async Task UpdateSnapshotsAsync(
         ElvantoPerson                                      elv,
         DbPerson                                           appPerson,
         Dictionary<(Guid, string), DbElvantoFieldSnapshot> snapshots,
+        IReadOnlyCollection<string>                        holdFields,
         CancellationToken                                  token = default
     )
     {
@@ -822,6 +1035,11 @@ public class ElvantoPersonSyncService(
 
         foreach (IFieldSyncDescriptor desc in _descriptors)
         {
+            // Held because the app won a conflict on this field and its value has not reached
+            // Elvanto yet. Recording what Elvanto currently says would settle a field that is
+            // not settled, and the pending outbound change would never be offered again.
+            if (holdFields.Contains(desc.FieldName)) continue;
+
             string? elvValue = desc.GetFromElvanto(elv);
             if (elvValue is null) continue;
 

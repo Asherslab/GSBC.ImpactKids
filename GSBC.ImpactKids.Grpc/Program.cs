@@ -113,7 +113,11 @@ builder.Services.AddPooledDbContextFactory<GsbcDbContext>((sp, o) =>
 
 ElvantoConfig? elvantoConfig = builder.Configuration.GetSection("Elvanto").Get<ElvantoConfig>();
 if (elvantoConfig != null)
+{
     builder.Services.AddSingleton(elvantoConfig);
+    // Singleton so the ceiling spans every sync run in this process, not one run at a time.
+    builder.Services.AddSingleton(new ElvantoWriteBudget(elvantoConfig.MaxWrites));
+}
 
 // builder.Services.AddCors(options =>
 // {
