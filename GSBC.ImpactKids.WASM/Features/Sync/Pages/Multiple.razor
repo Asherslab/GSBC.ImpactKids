@@ -99,6 +99,7 @@
             <MudTh>Status</MudTh>
             <MudTh>Started</MudTh>
             <MudTh>Completed</MudTh>
+            <MudTh>Plan</MudTh>
             <MudTh></MudTh>
         </HeaderContent>
         <RowTemplate>
@@ -118,8 +119,40 @@
             </MudTd>
             <MudTd DataLabel="Started">@context.LocalStartedAt.ToString("dd/MM/yyyy HH:mm:ss")</MudTd>
             <MudTd DataLabel="Completed">@(context.LocalCompletedAt?.ToString("dd/MM/yyyy HH:mm:ss") ?? "-")</MudTd>
+            <MudTd DataLabel="Plan">
+                @if (context.PendingPlanItems == 0)
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">-</MudText>
+                }
+                else if (context.PlanIsExecutable)
+                {
+                    <MudChip T="string" Color="Color.Warning" Size="Size.Small"
+                             Title="@($"Expires {context.LocalPlanExpiresAt:dd/MM/yyyy HH:mm}")">
+                        @context.PendingPlanItems waiting
+                    </MudChip>
+                }
+                else
+                {
+                    <MudChip T="string" Color="Color.Default" Size="Size.Small"
+                             Title="A plan is only executable for a few hours - the roll may have moved since.">
+                        expired
+                    </MudChip>
+                }
+            </MudTd>
             <MudTd>
-                <MudButton Variant="Variant.Outlined" Href="@($"/Sync/{context.Id}")">View</MudButton>
+                <MudStack Row Spacing="2">
+                    <MudButton Variant="Variant.Outlined" Href="@($"/Sync/{context.Id}")">View</MudButton>
+                    @if (context.PlanIsExecutable)
+                    {
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Warning"
+                                   StartIcon="@Icons.Material.Filled.PlayArrow"
+                                   Disabled="@_isSubmitting"
+                                   OnClick="@(() => ExecutePlan(context))">
+                            Execute
+                        </MudButton>
+                    }
+                </MudStack>
             </MudTd>
         </RowTemplate>
         <NoRecordsContent>

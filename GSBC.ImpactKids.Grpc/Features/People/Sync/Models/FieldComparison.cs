@@ -91,7 +91,7 @@ public sealed record FieldDecision(
     bool              WasConflict = false)
 {
     public static FieldDecision Skipped(string reason)  => new(FieldDecisionKind.Skipped,  null, reason);
-    public static FieldDecision Agreed()                => new(FieldDecisionKind.Agreed,   null, "Match");
+    public static FieldDecision Agreed(string reason = "Match") => new(FieldDecisionKind.Agreed, null, reason);
     public static FieldDecision Diverged(string reason) => new(FieldDecisionKind.Diverged, null, reason);
 
     public static FieldDecision Inbound(string? value, string reason, bool conflict = false) =>

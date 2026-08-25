@@ -12,6 +12,14 @@ public class DbSyncPendingReview
     public          int                MatchConfidence { get; set; }
     public          string?            MatchStrategy   { get; set; }
     public required ManualReviewStatus Status          { get; set; }
+    /// <summary>
+    /// The operation that raised this review. Previously a review was found by joining through the
+    /// operation's audit rows, so losing those - which one failed flush is enough to do - made the
+    /// review unreachable from the page that is supposed to action it.
+    /// </summary>
+    public          Guid?              SyncOperationId { get; set; }
+    public          DbSyncOperation?   SyncOperation   { get; set; }
+
     public required DateTimeOffset     CreatedAt       { get; set; }
     public          DateTimeOffset?    ReviewedAt      { get; set; }
     public          string?            PersonName      { get; set; }

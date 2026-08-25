@@ -23,6 +23,14 @@ public interface ISyncService
         CallContext context = default
     );
 
+    IAsyncEnumerable<BasicReadMultipleResponse<SyncPlannedChange>> ReadPlannedChanges(
+        BasicReadRequest request,
+        CallContext      context = default
+    );
+
+    /// <summary>Executes the plan an earlier run decided. Refuses an expired plan outright.</summary>
+    Task<SyncResponse> ExecutePlan(ExecutePlanRequest request, CallContext context = default);
+
     Task<BasicResponse> ApproveReview(ManualReviewActionRequest request, CallContext context = default);
 
     Task<BasicResponse> DenyReview(ManualReviewActionRequest request, CallContext context = default);

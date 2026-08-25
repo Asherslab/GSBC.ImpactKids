@@ -409,6 +409,37 @@ public class FieldReconcilerTruthTableTests
         Assert.True(d.WasConflict);
     }
 
+    // -------------------------------------------- textually different, substantively the same
+
+    [Fact]
+    public void NeitherSideSayingAnythingIsAgreement_NotADivergence()
+    {
+        // The app holds nothing and Elvanto's box says "None". The hashes differ, a person reading
+        // the run would not call that a difference, and left unsettled it reported once per person
+        // per run forever - 89 rows on the first real run, in exactly the place the divergences are
+        // supposed to be a work-list.
+        FieldDecision d = Reconciler.Decide(
+            SaysNothingIsUnusable,
+            Compare(SaysNothingIsUnusable, null, "None"),
+            Config(SyncDirection.Bidirectional));
+
+        Assert.Equal(FieldDecisionKind.Agreed, d.Kind);
+        Assert.Equal("Match:NeitherSideSaysAnything", d.Reason);
+    }
+
+    [Fact]
+    public void AppHavingSomethingIsStillOutbound_EvenWhenElvantoSaysNothing()
+    {
+        // The other half of the same rule, and the one that must not be swallowed by it: this is the
+        // restored-dump backlog.
+        Assert.Equal(
+            FieldDecisionKind.Outbound,
+            Reconciler.Decide(
+                SaysNothingIsUnusable,
+                Compare(SaysNothingIsUnusable, "0435862120", "None"),
+                Config(SyncDirection.Bidirectional)).Kind);
+    }
+
     // ------------------------------------------------------- the migration's own case
 
     [Fact]

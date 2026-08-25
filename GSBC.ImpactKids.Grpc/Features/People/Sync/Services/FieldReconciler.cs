@@ -40,6 +40,14 @@ public class FieldReconciler(IConflictResolver conflictResolver) : IFieldReconci
         if (comparison.AppHash == comparison.ElvantoHash)
             return FieldDecision.Agreed();
 
+        // Textually different, substantively the same: the app holds nothing and Elvanto's value
+        // says nothing either - a blank medical box, or one holding "None". Hashes separate null
+        // from "" from "None"; a person reading the run does not. Left unsettled these reported as a
+        // divergence on every run forever, which is noise in exactly the place the divergences are
+        // supposed to be a work-list.
+        if (string.IsNullOrWhiteSpace(comparison.AppValue) && !comparison.ElvantoValueUsable)
+            return FieldDecision.Agreed("Match:NeitherSideSaysAnything");
+
         FieldDecision decision = comparison.HasBase
             ? DecideAgainstBase(descriptor, comparison, config)
             : DecideFirstSync(descriptor, comparison);
@@ -68,10 +76,7 @@ public class FieldReconciler(IConflictResolver conflictResolver) : IFieldReconci
         // Elvanto's value says nothing ("Not Requested", "None", or simply absent) and the app has
         // something. This is the shape of the entire restored-dump backlog: an app value Elvanto has
         // never been told about. It was falling through to a bare continue with no row.
-        if (appHasSomethingToSay)
-            return FieldDecision.Outbound(c.EffectiveOutboundValue, "FirstSync:ElvantoHasNothing");
-
-        return FieldDecision.Diverged("FirstSync:NeitherSideHasAValue");
+        return FieldDecision.Outbound(c.EffectiveOutboundValue, "FirstSync:ElvantoHasNothing");
     }
 
     private FieldDecision DecideAgainstBase(

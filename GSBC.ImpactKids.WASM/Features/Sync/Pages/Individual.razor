@@ -52,7 +52,7 @@
     {
         <MudGrid Spacing="2" Class="mb-4">
             <MudItem xs="6" sm="4">
-                <StatTile Label="Total Entries" Value="@s.Total"/>
+                <StatTile Label="Entries &amp; Plan Items" Value="@s.Total"/>
             </MudItem>
             <MudItem xs="6" sm="4">
                 <StatTile Label="People From Elvanto" Value="@s.InboundPeople" Color="Color.Info"/>
@@ -84,6 +84,12 @@
                 <StatTile Label="Diverged" Value="@s.Diverged"
                           Color="@(s.Diverged > 0 ? Color.Warning : Color.Default)"/>
             </MudItem>
+            @if (s.Stale > 0)
+            {
+                <MudItem xs="6" sm="4">
+                    <StatTile Label="Stale (not applied)" Value="@s.Stale" Color="Color.Info"/>
+                </MudItem>
+            }
         </MudGrid>
         <MudDivider Class="mb-4"/>
     }
@@ -159,6 +165,78 @@
             </MudTabPanel>
             <MudTabPanel Text="Diverged" Icon="@Icons.Material.Filled.CallSplit">
                 <AuditLogTable Logs="@DivergedLogs" GetPersonName="@GetPersonName"/>
+            </MudTabPanel>
+            <MudTabPanel Icon="@Icons.Material.Filled.Checklist"
+                         BadgeData="@(PendingPlanItems > 0 ? PendingPlanItems : null)"
+                         BadgeColor="Color.Warning">
+                <TabContent>
+                    <MudText>Plan</MudText>
+                </TabContent>
+                <ChildContent>
+                    @if (_plan.HasError)
+                    {
+                        <MudAlert Severity="Severity.Error" Class="mb-4">@_plan.Error</MudAlert>
+                    }
+                    @if (_operation.Data is { PlanExpiresAt: not null } planOp)
+                    {
+                        <MudAlert Severity="@(planOp.PlanIsExecutable ? Severity.Info : Severity.Normal)" Class="mb-4">
+                            @if (planOp.PendingPlanItems == 0)
+                            {
+                                <text>Nothing is waiting. Everything decided here has been applied, skipped or superseded.</text>
+                            }
+                            else if (planOp.PlanIsExecutable)
+                            {
+                                <text>
+                                    @planOp.PendingPlanItems item@(planOp.PendingPlanItems == 1 ? "" : "s") waiting.
+                                    Executable until @planOp.LocalPlanExpiresAt?.ToString("dd/MM/yyyy HH:mm") —
+                                    after that the whole plan is refused, because the roll may have moved since it
+                                    was decided. Every item's two sides are re-read before it is applied.
+                                </text>
+                            }
+                            else
+                            {
+                                <text>
+                                    This plan expired at @planOp.LocalPlanExpiresAt?.ToString("dd/MM/yyyy HH:mm").
+                                    Run a new sync to decide a fresh one.
+                                </text>
+                            }
+                        </MudAlert>
+                    }
+                    <MudTable Items="@PlanItems" Hover Dense Breakpoint="Breakpoint.None">
+                        <HeaderContent>
+                            <MudTh>Person</MudTh>
+                            <MudTh>What</MudTh>
+                            <MudTh>Field</MudTh>
+                            <MudTh>App</MudTh>
+                            <MudTh>Elvanto</MudTh>
+                            <MudTh>Proposed</MudTh>
+                            <MudTh>Reason</MudTh>
+                            <MudTh>Status</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Person">
+                                @(context.PersonId is { } pid
+                                    ? GetPersonName(pid)
+                                    : context.ObservedElvantoValue ?? context.ElvantoId ?? "-")
+                            </MudTd>
+                            <MudTd DataLabel="What">@FormatPlanKind(context.Kind)</MudTd>
+                            <MudTd DataLabel="Field">@(context.FieldName ?? "-")</MudTd>
+                            <MudTd DataLabel="App">@(context.ObservedAppValue ?? "-")</MudTd>
+                            <MudTd DataLabel="Elvanto">@(context.ObservedElvantoValue ?? "-")</MudTd>
+                            <MudTd DataLabel="Proposed">@(context.ProposedValue ?? "-")</MudTd>
+                            <MudTd DataLabel="Reason">@context.Reason</MudTd>
+                            <MudTd DataLabel="Status">
+                                <MudChip T="string" Size="Size.Small" Color="@PlanStatusColor(context.Status)"
+                                         Title="@context.StatusReason">
+                                    @context.Status
+                                </MudChip>
+                            </MudTd>
+                        </RowTemplate>
+                        <NoRecordsContent>
+                            <MudText Class="pa-4">This run decided nothing that needs applying.</MudText>
+                        </NoRecordsContent>
+                    </MudTable>
+                </ChildContent>
             </MudTabPanel>
             @if (ManualReviewItems.Count > 0)
             {

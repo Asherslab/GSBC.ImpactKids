@@ -303,17 +303,38 @@ timestamps). That matters for verification — see below.
 
 Each step builds and is independently revertible. **Nothing here enables a write to Elvanto.**
 
+**Steps 1–5 have landed on `feature/bidirectional-elvanto-sync`. Step 6 has not, and needs asking
+first.** What each step actually turned out to need is recorded under it.
+
 1. **Stage 1 partials.** Mechanical, no behaviour change. Do it first so every later diff is
-   readable.
+   readable. *Landed — the concatenated bodies were byte-identical to the original.*
 2. **The two independent bugs**, neither of which waits on anything: the sticky `ManualReview`
    status that suppresses creates forever (**F3**) and the `UpsertMetadata` unique-index violation
-   that fails whole runs (**F5**). Small, and the second can kill a run today.
+   that fails whole runs (**F5**). Small, and the second can kill a run today. *Landed. F3 needed a
+   third piece the plan did not name: denying a low-confidence match also has to release the
+   outbound create, since per `docs/sync-feature.md` that denial means "these are two different
+   people".*
 3. **`SyncEventType.Diverged` + the counter.** Land this *before* the state change, on the current
    logic. It turns the existing silence into rows, which gives Part 1 a baseline to be compared
-   against instead of a blank page.
+   against instead of a blank page. *Landed.*
 4. **Part 1**, as `FieldReconciler` — the migration, the merge, the `bool` return on
-   `ApplyToElvantoRequest`. Answer the null-clear question against Elvanto first.
-5. **Part 2**, Decide/Apply split, plan table, staleness check, expiry, then the UI.
+   `ApplyToElvantoRequest`. Answer the null-clear question against Elvanto first. *Landed, plus one
+   rule the design missed: **two sides that both say nothing are agreement, not divergence**. The app
+   holding null against an Elvanto box reading "None" hashes as a difference and reported as one on
+   every run forever — 89 rows on the first real run, in exactly the place the divergences are
+   supposed to be a work-list. The migration is `20260825143330_SyncFieldBaseAppLeg`; `AppHash` is
+   deliberately not backfilled.*
+5. **Part 2**, Decide/Apply split, plan table, staleness check, expiry, then the UI. *Landed as
+   `20260825144050_SyncPlannedChanges`. Two things the design did not settle:*
+
+   - *Where the base of an **agreed** field is written. Decide has to do it — there is nothing to
+     apply, and leaving it to Apply means a Decide-only run never settles anything and re-derives
+     every field from first-sync rules forever. So Decide's writes are the plan, the divergences, the
+     reviews **and** the agreements; still nothing in `People`.*
+   - *The audit trail's tense. Decide writes only `Diverged` and `ManualReviewQueued`, both of which
+     are true at decide time; Apply writes the past-tense rows. That closes **F12** exactly, at the
+     cost of a dry run's stat tiles reading zero — so they now count pending plan items alongside
+     audit rows.*
 6. **Cleanups**, once the above is stable: `FamilyIdDescriptor.SetOnApp` inventing a Guid (**F7**),
    the unmapped school grade (**F9**), the split `try` around the review save (**F11**), the
    `Scope=Family` hole (**F6**), and the destructive migrations that need asking first — dropping
@@ -336,8 +357,11 @@ asserts that today, and a rename would silently and permanently break a field's 
 2. A **Decide-only** run at `Scope=All`. Expect it to be loud: with no app-leg base, every field
    re-applies first-sync rules. Read the `Diverged` rows — **this is the run that finally shows the
    F1 backlog**, and it is the acceptance test for the whole exercise.
-3. Re-run Decide. The second plan should be materially smaller than the first; anything still
-   diverging on the second pass is a real finding.
+3. Re-run Decide. **Correction, from running it:** the second plan is *identical*, and that is the
+   correct result rather than a finding. The expectation was written against a design where the
+   first run settled snapshots for everything it had merely reported. It no longer does: agreements
+   settle on the first run (18,683 bases), and what remains in the plan is genuinely outstanding
+   work that no Decide-only run may consume. A second plan that shrank would mean step 4 was broken.
 4. Edit one field in the app, run Decide, confirm it appears in the plan. Run Decide again without
    applying — **it must still be there.** That is F2, regression-tested.
 5. Apply with writes still off. Every outbound item should report as suppressed, and its base must

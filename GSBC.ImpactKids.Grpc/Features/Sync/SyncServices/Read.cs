@@ -4,6 +4,8 @@ using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using Microsoft.EntityFrameworkCore;
 
+using DbPlannedChangeStatus = GSBC.ImpactKids.Grpc.Data.Models.Sync.Enums.PlannedChangeStatus;
+
 namespace GSBC.ImpactKids.Grpc.Features.Sync.SyncServices;
 
 public partial class SyncService
@@ -21,9 +23,12 @@ public partial class SyncService
         if (operation == null)
             return BasicReadResponse<SyncOperation>.WithError("Sync operation not found");
 
+        int pending = await db.PlannedChanges
+            .CountAsync(x => x.SyncOperationId == id && x.Status == DbPlannedChangeStatus.Pending, token);
+
         return new BasicReadResponse<SyncOperation>
         {
-            Entity  = operationConverter.Convert(operation),
+            Entity  = operationConverter.Convert(operation) with { PendingPlanItems = pending },
             Success = true
         };
     }

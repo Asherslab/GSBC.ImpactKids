@@ -48,4 +48,10 @@ public class ElvantoConfig
     /// from weeks ago reaches Elvanto on the back of someone else's test.
     /// </summary>
     public Guid[] AllowedUpdatePersonIds { get; set; } = [];
+
+    /// <summary>
+    /// How long a decided plan stays executable. Long enough for a considered review, short enough
+    /// that the roll has not materially turned over.
+    /// </summary>
+    public int PlanExpiryHours { get; set; } = 4;
 }

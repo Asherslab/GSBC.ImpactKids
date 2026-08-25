@@ -14,6 +14,7 @@ public partial class GsbcDbContext
     public required DbSet<DbSyncAuditLog>         SyncAuditLogs         { get; set; }
     public required DbSet<DbSyncFieldConfig>      SyncFieldConfigs      { get; set; }
     public required DbSet<DbSyncPendingReview>    PendingReviews        { get; set; }
+    public required DbSet<DbSyncPlannedChange>    PlannedChanges        { get; set; }
 
     private static void BuildSyncModel(ModelBuilder modelBuilder)
     {
@@ -103,6 +104,35 @@ public partial class GsbcDbContext
             .HasIndex(x => new { x.PersonId, x.ElvantoId })
             .IsUnique();
         modelBuilder.Entity<DbSyncPendingReview>()
+            .Property(x => x.Status).HasConversion<string>();
+        modelBuilder.Entity<DbSyncPendingReview>()
+            .HasOne(x => x.SyncOperation)
+            .WithMany()
+            .HasForeignKey(x => x.SyncOperationId)
+            .IsRequired(false);
+
+        // DbSyncPlannedChange - the plan a run decided, read back by Apply.
+        modelBuilder.Entity<DbSyncPlannedChange>()
+            .HasOne(x => x.SyncOperation)
+            .WithMany(x => x.PlannedChanges)
+            .HasForeignKey(x => x.SyncOperationId);
+
+        // Nullable, because a CreateLocally item names an Elvanto record and no app person: Decide
+        // writes nothing to People, so there is no id to point at until Apply makes one.
+        modelBuilder.Entity<DbSyncPlannedChange>()
+            .HasOne(x => x.Person)
+            .WithMany()
+            .HasForeignKey(x => x.PersonId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<DbSyncPlannedChange>()
+            .HasIndex(x => new { x.SyncOperationId, x.Status });
+        modelBuilder.Entity<DbSyncPlannedChange>()
+            .HasIndex(x => new { x.PersonId, x.DecidedAt });
+        modelBuilder.Entity<DbSyncPlannedChange>()
+            .Property(x => x.Kind).HasConversion<string>();
+        modelBuilder.Entity<DbSyncPlannedChange>()
             .Property(x => x.Status).HasConversion<string>();
 
         SeedSyncFieldConfigs(modelBuilder);

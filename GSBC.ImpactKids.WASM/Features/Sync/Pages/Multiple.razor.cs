@@ -3,6 +3,7 @@ using EasyAppDev.Blazor.Store.AsyncActions;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Sync;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People.Sync;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.People;
 using GSBC.ImpactKids.WASM.Features.People.Components.Individual;
 using GSBC.ImpactKids.WASM.Services.RefreshableStore;
 using Microsoft.AspNetCore.Components;
@@ -112,6 +113,46 @@ public partial class Multiple : ComponentBase, IDisposable
         {
             _isSubmitting = false;
             StateHasChanged();
+            await PendingReviewsStore.RefreshEvent();
+        }
+    }
+
+    /// <summary>
+    /// Runs the work an earlier Decide recorded. Everything that makes this safe is in the engine:
+    /// the plan expires, every item's two sides are re-read before it is applied, and nothing
+    /// outside the plan is touched - anything that appeared since belongs to the next plan.
+    /// </summary>
+    private async Task ExecutePlan(SyncOperation operation)
+    {
+        _isSubmitting = true;
+        StateHasChanged();
+
+        try
+        {
+            SyncResponse response = await SyncService.ExecutePlan(
+                new ExecutePlanRequest { OperationId = operation.Id });
+
+            if (!response.Success)
+            {
+                Snackbar.Add(response.Error ?? "Execute failed", Severity.Error);
+            }
+            else if (response.StaleItems > 0)
+            {
+                Snackbar.Add(
+                    $"Executed — {response.StaleItems} item{(response.StaleItems == 1 ? "" : "s")} skipped because "
+                    + "a side had moved since the plan was decided",
+                    Severity.Warning);
+            }
+            else
+            {
+                Snackbar.Add("Plan executed", Severity.Success);
+            }
+        }
+        finally
+        {
+            _isSubmitting = false;
+            StateHasChanged();
+            await SyncStore.RefreshEvent();
             await PendingReviewsStore.RefreshEvent();
         }
     }
