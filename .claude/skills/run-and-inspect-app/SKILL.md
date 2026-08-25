@@ -276,6 +276,31 @@ gets an authenticated SPA whose every call 401s.
 
 A 401 on `/bff/user` from an anonymous page is expected, not a fault.
 
+## Always drive the app as a user
+
+**Never drive the UI with JavaScript. Never.** `javascript_tool` is for *reading* state and
+`form_input` is not a substitute for typing. Clicks go through `computer left_click` (on a
+`ref` or on coordinates from a screenshot), text goes in with `computer type`, and keys with
+`computer key`. If a control cannot be reached that way, say so and ask - do not reach for
+`.click()` as a fallback.
+
+This is not a style preference. Blazor binds on the events a real interaction raises, so a
+JS-set value or a synthetic `.click()` updates the DOM and changes nothing underneath:
+
+- `form_input` on a MudBlazor text field sets `input.value`, the screen shows the new text,
+  and the component never sees it. Save and the old value is still in the database.
+- A field can be `readOnly` until an edit mode is entered. Writing to it with JS "succeeds"
+  and is silently discarded.
+- `.click()` on a Mud button often does nothing at all, and MudMenu popovers never open.
+
+Every one of those has already produced a confident, wrong conclusion here - a "saved" edit
+that was never saved, and an interceptor declared broken when it had simply never been given a
+real edit to observe. A test driven by JavaScript proves nothing about the app.
+
+So: take a screenshot, find the control, click it, type into it, click the save button, then
+verify the result in the database or by re-reading the page. Slower, and the only way the
+answer means anything.
+
 ## Inspecting the UI
 
 Prefer the DOM over screenshots for anything measurable. The pane's screenshot can capture
