@@ -5,14 +5,24 @@ Bidirectional sync between the app and Elvanto, with a manual-review workflow fo
 ## Key entities
 
 - `DbSyncPendingReview` — keyed on `(PersonId, ElvantoId)`. Persisted **outside** the main transaction (after `audit.FlushAsync`) so DryRun results survive the rollback.
-- `DbSyncMetadata` — tracks `ManualReviewReason` and `LastSyncStatus` for existing checks.
+- `DbSyncMetadata` — the link between a person and an Elvanto record. Unique on `ElvantoId` **and**
+  on `PersonId`, so `UpsertMetadata` asks both before adding a row; asking only `ElvantoId` added a
+  second row for a person who had been compared to someone else's id and failed the whole run.
+  `LastSyncStatus` is written but read by nothing — do not gate behaviour on it.
 
 ## Review workflow
 
 1. DryRun → low-confidence match → `DbSyncPendingReview` (`Status = Pending`) saved outside the transaction.
 2. User opens the sync-operation detail page (`/Sync/{id}`) → the **Manual Review** tab shows items for this operation.
 3. Approve / Deny buttons call `ISyncService.ApproveReview` / `DenyReview` (by review `Guid`).
-4. Next wet run → engine checks the `pendingReviews` dictionary → **Approved** = link + field sync; **Denied** = skip both sides.
+4. Next wet run → engine checks the `pendingReviews` dictionary → **Approved** = link + field sync;
+   **Denied** = never link this pair, and (for a low-confidence match) the app person becomes
+   eligible to be created in Elvanto as a separate person.
+
+A review that is still `Pending` suppresses that person's outbound create, and says so with a
+`ManualReviewQueued / CreateSuppressed:AwaitingReview` audit row. The suppression used to key off
+`DbSyncMetadata.LastSyncStatus == ManualReview`, which nothing ever resets — so one trip through
+the review queue suppressed a person's create permanently, with a bare `continue` and no row.
 
 ### Two kinds of review, asking opposite questions
 
@@ -22,7 +32,7 @@ Bidirectional sync between the app and Elvanto, with a manual-review workflow fo
 |---|---|---|
 | Raised from | the matching loop, on a fuzzy candidate | the create path, when an unlinked person shares first+last name with someone already linked |
 | **Approved** | **link** the two records, sync fields onward | **suppress the create** — they already exist in Elvanto |
-| **Denied** | never link this pair | **create** them in Elvanto as a separate person |
+| **Denied** | never link this pair, **and** create the app person separately | **create** them in Elvanto as a separate person |
 
 Approving a duplicate deliberately does **not** link them: two app people cannot share one
 `ElvantoId`, because `appByElvantoId` is built with `ToDictionary` on that key and would throw.
