@@ -11,10 +11,6 @@ public interface IPersonService
         IUpdateService<UpdatePersonRequest>,
         IBasicDeleteService<Person>
 {
-    Task<BasicResponse> SyncWithElvanto(
-        CallContext context = default
-    );
-
     Task<BasicReadResponse<Person>> Read(
         BasicReadRequest request,
         CallContext      context = default

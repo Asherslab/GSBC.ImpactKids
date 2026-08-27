@@ -7,6 +7,7 @@
 <MudPaper Elevation="6" Class="relative pt-1 px-6 pb-6">
     <CreatePersonWorkflow
         FamilyId="FamilyId"
+        FamilyWithPersonId="FamilyWithPersonId"
         OnExit="OnExit"/>
 </MudPaper>
 
@@ -17,6 +18,10 @@
 
     [SupplyParameterFromQuery]
     public Guid? FamilyId { get; set; }
+
+    /// <summary>Whose family to join, when that family may not exist yet. See CreatePersonRequest.</summary>
+    [SupplyParameterFromQuery]
+    public Guid? FamilyWithPersonId { get; set; }
 
     private readonly BreadcrumbItem[] _breadcrumbs =
     [

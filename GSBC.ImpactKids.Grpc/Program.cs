@@ -1,6 +1,8 @@
 using GSBC.ImpactKids.Grpc;
 using GSBC.ImpactKids.Grpc.Data;
+using GSBC.ImpactKids.Grpc.Data.Interceptors;
 using GSBC.ImpactKids.Grpc.Extensions;
+using GSBC.ImpactKids.Grpc.Features.People.Sync.Interfaces;
 using GSBC.ImpactKids.Grpc.Features.Attendance.AttendanceItemRecordServices;
 using GSBC.ImpactKids.Grpc.Features.Attendance.AttendanceItemTypeServices;
 using GSBC.ImpactKids.Grpc.Features.Attendance.AttendanceRecordServices;
@@ -20,6 +22,7 @@ using GSBC.ImpactKids.Grpc.Features.People.AllergyServices;
 using GSBC.ImpactKids.Grpc.Features.People.MedicalNoteServices;
 using GSBC.ImpactKids.Grpc.Features.People.MedicalTypeServices;
 using GSBC.ImpactKids.Grpc.Features.People.PersonServices;
+using GSBC.ImpactKids.Grpc.Features.Sync.SyncServices;
 using GSBC.ImpactKids.Grpc.Features.People.SchoolGradeServices;
 using GSBC.ImpactKids.Grpc.Features.Scheduling.School.SchoolTermServices;
 using GSBC.ImpactKids.Grpc.Features.Scheduling.ServicesServices;
@@ -91,6 +94,8 @@ builder.Services.AddTransient<IClaimsTransformation, CustomClaimsTransformation>
 builder.Services.AddCodeFirstGrpc();
 builder.Services.AddGrpc();
 builder.Services.AddConverters();
+builder.Services.AddPeopleSync();
+builder.Services.AddSingleton<FieldChangeTrackingInterceptor>();
 builder.Services.AddTransient<ElvantoService>();
 builder.Services.AddSingleton<EventingChannelsService>();
 // Wakes the wall display's scoreboard stream - see GameDisplayService.WatchScoreboard.
@@ -99,15 +104,20 @@ builder.Services.AddHostedService<RabbitWorker>();
 builder.Services.AddHostedService<HeartbeatService>();
 builder.Services.AddHybridCache();
 
-builder.Services.AddPooledDbContextFactory<GsbcDbContext>(o =>
+builder.Services.AddPooledDbContextFactory<GsbcDbContext>((sp, o) =>
 {
     o.UseNpgsql(builder.Configuration.GetConnectionString("impact-kids"));
+    o.AddInterceptors(sp.GetRequiredService<FieldChangeTrackingInterceptor>());
     // o.AddInterceptors(new GSBC.ImpactKids.Grpc.Data.Interceptors.LatencyInterceptor(TimeSpan.FromSeconds(1.5)));
 });
 
 ElvantoConfig? elvantoConfig = builder.Configuration.GetSection("Elvanto").Get<ElvantoConfig>();
 if (elvantoConfig != null)
+{
     builder.Services.AddSingleton(elvantoConfig);
+    // Singleton so the ceiling spans every sync run in this process, not one run at a time.
+    builder.Services.AddSingleton(new ElvantoWriteBudget(elvantoConfig.MaxWrites));
+}
 
 // builder.Services.AddCors(options =>
 // {
@@ -168,6 +178,7 @@ app.MapGrpcService<GamePointRecordService>();
 app.MapGrpcService<GameBoardService>();
 // Unauthenticated - wall display only, aggregate scores only.
 app.MapGrpcService<GameDisplayService>();
+app.MapGrpcService<SyncService>();
 app.MapGet("/",
     () =>
         "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");

@@ -7,6 +7,8 @@ public class PeopleRequest : IRequestMessage
 {
     public static Uri RequestUri { get; } = new("https://api.elvanto.com/v1/people/getAll.json");
 
+    public static ElvantoMutation Mutation => ElvantoMutation.None;
+
     [JsonPropertyName("suspended")]
     public string? Suspended { get; set; }
 

@@ -501,3 +501,9 @@ $RECYCLE.BIN/
 # api key, which comes from AppHost:McpApiKey in each developer's own user-secrets - so the file is
 # per-machine by nature and there is no shared version worth committing.
 .mcp.json
+
+# local DB dumps
+*.dump
+
+# Nodeterm tool config, per-machine
+.nodeterm/

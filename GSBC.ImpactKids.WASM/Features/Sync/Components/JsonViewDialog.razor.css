@@ -1,0 +1,10 @@
+.json {
+    font-family: var(--mud-typography-monospace-family, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    margin: 0;
+    max-height: 60vh;
+    overflow: auto;
+    white-space: pre;
+    tab-size: 2;
+}

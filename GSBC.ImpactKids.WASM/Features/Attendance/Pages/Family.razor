@@ -10,7 +10,18 @@
 <MudBreadcrumbs Items="_breadcrumbs"/>
 
 <MudPaper Elevation="6" Class="pt-1 px-6 pb-6">
-    <MudText Align="Align.Center" Typo="Typo.h5" Class="py-3">Attendance for the @_familyName.Data Family</MudText>
+    @* "the X Family" only reads correctly when there is one. A person with no household gets their
+       own name, rather than being announced as a family of one. *@
+    <MudText Align="Align.Center" Typo="Typo.h5" Class="py-3">
+        @if (_person.Data?.HasFamily == false)
+        {
+            @($"Attendance for {_person.Data.FirstName} {_person.Data.LastName}")
+        }
+        else
+        {
+            @($"Attendance for the {_familyName.Data} Family")
+        }
+    </MudText>
     <MudOverlay Visible="@(_service.IsLoading || _person.IsLoading)"
                 DarkBackground
                 Absolute>
@@ -29,16 +40,28 @@
         </MudAlert>
     }
     <MudStack>
+        @* FamilyWithPersonId, not just FamilyId, so this keeps working for someone with no household:
+           the family does not exist yet and the server mints it onto both of them. FamilyId is still
+           passed when there IS one, purely so the family selector arrives pre-filled. *@
         <MudButton
             Class="py-4"
-            Href="@($"/Attendance/CreatePerson?{nameof(CreatePerson.ServiceId)}={_service.Data?.Id}&{nameof(CreatePerson.FamilyId)}={_person.Data?.FamilyId}")">
-            Create Person in Family
+            Href="@($"/Attendance/CreatePerson?{nameof(CreatePerson.ServiceId)}={_service.Data?.Id}"
+                    + $"&{nameof(CreatePerson.FamilyWithPersonId)}={_person.Data?.Id}"
+                    + (_person.Data?.HasFamily == true
+                        ? $"&{nameof(CreatePerson.FamilyId)}={_person.Data?.FamilyId}"
+                        : ""))">
+            @(_person.Data?.HasFamily == false ? "Create Person in New Family" : "Create Person in Family")
         </MudButton>
         <MudPaper Elevation="0" Class="pa-4">
             @if (_person.HasData)
             {
+                @* The person themselves, then anyone in their household. Filtering on family alone
+                   dropped a person with no family off their OWN page - and this page is where they
+                   get signed in, so it left no way to do it. Adds nothing for someone who has a
+                   family: they already match. (Comment sits above the tag: between attributes razor
+                   parses it as an attribute name, which builds and throws at render.) *@
                 <ListComponent T="Person"
-                               Filter="@(x => x.FamilyId == _person.Data!.FamilyId)"
+                               Filter="@(x => x.Id == _person.Data!.Id || x.SharesFamilyWith(_person.Data!))"
                                Ordering="@(l => l.OrderBy(x => x.GetAge()))"
                                Spacing="3"
                                Limit="15"

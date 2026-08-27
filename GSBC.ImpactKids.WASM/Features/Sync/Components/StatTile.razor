@@ -1,0 +1,12 @@
+@using MudBlazor
+
+<MudPaper Elevation="2" Class="pa-3 d-flex flex-column align-center">
+    <MudText Typo="Typo.h5" Color="@Color">@Value</MudText>
+    <MudText Typo="Typo.caption" Color="Color.Secondary" Align="Align.Center">@Label</MudText>
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+    [Parameter, EditorRequired] public int    Value { get; set; }
+    [Parameter]                 public Color  Color { get; set; } = Color.Default;
+}

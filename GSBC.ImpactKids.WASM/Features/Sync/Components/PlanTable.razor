@@ -1,0 +1,116 @@
+@using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Sync
+@using System.Collections.Immutable
+@inject IDialogService DialogService
+
+<MudTable Items="@Items" Hover Dense Breakpoint="Breakpoint.None" RowsPerPage="25">
+    <HeaderContent>
+        <MudTh>Person</MudTh>
+        <MudTh>What</MudTh>
+        <MudTh>Field</MudTh>
+        <MudTh>App</MudTh>
+        <MudTh>Elvanto</MudTh>
+        <MudTh>Proposed</MudTh>
+        <MudTh>Reason</MudTh>
+        <MudTh>Status</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Person">@Describe(context)</MudTd>
+        <MudTd DataLabel="What">@FormatPlanKind(context.Kind)</MudTd>
+        <MudTd DataLabel="Field">@(context.FieldName ?? "-")</MudTd>
+        <MudTd DataLabel="App">
+            @if (LooksLikeJson(context.ObservedAppValue))
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.Info"
+                               Size="Size.Small"
+                               Color="Color.Info"
+                               Title="View the payload"
+                               OnClick="@(() => ShowJson($"App — {Describe(context)}", context.ObservedAppValue!))"/>
+            }
+            else
+            {
+                @(context.ObservedAppValue ?? "-")
+            }
+        </MudTd>
+        <MudTd DataLabel="Elvanto">
+            @if (LooksLikeJson(context.ObservedElvantoValue))
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.Info"
+                               Size="Size.Small"
+                               Color="Color.Info"
+                               Title="View the payload"
+                               OnClick="@(() => ShowJson($"Elvanto — {Describe(context)}", context.ObservedElvantoValue!))"/>
+            }
+            else
+            {
+                @(context.ObservedElvantoValue ?? "-")
+            }
+        </MudTd>
+        <MudTd DataLabel="Proposed">@(context.ProposedValue ?? "-")</MudTd>
+        <MudTd DataLabel="Reason">@context.Reason</MudTd>
+        <MudTd DataLabel="Status">
+            <MudChip T="string" Size="Size.Small" Color="@PlanStatusColor(context.Status)"
+                     Title="@context.StatusReason">
+                @context.Status
+            </MudChip>
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText Class="pa-4">@EmptyText</MudText>
+    </NoRecordsContent>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 25, 50, 100 }"/>
+    </PagerContent>
+</MudTable>
+
+@code {
+    [Parameter, EditorRequired]
+    public ImmutableList<SyncPlannedChange> Items { get; set; } = ImmutableList<SyncPlannedChange>.Empty;
+
+    [Parameter, EditorRequired]
+    public Func<Guid, string> GetPersonName { get; set; } = _ => "Unknown";
+
+    [Parameter]
+    public string EmptyText { get; set; } = "Nothing decided here.";
+
+    // A create-in-Elvanto row's observed value is the entire request payload. Printed inline it
+    // swallowed the row - a wall of JSON where every other row shows one field - so anything that
+    // reads as an object or an array collapses to a button that opens it pretty-printed instead.
+    private static bool LooksLikeJson(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return false;
+        string trimmed = value.TrimStart();
+        return trimmed.StartsWith('{') || trimmed.StartsWith('[');
+    }
+
+    private Task ShowJson(string title, string raw) =>
+        JsonViewDialog.Open(DialogService, title, raw);
+
+    /// <summary>
+    /// A row with no app person is an Elvanto record that matched nobody, so it is named by
+    /// whatever identifies it there - never by its payload, which is what the JSON column is for.
+    /// </summary>
+    private string Describe(SyncPlannedChange item) =>
+        item.PersonId is { } pid
+            ? GetPersonName(pid)
+            : item.ElvantoId ?? FormatPlanKind(item.Kind);
+
+    private static Color PlanStatusColor(PlannedChangeStatus status) => status switch
+    {
+        PlannedChangeStatus.Applied => Color.Success,
+        PlannedChangeStatus.Pending => Color.Warning,
+        PlannedChangeStatus.Stale   => Color.Info,
+        PlannedChangeStatus.Failed  => Color.Error,
+        _                           => Color.Default
+    };
+
+    private static string FormatPlanKind(PlannedChangeKind kind) => kind switch
+    {
+        PlannedChangeKind.InboundField    => "Field from Elvanto",
+        PlannedChangeKind.OutboundField   => "Field to Elvanto",
+        PlannedChangeKind.CreateInElvanto => "Create in Elvanto",
+        PlannedChangeKind.CreateLocally   => "Create locally",
+        PlannedChangeKind.Archive         => "Archive",
+        PlannedChangeKind.LinkPerson      => "Link",
+        _                                 => kind.ToString()
+    };
+}

@@ -1,0 +1,328 @@
+@inherits StoreEntityUtilityComponent<IndividualSyncState>
+@page "/Sync/{Id:guid}"
+@inject IRefreshableStore<SyncOperation> SyncStore
+@inject IRefreshableStore<Person>        PeopleStore
+@inject ISyncService                     SyncService
+
+<PageTitle>Sync Operation</PageTitle>
+
+<MudBreadcrumbs Items="_breadcrumbs"/>
+
+<MudPaper Elevation="6" Class="mt-4 px-6 pb-6">
+    <MudOverlay Visible="@_operation.IsLoading" DarkBackground Absolute>
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+
+    @if (_operation.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">@_operation.Error</MudAlert>
+    }
+
+    @if (_operation.Data is { } op)
+    {
+        <MudStack Row AlignItems="AlignItems.Center" Class="py-4" Spacing="3">
+            @if (op.Status.HasValue)
+            {
+                <MudChip T="string" Color="@StatusColor(op.Status.Value)" Size="Size.Medium">@op.Status</MudChip>
+            }
+            else
+            {
+                <MudChip T="string" Color="Color.Default" Size="Size.Medium">Running</MudChip>
+            }
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Started: @op.LocalStartedAt.ToString("dd/MM/yyyy HH:mm:ss")
+            </MudText>
+            @if (op.LocalCompletedAt.HasValue)
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    Completed: @op.LocalCompletedAt.Value.ToString("dd/MM/yyyy HH:mm:ss")
+                </MudText>
+            }
+        </MudStack>
+
+        @if (!string.IsNullOrWhiteSpace(op.FailureReason))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4">@op.FailureReason</MudAlert>
+        }
+    }
+
+    @if (Stats is { } s)
+    {
+        <MudGrid Spacing="2" Class="mb-4">
+            <MudItem xs="6" sm="4">
+                <StatTile Label="Entries &amp; Plan Items" Value="@s.Total"/>
+            </MudItem>
+            <MudItem xs="6" sm="4">
+                <StatTile Label="People From Elvanto" Value="@s.InboundPeople" Color="Color.Info"/>
+            </MudItem>
+            <MudItem xs="6" sm="4">
+                <StatTile Label="Fields From Elvanto" Value="@s.InboundFields" Color="Color.Info"/>
+            </MudItem>
+            <MudItem xs="6" sm="4">
+                <StatTile Label="People To Elvanto" Value="@s.OutboundPeople" Color="Color.Primary"/>
+            </MudItem>
+            <MudItem xs="6" sm="4">
+                <StatTile Label="Fields To Elvanto" Value="@s.OutboundFields" Color="Color.Primary"/>
+            </MudItem>
+            <MudItem xs="6" sm="4">
+                <StatTile Label="Matched" Value="@s.AutoLinked"/>
+            </MudItem>
+            <MudItem xs="6" sm="4">
+                <StatTile Label="Conflicts" Value="@s.Conflicts"
+                          Color="@(s.Conflicts > 0 ? Color.Warning : Color.Default)"/>
+            </MudItem>
+            <MudItem xs="6" sm="4">
+                <StatTile Label="Manual Review" Value="@s.ManualReview"
+                          Color="@(s.ManualReview > 0 ? Color.Secondary : Color.Default)"/>
+            </MudItem>
+            <MudItem xs="6" sm="4">
+                <StatTile Label="Archived" Value="@s.Archived" Color="@(s.Archived > 0 ? Color.Error : Color.Default)"/>
+            </MudItem>
+            <MudItem xs="6" sm="4">
+                <StatTile Label="Diverged" Value="@s.Diverged"
+                          Color="@(s.Diverged > 0 ? Color.Warning : Color.Default)"/>
+            </MudItem>
+            @if (s.Stale > 0)
+            {
+                <MudItem xs="6" sm="4">
+                    <StatTile Label="Stale (not applied)" Value="@s.Stale" Color="Color.Info"/>
+                </MudItem>
+            }
+        </MudGrid>
+        <MudDivider Class="mb-4"/>
+    }
+
+    @if (_auditLogs.IsLoading)
+    {
+        <MudProgressLinear Indeterminate Class="mb-4"/>
+    }
+    else if (_auditLogs.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">@_auditLogs.Error</MudAlert>
+    }
+    else if (_auditLogs.HasData)
+    {
+        <MudGrid Spacing="2" AlignItems="AlignItems.Center" Class="mb-4">
+            <MudItem xs="12" md="4">
+                <MudTextField T="string"
+                              Value="State.Search"
+                              ValueChanged="OnSearch"
+                              Placeholder="Search person, field, value..."
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium"
+                              Clearable
+                              Immediate/>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudSelect T="SyncEventType"
+                           MultiSelection="true"
+                           SelectedValues="State.SelectedEventTypes"
+                           SelectedValuesChanged="OnEventTypesChanged"
+                           Placeholder="All event types"
+                           Clearable>
+                    @foreach (SyncEventType type in Enum.GetValues<SyncEventType>())
+                    {
+                        <MudSelectItem T="SyncEventType" Value="type">@FormatEventType(type)</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudSelect T="string"
+                           MultiSelection="true"
+                           SelectedValues="State.SelectedFields"
+                           SelectedValuesChanged="OnFieldsChanged"
+                           Placeholder="All fields"
+                           Clearable>
+                    @foreach (string field in AvailableFields)
+                    {
+                        <MudSelectItem T="string" Value="field">@field</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="1">
+                @if (HasActiveFilters)
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.FilterAltOff"
+                                   Color="Color.Warning"
+                                   Title="Clear all filters"
+                                   OnClick="ClearFilters"/>
+                }
+            </MudItem>
+        </MudGrid>
+
+        @* Two things live on this page and they are not the same thing: what a run DECIDED (the
+           plan) and what it DID (the audit trail). Splitting them at the top level keeps a dry
+           run's plan readable in the same direction-by-direction shape as an executed run, rather
+           than as one flat table under a single "Plan" tab. *@
+        <MudTabs Elevation="0" Rounded ApplyEffectsToContainer PanelClass="pt-4">
+            @* Counts live in the label, not in a MudTabPanel badge: the badge is absolutely
+               positioned past the label's right edge and the tab strip clips it, so "50" rendered
+               as "5" - a wrong number is worse than no number. *@
+            <MudTabPanel Icon="@Icons.Material.Filled.Checklist">
+                <TabContent>
+                    <MudText>@Labelled("Plan", PendingPlanItems)</MudText>
+                </TabContent>
+                <ChildContent>
+                    @if (_plan.HasError)
+                    {
+                        <MudAlert Severity="Severity.Error" Class="mb-4">@_plan.Error</MudAlert>
+                    }
+                    @if (_operation.Data is { PlanExpiresAt: not null } planOp)
+                    {
+                        <MudAlert Severity="@(planOp.PlanIsExecutable ? Severity.Info : Severity.Normal)" Class="mb-4">
+                            @if (planOp.PendingPlanItems == 0)
+                            {
+                                <text>Nothing is waiting. Everything decided here has been applied, skipped or superseded.</text>
+                            }
+                            else if (planOp.PlanIsExecutable)
+                            {
+                                <text>
+                                    @planOp.PendingPlanItems item@(planOp.PendingPlanItems == 1 ? "" : "s") waiting.
+                                    Executable until @planOp.LocalPlanExpiresAt?.ToString("dd/MM/yyyy HH:mm") —
+                                    after that the whole plan is refused, because the roll may have moved since it
+                                    was decided. Every item's two sides are re-read before it is applied.
+                                </text>
+                            }
+                            else
+                            {
+                                <text>
+                                    This plan expired at @planOp.LocalPlanExpiresAt?.ToString("dd/MM/yyyy HH:mm").
+                                    Run a new sync to decide a fresh one.
+                                </text>
+                            }
+                        </MudAlert>
+                    }
+                    <MudTabs Elevation="0" Rounded PanelClass="pt-4">
+                        <MudTabPanel Text="@PlanLabel("To Elvanto", PlanToElvanto)" Icon="@Icons.Material.Filled.Upload">
+                            <PlanTable Items="@PlanToElvanto" GetPersonName="@GetPersonName"
+                                       EmptyText="Nothing to write to Elvanto."/>
+                        </MudTabPanel>
+                        <MudTabPanel Text="@PlanLabel("From Elvanto", PlanFromElvanto)" Icon="@Icons.Material.Filled.Download">
+                            <PlanTable Items="@PlanFromElvanto" GetPersonName="@GetPersonName"
+                                       EmptyText="Nothing to write into the app."/>
+                        </MudTabPanel>
+                        <MudTabPanel Text="@PlanLabel("Links", PlanLinks)" Icon="@Icons.Material.Filled.CompareArrows">
+                            <PlanTable Items="@PlanLinks" GetPersonName="@GetPersonName"
+                                       EmptyText="No records to link."/>
+                        </MudTabPanel>
+                        <MudTabPanel Text="@PlanLabel("Archive", PlanArchive)" Icon="@Icons.Material.Filled.Archive">
+                            <PlanTable Items="@PlanArchive" GetPersonName="@GetPersonName"
+                                       EmptyText="Nobody to archive."/>
+                        </MudTabPanel>
+                    </MudTabs>
+                </ChildContent>
+            </MudTabPanel>
+            <MudTabPanel Text="Executed" Icon="@Icons.Material.Filled.History">
+                <MudTabs Elevation="0" Rounded PanelClass="pt-4">
+                    <MudTabPanel Text="To Elvanto" Icon="@Icons.Material.Filled.Upload">
+                        <AuditLogTable Logs="@ToElvantoLogs" GetPersonName="@GetPersonName"/>
+                    </MudTabPanel>
+                    <MudTabPanel Text="From Elvanto" Icon="@Icons.Material.Filled.Download">
+                        <AuditLogTable Logs="@FromElvantoLogs" GetPersonName="@GetPersonName"/>
+                    </MudTabPanel>
+                    <MudTabPanel Text="Matches & Conflicts" Icon="@Icons.Material.Filled.CompareArrows">
+                        <AuditLogTable Logs="@MatchConflictLogs" GetPersonName="@GetPersonName"/>
+                    </MudTabPanel>
+                </MudTabs>
+            </MudTabPanel>
+            @* Top level, not a sub-tab of Executed: a divergence is decided, never executed - the
+               engine looked at both sides and refused to act. On a dry run it was the only thing
+               under a tab called "Executed", which read as "done" for the rows that are precisely
+               not done. It is also the page's work-list, so it is one click from the front. *@
+            <MudTabPanel Icon="@Icons.Material.Filled.CallSplit">
+                <TabContent>
+                    <MudText>@Labelled("Diverged", DivergedLogs.Count)</MudText>
+                </TabContent>
+                <ChildContent>
+                    <MudAlert Severity="Severity.Normal" Class="mb-4">
+                        The two sides differ and this run deliberately did nothing. Each row carries both
+                        values and the reason, so it can be acted on without re-running anything.
+                    </MudAlert>
+                    <AuditLogTable Logs="@DivergedLogs" GetPersonName="@GetPersonName"/>
+                </ChildContent>
+            </MudTabPanel>
+            @if (ManualReviewItems.Count > 0)
+            {
+                <MudTabPanel Icon="@Icons.Material.Filled.RateReview">
+                    <TabContent>
+                        <MudText>
+                            @Labelled("Manual Review", ManualReviewItems.Count(r => r.Status == ManualReviewStatus.Pending))
+                        </MudText>
+                    </TabContent>
+                    <ChildContent>
+                        <MudOverlay Visible="@_reviewLoading" DarkBackground Absolute>
+                            <MudProgressCircular Indeterminate/>
+                        </MudOverlay>
+                        <MudStack Spacing="2">
+                            @foreach (SyncManualReviewEntry review in ManualReviewItems)
+                            {
+                                <MudPaper Outlined Class="pa-4">
+                                    <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Wrap="Wrap.Wrap">
+                                        <MudStack Spacing="1">
+                                            <MudLink Typo="Typo.subtitle1"
+                                                     Underline="Underline.Hover"
+                                                     OnClick="@(() => ShowPersonDetails(review.PersonId))">
+                                                <b>@(review.PersonName ?? GetPersonName(review.PersonId))</b>
+                                            </MudLink>
+                                            <MudStack Row Spacing="2">
+                                                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                                    Elvanto ID:
+                                                    <MudLink Href="@ElvantoLinks.GetPersonUrl(review.ElvantoId)" Target="_blank">@review.ElvantoId</MudLink>
+                                                </MudText>
+                                                @if (review.MatchStrategy is not null)
+                                                {
+                                                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                                        Strategy: @review.MatchStrategy
+                                                    </MudText>
+                                                }
+                                            </MudStack>
+                                            <MudText Typo="Typo.body2">
+                                                @ReviewQuestion(review, review.PersonName ?? GetPersonName(review.PersonId))
+                                            </MudText>
+                                            <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                                <MudText Typo="Typo.body2">Confidence:</MudText>
+                                                <MudProgressLinear Value="@review.MatchConfidence"
+                                                                   Color="@ConfidenceColor(review.MatchConfidence)"
+                                                                   Style="width: 120px"/>
+                                                <MudText Typo="Typo.body2">@review.MatchConfidence%</MudText>
+                                            </MudStack>
+                                        </MudStack>
+                                        <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                            <MudChip T="string"
+                                                     Color="@ReviewStatusColor(review.Status)"
+                                                     Size="Size.Small">
+                                                @review.Status
+                                            </MudChip>
+                                            @if (review.Status == ManualReviewStatus.Pending)
+                                            {
+                                                <MudButton Variant="Variant.Filled"
+                                                           Color="Color.Success"
+                                                           Size="Size.Small"
+                                                           StartIcon="@Icons.Material.Filled.CheckCircle"
+                                                           Disabled="@_reviewLoading"
+                                                           Title="@ApproveHint(review)"
+                                                           OnClick="@(() => ApproveReview(review))">
+                                                    @ApproveLabel(review)
+                                                </MudButton>
+                                                <MudButton Variant="Variant.Outlined"
+                                                           Color="Color.Error"
+                                                           Size="Size.Small"
+                                                           StartIcon="@Icons.Material.Filled.Cancel"
+                                                           Disabled="@_reviewLoading"
+                                                           Title="@DenyHint(review)"
+                                                           OnClick="@(() => DenyReview(review))">
+                                                    @DenyLabel(review)
+                                                </MudButton>
+                                            }
+                                        </MudStack>
+                                    </MudStack>
+                                </MudPaper>
+                            }
+                        </MudStack>
+                    </ChildContent>
+                </MudTabPanel>
+            }
+        </MudTabs>
+    }
+</MudPaper>

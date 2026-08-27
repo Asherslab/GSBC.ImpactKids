@@ -64,11 +64,6 @@ public partial class Multiple
         );
     }
 
-    private async Task SyncElvantoPeople()
-    {
-        await PersonService.SyncWithElvanto();
-    }
-
     private async Task CreatePerson() =>
         await DetailsComponentDialog.Open<PersonDetails>(DialogService, "Create Person", ModificationState.Creating);
 }
