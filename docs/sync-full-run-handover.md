@@ -169,11 +169,21 @@ asking for another `"new"`.
 move was dropped **with no audit row at all**. The config table that caused it no longer exists — a
 field's direction is on its descriptor.
 
-**Changing a descriptor's direction requires a matching migration, or the change does nothing and
-says nothing.**
+**No longer true since the config table was dropped:** changing a descriptor's direction used to
+require a matching migration or it did nothing and said nothing. The descriptor is now the only
+authority, so the one-line change is the whole change.
 
-`SchoolGradeId` and `FamilyGuardian` remain `InboundOnly` in both places. School grade is correct and
-intended — Elvanto owns those ids, and a created child therefore arrives in Elvanto without a grade.
+`SchoolGradeId` is now `Bidirectional` (2026-08-27) — see "School grade goes both ways" in
+`sync-feature.md`. A created child still arrives in Elvanto without a grade; the first update after
+that carries it.
+
+**Verified against the live API on 2026-08-27** on the dormant `test test` person
+(`318e89e3-…`), each write read back with `people/getInfo`: `school_grade` goes **under `fields`**
+and takes the **grade id**. See "School grade goes both ways" in `sync-feature.md` for the three
+findings and the failures behind each.
+
+`test test` is left holding grade `7`; it had no grade before. It cannot be put back via the API —
+nothing clears a school grade — so **clear it in the Elvanto UI** if the empty state matters.
 
 ---
 
@@ -189,6 +199,11 @@ intended — Elvanto owns those ids, and a created child therefore arrives in El
   same parameter. Both work.
 - Custom fields are `custom_<id>` nested under `fields`. `datepicker` and `textarea` take plain
   strings; `select` takes the option id as a plain string.
+- `school_grade` is a standard **optional people field**: it goes under `fields`, not at the top
+  level, and takes the grade **id** despite the docs saying "the name of the school grade" — a
+  numerically-named grade sent by name answers 500. It **cannot be cleared**: null is ignored, `""`
+  and `"0"` answer 500, and every "none" spelling is an invalid value. This is the one field where
+  the "empty string clears" rule below does not apply.
 - Mobile numbers are normalised by Elvanto on the way in (`0400 000 001` → `0400000001`). This is why
   the phone descriptor strips spacing before comparing.
 
