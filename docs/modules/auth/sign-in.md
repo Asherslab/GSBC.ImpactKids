@@ -3,10 +3,11 @@ title: Sign in — the cookie, the bearer token, and the local bypass
 kind: reference
 status: current
 module: auth
-verified: 2026-08-24
+verified: 2026-08-27
 code:
   - GSBC.ImpactKids.YARP
   - GSBC.ImpactKids.Grpc/Services/CustomClaimsTransformation.cs
+  - GSBC.ImpactKids.Grpc/Features/Attendance/PickupDisplayKeyServices
   - GSBC.ImpactKids.WASM/Authentication/BffAuthenticationStateProvider.cs
 ---
 
@@ -24,8 +25,13 @@ in and whose every call returns 401 — which reads as a broken app rather than 
 
 | Layer | Who checks it | What it is |
 |---|---|---|
-| Cookie | YARP, on routes with an `AuthorizationPolicy` | `__gsbc_yarp`, `SameSite=Strict`, `Secure`, `HttpOnly` (`Extensions/HostExtensions.cs:51`) |
+| Cookie | YARP, on routes with an `AuthorizationPolicy` | `__gsbc_yarp`, `SameSite=Strict`, `Secure`, `HttpOnly` (`Extensions/HostExtensions.cs`) |
 | Bearer | The gRPC service | An Auth0-signed JWT, attached by `AddBearerTokenToHeadersTransform` |
+
+There is a **third, much smaller thing** that is not a layer of this at all: `__gsbc_display`, a
+cookie in its own scheme that a wall display enrols with. It never carries a bearer token and never
+reaches a `gRPC/` route. It has its own section below; do not extend the leader session to cover a
+screen.
 
 The proxy routes (`appsettings.json`) decide which applies:
 
@@ -34,8 +40,12 @@ The proxy routes (`appsettings.json`) decide which applies:
 | `/gRPC/GSBC.ImpactKids.{service}/**` | `Default` | cookie required, bearer attached |
 | `/api/**` | `Default` | same |
 | `/public/GSBC.ImpactKids.Games.Display/**` | none | anonymous on purpose — the score wall cannot sign in. Aggregate scores only |
-| `/public/GSBC.ImpactKids.Attendance.Display/**` | none | anonymous on purpose — the pickup wall cannot sign in. Display names of children currently requested and not yet signed out, nothing else |
+| `/public/GSBC.ImpactKids.Attendance.Display/**` | `PickupDisplay` | anonymous *at the gRPC service* — no bearer is attached — but **not open**: the enrolment cookie is required. Display names of children currently requested and not yet signed out, nothing else |
 | `{**catch-all}` | none | the WASM app itself |
+
+**The two `public/` routes are not the same shape, and the difference is the point.** Aggregate
+scores may be read by anyone; a list of which named children are in a known building at a known hour
+may not. `public/` says "no Auth0 login is involved here", not "no credential is involved here".
 
 **`public/` is routed one named service at a time, never as a prefix.** Two services are listed
 above because two exist, not because the prefix is open. A `/public/{**catch-all}` match would
@@ -61,6 +71,93 @@ gets `index.html` with a 200. grpc-web then reports
 really an expired session. The client drives `/bff/login` itself.
 
 A 401 from `/bff/user` on an anonymous page is expected, not a fault.
+
+**The display scheme below answers the same way, for a sharper version of the same reason.** Its
+caller is grpc-web on a TV with nobody standing at it, so a 302 does not merely look like a
+serialisation bug — it reads as "Connecting…" on a wall, forever.
+
+## The pickup display key — how a screen with no login is still not public
+
+`/Display/Pickup` shows children's display names. The page route is **not** the control point and
+never can be: the `{**catch-all}` route serves the same `index.html` for every path and the Blazor
+router picks the page client side, so the bundle is public and always was. A key checked on the page
+route would look like security and be none. **The thing worth gating is the data call**,
+`public/GSBC.ImpactKids.Attendance.Display/**`, and that is where the policy sits.
+
+### Enrol on a query string, run on a cookie
+
+```
+TV bookmark ──► /bff/display-login?key=…  ──► sets __gsbc_display ──► 302 ──► /Display/Pickup
+                                                                                   │
+                                             WatchPickups ◄── cookie ──────────────┘
+```
+
+`WatchPickups` is a long-lived stream that reconnects all night. A key left in the query string is a
+credential written into proxy and CDN access logs on **every reconnect, forever**; a key spent once
+at enrolment appears there once. `DevAuthEndpoints` is the existing precedent for the shape — mint a
+session, redirect to a clean URL — and `DisplayAuthEndpoints` follows it, including stripping the key
+from the redirect. Unlike the dev bypass these routes are **not** environment-gated: a wall display
+is a production thing and there is no other way to set one up.
+
+The TV bookmarks the *keyed* URL, so a cookie lost to a browser restart or a wiped profile re-enrols
+itself with nobody involved. That is deliberate, and it is also the answer to the data-protection key
+ring being in memory: a proxy restart drops every cookie, and this one comes back on its own.
+
+### The scheme grants one thing
+
+`DisplayAuthOptions.SchemeName` is a **second** `AddCookie` beside the leader session, never a
+widening of it (`Extensions/HostExtensions.cs`). Two independent things stop it reaching anything
+else:
+
+- the `Default` policy on every `gRPC/` and `/api/` route names only the leader cookie scheme, and
+  the `PickupDisplay` policy names only the display scheme — neither satisfies the other;
+- `AddBearerTokenToHeadersTransform` is **not** attached on the `PickupDisplay` route, so nothing
+  this cookie carries can reach the gRPC service's `EnabledOnly` policy. That policy reads a claim
+  off a bearer token, and there is no bearer token.
+
+A signed-in leader therefore does not satisfy the pickup route either. The wall is opened from its
+setup link, by anybody or nobody, and that is the only way in.
+
+### Rotation is immediate and total
+
+The key lives in the database (`PickupDisplayKeys`, one row), not in config — "rotated on admin
+request" means somebody presses a button on `/Attendance/PickupDisplaySetup`, not that somebody
+redeploys. **Only a SHA-256 hash is stored**; the key itself comes back once, from the rotation that
+minted it, and is unrecoverable after that. Comparison is `CryptographicOperations.FixedTimeEquals`,
+and the key is never logged — not on success, not on failure, not in the redirect.
+
+The row's `Id` doubles as the key's **generation**. It rides on the cookie, and
+`OnValidatePrincipal` checks it against the current one on every request, so rotating does not merely
+stop new enrolments — every screen already enrolled falls to the unauthorised state and has to be
+re-opened from the new link. The proxy caches "which generation is current" for 30 seconds
+(`DisplayAuthOptions.GenerationCacheLifetime`), which is the real upper bound on "immediate", and
+falls back to the last answer that arrived if the gRPC service is briefly unreachable rather than
+signing every wall in the building out.
+
+The proxy asks the gRPC service over two cluster-internal endpoints,
+`internal/pickup-display-key/validate` and `.../generation`. **They have no proxy route, on purpose.**
+`validate` is a key oracle; the only thing stopping it being brute-forced from the internet is that
+the internet cannot reach it. Adding an `internal/` route to `appsettings.json` would undo that
+silently, exactly the way a `/public/{**catch-all}` would.
+
+### The key bounds discovery, and nothing bounds disclosure
+
+A key stops URL guessing, crawlers and a link idly shared. That is the whole of its job.
+
+It does **not** help against anyone who has ever held the URL — a volunteer with it in their phone
+history keeps it until somebody rotates. **There is no second control behind the key: no time
+window, no source restriction.** The key is it.
+
+A time-boxed response — serving names only around the service — was built and then **removed at the
+owner's instruction**, on the grounds that the TV and the enrolment link are under his sole control.
+That is a deliberate acceptance of the residual risk by the person holding it, recorded here so a
+later reader does not mistake the absence for an oversight and quietly add one back. If the link ever
+leaves that person's control, **rotating the key is the answer**, and rotation is immediate and total.
+
+A missing or stale cookie renders as readable words telling whoever walks past that the screen needs
+re-opening from its setup link, never as "Connecting…".
+
+`/bff/display-logout` drops the cookie on one screen without touching the key.
 
 ## Being enabled is a database fact, not an Auth0 one
 
@@ -128,6 +225,12 @@ is working exactly as designed.
 
 Verified on 2026-08-24: a dev session drives the authed pages end to end, with every proxied gRPC call
 returning 200 and `/bff/user` reporting `permissions: user:enabled`.
+
+**The pickup display key has not been driven in a running app.** Added 2026-08-27; it compiles and the
+reasoning above is checked against the code, but none of these has been seen happen: an enrolment that
+sets the cookie and lands on a clean URL, a `WatchPickups` call that a 401 reaches as a readable screen
+rather than "Connecting…", or a rotation dropping an enrolled screen.
+Treat this section as the design until somebody watches it work.
 
 **The closed gate is verified**, through the `GSBC.ImpactKids.AppHost: https PROD` run configuration on
 2026-08-24, with the whole stack up:

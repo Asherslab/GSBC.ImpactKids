@@ -103,6 +103,13 @@ collaborators. See [docs/work/2026-08-elvanto-sync-refactor.md](../docs/work/202
   - `GameDisplayService` — no attribute at all, routed under `public/` for the wall display, which
     cannot sign in. **Only aggregate scores may go through it** — no people, no medical detail.
     Adding a method here is a decision about what an unauthenticated screen can read.
+  - `AttendancePickupDisplayService` — no attribute either, routed under `public/` for the pickup
+    wall. It deliberately carries **people**, so it has its own narrower rule rather than sharing the
+    games one: a display name (first name plus last initial) and a time, for children currently
+    requested and not yet signed out, and nothing else. It is also the only `public/` route with an
+    `AuthorizationPolicy` on it — the screen enrols with a key, which is the whole of the control
+    here; there is deliberately no time window behind it. See
+    [docs/modules/auth/sign-in.md](../docs/modules/auth/sign-in.md).
 
   `EventingChannelsService` is a singleton helper, not a mapped gRPC service; it needs no policy.
 - `Policies.EnabledOnly` requires the claim `Enabled=true`, which `CustomClaimsTransformation` adds by
@@ -184,6 +191,31 @@ failing to start, not as a runtime error.
 Database models use `DateTimeOffset`, contracts use UTC `DateTime`, and `DateTimeConverter` in
 `Conversion/Converters.cs` bridges them. Keep new columns `DateTimeOffset` — it maps to `timestamptz`
 regardless of Npgsql's legacy-timestamp switch, which this repo deliberately never sets.
+
+**A `DateTimeOffset` you compare against in a query must have offset zero.** Npgsql refuses to write
+any other offset to a `timestamptz`:
+
+```
+Cannot write DateTimeOffset with Offset=10:00:00 to PostgreSQL type
+'timestamp with time zone', only offset 0 (UTC) is supported.
+```
+
+It **builds fine and throws at execution**, so it surfaces as a failed request rather than a
+compiler error — and on a wall display with nobody standing at it, as "Connecting…" forever.
+
+This bites exactly where the *logic* is correctly local. Working out "today" means the local day,
+because a Friday evening service here is already Saturday in UTC — but the bounds must be converted
+before they reach the query:
+
+```csharp
+DateTime       localToday = DateTime.Today;
+DateTimeOffset dayStart   = new DateTimeOffset(localToday, TimeZoneInfo.Local.GetUtcOffset(localToday))
+    .ToUniversalTime();          // same instant, offset 0 - without this it throws
+```
+
+Everywhere else in this project reaches offset zero via
+`new DateTimeOffset(DateTime.SpecifyKind(value, DateTimeKind.Utc))`. Use that when the value is
+already UTC, and `ToUniversalTime()` when you deliberately started from a local wall-clock day.
 
 # Converters
 

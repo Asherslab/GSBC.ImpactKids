@@ -118,6 +118,9 @@ builder.Services.AddAuthenticatedGrpcClient<IMemoryVersesBibleVersesRelationship
 builder.Services.AddAuthenticatedGrpcClient<IMemoryVerseListsService>();
 builder.Services.AddAuthenticatedGrpcClient<IMemorisationEntriesService>();
 builder.Services.AddAuthenticatedGrpcClient<IAttendanceRecordService>();
+// The admin end of the pickup wall's key. Authorized - the anonymous client above reads
+// the wall, this one hands out the credential for it.
+builder.Services.AddAuthenticatedGrpcClient<IPickupDisplayKeyService>();
 builder.Services.AddAuthenticatedGrpcClient<IAttendanceItemTypeService>();
 builder.Services.AddAuthenticatedGrpcClient<IAttendanceItemRecordService>();
 builder.Services.AddAuthenticatedGrpcClient<IGamePointRecordService>();

@@ -357,6 +357,15 @@ before concluding anything about the data.
 Ask the user to open those, or verify the markup another way — do not claim a dialog works
 because it compiled.
 
+**On a MudButton, click the coordinate, not the `ref`.** `computer left_click` with a `ref`
+from `read_page`/`find` reports "Clicked on element ref_N" and **nothing happens** — no
+error, no change. The same button clicked at its screenshot coordinates fires normally. This
+cost a confused minute on `ROTATE THE KEY`, where the success path is a page that rewrites
+itself, so "no visible change" read as a broken handler rather than a click that never
+landed. The reported success is about dispatching, not about Blazor receiving it: **verify
+the effect** (re-read the page, or check the row in Postgres), never the tool's own
+acknowledgement.
+
 ## Scoped CSS does not reach MudBlazor components
 
 Blazor CSS isolation only stamps the `b-<hash>` attribute on elements in the component's

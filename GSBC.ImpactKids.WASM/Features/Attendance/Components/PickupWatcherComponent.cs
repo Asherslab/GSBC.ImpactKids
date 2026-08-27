@@ -1,3 +1,4 @@
+using Grpc.Core;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Attendance;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Features.Attendance;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.Attendance;
@@ -32,6 +33,18 @@ public abstract class PickupWatcherComponent : ComponentBase, IAsyncDisposable
     public required IAttendancePickupDisplayService PickupService { get; set; }
 
     protected PickupDisplayResponse? Pickups { get; private set; }
+
+    /// <summary>
+    /// The screen is not enrolled, or was enrolled on a key that has since been rotated.
+    /// <para>
+    /// The proxy answers 401 rather than redirecting, precisely so this is distinguishable -
+    /// a 302 would fall through to the wasm catch-all and come back as index.html with a
+    /// 200, which grpc-web reports as a content-type error indistinguishable from a
+    /// serialisation bug. A wall must be able to say "I need setting up again" instead of
+    /// sitting on "Connecting..." until somebody notices.
+    /// </para>
+    /// </summary>
+    protected bool Unauthorised { get; private set; }
 
     private CancellationTokenSource? _watchTokenSource;
 
@@ -77,6 +90,7 @@ public abstract class PickupWatcherComponent : ComponentBase, IAsyncDisposable
                         {
                             OnPickupsReceived(pickups);
                             Pickups = pickups;
+                            Unauthorised = false;
 
                             StateHasChanged();
                         }
@@ -86,6 +100,21 @@ public abstract class PickupWatcherComponent : ComponentBase, IAsyncDisposable
             catch (OperationCanceledException) when (token.IsCancellationRequested)
             {
                 return;
+            }
+            catch (RpcException exception)
+                when (exception.StatusCode is StatusCode.Unauthenticated or StatusCode.PermissionDenied)
+            {
+                // The enrolment cookie is missing or was minted against a key that has since
+                // been rotated. Say so on the wall rather than retrying silently - nobody is
+                // standing here to read a console. Retrying continues underneath anyway, so
+                // a proxy that was merely having a bad moment heals itself.
+                await InvokeAsync(() =>
+                    {
+                        Unauthorised = true;
+
+                        StateHasChanged();
+                    }
+                );
             }
             catch
             {

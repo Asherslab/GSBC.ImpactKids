@@ -33,6 +33,13 @@ public class AttendancePickupDisplayService(
     /// </summary>
     private static readonly TimeSpan KeepAlive = TimeSpan.FromSeconds(30);
 
+    // There is deliberately NO time window on this response. One was built and removed at
+    // the owner's instruction: the TV and the enrolment link are under his sole control, so
+    // the residual risk a window would manage - a leaked link still answering months later -
+    // is one he has accepted knowingly. The enrolment key is the whole of the control here,
+    // and rotating it is the answer if the link ever leaves his hands. Do not re-add a
+    // window as a tidy-up; it is absent on purpose.
+
     public async Task<PickupDisplayResponse> GetPickups(PickupDisplayRequest r, CallContext c = default)
         => await BuildPickupsAsync(db, r.ServiceId, c.CancellationToken);
 
@@ -174,11 +181,20 @@ public class AttendancePickupDisplayService(
                 .FirstOrDefaultAsync(x => x.Id == serviceId, token);
 
         // No id given, so the display is on a fixed URL - fall back to today, then to the
-        // most recent service, matching how the attendance tool picks one. Local, not UTC:
-        // the tool compares Service.LocalDate against DateTime.Today, and a Friday night
-        // service here is already Saturday in UTC.
-        DateTimeOffset todayStart = new(DateTime.Today, TimeZoneInfo.Local.GetUtcOffset(DateTime.Today));
-        DateTimeOffset todayEnd   = todayStart.AddDays(1);
+        // most recent service, matching how the attendance tool picks one. The DAY is the
+        // local one: the tool compares Service.LocalDate against DateTime.Today, and a
+        // Friday night service here is already Saturday in UTC.
+        //
+        // The bounds are then converted to UTC before they reach the query. Npgsql refuses
+        // to write a DateTimeOffset whose offset is anything but zero to a timestamptz -
+        // "only offset 0 (UTC) is supported" - so passing the +10:00 values straight in
+        // throws at execution, which surfaces on the wall as a 503 and "Connecting..."
+        // forever. ToUniversalTime keeps the same instant; only the representation changes,
+        // so the local day boundaries are preserved exactly.
+        DateTime       localToday = DateTime.Today;
+        DateTimeOffset todayStart = new DateTimeOffset(localToday, TimeZoneInfo.Local.GetUtcOffset(localToday))
+            .ToUniversalTime();
+        DateTimeOffset todayEnd = todayStart.AddDays(1);
 
         DbService? today = await db.Services
             .AsNoTracking()
