@@ -33,6 +33,6 @@ public partial class ElvantoService
         ElvantoGetPersonInfoResponse? resp = await SendMessage<ElvantoGetPersonInfoRequest, ElvantoGetPersonInfoResponse>(
             new ElvantoGetPersonInfoRequest { Id = elvantoId }, token);
 
-        return resp?.Person;
+        return resp?.Person?.FirstOrDefault();
     }
 }

@@ -25,6 +25,18 @@ public class ElvantoGetPersonInfoRequest : IRequestMessage
 
 public class ElvantoGetPersonInfoResponse
 {
+    /// <summary>
+    /// A <b>list</b>, because that is what Elvanto sends: <c>people/getInfo</c> answers with
+    /// <c>"person": [ { ... } ]</c> even for a single id, exactly as <c>people/getAll</c> does.
+    ///
+    /// This was declared as a single <c>ElvantoPerson?</c>, and the mismatch made every call return
+    /// null. System.Text.Json threw on <c>$.person</c>, the transport's catch-all logged a warning
+    /// and returned default, and the caller read that as "Elvanto has no such person" off a clean
+    /// HTTP 200 — a parse failure wearing the costume of an empty result. It cost the family
+    /// read-back on <c>people/edit</c>, which is the only source of a newly minted household's id,
+    /// and it is why the person- and family-scoped syncs silently processed nobody before they were
+    /// removed.
+    /// </summary>
     [JsonPropertyName("person")]
-    public ElvantoPerson? Person { get; set; }
+    public List<ElvantoPerson>? Person { get; set; }
 }
