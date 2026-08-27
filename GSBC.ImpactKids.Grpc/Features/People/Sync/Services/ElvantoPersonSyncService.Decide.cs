@@ -4,7 +4,6 @@ using GSBC.ImpactKids.Grpc.Data.Models.Sync.Enums;
 using GSBC.ImpactKids.Grpc.Features.Elvanto.ElvantoServices.Models;
 using GSBC.ImpactKids.Grpc.Features.People.Sync.Models;
 using GSBC.ImpactKids.Grpc.Features.People.Sync;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People.Sync;
 using Microsoft.EntityFrameworkCore;
 using GrpcReviewStatus = GSBC.ImpactKids.Grpc.Data.Models.Sync.Enums.ManualReviewStatus;
 
@@ -20,7 +19,7 @@ public partial class ElvantoPersonSyncService
     /// that two sides already say the same thing changes neither of them. Everything that needs an
     /// action becomes a plan row and stays outstanding until that action lands.
     /// </summary>
-    private async Task<SyncResult> DecideAsync(SyncWithElvantoRequest request, CancellationToken token)
+    private async Task<SyncResult> DecideAsync(CancellationToken token)
     {
         Guid            operationId = Guid.NewGuid();
         SyncAuditLogger audit       = new(db);
@@ -28,17 +27,11 @@ public partial class ElvantoPersonSyncService
         DbSyncOperation operation = new()
         {
             Id            = operationId,
-            Mode          = MapMode(request.Mode),
-            Scope         = MapScope(request.Scope),
-            PersonId      = request.Scope == ElvantoSyncScope.Person ? request.PersonId : null,
-            FamilyId      = request.Scope == ElvantoSyncScope.Family ? request.FamilyId : null,
             StartedAt     = DateTimeOffset.UtcNow,
             PlanExpiresAt = DateTimeOffset.UtcNow.AddHours(elvantoConfig.PlanExpiryHours)
         };
 
-        logger.LogInformation(
-            "Sync operation {OperationId} deciding | Mode={Mode} Scope={Scope}",
-            operationId, request.Mode, request.Scope);
+        logger.LogInformation("Sync operation {OperationId} deciding", operationId);
 
         // Written before anything references it: the plan rows carry a foreign key to it, and a run
         // that dies mid-decide should still leave a row saying it started.
@@ -47,11 +40,11 @@ public partial class ElvantoPersonSyncService
 
         try
         {
-            (SyncWorkingSet? set, string? refusal) = await LoadWorkingSetAsync(operationId, request, token);
+            (SyncWorkingSet? set, string? refusal) = await LoadWorkingSetAsync(operationId, token);
             if (set is null)
             {
                 logger.LogError("Sync {OperationId}: {Reason}", operationId, refusal);
-                return await FailAsync(operation, audit, refusal!, request.Mode, token);
+                return await FailAsync(operation, audit, refusal!, token);
             }
 
             SyncCounters              counters          = new();
@@ -88,14 +81,14 @@ public partial class ElvantoPersonSyncService
 
                     if (match is null)
                     {
-                        // Out of scope, and silently so on purpose: a scoped run pulls the whole
-                        // Elvanto roll so the matcher can work, and every unmatched row in it is
-                        // somebody this run was never asked about. Auditing them would write ~1718
-                        // rows for a sync of one person.
-                        if (!set.MayCreateLocalPeople) continue;
-
                         // New in Elvanto. Nothing is created now - the plan names the Elvanto record
-                        // and Apply makes the person, so a dry run and a full run walk one path.
+                        // and Apply makes the person, so deciding and executing walk one path.
+                        //
+                        // There was a MayCreateLocalPeople guard here, false for any scoped run: a
+                        // scoped run pulled the whole Elvanto roll so the matcher could work while
+                        // loading one person's worth of app side, so every one of the other ~1718
+                        // unmatched rows read as somebody to create. Scope is gone, both sides are
+                        // always whole, and an unmatched Elvanto person is now unambiguously new.
                         plan.Add(Planned(operationId, PlannedChangeKind.CreateLocally,
                             personId: null, elvantoId: elv.Id, fieldName: null,
                             observedElvantoHash: HashElvantoPerson(elv),
@@ -188,7 +181,7 @@ public partial class ElvantoPersonSyncService
                 await PlanFieldsAsync(operationId, elv, appPerson, set, plan, counters, audit, token);
             }
 
-            int archived = DecideArchives(operationId, request, set, plan);
+            int archived = DecideArchives(operationId, set, plan);
             manualReview += await DecideCreatesAsync(
                 operationId, set, plan, counters, audit,
                 reviewCandidateIds, deniedPairIds, awaitingReviewIds, newPendingReviews, token);
@@ -237,7 +230,6 @@ public partial class ElvantoPersonSyncService
             return new SyncResult
             {
                 OperationId        = operationId,
-                Mode               = request.Mode,
                 Success            = true,
                 PeopleProcessed    = set.ElvantoPeople.Count,
                 InboundPeople      = counters.InboundPeople,
@@ -257,22 +249,24 @@ public partial class ElvantoPersonSyncService
         catch (Exception ex)
         {
             logger.LogError(ex, "Sync operation {OperationId} failed while deciding", operationId);
-            return await FailAsync(operation, audit, ex.Message, request.Mode, token);
+            return await FailAsync(operation, audit, ex.Message, token);
         }
     }
 
     /// <summary>
-    /// People whose Elvanto record is gone. Only meaningful at full scope — a scoped fetch returns a
-    /// subset by design, and reading that as deletion is how a dry run once archived 726 children.
+    /// People whose Elvanto record is gone.
+    ///
+    /// This is only safe against a whole-roll read, and once guarded itself with a scope check: a
+    /// scoped fetch returned a subset by design, and reading that subset as deletion is how a run
+    /// once archived 726 children. Scope is gone, so the fetch is always everyone and the guard has
+    /// nothing left to guard - the coverage floor in LoadWorkingSet is what still stands between a
+    /// short Elvanto read and a mass archive.
     /// </summary>
     private int DecideArchives(
         Guid                      operationId,
-        SyncWithElvantoRequest    request,
         SyncWorkingSet            set,
         List<DbSyncPlannedChange> plan)
     {
-        if (request.Scope != ElvantoSyncScope.All) return 0;
-
         HashSet<string> fetched = set.ElvantoPeople
             .Where(e => e.Id is not null)
             .Select(e => e.Id!)
@@ -337,7 +331,6 @@ public partial class ElvantoPersonSyncService
         DbSyncOperation   operation,
         SyncAuditLogger   audit,
         string            reason,
-        ElvantoSyncMode   mode,
         CancellationToken token)
     {
         db.ChangeTracker.Clear();
@@ -359,6 +352,6 @@ public partial class ElvantoPersonSyncService
             logger.LogWarning(flushEx, "Sync {OperationId}: failed to persist audit logs after failure", operation.Id);
         }
 
-        return SyncResult.Failed(operation.Id, mode, reason);
+        return SyncResult.Failed(operation.Id, reason);
     }
 }

@@ -5,7 +5,6 @@ using GSBC.ImpactKids.Grpc.Features.Elvanto.ElvantoServices;
 using GSBC.ImpactKids.Grpc.Features.Elvanto.ElvantoServices.Models;
 using GSBC.ImpactKids.Grpc.Features.People.Sync.Interfaces;
 using GSBC.ImpactKids.Grpc.Features.People.Sync.Models;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People.Sync;
 using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ImpactKids.Grpc.Features.People.Sync.Services;
@@ -20,22 +19,20 @@ public partial class ElvantoPersonSyncService
     /// first: an item whose reading has moved is marked <c>Stale</c>, skipped and reported, so
     /// nothing is clobbered on the strength of a stale observation.
     /// </summary>
-    private async Task<SyncResult> ApplyPlanAsync(Guid operationId, SyncResult? decided, CancellationToken token)
+    public async Task<SyncResult> ApplyPlanAsync(Guid operationId, CancellationToken token = default)
     {
         DbSyncOperation? operation = await db.SyncOperations
             .FirstOrDefaultAsync(x => x.Id == operationId, token);
 
         if (operation is null)
-            return SyncResult.Failed(operationId, ElvantoSyncMode.Full, "Sync operation not found");
-
-        ElvantoSyncMode mode = UnmapMode(operation.Mode);
+            return SyncResult.Failed(operationId, "Sync operation not found");
 
         // Expiry is a backstop against a failure the per-item check cannot catch. A stale item is one
         // whose values moved; expiry guards against the SET of items being wrong - people created,
         // deleted or merged in Elvanto since Decide ran, which no per-item check can see because
         // those items are not in the plan. The whole plan is refused, never part of it.
         if (operation.PlanExpiresAt is { } expiry && DateTimeOffset.UtcNow > expiry)
-            return SyncResult.Failed(operationId, mode,
+            return SyncResult.Failed(operationId,
                 $"This plan expired at {expiry:u}. Run a new sync — the roll may have moved since it was decided.");
 
         List<DbSyncPlannedChange> plan = await db.PlannedChanges
@@ -43,15 +40,7 @@ public partial class ElvantoPersonSyncService
             .ToListAsync(token);
 
         if (plan.Count == 0)
-            return Merge(decided, operationId, mode, new SyncCounters(), 0, 0, 0);
-
-        SyncWithElvantoRequest request = new()
-        {
-            Mode     = mode,
-            Scope    = UnmapScope(operation.Scope),
-            PersonId = operation.PersonId,
-            FamilyId = operation.FamilyId
-        };
+            return Applied(operationId, new SyncCounters(), 0, 0, 0);
 
         SyncAuditLogger audit = new(db);
 
@@ -59,11 +48,11 @@ public partial class ElvantoPersonSyncService
         {
             using IDisposable _ = syncContext.SetSource(SyncSource.Elvanto);
 
-            (SyncWorkingSet? set, string? refusal) = await LoadWorkingSetAsync(operationId, request, token);
+            (SyncWorkingSet? set, string? refusal) = await LoadWorkingSetAsync(operationId, token);
             if (set is null)
             {
                 logger.LogError("Sync {OperationId}: apply refused — {Reason}", operationId, refusal);
-                return SyncResult.Failed(operationId, mode, refusal!);
+                return SyncResult.Failed(operationId, refusal!);
             }
 
             SyncCounters counters = new();
@@ -235,10 +224,10 @@ public partial class ElvantoPersonSyncService
             // sends are reconciled in the short save at the end.
 
             counters.OutboundFields += await ApplyOutboundFieldsAsync(
-                operationId, plan, appById, set, audit, mode, token);
+                operationId, plan, appById, set, audit, token);
 
             counters.OutboundPeople += await ApplyCreatesInElvantoAsync(
-                operationId, plan, appById, set, audit, mode, token);
+                operationId, plan, appById, set, audit, token);
 
             await db.SaveChangesAsync(token);
 
@@ -262,7 +251,7 @@ public partial class ElvantoPersonSyncService
                 operationId, plan.Count, stale, counters.InboundPeople, counters.InboundFields,
                 counters.OutboundPeople, counters.OutboundFields, autoLinked, archived);
 
-            return Merge(decided, operationId, mode, counters, autoLinked, archived, stale, plan.Count);
+            return Applied(operationId, counters, autoLinked, archived, stale, plan.Count);
         }
         catch (Exception ex)
         {
@@ -287,7 +276,7 @@ public partial class ElvantoPersonSyncService
                     operationId);
             }
 
-            return SyncResult.Failed(operationId, mode, ex.Message);
+            return SyncResult.Failed(operationId, ex.Message);
         }
     }
 
@@ -301,7 +290,6 @@ public partial class ElvantoPersonSyncService
         Dictionary<Guid, DbPerson> appById,
         SyncWorkingSet             set,
         SyncAuditLogger            audit,
-        ElvantoSyncMode            mode,
         CancellationToken          token)
     {
         int pushed = 0;
@@ -318,11 +306,10 @@ public partial class ElvantoPersonSyncService
                 continue;
             }
 
-            // AppOnly means local changes only. Named as a skip rather than dropped, so the plan
-            // still shows the work and the reason it did not go.
-            bool mayPush = mode != ElvantoSyncMode.AppOnly
-                           && elvantoService.UpdatesEnabled
-                           && elvantoService.MayUpdate(person.Id);
+            // Named as a skip rather than dropped, so the plan still shows the work and the reason
+            // it did not go. An AppOnly mode used to be one of these conditions; the configuration
+            // switches below say the same thing and cannot be picked per run by mistake.
+            bool mayPush = elvantoService.UpdatesEnabled && elvantoService.MayUpdate(person.Id);
 
             ElvantoUpdatePersonRequest request = new() { Id = person.ElvantoId };
             List<(DbSyncPlannedChange Item, IFieldSyncDescriptor Descriptor, string? Settled)> carried = [];
@@ -353,16 +340,15 @@ public partial class ElvantoPersonSyncService
                 // outstanding and is offered again next run, instead of being marked seen by the run
                 // that reported it as "would push".
                 logger.LogInformation(
-                    "Sync {OperationId}: would send outbound update for person {PersonId} ({FirstName} {LastName}) "
-                    + "(mode={Mode}). Payload: {Payload}",
-                    operationId, person.Id, person.FirstName, person.LastName, mode,
+                    "Sync {OperationId}: would send outbound update for person {PersonId} ({FirstName} {LastName}). "
+                    + "Payload: {Payload}",
+                    operationId, person.Id, person.FirstName, person.LastName,
                     ElvantoService.DescribePayload(request));
 
-                // Named by what actually stopped it, not by the mode the plan happened to be decided
-                // in. An Execute of a plan a dry run produced is not itself a dry run, and a row
-                // saying "WouldPush:DryRun" for it is the same kind of tense-lie the audit trail is
-                // being cleaned of.
-                string suppression = SuppressionReason(mode, person.Id, elvantoService.UpdatesEnabled);
+                // Named by whichever write switch actually stopped it. There is no run mode left to
+                // blame it on, which is the point: "WouldPush:DryRun" was a tense-lie about a run
+                // that had already been decided, and the switches say something a person can act on.
+                string suppression = SuppressionReason(person.Id, elvantoService.UpdatesEnabled);
 
                 foreach ((DbSyncPlannedChange item, _, _) in carried)
                 {
@@ -420,7 +406,6 @@ public partial class ElvantoPersonSyncService
         Dictionary<Guid, DbPerson> appById,
         SyncWorkingSet             set,
         SyncAuditLogger            audit,
-        ElvantoSyncMode            mode,
         CancellationToken          token)
     {
         int created = 0;
@@ -461,11 +446,9 @@ public partial class ElvantoPersonSyncService
                 continue;
             }
 
-            if (mode == ElvantoSyncMode.AppOnly || !elvantoService.CreatesEnabled)
+            if (!elvantoService.CreatesEnabled)
             {
-                string suppression = mode == ElvantoSyncMode.AppOnly
-                    ? "AppOnly run"
-                    : "Elvanto:AllowCreates=false";
+                const string suppression = "Elvanto:AllowCreates=false";
 
                 MarkSkipped(item, suppression);
                 await audit.Log(operationId, local.Id, SyncEventType.WouldCreateInElvanto,
@@ -553,9 +536,8 @@ public partial class ElvantoPersonSyncService
     /// are layered, so which one refused is the difference between "turn on AllowUpdates" and "this
     /// person is not on the allow list".
     /// </summary>
-    private string SuppressionReason(ElvantoSyncMode mode, Guid personId, bool updatesEnabled)
+    private string SuppressionReason(Guid personId, bool updatesEnabled)
     {
-        if (mode == ElvantoSyncMode.AppOnly)          return "AppOnly run";
         if (!elvantoService.WritesEnabled)            return "Elvanto:AllowWrites=false";
         if (!updatesEnabled)                          return "Elvanto:AllowUpdates=false";
         if (!elvantoService.MayUpdate(personId))      return "Not in Elvanto:AllowedUpdatePersonIds";
@@ -586,13 +568,16 @@ public partial class ElvantoPersonSyncService
     }
 
     /// <summary>
-    /// A full run is Decide then Apply, and the person reading the numbers wants one set. The
-    /// divergences and reviews belong to Decide; everything else is what Apply actually did.
+    /// What this Execute did, and only that.
+    ///
+    /// This used to merge in the Decide result, because a full run was Decide-then-Apply in one call
+    /// and the person reading the numbers wanted one set. There is no such call now: an Execute
+    /// always runs against a plan decided earlier, so the counts Decide owns - divergences,
+    /// conflicts, reviews - are read from that operation's own row and are deliberately not restated
+    /// here. They were already reported as zero on every Execute; this stops that being a surprise.
     /// </summary>
-    private static SyncResult Merge(
-        SyncResult?  decided,
+    private static SyncResult Applied(
         Guid         operationId,
-        ElvantoSyncMode mode,
         SyncCounters counters,
         int          autoLinked,
         int          archived,
@@ -600,21 +585,18 @@ public partial class ElvantoPersonSyncService
         int          planned = 0) => new()
     {
         OperationId        = operationId,
-        Mode               = mode,
         Success            = true,
-        PeopleProcessed    = decided?.PeopleProcessed ?? 0,
+        PeopleProcessed    = 0,
         InboundPeople      = counters.InboundPeople,
         InboundFields      = counters.InboundFields,
         OutboundPeople     = counters.OutboundPeople,
         OutboundFields     = counters.OutboundFields,
-        Conflicts          = decided?.Conflicts ?? 0,
+        Conflicts          = 0,
         AutoLinked         = autoLinked,
-        ManualReviewQueued = decided?.ManualReviewQueued ?? 0,
+        ManualReviewQueued = 0,
         Archived           = archived,
-        Diverged           = decided?.Diverged ?? 0,
+        Diverged           = 0,
         PlannedChanges     = planned,
-        StaleItems         = stale,
-        ManualReviewItems  = decided?.ManualReviewItems ?? [],
-        AuditLog           = decided?.AuditLog ?? []
+        StaleItems         = stale
     };
 }

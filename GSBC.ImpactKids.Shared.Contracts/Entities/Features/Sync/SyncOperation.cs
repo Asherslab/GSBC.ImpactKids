@@ -3,11 +3,7 @@ namespace GSBC.ImpactKids.Shared.Contracts.Entities.Features.Sync;
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
 public record SyncOperation : IIdentifiable
 {
-    public required Guid      Id       { get; init; }
-    public required SyncMode  Mode     { get; init; }
-    public required SyncScope Scope    { get; init; }
-    public          Guid?     PersonId { get; init; }
-    public          Guid?     FamilyId { get; init; }
+    public required Guid Id { get; init; }
 
     public required DateTime StartedAt { get; init; }
 
@@ -34,22 +30,6 @@ public record SyncOperation : IIdentifiable
     [ProtoIgnore]
     public bool PlanIsExecutable =>
         PendingPlanItems > 0 && (PlanExpiresAt is null || PlanExpiresAt > DateTime.UtcNow);
-}
-
-[ProtoContract]
-public enum SyncMode
-{
-    Full    = 0,
-    AppOnly = 1,
-    DryRun  = 2
-}
-
-[ProtoContract]
-public enum SyncScope
-{
-    All    = 0,
-    Person = 1,
-    Family = 2
 }
 
 [ProtoContract]

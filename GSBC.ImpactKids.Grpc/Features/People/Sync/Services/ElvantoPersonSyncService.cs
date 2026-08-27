@@ -3,7 +3,6 @@ using GSBC.ImpactKids.Grpc.Features.Elvanto.ElvantoServices;
 using GSBC.ImpactKids.Grpc.Features.Elvanto.ElvantoServices.Models;
 using GSBC.ImpactKids.Grpc.Features.People.Sync.Interfaces;
 using GSBC.ImpactKids.Grpc.Features.People.Sync.Models;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People.Sync;
 
 namespace GSBC.ImpactKids.Grpc.Features.People.Sync.Services;
 
@@ -15,12 +14,17 @@ namespace GSBC.ImpactKids.Grpc.Features.People.Sync.Services;
 /// Elvanto. <b>Apply</b> executes a plan — re-reading both sides first and refusing any item whose
 /// reading has moved.
 ///
-/// The three modes stop being three code paths and become two calls: a dry run is Decide and stop, a
-/// full run is Decide and then immediately Apply, and Execute applies a plan a person has read. That
-/// last one is the point. Full and DryRun used to walk <i>different</i> create paths, so a dry run
-/// was a plan preview rather than a rehearsal — it structurally could not exercise SaveChanges, the
-/// change interceptor, the payload builder or the failure branch. "Apply exactly what was shown" is
-/// not a meaningful promise until both walk the same code.
+/// There is no mode. A run decides, and a person then executes the plan they have read - two calls,
+/// always in that order, never one that does both behind a dropdown. Full / AppOnly / DryRun were
+/// three names for how much of Apply to skip, and the honest version of that question is "has anyone
+/// looked at the plan yet?", which a separate Execute answers by existing. AppOnly survives as
+/// configuration: an Execute with writes off applies the inbound half and records every outbound as
+/// suppressed.
+///
+/// Deciding and applying were once <i>different</i> create paths, so a preview structurally could not
+/// exercise SaveChanges, the change interceptor, the payload builder or the failure branch. "Apply
+/// exactly what was shown" is not a meaningful promise until both walk the same code, and now only
+/// one path exists to walk.
 /// </summary>
 public partial class ElvantoPersonSyncService(
     GsbcDbContext                     db,
@@ -36,29 +40,17 @@ public partial class ElvantoPersonSyncService(
     private readonly IReadOnlyList<IFieldSyncDescriptor> _descriptors = descriptors.ToList();
 
     /// <summary>
-    /// How much of the linked roll Elvanto must return before a full-scope sync is willing to
-    /// archive anything. People genuinely leave, so this is not 100%, but a real week's
+    /// How much of the linked roll Elvanto must return before a run is willing to archive anything. People genuinely leave, so this is not 100%, but a real week's
     /// departures are a handful out of seventeen hundred - not hundreds.
     /// </summary>
     private const double MinimumElvantoCoverage = 0.9;
 
-    public async Task<SyncResult> SyncAsync(
-        SyncWithElvantoRequest request,
-        CancellationToken      token = default
-    )
-    {
-        SyncResult decided = await DecideAsync(request, token);
-
-        // A dry run stops here, and now genuinely is one: nothing in People was touched, so the
-        // audit trail no longer claims local writes in the past tense that never happened.
-        if (!decided.Success || request.Mode == ElvantoSyncMode.DryRun)
-            return decided;
-
-        return await ApplyPlanAsync(decided.OperationId, decided, token);
-    }
-
-    public Task<SyncResult> ApplyPlanAsync(Guid operationId, CancellationToken token = default) =>
-        ApplyPlanAsync(operationId, decided: null, token);
+    /// <summary>
+    /// Decides a plan and stops. Nothing in <c>People</c> is touched and nothing is sent to Elvanto,
+    /// so the audit trail cannot claim a write in the past tense that never happened. Making it
+    /// happen is <see cref="ApplyPlanAsync(Guid, CancellationToken)"/>.
+    /// </summary>
+    public Task<SyncResult> SyncAsync(CancellationToken token = default) => DecideAsync(token);
 
     private sealed class SyncCounters
     {

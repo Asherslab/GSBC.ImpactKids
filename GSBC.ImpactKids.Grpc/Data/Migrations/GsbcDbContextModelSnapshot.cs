@@ -825,22 +825,8 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.Property<string>("FailureReason")
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("FamilyId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Mode")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid?>("PersonId")
-                        .HasColumnType("uuid");
-
                     b.Property<DateTimeOffset?>("PlanExpiresAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Scope")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<DateTimeOffset>("StartedAt")
                         .HasColumnType("timestamp with time zone");
@@ -850,9 +836,7 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PersonId");
-
-                    b.HasIndex("Scope", "StartedAt");
+                    b.HasIndex("StartedAt");
 
                     b.ToTable("SyncOperations");
                 });
@@ -1286,15 +1270,6 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("SyncOperation");
-                });
-
-            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Sync.DbSyncOperation", b =>
-                {
-                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.People.DbPerson", "Person")
-                        .WithMany()
-                        .HasForeignKey("PersonId");
-
-                    b.Navigation("Person");
                 });
 
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Sync.DbSyncPendingReview", b =>

@@ -8,7 +8,6 @@ public class SyncResponse : ISuccessResponse, IErrorResponse
     public required bool    Success             { get; init; }
     public          string? Error               { get; init; }
     public required string  OperationId         { get; init; }
-    public required string  Mode                { get; init; }
     public required int     PeopleProcessed     { get; init; }
     public required int     InboundPeople       { get; init; }
     public required int     InboundFields       { get; init; }

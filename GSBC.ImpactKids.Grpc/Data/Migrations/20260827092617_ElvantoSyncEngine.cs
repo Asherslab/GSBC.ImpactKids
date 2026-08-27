@@ -18,6 +18,21 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                 nullable: true);
 
             migrationBuilder.CreateTable(
+                name: "ElvantoFamilyLinks",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    LocalFamilyId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ElvantoFamilyId = table.Column<string>(type: "text", nullable: false),
+                    Source = table.Column<string>(type: "text", nullable: false),
+                    LinkedAtUtc = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ElvantoFamilyLinks", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ElvantoFieldSnapshots",
                 columns: table => new
                 {
@@ -58,10 +73,6 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Mode = table.Column<string>(type: "text", nullable: false),
-                    Scope = table.Column<string>(type: "text", nullable: false),
-                    PersonId = table.Column<Guid>(type: "uuid", nullable: true),
-                    FamilyId = table.Column<Guid>(type: "uuid", nullable: true),
                     StartedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     CompletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     Status = table.Column<string>(type: "text", nullable: true),
@@ -71,11 +82,6 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_SyncOperations", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_SyncOperations_People_PersonId",
-                        column: x => x.PersonId,
-                        principalTable: "People",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -174,6 +180,18 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_ElvantoFamilyLinks_ElvantoFamilyId",
+                table: "ElvantoFamilyLinks",
+                column: "ElvantoFamilyId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ElvantoFamilyLinks_LocalFamilyId",
+                table: "ElvantoFamilyLinks",
+                column: "LocalFamilyId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ElvantoFieldSnapshots_EntityType_EntityId_FieldName",
                 table: "ElvantoFieldSnapshots",
                 columns: new[] { "EntityType", "EntityId", "FieldName" },
@@ -216,19 +234,17 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                 columns: new[] { "SyncOperationId", "OccurredAt" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_SyncOperations_PersonId",
+                name: "IX_SyncOperations_StartedAt",
                 table: "SyncOperations",
-                column: "PersonId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SyncOperations_Scope_StartedAt",
-                table: "SyncOperations",
-                columns: new[] { "Scope", "StartedAt" });
+                column: "StartedAt");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "ElvantoFamilyLinks");
+
             migrationBuilder.DropTable(
                 name: "ElvantoFieldSnapshots");
 

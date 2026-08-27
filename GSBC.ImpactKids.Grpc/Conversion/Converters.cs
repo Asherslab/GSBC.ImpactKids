@@ -209,7 +209,6 @@ public partial class SyncOperationConverter(
 
     [MapperIgnoreSource(nameof(DbSyncOperation.AuditLogs))]
     [MapperIgnoreSource(nameof(DbSyncOperation.PlannedChanges))]
-    [MapperIgnoreSource(nameof(DbSyncOperation.Person))]
     // Not a column: the read fills it in, because "does this operation still have work waiting?" is
     // the whole question the Execute button asks.
     [MapperIgnoreTarget(nameof(SyncOperation.PendingPlanItems))]
@@ -268,7 +267,6 @@ public class SyncResultConverter : IConverter<SyncResult, SyncResponse>
         Success = result.Success,
         Error = result.Error,
         OperationId = result.OperationId.ToString(),
-        Mode = result.Mode.ToString(),
         PeopleProcessed = result.PeopleProcessed,
         InboundPeople = result.InboundPeople,
         InboundFields = result.InboundFields,

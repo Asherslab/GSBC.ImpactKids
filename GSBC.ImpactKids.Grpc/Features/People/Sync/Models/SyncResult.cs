@@ -1,12 +1,10 @@
 using GSBC.ImpactKids.Grpc.Data.Models.Sync;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People.Sync;
 
 namespace GSBC.ImpactKids.Grpc.Features.People.Sync.Models;
 
 public sealed class SyncResult
 {
     public required Guid            OperationId        { get; init; }
-    public required ElvantoSyncMode Mode               { get; init; }
     public required bool            Success            { get; init; }
     public          string?         Error              { get; init; }
     public required int             PeopleProcessed    { get; init; }
@@ -38,10 +36,9 @@ public sealed class SyncResult
     /// One failure shape for every abort. There were four hand-written result literals, which is why
     /// the audit log was attached to the success one and absent from all three failures.
     /// </summary>
-    public static SyncResult Failed(Guid operationId, ElvantoSyncMode mode, string error) => new()
+    public static SyncResult Failed(Guid operationId, string error) => new()
     {
         OperationId        = operationId,
-        Mode               = mode,
         Success            = false,
         Error              = error,
         PeopleProcessed    = 0,

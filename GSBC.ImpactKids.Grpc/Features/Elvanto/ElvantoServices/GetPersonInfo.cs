@@ -1,5 +1,4 @@
 using GSBC.ImpactKids.Grpc.Features.Elvanto.ElvantoServices.Models;
-using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ImpactKids.Grpc.Features.Elvanto.ElvantoServices;
 
@@ -10,56 +9,25 @@ public partial class ElvantoService
         RetrieveElvantoPeople(token);
 
     /// <summary>
-    /// For a person-scoped sync: if the local person has an ElvantoId, fetch directly via getInfo.
-    /// Otherwise fall back to searching the full list and returning matches by name.
+    /// One person by Elvanto id.
+    ///
+    /// <b>This currently always returns null, and that is a known open defect, not a quirk to design
+    /// around.</b> Elvanto's <c>people/getInfo</c> answers with <c>"person": [ { ... } ]</c> — an
+    /// array — while <see cref="ElvantoGetPersonInfoResponse.Person"/> is declared as a single
+    /// object, so the deserialize throws, the transport logs a warning and returns default, and the
+    /// caller reads "no such person" off a clean HTTP 200. The fix is one line: make that property a
+    /// list and take the first element.
+    ///
+    /// Two callers depend on it, both on the <c>family_id: "new"</c> path where Elvanto mints a
+    /// household — <c>CreatePerson</c> when the create response omits <c>family_id</c>, and
+    /// <c>UpdatePerson</c>, for which the read-back is the <i>only</i> source of that id. While it
+    /// returns null, an edit that creates a household cannot learn which one, so no
+    /// <c>ElvantoFamilyLinks</c> row is written for it and the next sibling asks for "new" again.
+    ///
+    /// It kept two other callers until 2026-08-27 — the person- and family-scoped fetches — and this
+    /// defect is why both scopes silently processed nobody. The scopes were removed rather than
+    /// repaired; this method stays because the two write-path callers are real.
     /// </summary>
-    public async Task<List<ElvantoPerson>> GetPersonByIdOrSearchAsync(Guid localPersonId, CancellationToken token = default)
-    {
-        string? elvantoId = await db.People
-            .Where(p => p.Id == localPersonId)
-            .Select(p => p.ElvantoId)
-            .FirstOrDefaultAsync(token);
-
-        if (elvantoId is not null)
-        {
-            ElvantoPerson? person = await GetPersonInfoAsync(elvantoId, token);
-            return person is null ? [] : [person];
-        }
-
-        // No link — return full list so the matcher can run
-        return await RetrieveElvantoPeople(token);
-    }
-
-    /// <summary>
-    /// For a family-scoped sync: fetch each linked family member by ID; add unlinked via full pull.
-    /// </summary>
-    public async Task<List<ElvantoPerson>> GetPeopleForFamilyAsync(Guid familyId, CancellationToken token = default)
-    {
-        List<string?> elvantoIds = await db.People
-            .IgnoreQueryFilters()
-            .Where(p => p.FamilyId == familyId)
-            .Select(p => p.ElvantoId)
-            .ToListAsync(token);
-
-        bool hasUnlinked = elvantoIds.Any(id => id is null);
-
-        List<ElvantoPerson> result = [];
-        foreach (string? id in elvantoIds.Where(id => id is not null))
-        {
-            ElvantoPerson? p = await GetPersonInfoAsync(id!, token);
-            if (p is not null) result.Add(p);
-        }
-
-        if (hasUnlinked)
-        {
-            // Pull full list so the matcher can find unlinked family members
-            List<ElvantoPerson> all = await RetrieveElvantoPeople(token);
-            result.AddRange(all.Where(elv => !result.Any(r => r.Id == elv.Id)));
-        }
-
-        return result;
-    }
-
     private async Task<ElvantoPerson?> GetPersonInfoAsync(string elvantoId, CancellationToken token = default)
     {
         ElvantoGetPersonInfoResponse? resp = await SendMessage<ElvantoGetPersonInfoRequest, ElvantoGetPersonInfoResponse>(

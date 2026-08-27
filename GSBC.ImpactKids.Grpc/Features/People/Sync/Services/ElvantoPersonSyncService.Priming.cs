@@ -3,7 +3,6 @@ using GSBC.ImpactKids.Grpc.Data.Models.Sync;
 using GSBC.ImpactKids.Grpc.Data.Models.Sync.Enums;
 using GSBC.ImpactKids.Grpc.Features.People.Sync.Descriptors;
 using GSBC.ImpactKids.Grpc.Features.People.Sync.Models;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People.Sync;
 using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ImpactKids.Grpc.Features.People.Sync.Services;
@@ -162,33 +161,4 @@ public partial class ElvantoPersonSyncService
         public static Translated CannotRead(string detail) => new(null, false, detail);
     }
 
-    private static SyncMode MapMode(ElvantoSyncMode mode) => mode switch
-    {
-        ElvantoSyncMode.DryRun   => SyncMode.DryRun,
-        ElvantoSyncMode.AppOnly  => SyncMode.AppOnly,
-        _                        => SyncMode.Full
-    };
-
-    private static SyncScope MapScope(ElvantoSyncScope scope) => scope switch
-    {
-        ElvantoSyncScope.Person => SyncScope.Person,
-        ElvantoSyncScope.Family => SyncScope.Family,
-        _                       => SyncScope.All
-    };
-
-    // Apply reconstructs the request from the operation row, because a plan may be executed in a
-    // later process than the one that decided it.
-    private static ElvantoSyncMode UnmapMode(SyncMode mode) => mode switch
-    {
-        SyncMode.DryRun  => ElvantoSyncMode.DryRun,
-        SyncMode.AppOnly => ElvantoSyncMode.AppOnly,
-        _                => ElvantoSyncMode.Full
-    };
-
-    private static ElvantoSyncScope UnmapScope(SyncScope scope) => scope switch
-    {
-        SyncScope.Person => ElvantoSyncScope.Person,
-        SyncScope.Family => ElvantoSyncScope.Family,
-        _                => ElvantoSyncScope.All
-    };
 }
