@@ -1,5 +1,7 @@
 using System.Security.Claims;
+using GSBC.ImpactKids.YARP.DisplayAuth;
 using GSBC.ImpactKids.YARP.RequestTransformers;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
@@ -28,7 +30,20 @@ internal static class HostExtensions
                     // builderContext.RequestTransforms.Add(builderContext.Services.GetRequiredService<ValidateAntiforgeryTokenRequestTransform>());
                     builderContext.RequestTransforms.Add(new RequestHeaderRemoveTransform("Cookie"));
 
-                    if (!string.IsNullOrEmpty(builderContext.Route.AuthorizationPolicy))
+                    // The pickup wall's policy is the one policy that must NOT bring a
+                    // bearer token with it. Its cookie is a screen's enrolment, not a
+                    // person's session - there is no Auth0 token behind it to fetch, and
+                    // the display service is anonymous by design. Asking the token manager
+                    // for one would fail on every request and log an error saying so.
+                    bool attachBearer =
+                        !string.IsNullOrEmpty(builderContext.Route.AuthorizationPolicy) &&
+                        !string.Equals(
+                            builderContext.Route.AuthorizationPolicy,
+                            DisplayAuthOptions.PolicyName,
+                            StringComparison.OrdinalIgnoreCase
+                        );
+
+                    if (attachBearer)
                     {
                         builderContext.RequestTransforms.Add(builderContext.Services
                             .GetRequiredService<AddBearerTokenToHeadersTransform>());
@@ -68,6 +83,60 @@ internal static class HostExtensions
                     {
                         context.Response.StatusCode = StatusCodes.Status403Forbidden;
                         return Task.CompletedTask;
+                    };
+                })
+                // A SECOND cookie scheme beside the leader session, never a widening of it.
+                // It says one thing - "this screen enrolled on the current pickup display
+                // key" - and the only route that names its policy is the pickup display
+                // one. See DisplayAuthOptions for why that cannot reach anything else.
+                .AddCookie(DisplayAuthOptions.SchemeName, options =>
+                {
+                    options.Cookie.Name = DisplayAuthOptions.CookieName;
+                    options.Cookie.SameSite = SameSiteMode.Strict;
+                    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                    options.Cookie.HttpOnly = true;
+
+                    // Deliberately long, and deliberately not sliding on the ticket alone:
+                    // the key is non-expiring by decision, rotation is how it ends, and a
+                    // cookie that quietly expired would strand a TV mid service.
+                    options.ExpireTimeSpan = DisplayAuthOptions.CookieLifetime;
+                    options.SlidingExpiration = true;
+
+                    // Same reasoning as the scheme above, and it matters more here: the
+                    // caller is grpc-web on a wall display. A 302 falls through to the wasm
+                    // catch-all and comes back as index.html with a 200, which grpc-web
+                    // reports as "Bad gRPC response. Invalid content-type value: text/html"
+                    // - and a wall with nobody standing at it just reads "Connecting...".
+                    options.Events.OnRedirectToLogin = context =>
+                    {
+                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                        return Task.CompletedTask;
+                    };
+                    options.Events.OnRedirectToAccessDenied = context =>
+                    {
+                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                        return Task.CompletedTask;
+                    };
+
+                    // Rotation has to be total, not merely forward looking. The cookie
+                    // records which key the screen enrolled on; once a new one is minted
+                    // every older cookie is rejected here and the wall says so.
+                    options.Events.OnValidatePrincipal = async context =>
+                    {
+                        PickupDisplayKeyClient keys = context.HttpContext.RequestServices
+                            .GetRequiredService<PickupDisplayKeyClient>();
+
+                        Guid? current = await keys.CurrentGenerationAsync(context.HttpContext.RequestAborted);
+
+                        string? enrolled = context.Principal?
+                            .FindFirst(DisplayAuthOptions.GenerationClaimType)?.Value;
+
+                        if (current != null && enrolled == current.Value.ToString())
+                            return;
+
+                        context.RejectPrincipal();
+
+                        await context.HttpContext.SignOutAsync(DisplayAuthOptions.SchemeName);
                     };
                 })
                 .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, configureOptions: options =>
@@ -124,6 +193,13 @@ internal static class HostExtensions
                 .SetDefaultPolicy(new AuthorizationPolicyBuilder(CookieAuthenticationDefaults.AuthenticationScheme)
                     .RequireAuthenticatedUser()
                     .Build()
+                )
+                // Names ONE scheme, and it is not the leader session's. A signed in leader
+                // therefore does not satisfy this either - the wall is opened from its
+                // setup link, by anybody or nobody, and that is the only way in.
+                .AddPolicy(DisplayAuthOptions.PolicyName, policy => policy
+                    .AddAuthenticationSchemes(DisplayAuthOptions.SchemeName)
+                    .RequireAuthenticatedUser()
                 );
 
             return builder;

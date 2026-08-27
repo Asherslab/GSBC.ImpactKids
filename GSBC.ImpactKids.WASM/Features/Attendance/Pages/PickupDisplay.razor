@@ -14,7 +14,17 @@
        looks alive from across the room. *@
     <div class="pickup-ambient"></div>
 
-    @if (Pickups == null)
+    @* Checked before everything else, deliberately. An unenrolled screen must never sit on
+       "Connecting..." - that is what a wall shows when nobody has noticed it is broken, and
+       this one has a remedy somebody walking past can act on. *@
+    @if (Unauthorised)
+    {
+        <div class="pickup-message pickup-message-stack">
+            <span>This screen needs setting up again</span>
+            <span class="pickup-message-detail">Open it from the pickup display link on the admin page</span>
+        </div>
+    }
+    else if (Pickups == null)
     {
         <div class="pickup-message">
             <span class="pickup-dots">Connecting<span>.</span><span>.</span><span>.</span></span>

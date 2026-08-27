@@ -54,6 +54,21 @@
     to   { opacity: .65; }
 }
 
+/* The unenrolled screen. Two lines rather than one: the first says what is wrong from
+   across the room, the second says what to do from arm's length. */
+.pickup-message-stack {
+    flex-direction: column;
+    gap: 2vmin;
+    text-align: center;
+    padding: 0 6vmin;
+}
+
+.pickup-message-detail {
+    font-size: 3vmin;
+    letter-spacing: .08em;
+    opacity: .7;
+}
+
 .pickup-dots span {
     animation: pickup-blink 1.4s infinite;
 }

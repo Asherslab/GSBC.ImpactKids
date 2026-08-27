@@ -4,6 +4,7 @@ using GSBC.ImpactKids.Grpc.Data.Interceptors;
 using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Grpc.Features.People.Sync.Interfaces;
 using GSBC.ImpactKids.Grpc.Features.Attendance.AttendancePickupDisplayServices;
+using GSBC.ImpactKids.Grpc.Features.Attendance.PickupDisplayKeyServices;
 using GSBC.ImpactKids.Grpc.Features.Attendance.AttendanceItemRecordServices;
 using GSBC.ImpactKids.Grpc.Features.Attendance.AttendanceItemTypeServices;
 using GSBC.ImpactKids.Grpc.Features.Attendance.AttendanceRecordServices;
@@ -183,12 +184,18 @@ app.MapGrpcService<GameBoardService>();
 app.MapGrpcService<GameDisplayService>();
 // Unauthenticated - pickup wall only, first name plus last initial only.
 app.MapGrpcService<AttendancePickupDisplayService>();
+// Authorized - the console that hands out the pickup wall's key, not the wall itself.
+app.MapGrpcService<PickupDisplayKeyService>();
 app.MapGrpcService<SyncService>();
 app.MapGet("/",
     () =>
         "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");
 
 app.AddEventEndpoints();
+
+// Cluster-internal only - the proxy asks these when a pickup wall enrols. Deliberately not
+// routed in GSBC.ImpactKids.YARP/appsettings.json; see the class remarks.
+app.AddPickupDisplayKeyEndpoints();
 
 using (IServiceScope scope = app.Services.CreateScope())
 {
