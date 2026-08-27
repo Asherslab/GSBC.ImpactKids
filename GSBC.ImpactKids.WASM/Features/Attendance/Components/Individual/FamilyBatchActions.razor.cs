@@ -227,7 +227,12 @@ public partial class FamilyBatchActions
         {
             _busy = false;
 
-            await AttendanceRecordsStore.RefreshAll();
+            // RefreshEvent, NOT RefreshAll: RefreshAll is served from the executor's 30
+            // minute cache, so straight after a batch it hands back the state from before
+            // it and the rows do not settle. This was visible - a batch of two left one
+            // child showing "Requested" and the other still offering to request, with both
+            // rows already written in the database.
+            await AttendanceRecordsStore.RefreshEvent();
             await OnChanged.InvokeAsync();
 
             RetrieveBatches();
