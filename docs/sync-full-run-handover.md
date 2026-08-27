@@ -227,10 +227,11 @@ creates and drops tables nobody ever used.
   that do succeed. Verify in the database before believing it. Not sync-related.
 - **`GsbcDbContextFactory` hardcodes port 60536** but a persistent container keeps the port it was
   created with. `db-restore.sh` passes the discovered port explicitly.
-- **`Scope=Person` on an *unlinked* person is dangerous and unfixed.** It fetches the whole Elvanto
-  roll so the matcher can run, then the main loop creates a local app person for every row that does
-  not match — roughly 1718 spurious people. Local only, no Elvanto writes, but it would wreck the
-  database. Use `Scope=All` with the allow lists instead.
+- **`Scope=Person` / `Scope=Family` — resolved 2026-08-27 by removal.** The hazard was real:
+  `Scope=Person` on an *unlinked* person fetched the whole Elvanto roll so the matcher could run, then
+  created a local app person for every row that did not match — roughly 1718 spurious people. Local
+  only, no Elvanto writes, but it would have wrecked the database. Scope is now gone entirely rather
+  than repaired; every run covers the whole roll. To narrow a run's *effect*, use the allow lists.
 
 ---
 

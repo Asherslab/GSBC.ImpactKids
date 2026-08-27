@@ -63,8 +63,10 @@ This is not ceremony. Three things make it necessary:
    gap as an app-side edit and planned to push it — the outbound surface grew 67 → 73 across an
    apply. It no longer does; 71 before and after, verified on a fresh restore. Do not treat that fix
    as making a stale plan safe to approve.
-2. **The allow lists are the containment, not the plan.** Mode, scope and the plan itself do nothing
-   to restrict *who* is written. Only `AllowedUpdatePersonIds` / `AllowedCreatePersonIds` do.
+2. **The allow lists are the containment, not the plan.** The plan itself does nothing to restrict
+   *who* is written. Only `AllowedUpdatePersonIds` / `AllowedCreatePersonIds` do. Mode and scope used
+   to be listed here too; both were removed on 2026-08-27, which changes nothing about this rule —
+   they never contained anything either.
 3. **Creates are irreversible from here.** `people/create` mints a person and a family in the
    church's live Elvanto. There is no delete in this codebase. A wrong create is cleaned up by hand,
    in Elvanto, by a person.
@@ -240,13 +242,14 @@ Reads and decides first, writes last and smallest. Each phase should be verified
 or from Elvanto, not from the logs — the gRPC log buffer is saturated within seconds.
 
 ### 1. Read and decide (no writes, no local mutation)
-- Full `DryRun` / `Scope=All`. Confirm it reproduces: 565 plan rows, 71 outbound, 0 diverged, 511 links.
+- Press **Decide Plan**. There is no mode or scope to choose any more — every run decides the whole
+  roll and writes nothing. Confirm it reproduces: 565 plan rows, 71 outbound, 0 diverged, 511 links.
 - Run it twice. The numbers must be identical and the link table must not grow.
 
 ### 2. Local apply (writes still off)
 - Execute the plan. Expect ~466 applied, ~99 suppressed, 0 failed; bucket 412 → 3; no-family 0 → 399.
-- Then DryRun again: the family work should be settled and not re-proposed.
-- **Check the outbound count across the apply.** 71 before, 71 after, and a third DryRun identical to
+- Then decide again: the family work should be settled and not re-proposed.
+- **Check the outbound count across the apply.** 71 before, 71 after, and a third decide identical to
   the second. A grown outbound surface means a base was settled on a write that did not fully land;
   that is the 2026-08-27 defect and it is what the check is for. Two `MedicalAllergyNotes` rows do
   legitimately move to `Diverged: BaseDisagreesWithBothSides` after the apply — the app parsed
@@ -274,12 +277,15 @@ check (`Creates.cs:108`) when an unlinked app person shares an exact name with a
 one, and `MatchConfidence = 50` is a hardcoded literal for that strategy (`Creates.cs:153`). Do not
 read them against the matcher's 100/90/75/50 table below — it describes a different mechanism.
 
-### 4. Scoped runs — **skip this phase; both scopes are confirmed broken**
+### 4. Scoped runs — **phase deleted; the scopes no longer exist**
 
-There is nothing to test here any more. `Scope=Person` and `Scope=Family` do not work, and Asher's
-decision on 2026-08-27 is that they will not be fixed — they are to be removed. See "Scoped runs are
-broken" under Traps for the mechanism and the evidence. Use `Scope=All` with allow lists for
-everything, which is what the write phase does anyway.
+Removed from the codebase on 2026-08-27, along with `ElvantoSyncScope`, `PersonId`/`FamilyId` on the
+request and on `DbSyncOperation`, and the two guards that existed only to contain them
+(`SyncWorkingSet.MayCreateLocalPeople`, and the scope check in `DecideArchives`). Every run is the
+whole roll. Use the allow lists to narrow a run's *effect*, which is what the write phase does anyway.
+
+See "Scoped runs were broken" under Traps for the mechanism and the evidence — kept because it is
+also the reason `GetPersonInfoAsync` still returns null on the write path.
 
 ### 5. Writes — both rules above apply
 
@@ -303,9 +309,9 @@ point, so a second write attempt in the same process is *supposed* to be refused
 
 Carried forward because each one has already cost time.
 
-- **Scoped runs are broken, confirmed 2026-08-27, and will not be fixed.** Asher's decision: both
-  scopes are to be removed rather than repaired. Use `Scope=All` with allow lists for everything.
-  Recorded here so nobody re-derives it or trusts a scoped run's `Success`.
+- **Scoped runs were broken, and were removed on 2026-08-27 rather than repaired.** Kept in full
+  because the cause below still affects the write path, and so nobody reintroduces scoping without
+  reading it.
 
   **The cause is one line.** Elvanto's `people/getInfo` returns `"person": [ {...} ]` — an *array*.
   `ElvantoGetPersonInfoResponse.Person` is declared as a single `ElvantoPerson?`
@@ -338,10 +344,10 @@ Carried forward because each one has already cost time.
   `Success` with an empty plan. It also supersedes the old "person-scoped runs skip `FamilyId` and
   nobody has explained why": they skip everything, and this is why.
 
-- **The unlinked-person fallback wrecks the database.** `Scope=Person` on an *unlinked* person
-  fetches the whole Elvanto roll so the matcher can run, then creates a local person for every row
-  that does not match — ~1718 spurious people. Local only, no Elvanto writes, but it is a restore to
-  undo. Another reason the scopes are going.
+- **The unlinked-person fallback wrecked the database — resolved by the removal.** `Scope=Person` on
+  an *unlinked* person fetched the whole Elvanto roll so the matcher could run, then created a local
+  person for every row that did not match — ~1718 spurious people. Local only, no Elvanto writes, but
+  it was a restore to undo. This was the strongest reason the scopes went.
 - **Never add contacts to the main roll.** Absence from it drives archiving; a short roll once
   archived 726 children. `LoadWorkingSetAsync` has two independent refusals — leave them alone.
 - **Never ask Elvanto for the `family` field.** Silently ignored on `getAll`; on `getInfo` it breaks
@@ -413,11 +419,12 @@ Run the app via the Rider run configuration `GSBC.ImpactKids.AppHost: https`, ne
 App at `https://localhost:7263`. Sign in with `/bff/dev-login?returnUrl=/Sync`.
 
 Driving the sync without the UI, when the browser is unavailable — grpc-web, cookie from dev-login.
-`\x10\x02` is `Mode=DryRun`; `Scope=All` is the default and omitted:
+`SyncWithElvantoRequest` is now empty, so the body is a zero-length message: a 5-byte grpc-web frame
+with a length of 0 and no payload. The old `\x10\x02` was `Mode=DryRun`, a field that no longer exists.
 
 ```bash
 curl -sk -c jar -b jar -L -o /dev/null "https://localhost:7263/bff/dev-login?returnUrl=/Sync"
-printf '\x00\x00\x00\x00\x02\x10\x02' > req.bin
+printf '\x00\x00\x00\x00\x00' > req.bin
 curl -sk -b jar -X POST "https://localhost:7263/gRPC/GSBC.ImpactKids.Sync/CreateSync" \
   -H 'Content-Type: application/grpc-web+proto' -H 'x-grpc-web: 1' --data-binary @req.bin
 ```
@@ -446,14 +453,16 @@ commit.
 
 ## Open, and deliberately not done
 
-- **Remove `Scope=Person` and `Scope=Family`.** Asher, 2026-08-27: they are pointless now and are to
-  be deleted rather than fixed. Both are confirmed broken — see "Scoped runs are broken" under Traps
-  for the mechanism, the evidence and the per-case behaviour. This replaces the older open item
-  "person-scoped runs skip `FamilyId` entirely", which was a symptom of the same defect.
+- ~~**Remove `Scope=Person` and `Scope=Family`.**~~ **Done, 2026-08-27.** `ElvantoSyncScope` is
+  deleted outright rather than reduced to `All`, along with `PersonId`/`FamilyId` on the request and
+  on `DbSyncOperation` (migration `DropSyncModeAndScope`), and
+  `GetPersonByIdOrSearchAsync` / `GetPeopleForFamilyAsync`. `GetPersonInfoAsync` stayed, as required
+  — its two write-path callers are real — and it now carries the defect note on itself. The one-line
+  model fix is still outstanding; see the next item.
 
-  Deleting them takes `ElvantoSyncScope` down to `All` and lets `GetPersonByIdOrSearchAsync` and
-  `GetPeopleForFamilyAsync` go with them. **`GetPersonInfoAsync` itself must stay**, and the
-  one-line model fix stays with it — see the next item for why.
+  Done in the same pass: **`ElvantoSyncMode` (`Full` / `AppOnly` / `DryRun`) removed.** Every run
+  decides and stops; `ExecutePlan` applies. AppOnly's behaviour is reproduced by
+  `Elvanto:AllowWrites=false` on an Execute.
 
 - **The broken `getInfo` also disables the write path's family read-back.** Separate from the
   scopes, and not fixed either. `GetPersonInfoAsync` has two callers outside them, both on the

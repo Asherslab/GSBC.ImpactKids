@@ -4,7 +4,8 @@ Bidirectional sync between the app and Elvanto, with a manual-review workflow fo
 
 ## Key entities
 
-- `DbSyncPendingReview` — keyed on `(PersonId, ElvantoId)`. Persisted **outside** the main transaction (after `audit.FlushAsync`) so DryRun results survive the rollback.
+- `DbSyncPendingReview` — keyed on `(PersonId, ElvantoId)`. Written during Decide, so a review is
+  waiting before anything has been applied.
 - `DbSyncPlannedChange` — one row per decision, and the thing a person reads before pressing Execute.
 - **There is no `DbSyncMetadata` and no `DbSyncFieldConfig`.** The link between a person and an
   Elvanto record is `DbPerson.ElvantoId`; how they came to be linked is in `SyncAuditLogs` and the
@@ -14,10 +15,10 @@ Bidirectional sync between the app and Elvanto, with a manual-review workflow fo
 
 ## Review workflow
 
-1. DryRun → low-confidence match → `DbSyncPendingReview` (`Status = Pending`) saved outside the transaction.
+1. Decide → low-confidence match → `DbSyncPendingReview` (`Status = Pending`).
 2. User opens the sync-operation detail page (`/Sync/{id}`) → the **Manual Review** tab shows items for this operation.
 3. Approve / Deny buttons call `ISyncService.ApproveReview` / `DenyReview` (by review `Guid`).
-4. Next wet run → engine checks the `pendingReviews` dictionary → **Approved** = link + field sync;
+4. Next run → engine checks the `pendingReviews` dictionary → **Approved** = link + field sync;
    **Denied** = never link this pair, and (for a low-confidence match) the app person becomes
    eligible to be created in Elvanto as a separate person.
 
@@ -93,16 +94,26 @@ family move dropped with no audit row.
 | **Decide** | Elvanto + app | the plan, the divergences, the pending reviews, and the bases of fields that already agree | nothing |
 | **Apply** | the plan + live state | app people, bases, the audit trail | Elvanto |
 
-So the three modes are two calls: **DryRun** is Decide and stop, **Full** is Decide then immediately
-Apply, and **Execute** (`ISyncService.ExecutePlan`) applies a plan someone has read. That last one is
-the point of the split. Full and DryRun used to walk *different* create paths, so a dry run was a
-plan preview rather than a rehearsal — it structurally could not exercise `SaveChanges`, the change
-interceptor, the payload builder, the `"new"`-family chain or the failure branch.
+**There is no mode.** `CreateSync` decides and stops; `ExecutePlan` applies a plan someone has read.
+Two calls, always in that order, and nothing that does both at once.
 
-**Decide touches nothing in `People`.** A dry run is genuinely read-only on the app side, so the
-audit trail no longer records `Created`, `Match`, `FieldUpdated` or `Archived` in the past tense for
-a run that did none of them. Decide writes only `Diverged` and `ManualReviewQueued` rows; the plan
-carries everything else, and Apply writes the past-tense rows when it acts.
+There used to be three modes — `Full`, `AppOnly`, `DryRun` — which were three answers to "how much of
+Apply should I skip?". The honest form of that question is "has anyone looked at the plan yet?", and a
+separate Execute answers it by existing. `SyncWithElvantoRequest` is now an empty marker: an RPC needs
+a request type, but there is nothing left to put on it.
+
+**AppOnly is not lost.** An Execute with `Elvanto:AllowWrites=false` applies the inbound half and
+records every outbound as suppressed with the switch that stopped it — which is what AppOnly did,
+decided by configuration rather than by whoever picked from a dropdown.
+
+Decide and Apply were once *different* create paths, so a preview was a plan preview rather than a
+rehearsal — it structurally could not exercise `SaveChanges`, the change interceptor, the payload
+builder, the `"new"`-family chain or the failure branch. There is now one path to walk.
+
+**Decide touches nothing in `People`.** It is genuinely read-only on the app side, so the audit trail
+cannot record `Created`, `Match`, `FieldUpdated` or `Archived` in the past tense for a run that did
+none of them. Decide writes only `Diverged` and `ManualReviewQueued` rows; the plan carries everything
+else, and Apply writes the past-tense rows when it acts.
 
 An agreement settles its base during Decide rather than waiting for Apply, because there is nothing
 to apply: recording that two sides already say the same thing changes neither of them.
@@ -196,10 +207,20 @@ page gives them their own tab and stat tile, because they are a work-list rather
 
 ## Family, and what the sync will not guess at
 
-**A scoped run never creates local people.** Asking Elvanto about one person or one family pulls the
-*whole* roll the moment any member is unlinked, so the matcher can find them — while the app side
-loads only that person or family. Nothing then separates "the person this run is about" from the
-other seventeen hundred, and every one of them read as somebody to create.
+**Every run covers the whole roll.** `Scope` (`All` / `Person` / `Family`) is gone, along with
+`PersonId` and `FamilyId` on the request and on `DbSyncOperation`.
+
+Scoping was never sound and was removed rather than repaired. A scoped fetch was not a scoped roll:
+asking Elvanto about one person or one family pulled the *whole* roll the moment any member was
+unlinked, so the matcher could find them — while the app side loaded only that person or family.
+Nothing then separated "the person this run is about" from the other seventeen hundred, and every one
+of them read as somebody to create. `Scope=Person` on an unlinked person planned ~1718 spurious local
+creates.
+
+Two guards existed only to contain that, and both are gone with it: `SyncWorkingSet.MayCreateLocalPeople`,
+and a scope check at the top of `DecideArchives`. To narrow a run's *effect*, use the allow lists
+(`Elvanto:AllowedUpdatePersonIds`, `Elvanto:AllowedCreatePersonIds`) — those gate the write, which is
+the thing worth gating.
 
 **Family is compared in the app's terms** — "is this person in the right local family?", which is a
 fact the app owns. `person.FamilyId` on one side, and on the other the local family Elvanto's
@@ -232,8 +253,12 @@ as a legitimate clear.
 ## Never trust a partial Elvanto fetch
 
 `RetrieveElvantoPeople` returns the whole roll or throws `ElvantoFetchException`; there is no
-partial-success outcome, and it holds Elvanto to its own reported total. A full-scope sync also
-aborts before the archive step if the roll covers under 90% of the linked people.
+partial-success outcome, and it holds Elvanto to its own reported total. A run also aborts before the
+archive step if the roll covers under 90% of the linked people, or if Elvanto returns nothing at all.
+
+Both floors used to be qualified by "if this is a full-scope run". Every run is now the whole roll, so
+they apply unconditionally — which is what they were always for. With scope gone, this coverage floor
+is the *only* thing standing between a short Elvanto read and a mass archive.
 
 Both guards exist because absence from the fetched list is treated as proof of deletion: a single
 dropped page once archived 726 children, and six of the seven tables referencing a person are
@@ -245,25 +270,35 @@ dropped page once archived 726 children, and six of the seven tables referencing
 - `ApproveReview(ManualReviewActionRequest)` — sets `Status = Approved`.
 - `DenyReview(ManualReviewActionRequest)` — sets `Status = Denied`.
 
-## DryRun persistence pattern
+## Audit and review persistence
 
-`SyncAuditLogger.FlushAsync` calls `db.ChangeTracker.Clear()` then saves audit logs outside the transaction. Pending reviews follow the same pattern — saved after `FlushAsync` via `SaveNewPendingReviewsAsync`. This is what lets a DryRun leave behind reviewable state even though its transaction is rolled back.
+`SyncAuditLogger.FlushAsync` saves audit rows on its own; pending reviews follow via
+`SaveNewPendingReviewsAsync`. Both are written during Decide, so a divergence and a review are
+readable before anything has been applied.
+
+This was once described as surviving a rollback. **There is no transaction in the sync engine at
+all** — there is nothing for Decide to roll back, since it writes no `People` rows, and Apply
+deliberately does not hold one open across Elvanto HTTP calls: doing that meant every rollback undid
+half the world. Local state is committed before the sends, and the results are reconciled in a short
+save afterwards.
 
 ## UI
 
 - `Individual.razor` — "Manual Review" tab with approve/deny cards per item; shown only when the operation has `ManualReviewQueued` events. It mirrors the pending-review store into a local field, so it must seed that field explicitly after `RefreshAll()` — see [Front-end Store Architecture](./frontend-store-architecture.md).
-- `Multiple.razor` — warning banner showing the pending-review count after each sync.
+- `Multiple.razor` — a single **Decide Plan** button, the run list, and a warning banner showing the
+  pending-review count. It no longer loads the people store: that existed only to fill the Person and
+  Family scope dropdowns, so the run list no longer waits on ~1700 people to render.
 
 ## Why
 
-A user needs to approve low-confidence matches from a DryRun before running the wet run.
+A user needs to approve low-confidence matches from a decided plan before executing it.
 
 ## Extending the review UX
 
 Follow the outside-transaction save pattern.
 
 An approved review remains a permanent record. For a low-confidence match it does become
-irrelevant once the wet run assigns the person's `ElvantoId`. For a **potential duplicate** it
+irrelevant once an Execute assigns the person's `ElvantoId`. For a **potential duplicate** it
 does not: the row stays meaningful indefinitely, because it is the durable statement that two app
 records are the same person, and the future merge feature reads exactly those rows to find its
 work. Do not add cleanup that deletes decided reviews.
