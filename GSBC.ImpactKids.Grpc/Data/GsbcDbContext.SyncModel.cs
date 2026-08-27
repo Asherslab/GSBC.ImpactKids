@@ -31,18 +31,9 @@ public partial class GsbcDbContext
             .HasIndex(x => new { x.EntityType, x.EntityId, x.FieldName })
             .IsUnique();
 
-        // DbSyncOperation
+        // DbSyncOperation - every run covers the whole roll, so StartedAt alone is the useful order.
         modelBuilder.Entity<DbSyncOperation>()
-            .HasOne(x => x.Person)
-            .WithMany()
-            .HasForeignKey(x => x.PersonId)
-            .IsRequired(false);
-        modelBuilder.Entity<DbSyncOperation>()
-            .HasIndex(x => new { x.Scope, x.StartedAt });
-        modelBuilder.Entity<DbSyncOperation>()
-            .Property(x => x.Mode).HasConversion<string>();
-        modelBuilder.Entity<DbSyncOperation>()
-            .Property(x => x.Scope).HasConversion<string>();
+            .HasIndex(x => x.StartedAt);
         modelBuilder.Entity<DbSyncOperation>()
             .Property(x => x.Status).HasConversion<string>();
 

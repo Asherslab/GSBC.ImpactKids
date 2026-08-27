@@ -338,8 +338,8 @@ public partial class Individual
         AsyncData<Person> person = PeopleStore.GetState().First(x => x.Id == personId);
         if (person.Data is { } p) return p.GetDisplayName();
 
-        // Placeholder people from rolled-back DryRun/AppOnly transactions won't be in the store;
-        // the ManualReviewQueued log entry stores their name in ToValue as a fallback.
+        // A person named by a plan that has not been executed yet is not in the store; the
+        // ManualReviewQueued log entry stores their name in ToValue as a fallback.
         string? auditName = _auditLogs.Data?
             .FirstOrDefault(x => x.PersonId == personId && x.EventType == SyncEventType.ManualReviewQueued)
             ?.ToValue;
@@ -404,14 +404,6 @@ public partial class Individual
         ManualReviewStatus.Approved => Color.Success,
         ManualReviewStatus.Denied   => Color.Error,
         _                           => Color.Warning
-    };
-
-    private static Color ModeColor(SyncMode mode) => mode switch
-    {
-        SyncMode.Full    => Color.Primary,
-        SyncMode.AppOnly => Color.Info,
-        SyncMode.DryRun  => Color.Default,
-        _                => Color.Default
     };
 
     private static Color StatusColor(SyncStatus status) => status switch

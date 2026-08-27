@@ -3,7 +3,6 @@ using GSBC.ImpactKids.Grpc.Data.Models.Sync;
 using GSBC.ImpactKids.Grpc.Data.Models.Sync.Enums;
 using GSBC.ImpactKids.Grpc.Features.Elvanto.ElvantoServices.Models;
 using GSBC.ImpactKids.Grpc.Features.People.Sync.Models;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.People.Sync;
 using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ImpactKids.Grpc.Features.People.Sync.Services;
@@ -18,26 +17,27 @@ public partial class ElvantoPersonSyncService
     /// person cascade. A single dropped page once archived 726 children.
     /// </summary>
     private async Task<(SyncWorkingSet? Set, string? Refusal)> LoadWorkingSetAsync(
-        Guid                   operationId,
-        SyncWithElvantoRequest request,
-        CancellationToken      token)
+        Guid              operationId,
+        CancellationToken token)
     {
-        List<ElvantoPerson> elvantoPeople = await FetchElvantoAsync(request, token);
+        List<ElvantoPerson> elvantoPeople = await FetchElvantoAsync(token);
         logger.LogInformation(
-            "Sync {OperationId}: fetched {Count} people from Elvanto (scope={Scope})",
-            operationId, elvantoPeople.Count, request.Scope);
+            "Sync {OperationId}: fetched {Count} people from Elvanto",
+            operationId, elvantoPeople.Count);
 
-        if (request.Scope == ElvantoSyncScope.All && elvantoPeople.Count == 0)
-            return (null, "Elvanto returned 0 people on a full-scope sync — aborting to prevent mass archive");
+        // Both floors below used to be qualified by "if this is a full-scope run". Every run is now
+        // the whole roll, so they apply unconditionally - which is what they were always for.
+        if (elvantoPeople.Count == 0)
+            return (null, "Elvanto returned 0 people — aborting to prevent mass archive");
 
-        List<DbPerson> appPeople = await LoadAppPeopleAsync(request, token);
+        List<DbPerson> appPeople = await LoadAppPeopleAsync(token);
         logger.LogInformation("Sync {OperationId}: loaded {Count} app people", operationId, appPeople.Count);
 
         // Second line of defence behind the fetch itself. A roll that comes back short - for any
         // reason, including one nobody has thought of yet - must stop the run rather than delete
         // people.
         int linkedCount = appPeople.Count(p => p.ElvantoId is not null && p.DeletedAtUtc is null);
-        if (request.Scope == ElvantoSyncScope.All && linkedCount > 0)
+        if (linkedCount > 0)
         {
             double coverage = (double)elvantoPeople.Count / linkedCount;
             if (coverage < MinimumElvantoCoverage)
@@ -63,8 +63,7 @@ public partial class ElvantoPersonSyncService
 
         return (new SyncWorkingSet
         {
-            ElvantoPeople        = elvantoPeople,
-            MayCreateLocalPeople = request.Scope == ElvantoSyncScope.All,
+            ElvantoPeople = elvantoPeople,
             AppPeople     = appPeople,
             SchoolGrades  = await db.SchoolGrades.ToListAsync(token),
 
