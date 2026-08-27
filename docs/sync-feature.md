@@ -118,6 +118,25 @@ else, and Apply writes the past-tense rows when it acts.
 An agreement settles its base during Decide rather than waiting for Apply, because there is nothing
 to apply: recording that two sides already say the same thing changes neither of them.
 
+### Only one Apply at a time
+
+`ApplyPlanAsync` takes a Postgres advisory lock before it reads anything, and refuses immediately
+rather than queueing if it cannot have it. A second Execute is told *"another sync execution is
+already running… the plan is untouched"* and nothing is read or written.
+
+The per-item staleness check cannot cover this, and it is worth being clear why. Every guard in Apply
+re-reads the two **sides** — but two executions in flight have both read `Status == Pending` before
+either has written a status back, and neither side has moved while the other is still mid-flight, so
+both pass every check and both do the work. The visible failure is two people created in Elvanto for
+one plan row, which no later run can undo. Sequential re-execution was always safe; simultaneous was
+not.
+
+It is an advisory lock rather than an `Applying` status column or a `SemaphoreSlim` for two reasons.
+The lock is held by the **connection**, so a process that dies mid-apply releases it, instead of
+leaving a row saying `Applying` forever with nobody to clear it. And it is held by the **database**,
+so it still holds if the gRPC service is ever run as more than one replica — which a static semaphore
+quietly would not.
+
 ### `DbSyncPlannedChange`
 
 One row per decision, with both observed hashes on it — the same base primitive at a different
@@ -264,6 +283,53 @@ Both guards exist because absence from the fetched list is treated as proof of d
 dropped page once archived 726 children, and six of the seven tables referencing a person are
 `ON DELETE CASCADE`.
 
+## Known gaps
+
+Two things that are understood, deliberately not fixed, and should be read before anyone concludes
+the engine is airtight. Both are narrow; neither is a reason to keep writes off.
+
+### The create staleness check is skipped when the household was minted mid-apply
+
+`ElvantoPersonSyncService.Apply.cs`, in `ApplyCreatesInElvantoAsync`:
+
+```csharp
+if (SyncHash.Of(payload) != item.ObservedAppHash && elvantoFamilyId == item.ProposedValue)
+```
+
+The family id is part of the create payload, so a person whose household was minted by an *earlier
+item in the same apply* hashes differently for a reason that is not a change to the person — hence
+the second clause. But `&&` means the whole check is skipped in exactly that case, so the second and
+later members of every new household are created from a payload nobody re-verified. Edit that child
+between Decide and Execute and the edit goes to Elvanto unannounced instead of being marked `Stale`.
+
+The fix is to compare like with like rather than to skip: rebuild the payload with `item.ProposedValue`
+as the family, hash that, and compare unconditionally. Left alone because it wants its own test over
+the sibling-create path, and the window is one plan's lifetime (`Elvanto:PlanExpiryHours`, 4 by
+default).
+
+### The `FamilyId` base is settled in the wrong terms after an outbound push
+
+Family is compared in the **app's** terms but pushed in **Elvanto's**, and it is the only field where
+those differ — `BuildComparison` sets `OutboundValue` to the Elvanto household id (or `"new"`) for
+`FamilyId` and to the app-side value for everything else.
+
+`ApplyOutboundFieldsAsync` settles the base's Elvanto leg from `item.ProposedValue`, which for family
+is therefore a household id or the literal string `"new"`, while every comparison reads that leg as a
+local family Guid. So after any outbound family push, `BaseElvantoHash` is in a space nothing else
+uses.
+
+It does not loop, because `FieldReconciler` returns `Agreed` on hash equality *before* it consults the
+base — and once Elvanto has taken the push, the two sides agree. It bites only if a later change makes
+the two sides differ again: `elvMoved` is then computed against `"new"`, is meaninglessly true, and a
+clean "the app changed alone" is decided as a two-sided conflict instead. The fix is to settle that
+leg from the rebuilt comparison's `ElvantoValue`, as the inbound path already does, rather than from
+the proposed value.
+
+**This is not the old ping-pong**, which was a different and much larger problem — a household map
+derived from the roll on every run, so a move changed the evidence the map was built from. That is
+fixed: `ElvantoFamilyLinks` persists the pairing. See
+[the refactor log](./work/2026-08-elvanto-sync-refactor.md).
+
 ## gRPC methods on `ISyncService`
 
 - `ReadPendingReviews()` — streams all `SyncManualReviewEntry`.
@@ -288,6 +354,10 @@ save afterwards.
 - `Multiple.razor` — a single **Decide Plan** button, the run list, and a warning banner showing the
   pending-review count. It no longer loads the people store: that existed only to fill the Person and
   Family scope dropdowns, so the run list no longer waits on ~1700 people to render.
+- **Execute confirms first.** The button on the run list opens a message box naming the pending item
+  count and saying the changes go to this app and, where writes are enabled, to Elvanto. The engine's
+  guards are all per-item, and none of them notices that the person pressing Execute meant to press
+  View — so the count has to be shown before the call, not reported after it.
 
 ## Why
 
