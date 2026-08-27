@@ -1,0 +1,55 @@
+/* The request control is one tap target on a phone - it is pressed by someone holding a
+   clipboard, so it is sized past the 48px the material guidelines ask for rather than at it. */
+.pickup ::deep .mud-button-root {
+    min-height: 56px;
+    font-size: 1rem;
+    text-transform: none;
+}
+
+.pickup-done {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-height: 56px;
+    padding-inline: 0.5rem;
+    opacity: 0.7;
+}
+
+/* The requested state occupies the same height as the button it replaces, so a row does not
+   jump under the thumb when a request lands from another phone mid-tap. */
+.pickup-state {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    min-height: 56px;
+    padding-inline: 0.75rem;
+    border-radius: var(--mud-default-borderradius);
+    background-color: var(--mud-palette-warning-hover);
+    border: 1px solid var(--mud-palette-warning);
+}
+
+.pickup-state-text {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.pickup-state-label {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+    min-width: 0;
+}
+
+/* Deliberately not a large target. Clearing a request nobody meant to clear is the expensive
+   mistake here; needing two goes at an intended clear is the cheap one. */
+.pickup-clear {
+    flex: 0 0 auto;
+    opacity: 0.75;
+}
+
+.pickup-clear:hover {
+    opacity: 1;
+}

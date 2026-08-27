@@ -11,6 +11,13 @@ public class DbAttendanceRecord
     public required DateTimeOffset  SignedIn  { get; set; }
     public          DateTimeOffset? SignedOut { get; set; }
 
+    /// <summary>
+    /// When a parent asked for this child at the sign out desk. Deliberately not cleared
+    /// on sign out - "signed out after being requested" and "signed out cold" are
+    /// different facts, and the activity log wants both.
+    /// </summary>
+    public DateTimeOffset? PickupRequested { get; set; }
+
     public bool Deleted { get; set; }
 
     // Relationships \\
@@ -29,6 +36,11 @@ public class DbAttendanceRecord
 
     [MapperIgnore]
     public DbUser? SignedOutUser { get; set; }
+
+    public Guid? PickupRequestedUserId { get; set; }
+
+    [MapperIgnore]
+    public DbUser? PickupRequestedUser { get; set; }
 
     public Guid ServiceId { get; set; }
 

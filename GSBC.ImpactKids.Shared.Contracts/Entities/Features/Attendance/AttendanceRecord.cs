@@ -14,6 +14,18 @@ public record AttendanceRecord : IIdentifiable
     [ProtoIgnore]
     public DateTime? LocalSignedOut => SignedOut?.ToLocalTime();
 
+    /// <summary>When a parent asked for this child. Null means never requested.</summary>
+    public DateTime? PickupRequested { get; init; }
+
+    public Guid? PickupRequestedUserId { get; init; }
+
+    [ProtoIgnore]
+    public DateTime? LocalPickupRequested => PickupRequested?.ToLocalTime();
+
+    /// <summary>On the wall: asked for, and not yet gone.</summary>
+    [ProtoIgnore]
+    public bool AwaitingPickup => PickupRequested != null && SignedOut == null;
+
     public bool Deleted { get; init; }
 
     public required Guid  PersonId        { get; init; }

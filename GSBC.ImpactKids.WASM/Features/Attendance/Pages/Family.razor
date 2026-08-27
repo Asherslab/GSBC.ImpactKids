@@ -1,3 +1,4 @@
+@using GSBC.ImpactKids.WASM.Features.Attendance.Components.Individual
 @using PersonDisplay = GSBC.ImpactKids.WASM.Features.Attendance.Features.AttendanceItemTypes.Components.Individual.AttendanceItemTypeDisplay
 @inherits EntityUtilityComponent
 @page "/Attendance/Family/{Id:guid}"
@@ -69,34 +70,39 @@
                     <MudItem xs="12" md="4">
                         <PersonDisplay Id="personId">
                             <SuffixContent>
-                                <MudStack Row>
+                                <MudStack Spacing="2">
                                     @if (_peopleAttendance.IsLoading)
                                     {
                                         <MudProgressCircular Indeterminate/>
                                     }
-                                    else if (_peopleAttendance.Data != null && personId != null)
+                                    else if (_peopleAttendance.HasData && personId != null)
                                     {
-                                        if (_peopleAttendance.Data.TryGetValue(personId.Value, out Guid attendanceId))
-                                        {
-                                            <MudButton
-                                                Color="Color.Success"
-                                                Href="@($"/Attendance/SignIn/{personId}?{nameof(SignIn.ServiceId)}={_service.Data?.Id}")">
-                                                View
-                                            </MudButton>
-                                            <MudButton
-                                                Color="Color.Error"
-                                                Href="@($"/Attendance/SignOut/{personId}?{nameof(SignOut.AttendanceRecordId)}={attendanceId}")">
-                                                Sign Out
-                                            </MudButton>
-                                        }
-                                        else
-                                        {
-                                            <MudButton
-                                                Color="Color.Success"
-                                                Href="@($"/Attendance/SignIn/{personId}?{nameof(SignIn.ServiceId)}={_service.Data?.Id}")">
-                                                Sign In
-                                            </MudButton>
-                                        }
+                                        <MudStack Row>
+                                            @if (RecordFor(personId) is { SignedOut: null } live)
+                                            {
+                                                <MudButton
+                                                    Color="Color.Success"
+                                                    Href="@($"/Attendance/SignIn/{personId}?{nameof(SignIn.ServiceId)}={_service.Data?.Id}")">
+                                                    View
+                                                </MudButton>
+                                                <MudButton
+                                                    Color="Color.Error"
+                                                    Href="@($"/Attendance/SignOut/{personId}?{nameof(SignOut.AttendanceRecordId)}={live.Id}")">
+                                                    Sign Out
+                                                </MudButton>
+                                            }
+                                            else
+                                            {
+                                                <MudButton
+                                                    Color="Color.Success"
+                                                    Href="@($"/Attendance/SignIn/{personId}?{nameof(SignIn.ServiceId)}={_service.Data?.Id}")">
+                                                    Sign In
+                                                </MudButton>
+                                            }
+                                        </MudStack>
+                                        @* Sits below the row rather than beside it: on a phone this is
+                                           the control being aimed at, so it gets the full tile width. *@
+                                        <PickupRequestButton Record="@RecordFor(personId)"/>
                                     }
                                 </MudStack>
                             </SuffixContent>

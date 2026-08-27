@@ -1,0 +1,44 @@
+@inherits EntityUtilityComponent
+@inject IRefreshableStore<AttendanceRecord> AttendanceRecordsStore
+@inject IRefreshableStore<Person>           PeopleStore
+@inject IRefreshableStore<User>             UsersStore
+
+@* Plain elements, not MudStack/MudText: CSS isolation stamps its b-hash only on this
+   component's own markup, so a class on a MudBlazor component never matches its rule. *@
+<div class="log">
+    @if (_entries.IsLoading)
+    {
+        <div class="log-empty">
+            <MudProgressCircular Indeterminate Size="Size.Small"/>
+        </div>
+    }
+    else if (_entries.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Dense>
+            @(_entries.Error ?? "An Unexpected error occured")
+        </MudAlert>
+    }
+    else if (_entries.HasData && _entries.Data!.Count == 0)
+    {
+        <div class="log-empty">
+            <MudText Typo="Typo.body2">Nothing yet this service.</MudText>
+        </div>
+    }
+    else if (_entries.HasData)
+    {
+        <div class="log-rows">
+            @foreach (ActivityEntry entry in _entries.Data!)
+            {
+                <div class="log-row">
+                    <span class="log-time">@entry.Time</span>
+                    <span class="log-name">@entry.PersonName</span>
+                    <span class="log-action log-action--@entry.ActionClass">@entry.Action</span>
+                    @if (entry.ActorName != null)
+                    {
+                        <span class="log-actor">@entry.ActorName</span>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>

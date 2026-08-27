@@ -3,6 +3,7 @@ using GSBC.ImpactKids.Grpc.Data;
 using GSBC.ImpactKids.Grpc.Data.Interceptors;
 using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Grpc.Features.People.Sync.Interfaces;
+using GSBC.ImpactKids.Grpc.Features.Attendance.AttendancePickupDisplayServices;
 using GSBC.ImpactKids.Grpc.Features.Attendance.AttendanceItemRecordServices;
 using GSBC.ImpactKids.Grpc.Features.Attendance.AttendanceItemTypeServices;
 using GSBC.ImpactKids.Grpc.Features.Attendance.AttendanceRecordServices;
@@ -100,6 +101,8 @@ builder.Services.AddTransient<ElvantoService>();
 builder.Services.AddSingleton<EventingChannelsService>();
 // Wakes the wall display's scoreboard stream - see GameDisplayService.WatchScoreboard.
 builder.Services.AddSingleton<GameDataChangeNotifier>();
+// Wakes the pickup wall's stream - see AttendancePickupDisplayService.WatchPickups.
+builder.Services.AddSingleton<AttendanceDataChangeNotifier>();
 builder.Services.AddHostedService<RabbitWorker>();
 builder.Services.AddHostedService<HeartbeatService>();
 builder.Services.AddHybridCache();
@@ -178,6 +181,8 @@ app.MapGrpcService<GamePointRecordService>();
 app.MapGrpcService<GameBoardService>();
 // Unauthenticated - wall display only, aggregate scores only.
 app.MapGrpcService<GameDisplayService>();
+// Unauthenticated - pickup wall only, first name plus last initial only.
+app.MapGrpcService<AttendancePickupDisplayService>();
 app.MapGrpcService<SyncService>();
 app.MapGet("/",
     () =>
