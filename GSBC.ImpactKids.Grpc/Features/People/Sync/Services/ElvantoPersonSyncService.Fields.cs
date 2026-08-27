@@ -135,7 +135,7 @@ public partial class ElvantoPersonSyncService
 
         string?    rawElvValue = desc.GetFromElvanto(elv);
         string?    appValue    = desc.GetFromApp(appPerson);
-        Translated inbound     = TranslateElvantoValue(desc.FieldName, rawElvValue, set, appPerson.Id);
+        Translated inbound     = TranslateElvantoValue(desc.FieldName, rawElvValue, set, appPerson);
 
         bool isFamily = desc.FieldName == "FamilyId";
 
@@ -151,16 +151,23 @@ public partial class ElvantoPersonSyncService
         string? comparedApp = appValue;
         string? comparedElv = inbound.Value;
 
-        // Unreadable covers both: an Elvanto household this app has no other member of, and a school
-        // grade with no local row. Neither may drive a write in either direction, and neither is the
-        // same as the other side holding nothing.
+        // Unreadable now covers only a school grade with no local row and a bucketed person's
+        // household - an Elvanto household this app simply has no row for is no longer unreadable,
+        // it is recorded on first sight. Neither may drive a write in either direction, and neither
+        // is the same as Elvanto holding nothing, which is its own answer again.
         bool elvValueKnown = inbound.Known;
 
         // Outbound has to speak Elvanto's language even though the comparison speaks the app's: the
-        // Elvanto household this person's local family sits in, or "new" when it has none - which is
-        // a household to create, not a family to clear.
+        // Elvanto household this person's local family is, or "new" when it has none - which is a
+        // household to create, not a family to clear. Read from the stored pairing rather than from
+        // the other members the run happened to fetch, so it is the same answer every run.
+        // Guid.Empty is the app saying "no household", and there is nothing to push: "new" would ask
+        // Elvanto to create 400 one-person households, which is the inverse of what the value means.
+        // Left null it is refused by ApplyOutbound and reported, rather than silently inverted.
         string? outboundValue = isFamily
-            ? set.ResolveFamilyInElvanto(appPerson.FamilyId, appPerson.Id) ?? ElvantoService.NewFamily
+            ? appPerson.FamilyId == Guid.Empty
+                ? null
+                : set.Families.ElvantoFor(appPerson.FamilyId) ?? ElvantoService.NewFamily
             : comparedApp;
 
         return new FieldComparison
@@ -172,7 +179,8 @@ public partial class ElvantoPersonSyncService
             BaseAppHash        = baseRow?.AppHash,
             BaseElvantoHash    = baseRow?.LastSeenHash,
             ElvantoValueUsable = desc.IsValidInboundValue(comparedElv),
-            ElvantoValueKnown  = elvValueKnown,
+            ElvantoValueKnown = elvValueKnown,
+            ElvantoDetail     = inbound.Detail,
             AppChangedAt       = appChangedAt == default ? null : appChangedAt,
             // Elvanto's own date_modified, not the base's timestamp. The base records when the two
             // sides last agreed; using it as Elvanto's edit time made the app win any conflict where
@@ -269,7 +277,12 @@ public partial class ElvantoPersonSyncService
         if (desc.FieldName != "FamilyId")
             return desc.ApplyToElvantoRequest(req, value);
 
-        req.FamilyId = value ?? ElvantoService.NewFamily;
+        // Refused rather than defaulted. "no value" and "make a new household" are opposite
+        // instructions, and reading the first as the second is how a cleared family would become 400
+        // creates. A genuine new family arrives here as ElvantoService.NewFamily explicitly.
+        if (string.IsNullOrEmpty(value)) return false;
+
+        req.FamilyId = value;
         return true;
     }
 }

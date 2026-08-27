@@ -161,17 +161,38 @@ public partial class ElvantoPersonSyncService
                     continue;
                 }
 
-                desc!.SetOnApp(person!, item.ProposedValue);
+                // A descriptor may refuse a value it cannot read, and refusing is right. Recording
+                // the refusal as a completed write was not: the row said Applied, the audit row said
+                // the field had been updated, and the base below settled both legs on Elvanto's
+                // value - asserting the person held something they did not. The person kept their
+                // own value, so the next run read the gap as an app-side edit nobody made and
+                // planned to push it to Elvanto. Six of those appeared on a real Execute.
+                if (!desc!.SetOnApp(person!, item.ProposedValue))
+                {
+                    MarkSkipped(item, $"The app would not take Elvanto's value for {item.FieldName}");
+                    await audit.Log(operationId, person!.Id, SyncEventType.Diverged,
+                        $"InboundRefusedByApp:{item.Reason}", item.FieldName,
+                        item.ObservedAppValue, item.ObservedElvantoValue, SyncSource.Elvanto,
+                        token: token);
+                    continue;
+                }
+
                 MarkApplied(item);
 
                 await audit.Log(operationId, person!.Id, SyncEventType.FieldUpdated, item.Reason,
                     item.FieldName, item.ObservedAppValue, item.ObservedElvantoValue, SyncSource.Elvanto,
                     token: token);
 
-                // The app now holds Elvanto's value, so both legs settle on it. Nothing is
-                // outstanding on the app side: the reconciler only chose inbound because the app had
-                // not moved, or because Elvanto won a conflict outright.
-                await SettleBaseAsync(person.Id, desc, now!.ElvantoValue, now.ElvantoValue, set.Bases, token);
+                // Both legs record what each side actually holds, and the app's leg is re-read
+                // rather than assumed. It used to be written as Elvanto's value on the strength of
+                // the write having been attempted, which is only true when the write was exact - and
+                // an inbound is not always exact. The medical/allergy box parses into rows and is
+                // deliberately additive, so the person ends up holding a superset; settling both
+                // legs on Elvanto's text then made that superset look like an app-side change on the
+                // next run and planned to push it back as churn. Where the two legs differ the base
+                // now says so, and the run reports a difference instead of inventing an edit.
+                await SettleBaseAsync(person.Id, desc, desc.GetFromApp(person), now!.ElvantoValue,
+                    set.Bases, token);
                 counters.InboundFields++;
             }
 
@@ -356,13 +377,13 @@ public partial class ElvantoPersonSyncService
 
             ElvantoService.UpdateOutcome outcome = await elvantoService.UpdatePersonAsync(request, token);
 
-            // Elvanto created the family this person was moved into. Recorded both ways so the rest
-            // of this apply treats it as existing.
+            // Elvanto created the family this person was moved into. Persisted rather than only
+            // held for the rest of this apply: the id Elvanto minted is the answer to "which
+            // household is this local family?" for every run after this one too, and throwing it
+            // away at the end of the run is what made the outbound direction re-derive it forever.
             if (outcome.NewFamilyId is not null)
-            {
-                set.ElvantoFamilyIdByLocal[person.FamilyId] = outcome.NewFamilyId;
-                set.FamilyIdMap.TryAdd(outcome.NewFamilyId, person.FamilyId);
-            }
+                LinkFamily(set.Families, person.FamilyId, outcome.NewFamilyId,
+                    ElvantoFamilyLinkSource.CreatedInElvanto);
 
             foreach ((DbSyncPlannedChange item, IFieldSyncDescriptor desc, string? settled) in carried)
             {
@@ -420,8 +441,8 @@ public partial class ElvantoPersonSyncService
 
             // The family may have been created by an earlier item in this same apply, so the payload
             // is rebuilt rather than replayed - and then compared against what was decided.
-            bool knownFamily = set.ElvantoFamilyIdByLocal.TryGetValue(local.FamilyId, out string? elvantoFamilyId);
-            if (!knownFamily) elvantoFamilyId = ElvantoService.NewFamily;
+            string? elvantoFamilyId = set.Families.ElvantoFor(local.FamilyId);
+            if (elvantoFamilyId is null) elvantoFamilyId = ElvantoService.NewFamily;
 
             string payload = elvantoService.DescribeCreatePayload(
                 local, ComposeMedicalAllergyText(local), elvantoFamilyId);
@@ -475,11 +496,12 @@ public partial class ElvantoPersonSyncService
             item.ElvantoId  = result.Id;
             MarkApplied(item);
 
+            // Same as the update path: the household Elvanto minted for this person is remembered,
+            // so siblings later in this apply join them rather than each starting one of their own -
+            // and so do the runs after this one.
             if (result.FamilyId is not null)
-            {
-                set.ElvantoFamilyIdByLocal[local.FamilyId] = result.FamilyId;
-                set.FamilyIdMap.TryAdd(result.FamilyId, local.FamilyId);
-            }
+                LinkFamily(set.Families, local.FamilyId, result.FamilyId,
+                    ElvantoFamilyLinkSource.CreatedInElvanto);
 
             await audit.Log(operationId, local.Id, SyncEventType.PushedToElvanto, "CreatedNewInElvanto",
                 direction: SyncSource.App, token: token);

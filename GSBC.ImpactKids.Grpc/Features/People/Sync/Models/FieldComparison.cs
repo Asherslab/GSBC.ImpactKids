@@ -58,6 +58,12 @@ public sealed record FieldComparison
     /// </summary>
     public bool ElvantoValueKnown { get; init; } = true;
 
+    /// <summary>
+    /// Why Elvanto's side is not a value, when it is not — the text that reaches the audit row in
+    /// place of a bare "unknown".
+    /// </summary>
+    public string? ElvantoDetail { get; init; }
+
     /// <summary>What <c>SetOnApp</c> should receive when Elvanto wins. Defaults to <see cref="ElvantoValue"/>.</summary>
     public string? InboundValue { get; init; }
 

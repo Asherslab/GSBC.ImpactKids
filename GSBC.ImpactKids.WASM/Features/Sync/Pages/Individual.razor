@@ -153,24 +153,17 @@
             </MudItem>
         </MudGrid>
 
+        @* Two things live on this page and they are not the same thing: what a run DECIDED (the
+           plan) and what it DID (the audit trail). Splitting them at the top level keeps a dry
+           run's plan readable in the same direction-by-direction shape as an executed run, rather
+           than as one flat table under a single "Plan" tab. *@
         <MudTabs Elevation="0" Rounded ApplyEffectsToContainer PanelClass="pt-4">
-            <MudTabPanel Text="To Elvanto" Icon="@Icons.Material.Filled.Upload">
-                <AuditLogTable Logs="@ToElvantoLogs" GetPersonName="@GetPersonName"/>
-            </MudTabPanel>
-            <MudTabPanel Text="From Elvanto" Icon="@Icons.Material.Filled.Download">
-                <AuditLogTable Logs="@FromElvantoLogs" GetPersonName="@GetPersonName"/>
-            </MudTabPanel>
-            <MudTabPanel Text="Matches & Conflicts" Icon="@Icons.Material.Filled.CompareArrows">
-                <AuditLogTable Logs="@MatchConflictLogs" GetPersonName="@GetPersonName"/>
-            </MudTabPanel>
-            <MudTabPanel Text="Diverged" Icon="@Icons.Material.Filled.CallSplit">
-                <AuditLogTable Logs="@DivergedLogs" GetPersonName="@GetPersonName"/>
-            </MudTabPanel>
-            <MudTabPanel Icon="@Icons.Material.Filled.Checklist"
-                         BadgeData="@(PendingPlanItems > 0 ? PendingPlanItems : null)"
-                         BadgeColor="Color.Warning">
+            @* Counts live in the label, not in a MudTabPanel badge: the badge is absolutely
+               positioned past the label's right edge and the tab strip clips it, so "50" rendered
+               as "5" - a wrong number is worse than no number. *@
+            <MudTabPanel Icon="@Icons.Material.Filled.Checklist">
                 <TabContent>
-                    <MudText>Plan</MudText>
+                    <MudText>@Labelled("Plan", PendingPlanItems)</MudText>
                 </TabContent>
                 <ChildContent>
                     @if (_plan.HasError)
@@ -202,49 +195,62 @@
                             }
                         </MudAlert>
                     }
-                    <MudTable Items="@PlanItems" Hover Dense Breakpoint="Breakpoint.None">
-                        <HeaderContent>
-                            <MudTh>Person</MudTh>
-                            <MudTh>What</MudTh>
-                            <MudTh>Field</MudTh>
-                            <MudTh>App</MudTh>
-                            <MudTh>Elvanto</MudTh>
-                            <MudTh>Proposed</MudTh>
-                            <MudTh>Reason</MudTh>
-                            <MudTh>Status</MudTh>
-                        </HeaderContent>
-                        <RowTemplate>
-                            <MudTd DataLabel="Person">
-                                @(context.PersonId is { } pid
-                                    ? GetPersonName(pid)
-                                    : context.ObservedElvantoValue ?? context.ElvantoId ?? "-")
-                            </MudTd>
-                            <MudTd DataLabel="What">@FormatPlanKind(context.Kind)</MudTd>
-                            <MudTd DataLabel="Field">@(context.FieldName ?? "-")</MudTd>
-                            <MudTd DataLabel="App">@(context.ObservedAppValue ?? "-")</MudTd>
-                            <MudTd DataLabel="Elvanto">@(context.ObservedElvantoValue ?? "-")</MudTd>
-                            <MudTd DataLabel="Proposed">@(context.ProposedValue ?? "-")</MudTd>
-                            <MudTd DataLabel="Reason">@context.Reason</MudTd>
-                            <MudTd DataLabel="Status">
-                                <MudChip T="string" Size="Size.Small" Color="@PlanStatusColor(context.Status)"
-                                         Title="@context.StatusReason">
-                                    @context.Status
-                                </MudChip>
-                            </MudTd>
-                        </RowTemplate>
-                        <NoRecordsContent>
-                            <MudText Class="pa-4">This run decided nothing that needs applying.</MudText>
-                        </NoRecordsContent>
-                    </MudTable>
+                    <MudTabs Elevation="0" Rounded PanelClass="pt-4">
+                        <MudTabPanel Text="@PlanLabel("To Elvanto", PlanToElvanto)" Icon="@Icons.Material.Filled.Upload">
+                            <PlanTable Items="@PlanToElvanto" GetPersonName="@GetPersonName"
+                                       EmptyText="Nothing to write to Elvanto."/>
+                        </MudTabPanel>
+                        <MudTabPanel Text="@PlanLabel("From Elvanto", PlanFromElvanto)" Icon="@Icons.Material.Filled.Download">
+                            <PlanTable Items="@PlanFromElvanto" GetPersonName="@GetPersonName"
+                                       EmptyText="Nothing to write into the app."/>
+                        </MudTabPanel>
+                        <MudTabPanel Text="@PlanLabel("Links", PlanLinks)" Icon="@Icons.Material.Filled.CompareArrows">
+                            <PlanTable Items="@PlanLinks" GetPersonName="@GetPersonName"
+                                       EmptyText="No records to link."/>
+                        </MudTabPanel>
+                        <MudTabPanel Text="@PlanLabel("Archive", PlanArchive)" Icon="@Icons.Material.Filled.Archive">
+                            <PlanTable Items="@PlanArchive" GetPersonName="@GetPersonName"
+                                       EmptyText="Nobody to archive."/>
+                        </MudTabPanel>
+                    </MudTabs>
+                </ChildContent>
+            </MudTabPanel>
+            <MudTabPanel Text="Executed" Icon="@Icons.Material.Filled.History">
+                <MudTabs Elevation="0" Rounded PanelClass="pt-4">
+                    <MudTabPanel Text="To Elvanto" Icon="@Icons.Material.Filled.Upload">
+                        <AuditLogTable Logs="@ToElvantoLogs" GetPersonName="@GetPersonName"/>
+                    </MudTabPanel>
+                    <MudTabPanel Text="From Elvanto" Icon="@Icons.Material.Filled.Download">
+                        <AuditLogTable Logs="@FromElvantoLogs" GetPersonName="@GetPersonName"/>
+                    </MudTabPanel>
+                    <MudTabPanel Text="Matches & Conflicts" Icon="@Icons.Material.Filled.CompareArrows">
+                        <AuditLogTable Logs="@MatchConflictLogs" GetPersonName="@GetPersonName"/>
+                    </MudTabPanel>
+                </MudTabs>
+            </MudTabPanel>
+            @* Top level, not a sub-tab of Executed: a divergence is decided, never executed - the
+               engine looked at both sides and refused to act. On a dry run it was the only thing
+               under a tab called "Executed", which read as "done" for the rows that are precisely
+               not done. It is also the page's work-list, so it is one click from the front. *@
+            <MudTabPanel Icon="@Icons.Material.Filled.CallSplit">
+                <TabContent>
+                    <MudText>@Labelled("Diverged", DivergedLogs.Count)</MudText>
+                </TabContent>
+                <ChildContent>
+                    <MudAlert Severity="Severity.Normal" Class="mb-4">
+                        The two sides differ and this run deliberately did nothing. Each row carries both
+                        values and the reason, so it can be acted on without re-running anything.
+                    </MudAlert>
+                    <AuditLogTable Logs="@DivergedLogs" GetPersonName="@GetPersonName"/>
                 </ChildContent>
             </MudTabPanel>
             @if (ManualReviewItems.Count > 0)
             {
-                <MudTabPanel Icon="@Icons.Material.Filled.RateReview"
-                             BadgeData="@(ManualReviewItems.Count(r => r.Status == ManualReviewStatus.Pending))"
-                             BadgeColor="Color.Warning">
+                <MudTabPanel Icon="@Icons.Material.Filled.RateReview">
                     <TabContent>
-                        <MudText>Manual Review</MudText>
+                        <MudText>
+                            @Labelled("Manual Review", ManualReviewItems.Count(r => r.Status == ManualReviewStatus.Pending))
+                        </MudText>
                     </TabContent>
                     <ChildContent>
                         <MudOverlay Visible="@_reviewLoading" DarkBackground Absolute>

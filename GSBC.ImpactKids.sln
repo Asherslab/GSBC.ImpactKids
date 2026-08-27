@@ -61,6 +61,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "people", "people", "{E9D305
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "work", "work", "{B9DC90D9-F0E9-4A62-9E1D-CB23A88E59DE}"
 	ProjectSection(SolutionItems) = preProject
+		docs\work\2026-08-elvanto-family-mapping.md = docs\work\2026-08-elvanto-family-mapping.md
 		docs\work\2026-08-elvanto-sync-refactor.md = docs\work\2026-08-elvanto-sync-refactor.md
 		docs\work\2026-08-elvanto-sync-review.md = docs\work\2026-08-elvanto-sync-review.md
 	EndProjectSection

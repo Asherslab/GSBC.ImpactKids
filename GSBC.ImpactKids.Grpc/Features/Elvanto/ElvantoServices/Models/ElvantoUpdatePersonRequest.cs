@@ -36,6 +36,19 @@ public class ElvantoUpdatePersonRequest : IRequestMessage
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? FamilyId { get; set; }
 
+    /// <summary>
+    /// One of Elvanto's accepted values: Primary Contact, Spouse, Partner, Child, Sibling,
+    /// Grandfather, Grandmother, Other.
+    ///
+    /// Only ever set to "Primary Contact", and only by FamilyGuardianDescriptor promoting someone
+    /// Elvanto does not currently treat as a guardian. The app holds one boolean where Elvanto holds
+    /// eight relationships, so it has nothing to say about which of them a non-guardian should be -
+    /// see the descriptor for why the reverse is refused rather than guessed at.
+    /// </summary>
+    [JsonPropertyName("family_relationship")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? FamilyRelationship { get; set; }
+
     [JsonPropertyName("fields")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ElvantoPersonFields? Fields { get; set; }

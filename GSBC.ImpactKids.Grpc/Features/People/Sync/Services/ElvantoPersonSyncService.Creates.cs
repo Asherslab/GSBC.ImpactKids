@@ -68,7 +68,8 @@ public partial class ElvantoPersonSyncService
             // family. Only the first member of that family asks: the id comes back on the create and
             // is recorded, so siblings later in the same Apply join them instead of each starting a
             // household of their own.
-            bool knownFamily = set.ElvantoFamilyIdByLocal.TryGetValue(local.FamilyId, out string? elvantoFamilyId);
+            string? elvantoFamilyId = set.Families.ElvantoFor(local.FamilyId);
+            bool    knownFamily     = elvantoFamilyId is not null;
             if (!knownFamily)
                 elvantoFamilyId = ElvantoService.NewFamily;
 
@@ -184,12 +185,14 @@ public partial class ElvantoPersonSyncService
 
         foreach (IFieldSyncDescriptor desc in _descriptors)
         {
-            Translated value = TranslateElvantoValue(desc.FieldName, desc.GetFromElvanto(elv), set, p.Id);
+            Translated value = TranslateElvantoValue(desc.FieldName, desc.GetFromElvanto(elv), set, p);
 
             // A value we could not read is left off the new person rather than guessed at. They are
             // created without a school grade rather than with someone else's, and in their own new
             // family rather than in a household they may not belong to.
-            if (value.Known) desc.SetOnApp(p, value.Value);
+            // A refusal needs nothing done about it here: every field is initialised above, so the
+            // person is created without the value rather than with a guess at it.
+            if (value.Known) _ = desc.SetOnApp(p, value.Value);
         }
 
         return p;

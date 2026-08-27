@@ -40,6 +40,12 @@ Present tense, kept current, no dates.
 - [Elvanto sync — base values, plan-then-execute, and splitting the orchestrator](work/2026-08-elvanto-sync-refactor.md)
   — the plan. Read [the findings register](work/2026-08-elvanto-sync-review.md) first if you want
   the evidence rather than the response.
+- [Elvanto sync — a persisted local-family ⟷ Elvanto-family mapping](work/2026-08-elvanto-family-mapping.md)
+  — handover for the family-id work: why 494 people diverge on `FamilyId` every run, and the table that
+  ends it. **Built and verified**; also covers "no family" becoming a real state.
+- [Elvanto sync — full-feature test, ending in real writes](work/2026-08-elvanto-write-testing.md)
+  — the test plan, and **the halt-and-verify gate that must be satisfied before any write reaches
+  Elvanto**. Read the gate before touching `Elvanto:AllowWrites`.
 
 ### Open
 

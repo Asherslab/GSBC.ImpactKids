@@ -12,8 +12,7 @@ public class PhoneNumberDescriptor : BaseFieldSyncDescriptor
 
     public override string? GetFromApp(DbPerson person) => Normalise(person.PhoneNumber);
 
-    public override void SetOnApp(DbPerson person, string? value) =>
-        person.PhoneNumber = string.IsNullOrWhiteSpace(value) ? null : value;
+    public override bool SetOnApp(DbPerson person, string? value) => Assign(value, v => person.PhoneNumber = v);
 
     public override string? GetFromElvanto(ElvantoPerson elv) =>
         Normalise(string.IsNullOrWhiteSpace(elv.Mobile)

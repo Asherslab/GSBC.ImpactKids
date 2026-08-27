@@ -28,7 +28,21 @@ public interface IFieldSyncDescriptor
     PrecedenceOnTie PrecedenceOnTie => PrecedenceOnTie.Elvanto;
 
     string? GetFromApp(DbPerson person);
-    void    SetOnApp(DbPerson person, string? value);
+
+    /// <summary>
+    /// Writes an inbound value onto the person, and reports whether the person actually took it.
+    ///
+    /// <b>The return value is the inbound mirror of <see cref="ApplyToElvantoRequest"/>, and it
+    /// exists for the same reason.</b> Several descriptors refuse a value they cannot read - a date
+    /// that will not parse, a family id that is not a Guid - and refusing is right. Refusing
+    /// <i>silently</i> was not: the caller marked the change Applied, wrote an audit row saying the
+    /// field had been updated, and settled the base as though both sides now held Elvanto's value.
+    /// The person still held their own, so the next run saw an app-side change nobody made and
+    /// planned to push it back to Elvanto - six phantom outbound writes on a real run.
+    ///
+    /// False means "nothing was written". It must not be returned after a partial write.
+    /// </summary>
+    bool    SetOnApp(DbPerson person, string? value);
 
     string? GetFromElvanto(ElvantoPerson elvantoPerson);
 
@@ -52,8 +66,16 @@ public interface IFieldSyncDescriptor
     /// Returns false when the Elvanto value is semantically empty for this field
     /// (e.g. a consent state that means "nothing set") and should never drive an
     /// inbound update or win a conflict against a real app value.
+    ///
+    /// <b>Blank is the default case of that, and it used to be excluded.</b> Defaulting to true
+    /// made "Elvanto holds nothing" a usable value for every field that did not think to say
+    /// otherwise, so it won <c>FirstSync:ElvantoPrecedence</c> and planned an inbound <i>clear</i> -
+    /// and the reconciler's <c>FirstSync:ElvantoHasNothing</c> branch, which exists for exactly this
+    /// shape and pushes the app's value instead, was unreachable for those fields. This is the same
+    /// family as the unmapped school grade that cleared a child's year level: absence read as an
+    /// instruction. A descriptor that genuinely wants a blank to mean "clear it" has to say so.
     /// </summary>
-    bool IsValidInboundValue(string? elvValue) => true;
+    bool IsValidInboundValue(string? elvValue) => !string.IsNullOrWhiteSpace(elvValue);
 
     /// <summary>
     /// Which side wins the first time a field is seen, when there is no snapshot and so no

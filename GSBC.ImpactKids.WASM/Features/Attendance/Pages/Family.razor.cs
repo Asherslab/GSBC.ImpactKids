@@ -105,11 +105,7 @@ public partial class Family
             return;
         }
 
-        string familyName = people.Data
-            .Where(x => x.FamilyId == person.FamilyId)
-            .GroupBy(y => y.LastName)
-            .MaxBy(y => y.Count())!
-            .Key;
+        string familyName = Person.FamilyNameOf(person, people.Data);
 
         _person = _person.ToSuccess(person);
         _familyName = _familyName.ToSuccess(familyName);

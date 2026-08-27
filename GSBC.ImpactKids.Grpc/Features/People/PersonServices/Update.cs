@@ -81,7 +81,10 @@ public partial class PersonService
 
         if (request.FamilyId.IsUpdated)
         {
-            person.FamilyId = request.FamilyId.Value ?? Guid.NewGuid();
+            // Clearing the family means no family. It used to mint a fresh Guid, so "remove this
+            // person from their family" quietly put them in a new one of their own - which reads
+            // identically in the column and differently to everything that groups on it.
+            person.FamilyId = request.FamilyId.Value ?? Guid.Empty;
         }
 
         if (request.FamilyGuardian.IsUpdated)

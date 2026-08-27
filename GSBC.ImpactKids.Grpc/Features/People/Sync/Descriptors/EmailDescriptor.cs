@@ -11,7 +11,7 @@ public class EmailDescriptor : BaseFieldSyncDescriptor
     public override SyncDirection DefaultDirection => SyncDirection.Bidirectional;
 
     public override string? GetFromApp(DbPerson person)       => person.Email;
-    public override void    SetOnApp(DbPerson person, string? value) => person.Email = string.IsNullOrWhiteSpace(value) ? null : value;
+    public override bool    SetOnApp(DbPerson person, string? value) => Assign(value, v => person.Email = v);
     public override string? GetFromElvanto(ElvantoPerson elv) => string.IsNullOrWhiteSpace(elv.Email) ? null : elv.Email;
     public override bool    ApplyToElvantoRequest(ElvantoUpdatePersonRequest req, string? value) => Set(value, v => req.Email = v);
 }
