@@ -123,9 +123,10 @@ public partial class ElvantoPersonSyncService
     /// "is this person in the right local family?" is a fact the app owns — see the comment on
     /// <c>comparedApp</c> below for why the other direction failed.
     ///
-    /// Family is the one field whose <i>outbound</i> value leaves that space: it has to speak
-    /// Elvanto's language on the wire. That asymmetry is real and has a cost — see "The FamilyId base
-    /// is settled in the wrong terms after an outbound push" in docs/sync-feature.md.
+    /// Both are also the fields whose <i>outbound</i> value leaves that space: each has to speak
+    /// Elvanto's language on the wire, so each is translated back below. That asymmetry is real and
+    /// has a cost — see "The FamilyId base is settled in the wrong terms after an outbound push" in
+    /// docs/sync-feature.md.
     /// </summary>
     private FieldComparison BuildComparison(
         IFieldSyncDescriptor desc,
@@ -139,8 +140,6 @@ public partial class ElvantoPersonSyncService
         string?    rawElvValue = desc.GetFromElvanto(elv);
         string?    appValue    = desc.GetFromApp(appPerson);
         Translated inbound     = TranslateElvantoValue(desc.FieldName, rawElvValue, set, appPerson);
-
-        bool isFamily = desc.FieldName == "FamilyId";
 
         // Family is compared in the APP's terms - "is this person in the right local family?" - which
         // is a fact the app owns. Comparing in Elvanto's terms instead asked "which Elvanto household
@@ -160,18 +159,32 @@ public partial class ElvantoPersonSyncService
         // is the same as Elvanto holding nothing, which is its own answer again.
         bool elvValueKnown = inbound.Known;
 
-        // Outbound has to speak Elvanto's language even though the comparison speaks the app's: the
-        // Elvanto household this person's local family is, or "new" when it has none - which is a
-        // household to create, not a family to clear. Read from the stored pairing rather than from
-        // the other members the run happened to fetch, so it is the same answer every run.
+        // Outbound has to speak Elvanto's language even though the comparison speaks the app's, and
+        // two fields have to be carried back across that line.
+        //
+        // Family: the Elvanto household this person's local family is, or "new" when it has none -
+        // which is a household to create, not a family to clear. Read from the stored pairing rather
+        // than from the other members the run happened to fetch, so it is the same answer every run.
         // Guid.Empty is the app saying "no household", and there is nothing to push: "new" would ask
         // Elvanto to create 400 one-person households, which is the inverse of what the value means.
         // Left null it is refused by ApplyOutbound and reported, rather than silently inverted.
-        string? outboundValue = isFamily
-            ? appPerson.FamilyId == Guid.Empty
+        //
+        // School grade: the Elvanto id of the local grade row - the id, not the name, and it rides
+        // under "fields" rather than at the top level. A local grade this app has no ElvantoId for
+        // cannot be named to Elvanto at all, and neither can "no grade" - both leave null and are
+        // refused and reported. Neither is sent as a clear, and there is no clear to send: nothing
+        // empties a school grade through the API. See SchoolGradeDescriptor for what was measured.
+        string? outboundValue = desc.FieldName switch
+        {
+            "FamilyId" => appPerson.FamilyId == Guid.Empty
                 ? null
-                : set.Families.ElvantoFor(appPerson.FamilyId) ?? ElvantoService.NewFamily
-            : comparedApp;
+                : set.Families.ElvantoFor(appPerson.FamilyId) ?? ElvantoService.NewFamily,
+
+            "SchoolGradeId" => set.SchoolGrades
+                .FirstOrDefault(g => g.Id == appPerson.SchoolGradeId)?.ElvantoId,
+
+            _ => comparedApp
+        };
 
         return new FieldComparison
         {

@@ -181,9 +181,10 @@ Two rules give the reconciler its shape:
   outbound change stays outstanding and is offered again next run.
 
 `IFieldSyncDescriptor.ApplyToElvantoRequest` returns `bool` for that last rule: whether the payload
-genuinely carries the field. A descriptor that declines — `SchoolGradeId`, `FamilyGuardian`, a
-media-consent value that is not one of the four options — must say `false`, because a base advanced
-on a field that was never sent buries the change it was given.
+genuinely carries the field. A descriptor that declines — a demotion from `FamilyGuardian`, a school
+grade the app cannot name in Elvanto's terms, a media-consent value that is not one of the four
+options — must say `false`, because a base advanced on a field that was never sent buries the change
+it was given.
 
 ### Clearing a field
 
@@ -268,6 +269,38 @@ and since the field then had no Elvanto value to record, it recurred on every ru
 The same distinction applies to school grade: an Elvanto grade with no `DbSchoolGrade` row is
 unreadable, not absent, and clearing a child's grade because of it produced an audit row that read
 as a legitimate clear.
+
+### School grade goes both ways
+
+`SchoolGradeId` was `InboundOnly` for two reasons and is now `Bidirectional`. The payload had no
+`school_grade` at all, so the direction was the only thing stopping a "would push" row for a change
+the request body could never carry; it carries the field now. And Elvanto rolls every child's grade
+over yearly, which the old engine could not tell apart from an app-side edit — it compared an edit
+timestamp against a poll timestamp. The three-way merge can: a rollover moves Elvanto's leg alone and
+is `ElvantoChangedAlone`, applied inbound with no clock consulted at all.
+
+It is translated the same way family is: compared in the app's terms, pushed in Elvanto's, with
+`BuildComparison` resolving the local Guid back to `DbSchoolGrade.ElvantoId`. All fifteen local
+`ElvantoId` values match the ids the live API returns, one for one.
+
+Three things about the wire format, all verified against the live API on 2026-08-27, and each one
+wrong in the first cut of this change:
+
+- **`school_grade` is a standard optional people field, so it travels under `fields`**, beside
+  `birthday`. At the top level it is rejected outright: `A param does not exist (school_grade)`.
+- **The value is the grade id, not its name**, despite the docs describing it as "the name of the
+  school grade". The name works only where the name is not numeric — this account's grades are named
+  `1`–`12` plus Prep, Kindergarten and Nursery/Pre-school, and `"7"` answers with a 500 while that
+  grade's id succeeds. Twelve of the fifteen would have been unpushable.
+- **A school grade cannot be cleared through the API at all.** A null answers `ok` and changes
+  nothing; `""` and `"0"` both answer 500; every spelling of "none", including `-- None --`, is
+  rejected as an invalid value. Only Elvanto's own UI can empty the field.
+
+That last point makes the descriptor's refusal the only behaviour available rather than a
+preference. **A grade the app cannot name in Elvanto's terms is never sent.** A child with no grade
+and a local grade row with no `ElvantoId` both arrive as null and are declined, reported as
+`NotCarried:`. Note that the general "an empty string is a deliberate clear" rule above does **not**
+hold for this field.
 
 ## Never trust a partial Elvanto fetch
 
