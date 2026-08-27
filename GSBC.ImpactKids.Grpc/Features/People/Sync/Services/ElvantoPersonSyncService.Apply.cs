@@ -21,6 +21,20 @@ public partial class ElvantoPersonSyncService
     /// </summary>
     public async Task<SyncResult> ApplyPlanAsync(Guid operationId, CancellationToken token = default)
     {
+        // Taken before anything is read, and released however this method leaves. Two executions in
+        // flight would both read the same Pending items and both do the work - see ApplyClaim.
+        await using ApplyClaim? claim = await TryClaimApplyLockAsync(token);
+
+        if (claim is null)
+        {
+            logger.LogWarning(
+                "Sync {OperationId}: apply refused — another execution is already running", operationId);
+
+            return SyncResult.Failed(operationId,
+                "Another sync execution is already running. Wait for it to finish, then try again — "
+                + "the plan is untouched.");
+        }
+
         DbSyncOperation? operation = await db.SyncOperations
             .FirstOrDefaultAsync(x => x.Id == operationId, token);
 
@@ -432,6 +446,20 @@ public partial class ElvantoPersonSyncService
             string payload = elvantoService.DescribeCreatePayload(
                 local, ComposeMedicalAllergyText(local), elvantoFamilyId);
 
+            // KNOWN GAP, deliberately left as-is: the staleness check does not run at all when the
+            // family moved between deciding and applying.
+            //
+            // The family id is part of the payload, so a person whose household was minted by an
+            // earlier item in this same apply hashes differently for a reason that is not a change to
+            // the person - hence the second clause. But `&&` means the whole check is skipped in
+            // exactly that case, so the second and later members of every new household are created
+            // from a payload nobody re-verified. If someone edits that child between Decide and
+            // Execute, the edit goes to Elvanto unannounced instead of being marked Stale.
+            //
+            // The fix is to compare like with like rather than to skip: rebuild the payload with
+            // `item.ProposedValue` as the family and hash that, then compare unconditionally. Not
+            // done here because it wants its own test over the sibling-create path, and the window is
+            // one plan's lifetime (Elvanto:PlanExpiryHours, 4 by default).
             if (SyncHash.Of(payload) != item.ObservedAppHash && elvantoFamilyId == item.ProposedValue)
             {
                 MarkStale(item, "The person changed after this plan was decided");

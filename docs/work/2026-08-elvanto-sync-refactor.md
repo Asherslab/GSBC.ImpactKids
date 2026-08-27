@@ -413,12 +413,21 @@ the sequence rather than by reading:
    planned inbound family moves, each of which would have minted a fresh Guid and put the person in
    a brand-new one-person household (**F7**'s mechanism). Fixed: `ElvantoValueUnknown`.
 
-**Left for step 6, and it is a real finding:** applying an inbound family move and then planning the
-reverse outbound move for the same 14 people in the next run. The person is moved into the local
-family Elvanto says, and then the app's own grouping — read off their relatives — disagrees and
-would push them back. It converges after one outbound rather than looping, and with writes off it
-simply sits in the plan, but it means **family is the one field where Decide/Apply is not yet
-idempotent**. It belongs with **F6** and **F7**, which are the family rework.
+~~**Left for step 6, and it is a real finding:**~~ **Superseded by the family-mapping work** — see
+[2026-08 Elvanto family mapping](./2026-08-elvanto-family-mapping.md) and commit `c306b4c`. The
+finding as written was: applying an inbound family move and then planning the reverse outbound move
+for the same 14 people in the next run, because the app's own grouping — read off their relatives —
+disagreed and would push them back.
+
+**That mechanism no longer exists.** It depended on the household-to-family map being *derived* from
+the fetched roll on every run, so a move changed the very evidence the map was built from.
+`ElvantoFamilyLinks` persists the pairing: `TranslateFamily` answers from the stored row, which does
+not move when the roll or the person does, so a move is a difference the next run can see rather than
+one that re-derives itself. The verification note earlier in this doc — Decide, Execute with writes
+off, Decide again producing **zero** family items — is the one that stands.
+
+A *different* family wart survives, unrelated to this one and narrower: see "The FamilyId base is
+settled in the wrong terms after an outbound push" in [sync-feature.md](../sync-feature.md).
 
 ## The migration history was collapsed
 

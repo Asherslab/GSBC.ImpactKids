@@ -118,11 +118,14 @@ public partial class ElvantoPersonSyncService
     /// <summary>
     /// Puts one field's two sides and their base into a single comparison space.
     ///
-    /// Two fields are not naturally in one. Family is compared in <b>Elvanto's</b> terms: translating
-    /// an Elvanto family id back into a local Guid asks a map that learns the pairing from the
-    /// members, so a person alone in the wrong Elvanto family translated back to their own local
-    /// family and compared equal to it. School grade is compared in the <b>app's</b>, because Elvanto
-    /// owns the grade ids and the app owns the rows they point at.
+    /// Two fields are not naturally in one, and both are put in the <b>app's</b>. School grade
+    /// because Elvanto owns the grade ids and the app owns the rows they point at; family because
+    /// "is this person in the right local family?" is a fact the app owns — see the comment on
+    /// <c>comparedApp</c> below for why the other direction failed.
+    ///
+    /// Family is the one field whose <i>outbound</i> value leaves that space: it has to speak
+    /// Elvanto's language on the wire. That asymmetry is real and has a cost — see "The FamilyId base
+    /// is settled in the wrong terms after an outbound push" in docs/sync-feature.md.
     /// </summary>
     private FieldComparison BuildComparison(
         IFieldSyncDescriptor desc,

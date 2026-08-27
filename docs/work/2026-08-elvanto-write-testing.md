@@ -464,8 +464,12 @@ commit.
   decides and stops; `ExecutePlan` applies. AppOnly's behaviour is reproduced by
   `Elvanto:AllowWrites=false` on an Execute.
 
-- **The broken `getInfo` also disables the write path's family read-back.** Separate from the
-  scopes, and not fixed either. `GetPersonInfoAsync` has two callers outside them, both on the
+- ~~**The broken `getInfo` also disables the write path's family read-back.**~~ **Fixed, 2026-08-27**
+  in `f171ddc` — the one-line fix below was taken: `ElvantoGetPersonInfoResponse.Person` is a list and
+  the read takes the first element. Covered by `GetPersonInfoShapeTests` and
+  `FamilyReadBackLinkingTests`. The rest of this item is kept for the reasoning, not as open work.
+
+  Separate from the scopes. `GetPersonInfoAsync` has two callers outside them, both on the
   `family_id: "new"` path where Elvanto mints a household:
 
   | Caller | Why it reads back | Effect of the null |

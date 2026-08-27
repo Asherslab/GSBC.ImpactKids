@@ -85,6 +85,20 @@ public partial class Multiple : ComponentBase, IDisposable
     /// </summary>
     private async Task ExecutePlan(SyncOperation operation)
     {
+        // The engine's guards are all per-item; nothing in them notices that the person pressing this
+        // meant to press View. Naming the count and the fact that Elvanto is written to is the part
+        // that has to happen before the call, not after it.
+        bool? confirmed = await DialogService.ShowMessageBoxAsync(
+            "Execute this plan?",
+            $"{operation.PendingPlanItems} change{(operation.PendingPlanItems == 1 ? "" : "s")} will be applied "
+            + "to this app and, where writes are enabled, sent to Elvanto. Open View first if you have not "
+            + "read the plan.",
+            yesText: "Execute", cancelText: "Cancel"
+        );
+
+        if (confirmed is null)
+            return;
+
         _isSubmitting = true;
         StateHasChanged();
 
