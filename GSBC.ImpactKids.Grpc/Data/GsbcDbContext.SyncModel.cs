@@ -12,6 +12,7 @@ public partial class GsbcDbContext
     public required DbSet<DbSyncAuditLog>         SyncAuditLogs         { get; set; }
     public required DbSet<DbSyncPendingReview>    PendingReviews        { get; set; }
     public required DbSet<DbSyncPlannedChange>    PlannedChanges        { get; set; }
+    public required DbSet<DbElvantoFamilyLink>    ElvantoFamilyLinks    { get; set; }
 
     private static void BuildSyncModel(ModelBuilder modelBuilder)
     {
@@ -106,5 +107,16 @@ public partial class GsbcDbContext
             .Property(x => x.Kind).HasConversion<string>();
         modelBuilder.Entity<DbSyncPlannedChange>()
             .Property(x => x.Status).HasConversion<string>();
+
+        // DbElvantoFamilyLink - unique on BOTH sides, deliberately. One local family is one Elvanto
+        // household; a second row for either side is not a better guess, it is two answers to a
+        // question that has one, and the constraint is what turns that into a failure someone can
+        // see rather than whichever row the dictionary happened to yield first.
+        modelBuilder.Entity<DbElvantoFamilyLink>()
+            .HasIndex(x => x.LocalFamilyId).IsUnique();
+        modelBuilder.Entity<DbElvantoFamilyLink>()
+            .HasIndex(x => x.ElvantoFamilyId).IsUnique();
+        modelBuilder.Entity<DbElvantoFamilyLink>()
+            .Property(x => x.Source).HasConversion<string>();
     }
 }

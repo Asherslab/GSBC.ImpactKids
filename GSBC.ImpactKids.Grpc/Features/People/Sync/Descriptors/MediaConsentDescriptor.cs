@@ -14,17 +14,19 @@ public class MediaConsentDescriptor : BaseFieldSyncDescriptor
 
     public override string? GetFromApp(DbPerson person) => person.MediaConsent;
 
-    public override void SetOnApp(DbPerson person, string? value) =>
-        person.MediaConsent = value ?? nameof(PeopleMediaConsent.NotRequested);
+    public override bool SetOnApp(DbPerson person, string? value) =>
+        Assign(value, v => person.MediaConsent = v);
 
     public override string? GetFromElvanto(ElvantoPerson elv) =>
         elv.MediaConsent is null
             ? nameof(PeopleMediaConsent.NotRequested)
             : PeopleMediaConsentHelper.FromElvanto(elv.MediaConsent.Name).ToString();
 
-    // NotRequested means "nothing collected" — never let it overwrite a real consent value in the app.
+    // NotRequested means "nothing collected" — never let it overwrite a real consent value in the
+    // app. Blank says the same thing and is refused by the base, so this adds to that rule rather
+    // than replacing it: written as its own null check it let "" through, which is a clear.
     public override bool IsValidInboundValue(string? elvValue) =>
-        elvValue is not null && elvValue != nameof(PeopleMediaConsent.NotRequested);
+        base.IsValidInboundValue(elvValue) && elvValue != nameof(PeopleMediaConsent.NotRequested);
 
     public override bool ApplyToElvantoRequest(ElvantoUpdatePersonRequest req, string? value)
     {

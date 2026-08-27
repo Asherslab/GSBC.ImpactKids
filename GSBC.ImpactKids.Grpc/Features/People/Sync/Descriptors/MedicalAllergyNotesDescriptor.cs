@@ -149,12 +149,24 @@ public class MedicalAllergyNotesDescriptor : BaseFieldSyncDescriptor
     public override bool ApplyToElvantoRequest(ElvantoUpdatePersonRequest req, string? value) =>
         Set(value, v => req.MedicalAllergyNotes = v);
 
-    public override void SetOnApp(DbPerson person, string? value)
+    /// <summary>
+    /// Returns true because rows really are written - but the person will not end up holding
+    /// Elvanto's text verbatim, because this is a parse into structured rows and it is deliberately
+    /// additive. The caller settles the base from what the person actually holds afterwards rather
+    /// than from what Elvanto holds, which is what stops that difference being read as an app-side
+    /// change on the next run and pushed back as churn.
+    /// </summary>
+    public override bool SetOnApp(DbPerson person, string? value)
     {
         if (Lookups is null)
             throw new InvalidOperationException(
                 $"{nameof(MedicalAllergyNotesDescriptor)}.{nameof(Lookups)} was not primed before an inbound update. "
                 + "Without it an inbound write would silently drop every allergen and medical type.");
+
+        // Nothing to parse and nothing to add. Inbound here is additive, so a blank could never
+        // remove anything anyway - but reporting it as a write would settle a base saying the two
+        // sides now agree, which they do not.
+        if (string.IsNullOrWhiteSpace(value)) return false;
 
         MedicalAllergyFormat.ParsedMedicalAllergy parsed = MedicalAllergyFormat.Parse(value);
 
@@ -168,6 +180,8 @@ public class MedicalAllergyNotesDescriptor : BaseFieldSyncDescriptor
         // dropped or split into guesses.
         if (parsed.Unrecognised.Count > 0)
             ApplyUnrecognised(person, string.Join("\n", parsed.Unrecognised));
+
+        return true;
     }
 
     private void ApplyAllergy(DbPerson person, MedicalAllergyFormat.Item item)

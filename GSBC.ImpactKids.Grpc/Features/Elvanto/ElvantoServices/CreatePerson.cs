@@ -29,7 +29,7 @@ public partial class ElvantoService
     /// human's eye on the first few rather than trust.
     /// </summary>
     private static string FamilyRelationshipFor(DbPerson person) =>
-        person.FamilyGuardian ? "Spouse" : "Child";
+        person.FamilyGuardian ? "Primary Contact" : "Child";
 
     private static readonly TimeZoneInfo AestZone =
         TimeZoneInfo.FindSystemTimeZoneById("Australia/Sydney");

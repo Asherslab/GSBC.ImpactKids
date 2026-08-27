@@ -14,15 +14,33 @@ public abstract class BaseFieldSyncDescriptor : IFieldSyncDescriptor
     public virtual PrecedenceOnTie PrecedenceOnTie => PrecedenceOnTie.Elvanto;
 
     public abstract string? GetFromApp(DbPerson person);
-    public abstract void    SetOnApp(DbPerson person, string? value);
+    public abstract bool    SetOnApp(DbPerson person, string? value);
     public abstract string? GetFromElvanto(ElvantoPerson elvantoPerson);
     public abstract bool    ApplyToElvantoRequest(ElvantoUpdatePersonRequest req, string? value);
 
-    public virtual bool IsValidInboundValue(string? elvValue) => true;
+    /// <inheritdoc cref="IFieldSyncDescriptor.IsValidInboundValue"/>
+    public virtual bool IsValidInboundValue(string? elvValue) => !string.IsNullOrWhiteSpace(elvValue);
 
     public virtual SyncSource FirstSyncPrecedence => SyncSource.Elvanto;
 
     public virtual string? MergeForFirstSync(string? appValue, string? elvValue) => appValue;
+
+    /// <summary>
+    /// Assigns an inbound value and reports that the person took it.
+    ///
+    /// A blank is refused, and that refusal is the second line of defence behind
+    /// <see cref="IsValidInboundValue"/>. Elvanto holding nothing is not an instruction to clear
+    /// what a leader typed here: read as one it silently emptied a phone number, an email or a name
+    /// and recorded the emptying as an agreement, at which point the app had no copy left to notice
+    /// was missing. A descriptor that really does want a blank to clear its field assigns directly
+    /// rather than through this.
+    /// </summary>
+    protected static bool Assign(string? value, Action<string> assign)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return false;
+        assign(value);
+        return true;
+    }
 
     /// <summary>
     /// Assigns an outbound value and reports that it was carried. Null is "nothing to say" and is

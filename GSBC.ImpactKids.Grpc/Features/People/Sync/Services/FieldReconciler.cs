@@ -48,7 +48,7 @@ public class FieldReconciler(IConflictResolver conflictResolver) : IFieldReconci
         // here either: it records what both sides held when they agreed, and if one cannot say what
         // it holds now, "has it moved?" has no answer.
         if (!comparison.ElvantoValueKnown)
-            return FieldDecision.Diverged("ElvantoValueUnknown");
+            return FieldDecision.Diverged(comparison.ElvantoDetail ?? "ElvantoValueUnknown");
 
         FieldDecision decision = comparison.HasBase
             ? DecideAgainstBase(descriptor, comparison)
@@ -87,8 +87,15 @@ public class FieldReconciler(IConflictResolver conflictResolver) : IFieldReconci
         bool elvMoved = c.ElvantoHash != c.BaseElvantoHash;
 
         // The two sides differ and the base says neither has moved since they agreed - so the base
-        // records a disagreement, which it can only do if it was written while one was outstanding.
-        // Nothing can be inferred from it, so nothing is done to either side.
+        // records a disagreement rather than an agreement. Nothing can be inferred from it, so
+        // nothing is done to either side.
+        //
+        // Apply writes one of these on purpose now, and that is the honest use of it: an inbound
+        // write is not always exact - the medical/allergy box parses into rows and is deliberately
+        // additive - so the base records what each side actually holds afterwards, which is not the
+        // same string. Saying "the two differ and the engine cannot pick" is the truth about that
+        // state. Settling both legs on Elvanto's value instead read as an app-side edit on the next
+        // run and planned to push the difference back as churn.
         if (!appMoved && !elvMoved)
             return FieldDecision.Diverged("BaseDisagreesWithBothSides");
 

@@ -23,8 +23,19 @@ public class SchoolGradeDescriptor : BaseFieldSyncDescriptor
 
     public override string? GetFromApp(DbPerson person) => person.SchoolGradeId?.ToString();
 
-    public override void SetOnApp(DbPerson person, string? value) =>
-        person.SchoolGradeId = Guid.TryParse(value, out Guid g) ? g : null;
+    /// <summary>
+    /// A value that is not a local grade Guid is not a grade, and clearing the child's year level on
+    /// the strength of it is the F9 shape - absence read as an instruction. The orchestrator already
+    /// reports an Elvanto grade it cannot map as unreadable rather than as a value; this refuses the
+    /// rest, and says so rather than reporting a write it did not make.
+    /// </summary>
+    public override bool SetOnApp(DbPerson person, string? value)
+    {
+        if (!Guid.TryParse(value, out Guid g)) return false;
+
+        person.SchoolGradeId = g;
+        return true;
+    }
 
     // Returns the Elvanto school grade ID string for hash comparison
     public override string? GetFromElvanto(ElvantoPerson elv) => elv.SchoolGrade?.Id;

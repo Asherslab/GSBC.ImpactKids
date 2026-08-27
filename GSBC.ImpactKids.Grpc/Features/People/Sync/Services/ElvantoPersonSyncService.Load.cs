@@ -56,22 +56,10 @@ public partial class ElvantoPersonSyncService
             .Where(p => p.ElvantoId is not null)
             .ToDictionary(p => p.ElvantoId!);
 
-        // Seed family map from already-linked people: Elvanto family ID string → local Guid
-        Dictionary<string, Guid> familyIdMap = [];
-        // Blank is not a family id. Elvanto returns one for people it has no household for, and a
-        // map keyed on "" pairs every such person with whichever local family got there first.
-        foreach (ElvantoPerson e in elvantoPeople.Where(e => !string.IsNullOrWhiteSpace(e.FamilyId) && e.Id is not null))
-        {
-            if (!familyIdMap.ContainsKey(e.FamilyId!) && appByElvantoId.TryGetValue(e.Id!, out DbPerson? linked))
-                familyIdMap[e.FamilyId!] = linked.FamilyId;
-        }
-
-        Dictionary<Guid, List<(Guid PersonId, string ElvantoFamilyId)>> familyMembership = elvantoPeople
-            .Where(e => !string.IsNullOrWhiteSpace(e.FamilyId) && e.Id is not null)
-            .Select(e => (Elvanto: e.FamilyId!, App: appByElvantoId.GetValueOrDefault(e.Id!)))
-            .Where(x => x.App is not null)
-            .GroupBy(x => x.App!.FamilyId)
-            .ToDictionary(g => g.Key, g => g.Select(x => (x.App!.Id, x.Elvanto)).ToList());
+        // The persisted pairing, seeded on first sight from the linked people in this roll and read
+        // from the table on every run after. Family stops being re-derived per run - see
+        // SyncFamilyLinks for why the derivation was itself the bug.
+        SyncFamilyLinks families = await LoadFamilyLinksAsync(elvantoPeople, appByElvantoId, token);
 
         return (new SyncWorkingSet
         {
@@ -98,17 +86,7 @@ public partial class ElvantoPersonSyncService
             AppByElvantoId = appByElvantoId,
             UnlinkedApp    = appPeople.Where(p => p.ElvantoId is null).ToList(),
 
-            FamilyIdMap      = familyIdMap,
-            FamilyMembership = familyMembership,
-
-            // Still needed by the create path, where the person has no Elvanto record yet and so
-            // cannot be their own evidence. Recorded mid-run when Elvanto makes a family.
-            ElvantoFamilyIdByLocal = familyMembership.ToDictionary(
-                kv => kv.Key,
-                kv => kv.Value.GroupBy(m => m.ElvantoFamilyId)
-                    .OrderByDescending(g => g.Count())
-                    .ThenBy(g => g.Key, StringComparer.Ordinal)
-                    .First().Key)
+            Families = families
         }, null);
     }
 }

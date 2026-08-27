@@ -20,10 +20,14 @@ public class FirstTimeDescriptor : BaseFieldSyncDescriptor
                 .ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
             : null;
 
-    public override void SetOnApp(DbPerson person, string? value)
+    /// <inheritdoc cref="DateOfBirthDescriptor.SetOnApp"/>
+    public override bool SetOnApp(DbPerson person, string? value)
     {
-        if (DateTime.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime d))
-            person.FirstTime = new DateTimeOffset(DateTime.SpecifyKind(d, DateTimeKind.Utc));
+        if (!DateTime.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime d))
+            return false;
+
+        person.FirstTime = new DateTimeOffset(DateTime.SpecifyKind(d, DateTimeKind.Utc));
+        return true;
     }
 
     public override string? GetFromElvanto(ElvantoPerson elv) =>

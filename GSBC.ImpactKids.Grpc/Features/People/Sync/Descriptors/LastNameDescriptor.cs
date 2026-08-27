@@ -11,7 +11,7 @@ public class LastNameDescriptor : BaseFieldSyncDescriptor
     public override SyncDirection DefaultDirection => SyncDirection.Bidirectional;
 
     public override string? GetFromApp(DbPerson person)       => person.LastName;
-    public override void    SetOnApp(DbPerson person, string? value) => person.LastName = value ?? "";
+    public override bool    SetOnApp(DbPerson person, string? value) => Assign(value, v => person.LastName = v);
     public override string? GetFromElvanto(ElvantoPerson elv) => elv.LastName;
     public override bool    ApplyToElvantoRequest(ElvantoUpdatePersonRequest req, string? value) => Set(value, v => req.LastName = v);
 }

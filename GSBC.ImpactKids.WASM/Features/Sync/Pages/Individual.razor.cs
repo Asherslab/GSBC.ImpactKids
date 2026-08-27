@@ -34,19 +34,59 @@ public partial class Individual
     private AsyncData<ImmutableList<SyncPlannedChange>>     _plan           = AsyncData<ImmutableList<SyncPlannedChange>>.NotAsked();
     private bool                                            _reviewLoading  = false;
 
-    private ImmutableList<SyncPlannedChange> PlanItems =>
-        (_plan.Data ?? []).Where(MatchesSearch).ToImmutableList();
+    // The plan is split the same way the audit trail is - by direction - so a dry run reads like an
+    // executed run. Kind, not Direction: a plan row says what it would do, not what it did.
+    private ImmutableList<SyncPlannedChange> PlanToElvanto =>
+        PlanOf(PlannedChangeKind.OutboundField, PlannedChangeKind.CreateInElvanto);
+
+    private ImmutableList<SyncPlannedChange> PlanFromElvanto =>
+        PlanOf(PlannedChangeKind.InboundField, PlannedChangeKind.CreateLocally);
+
+    private ImmutableList<SyncPlannedChange> PlanLinks =>
+        PlanOf(PlannedChangeKind.LinkPerson);
+
+    private ImmutableList<SyncPlannedChange> PlanArchive =>
+        PlanOf(PlannedChangeKind.Archive);
+
+    private ImmutableList<SyncPlannedChange> PlanOf(params PlannedChangeKind[] kinds) =>
+        (_plan.Data ?? [])
+        .Where(x => kinds.Contains(x.Kind))
+        .Where(MatchesSearch)
+        .OrderBy(x => x.FieldName)
+        .ThenBy(x => x.PersonId)
+        .ToImmutableList();
+
+    /// <summary>
+    /// Counts go in the tab label rather than a MudTabPanel badge. The badge is positioned past the
+    /// label's right edge and the tab strip clips it, so "50" showed as "5" - and a truncated count
+    /// is worse than none on a page whose whole job is telling you how much there is to do.
+    /// Only what is still waiting is counted; applied rows are history.
+    /// </summary>
+    private static string PlanLabel(string text, ImmutableList<SyncPlannedChange> items) =>
+        Labelled(text, items.Count(x => x.Status == PlannedChangeStatus.Pending));
+
+    private static string Labelled(string text, int count) =>
+        count > 0 ? $"{text} ({count})" : text;
 
     private int PendingPlanItems =>
         (_plan.Data ?? []).Count(x => x.Status == PlannedChangeStatus.Pending);
 
+    // Direction alone is not enough to call a row executed. "CreateSuppressed:AwaitingReview" is
+    // written with Direction=App while the run pushes nothing - the person is held behind an
+    // unanswered review - so it was landing under Executed > To Elvanto on a dry run, reading as a
+    // push that happened. Every review row's home is the Manual Review tab, which already lists the
+    // person it is about.
     private ImmutableList<SyncAuditLog> ToElvantoLogs =>
-        ApplyFilters((_auditLogs.Data ?? []).Where(x => x.Direction == SyncSource.App).OrderBy(x => x.PersonId).ThenBy(x => x.EventType))
-            .ToImmutableList();
+        ApplyFilters(Executed(SyncSource.App)).ToImmutableList();
 
     private ImmutableList<SyncAuditLog> FromElvantoLogs =>
-        ApplyFilters((_auditLogs.Data ?? []).Where(x => x.Direction == SyncSource.Elvanto).OrderBy(x => x.PersonId).ThenBy(x => x.EventType))
-            .ToImmutableList();
+        ApplyFilters(Executed(SyncSource.Elvanto)).ToImmutableList();
+
+    private IEnumerable<SyncAuditLog> Executed(SyncSource direction) =>
+        (_auditLogs.Data ?? [])
+        .Where(x => x.Direction == direction && x.EventType != SyncEventType.ManualReviewQueued)
+        .OrderBy(x => x.PersonId)
+        .ThenBy(x => x.EventType);
 
     private ImmutableList<SyncAuditLog> MatchConflictLogs =>
         ApplyFilters((_auditLogs.Data ?? [])
@@ -199,26 +239,6 @@ public partial class Individual
                || (item.ProposedValue?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false)
                || item.Reason.Contains(search, StringComparison.OrdinalIgnoreCase);
     }
-
-    private static Color PlanStatusColor(PlannedChangeStatus status) => status switch
-    {
-        PlannedChangeStatus.Applied => Color.Success,
-        PlannedChangeStatus.Pending => Color.Warning,
-        PlannedChangeStatus.Stale   => Color.Info,
-        PlannedChangeStatus.Failed  => Color.Error,
-        _                           => Color.Default
-    };
-
-    private static string FormatPlanKind(PlannedChangeKind kind) => kind switch
-    {
-        PlannedChangeKind.InboundField    => "Field from Elvanto",
-        PlannedChangeKind.OutboundField   => "Field to Elvanto",
-        PlannedChangeKind.CreateInElvanto => "Create in Elvanto",
-        PlannedChangeKind.CreateLocally   => "Create locally",
-        PlannedChangeKind.Archive         => "Archive",
-        PlannedChangeKind.LinkPerson      => "Link",
-        _                                 => kind.ToString()
-    };
 
     private void RefreshPendingReviews()
     {

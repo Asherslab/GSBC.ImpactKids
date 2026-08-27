@@ -28,6 +28,40 @@ public record Person : IIdentifiable
 
     public string? ElvantoId { get; init; }
 
+    /// <summary>
+    /// Whether this person is in a household at all.
+    ///
+    /// <see cref="Guid.Empty"/> means they are not, and it is a real answer rather than missing data:
+    /// Elvanto reports several hundred people as "No Family" and the sync records exactly that. It
+    /// must never be treated as a family id — every such person shares the one value, so grouping on
+    /// it produces a single "family" of everybody who has none, named after whichever surname is
+    /// commonest among them. That is what the app's old "no family yet" bucket did, and it showed a
+    /// woman her family as "Kent (412)" with 411 strangers in it.
+    /// </summary>
+    [ProtoIgnore]
+    public bool HasFamily => FamilyId != Guid.Empty;
+
+    /// <summary>
+    /// Whether these two are in the same household. False when either has none — "neither is in a
+    /// family" is not a family in common.
+    /// </summary>
+    public bool SharesFamilyWith(Person other) => HasFamily && FamilyId == other.FamilyId;
+
+    /// <summary>
+    /// The household's name, taken from its commonest surname, or the person's own when they have
+    /// no household.
+    ///
+    /// Also the one place the empty group is handled: <c>MaxBy</c> returns null for an empty
+    /// sequence, and the three call sites all dereferenced it, so a person absent from the supplied
+    /// list threw rather than falling back.
+    /// </summary>
+    public static string FamilyNameOf(Person person, IEnumerable<Person> people) =>
+        person.HasFamily
+            ? people.Where(x => x.SharesFamilyWith(person))
+                    .GroupBy(y => y.LastName)
+                    .MaxBy(g => g.Count())?.Key ?? person.LastName
+            : person.LastName;
+
     public int? GetAge() => CalculateAge(LocalDateOfBirth);
 
     /// <summary>

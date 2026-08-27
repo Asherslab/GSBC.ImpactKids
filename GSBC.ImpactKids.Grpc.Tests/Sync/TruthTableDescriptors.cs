@@ -32,7 +32,7 @@ public sealed class TruthTableDescriptor : BaseFieldSyncDescriptor
             : appValue;
 
     public override string? GetFromApp(DbPerson person)               => null;
-    public override void    SetOnApp(DbPerson person, string? value)  { }
+    public override bool    SetOnApp(DbPerson person, string? value)  => true;
     public override string? GetFromElvanto(ElvantoPerson elv)         => null;
 
     public override bool ApplyToElvantoRequest(ElvantoUpdatePersonRequest req, string? value) =>
