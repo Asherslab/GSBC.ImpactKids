@@ -82,6 +82,24 @@ public class ElvantoUpdatePersonRequest : IRequestMessage
         set => (Fields ??= new ElvantoPersonFields()).FirstTimeAtImpactKids = value;
     }
 
+    /// <summary>
+    /// Elvanto's school grade id — the same id <c>people/getAll</c> returns under
+    /// <c>school_grade.id</c>, which is what <c>DbSchoolGrade.ElvantoId</c> stores. A standard
+    /// optional people field, so it travels under <c>fields</c> like the birthday rather than at the
+    /// top level, where it is rejected as a param that does not exist.
+    ///
+    /// Only ever a grade the app can name in Elvanto's terms. A local grade row with no
+    /// <c>ElvantoId</c>, and a child with no grade at all, both arrive here as null and are declined
+    /// rather than turned into a clear — see <c>SchoolGradeDescriptor</c>. There is no clear to send
+    /// in any case: an empty string answers with a 500 rather than emptying the field.
+    /// </summary>
+    [JsonIgnore]
+    public string? SchoolGrade
+    {
+        get => Fields?.SchoolGrade;
+        set => (Fields ??= new ElvantoPersonFields()).SchoolGrade = value;
+    }
+
     [JsonIgnore]
     public string? MedicalAllergyNotes
     {

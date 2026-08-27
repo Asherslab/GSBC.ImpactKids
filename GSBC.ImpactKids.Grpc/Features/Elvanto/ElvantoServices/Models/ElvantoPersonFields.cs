@@ -10,6 +10,21 @@ public class ElvantoPersonFields
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Birthday { get; set; }
 
+    /// <summary>
+    /// A standard optional people field, not a custom one, so it is named plainly rather than
+    /// <c>custom_&lt;id&gt;</c> - but it still lives under <c>fields</c>. Sent at the top level it is
+    /// rejected outright: <c>A param does not exist (school_grade)</c>.
+    ///
+    /// <b>The value is the grade id, not its name</b>, despite the docs describing it as "the name of
+    /// the school grade". The name form works only for grades whose name is not numeric: this
+    /// account's grades are named <c>1</c>-<c>12</c> plus Prep, Kindergarten and Nursery/Pre-school,
+    /// and sending <c>"7"</c> answers with a 500 "problem when saving to the database" while sending
+    /// that grade's id succeeds. Twelve of the fifteen would have been unpushable.
+    /// </summary>
+    [JsonPropertyName("school_grade")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? SchoolGrade { get; set; }
+
     // The option id of a "select" custom field, as a plain string. Elvanto's docs say Drop Down and
     // Checkbox fields must be arrays, but an array was refused here with "Invalid Value for custom
     // field" for both the option name and the option id - and this account has no checkbox or
