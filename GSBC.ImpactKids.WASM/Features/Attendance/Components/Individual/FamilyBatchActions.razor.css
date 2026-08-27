@@ -1,0 +1,64 @@
+/* Recessed strip above the household, so it reads as acting on all of them rather than as
+   another row among them. Depth here is a surface shift, not elevation alone - MudBlazor's
+   shadows are black at low alpha and vanish against this theme's background. */
+.batch {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: var(--mud-default-borderradius);
+    background-color: var(--mud-palette-background-gray);
+}
+
+.batch-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    padding: 0.75rem 1rem;
+    border-radius: var(--mud-default-borderradius);
+    background-color: var(--mud-palette-warning-hover);
+    border: 1px solid var(--mud-palette-warning);
+}
+
+.batch-items-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.batch-items-list {
+    margin: 0;
+    padding-inline-start: 1.75rem;
+}
+
+.batch-items-list li {
+    padding-block: 0.125rem;
+}
+
+.batch-items-who {
+    font-weight: 600;
+}
+
+.batch-items-what::before {
+    content: " — ";
+    opacity: 0.6;
+}
+
+/* Wraps to a column on a phone, where these are thumbed one-handed at a desk. */
+.batch-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.batch-buttons ::deep .mud-button-root {
+    min-height: 56px;
+    flex: 1 1 14rem;
+    font-size: 1rem;
+    text-transform: none;
+}
+
+.batch-note {
+    opacity: 0.7;
+}

@@ -29,6 +29,9 @@ public partial class Family
     private AsyncData<Dictionary<Guid, AttendanceRecord>> _peopleAttendance =
         AsyncData<Dictionary<Guid, AttendanceRecord>>.NotAsked();
 
+    /// <summary>This person plus anyone in their household - what the batch actions act on.</summary>
+    private ImmutableList<Person> _members = [];
+
     private readonly BreadcrumbItem[] _breadcrumbs =
     [
         new("Attendance", href: "/Attendance/Tool"),
@@ -127,6 +130,12 @@ public partial class Family
 
         _person = _person.ToSuccess(person);
         _familyName = _familyName.ToSuccess(familyName);
+
+        // The same set the list below renders, computed once so the batch bar and the rows
+        // can never disagree about who is in this household.
+        _members = people.Data
+            .Where(x => x.Id == person.Id || x.SharesFamilyWith(person))
+            .ToImmutableList();
 
         _breadcrumbs[1] = new BreadcrumbItem(familyName, href: null, disabled: true);
 

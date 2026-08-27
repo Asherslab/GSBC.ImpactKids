@@ -56,6 +56,13 @@
         <MudPaper Elevation="0" Class="pa-4">
             @if (_person.HasData)
             {
+                @* Above the rows, not among them: it acts on the whole household. Renders
+                   nothing unless there are two or more children it could act on. *@
+                <FamilyBatchActions
+                    Members="_members"
+                    Records="_peopleAttendance.Data"
+                    OnChanged="RetrieveAttendanceRecords"/>
+
                 @* The person themselves, then anyone in their household. Filtering on family alone
                    dropped a person with no family off their OWN page - and this page is where they
                    get signed in, so it left no way to do it. Adds nothing for someone who has a
