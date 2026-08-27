@@ -11,6 +11,14 @@ code:
   - GSBC.ImpactKids.Grpc/Data/Models/Sync
 ---
 
+> **Superseded in part, 2026-08-27.** `ElvantoSyncMode` (`Full` / `AppOnly` / `DryRun`) and
+> `ElvantoSyncScope` (`All` / `Person` / `Family`) have since been removed from the codebase. Every
+> run now decides a plan and stops, over the whole roll; `ExecutePlan` applies it. Where this document
+> reasons about modes or scopes, read it as a record of what was true at the time — the reasoning
+> stands, the surface it describes is gone. Current behaviour: [Elvanto Bidirectional
+> Sync](../sync-feature.md).
+
+
 # Elvanto sync — a persisted local-family ⟷ Elvanto-family mapping
 
 For whoever builds this next. Every number below came from real DryRuns against the church's live Elvanto

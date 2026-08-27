@@ -10,6 +10,14 @@ code:
   - GSBC.ImpactKids.WASM/Features/Sync
 ---
 
+> **Superseded in part, 2026-08-27.** `ElvantoSyncMode` (`Full` / `AppOnly` / `DryRun`) and
+> `ElvantoSyncScope` (`All` / `Person` / `Family`) have since been removed from the codebase. Every
+> run now decides a plan and stops, over the whole roll; `ExecutePlan` applies it. Where this document
+> reasons about modes or scopes, read it as a record of what was true at the time — the reasoning
+> stands, the surface it describes is gone. Current behaviour: [Elvanto Bidirectional
+> Sync](../sync-feature.md).
+
+
 # Elvanto sync — what the state model actually does
 
 A four-lens review of the sync feature as it stands at `1ba30d1`, prompted by pending changes and
