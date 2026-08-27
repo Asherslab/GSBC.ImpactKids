@@ -25,6 +25,18 @@ await Task.WhenAll(PeopleStore.RefreshAll());              // then fetch
 - Derived state is computed in a `Retrieve*` method that ends in `StateHasChanged()`, not in the
   markup. A property that filters a store list runs on every render.
 
+**After a write, call `RefreshEvent()` — never `RefreshAll()`.** `RefreshAll` goes through the
+action executor's cache with `cacheFor: TimeSpan.FromMinutes(30)`
+(`Services/RefreshableStore/RefreshableStore.cs`), so immediately after a mutation it hands back the
+response from *before* the mutation and the screen does not settle. `RefreshEvent` invalidates the
+key first, then refreshes.
+
+This one hides: the SSE invalidation from the event bus usually lands a moment later and updates the
+page anyway, so a `RefreshAll` after a write looks like it works. It fails where the timing is
+tightest — a batch of two writes left one child's row showing the new state and the other showing the
+old, with **both already written in the database**. `RefreshAll` is for arriving on a page;
+`RefreshEvent` is for having just changed something.
+
 **A blank-looking page is usually mid-load.** Only conclude data is missing after the store has
 resolved — the same trap applies when inspecting it in a browser (see the `run-and-inspect-app` skill).
 

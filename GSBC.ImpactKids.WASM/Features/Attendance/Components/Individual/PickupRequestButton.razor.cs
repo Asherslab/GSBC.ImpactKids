@@ -148,9 +148,12 @@ public partial class PickupRequestButton
                 return;
             }
 
-            // The eventing bus normally pushes this back, but the desk needs the control to settle
-            // whether or not that arrives, so the state it shows is re-read rather than assumed.
-            await AttendanceRecordsStore.RefreshAll();
+            // RefreshEvent, NOT RefreshAll: RefreshAll goes through the executor's 30 minute
+            // cache, so straight after a write it returns the response from before the write
+            // and the control never settles. RefreshEvent invalidates the key first. Without
+            // it this row only updates when the bus happens to push, which it does quickly
+            // enough to look correct and slowly enough to be a bug.
+            await AttendanceRecordsStore.RefreshEvent();
         }
         finally
         {
