@@ -1,11 +1,99 @@
 # Services, data and migrations
 
-One code-first gRPC service per feature, each a `partial class` with one file per operation
-(`Create.cs`, `Update.cs`, `ReadMultiple.cs`, `Delete.cs`) beside a root file holding the primary
-constructor. Add a new operation as a new file, not as another method in an existing one.
+One code-first gRPC service per feature, laid out as a partial class with one file per operation —
+the idiom is below. Add a new operation as a new file, not as another method in an existing one.
 
 Every service must be mapped in `Program.cs` — `app.MapGrpcService<XService>()`. A service that
 compiles and is not mapped fails at the client as an unimplemented method.
+
+# Partial classes — the house idiom
+
+This is how nearly every type of any size in this project is laid out: 112 files declare a
+`partial class`, and 23 of the 27 service classes use it. Learn the shape once and every feature
+folder reads the same.
+
+## Flavour one — a folder per service, a file per operation
+
+```
+Features/People/AllergyServices/
+    AllergyService.cs      <- the root: attributes, primary constructor, nothing else
+    Create.cs              <- public partial class AllergyService { public async Task<…> Create(…) }
+    Update.cs
+    ReadMultiple.cs
+    Delete.cs
+```
+
+The root file carries the whole declaration and often no body at all:
+
+```csharp
+[Authorize(Policy = Policies.EnabledOnly)]
+public partial class SyncService(
+    GsbcDbContext                              db,
+    IConverter<DbSyncOperation, SyncOperation> operationConverter,
+    IElvantoPersonSyncService                  syncEngine
+) : ISyncService;
+```
+
+Primary-constructor parameters are in scope in **every** partial file, and that is the whole reason
+the idiom works. An operation file names `db` and `operationConverter` directly — no fields, no
+`this.`, no constructor boilerplate to keep in sync across files. Adding a dependency is one line
+in one file and it is immediately available to every operation.
+
+Members that genuinely belong to the type as a whole — a shared `JsonSerializerOptions`, a gate
+property every operation asks — live in the root file beside the constructor.
+`ElvantoServices/ElvantoService.cs` is the reference for that.
+
+## Flavour two — not only for gRPC services
+
+The same layout applies to any injected service with more than one job.
+`Features/Elvanto/ElvantoServices/` is a plain `AddScoped` service, not a mapped gRPC endpoint, and
+splits identically: `ElvantoService.cs` (primary constructor, the write gates, the single
+`SendMessage` choke point) beside `GetPeople.cs`, `CreatePerson.cs`, `UpdatePerson.cs`,
+`GetPersonInfo.cs`, `GetElvantoReport.cs` and `GetServicePositions.cs`.
+
+Do not reach for a different structure just because a service is internal.
+
+## Flavour three — one type split by area, in place
+
+When a type is not a service and has no "operations" — `GsbcDbContext` — split by subject area
+using a dotted suffix in the same folder rather than a subfolder:
+
+```
+Data/GsbcDbContext.cs                 <- DbSets and OnModelCreating, calling into each area
+Data/GsbcDbContext.PeopleModel.cs
+Data/GsbcDbContext.SyncModel.cs
+Data/GsbcDbContext.GamesModel.cs
+```
+
+Use this form for a partial that is *a section of one type*, and flavour one for a partial that is
+*one operation of a service*.
+
+## Size
+
+The largest partial file in this project is 273 lines (`ElvantoServices/GetPeople.cs`) and the
+median is well under a hundred. A file crossing roughly 250 lines is the signal to ask whether it
+is holding two operations.
+
+`LoginService` (39 lines), `MetabaseService` (43) and `GameDisplayService` (344) are single-file
+and not partial, which is fine — with one job and no second operation, a folder of files is
+ceremony. Split when the second operation arrives, not before.
+
+## When partials are the wrong answer
+
+Partials split a **file**. They cannot split a **method**, and they do nothing about state shared
+between the pieces. A type whose length comes from one long method over many shared mutable locals
+gets *worse* under partials: the same tangle, now spread across files where you can no longer see
+it all at once.
+
+The test: can the piece you want to move out be understood from its parameters and the primary
+constructor alone? If yes, a partial file is right. If it only makes sense while holding six
+variables from the middle of another method in your head, the fix is to name that state as a type
+and pass it — a collaborator object, not another `.cs`.
+
+`Features/People/Sync/Services/ElvantoPersonSyncService.cs` is the live counter-example: 1270
+lines, not partial, with one 728-line method over fifteen shared mutable locals. It needs both
+moves — the self-contained helpers into partial files, and the phases that share state named as
+collaborators. See [docs/work/2026-08-elvanto-sync-refactor.md](../docs/work/2026-08-elvanto-sync-refactor.md).
 
 # Authorization
 

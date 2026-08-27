@@ -6,7 +6,6 @@ public class DbPerson
 {
     public required Guid Id { get; set; }
 
-    [MapperIgnore]
     public string? ElvantoId { get; set; }
 
     public required string FirstName { get; set; }
@@ -34,4 +33,7 @@ public class DbPerson
     // family stuff
     public required Guid FamilyId       { get; set; }
     public required bool FamilyGuardian { get; set; }
+
+    [MapperIgnore]
+    public DateTimeOffset? DeletedAtUtc { get; set; }
 }

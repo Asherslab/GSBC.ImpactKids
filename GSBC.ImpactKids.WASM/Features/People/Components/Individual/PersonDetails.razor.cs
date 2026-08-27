@@ -18,6 +18,10 @@ public partial class PersonDetails
     [Parameter]
     public Guid? FamilyId { get; set; }
 
+    /// <summary>Whose family the new person joins, when that family may not exist yet.</summary>
+    [Parameter]
+    public Guid? FamilyWithPersonId { get; set; }
+
     private AsyncData<ImmutableList<FamilyDefinition>>
         _families = AsyncData<ImmutableList<FamilyDefinition>>.NotAsked();
 
@@ -27,6 +31,9 @@ public partial class PersonDetails
 
         if (FamilyId != null && State == ModificationState.Creating)
             CreateRequest.FamilyId = FamilyId;
+
+        if (FamilyWithPersonId != null && State == ModificationState.Creating)
+            CreateRequest.FamilyWithPersonId = FamilyWithPersonId;
 
         RetrieveFamilies();
         HandleSubscriptionDisposal(EntityStore, _ => RetrieveFamilies());
@@ -73,7 +80,11 @@ public partial class PersonDetails
             return;
         }
 
+        // People with no household are excluded rather than grouped. They all share Guid.Empty, so
+        // grouping would offer "no family" in the picker as though it were a family - the same shape
+        // as the old bucket, which listed itself as "Kent (412)".
         ImmutableList<FamilyDefinition> familyDefinitions = people.Data
+            .Where(x => x.HasFamily)
             .GroupBy(x => x.FamilyId)
             .Select(x =>
                 new FamilyDefinition(x.Key,
@@ -87,13 +98,16 @@ public partial class PersonDetails
             .ThenBy(x => x.FamilyCount)
             .ToImmutableList();
 
-        if (
-            FamilyId != null &&
-            State == ModificationState.Creating &&
-            string.IsNullOrWhiteSpace(CreateRequest.LastName)
-        )
+        if (State == ModificationState.Creating && string.IsNullOrWhiteSpace(CreateRequest.LastName))
         {
-            CreateRequest.LastName = familyDefinitions.FirstOrDefault(x => x.Id == FamilyId)?.FamilyName ?? "";
+            // From the family when there is one, otherwise from the person whose family is about to
+            // be created - they are the only surname on offer, and it is the same convenience the
+            // family case has always had.
+            if (FamilyId != null)
+                CreateRequest.LastName = familyDefinitions.FirstOrDefault(x => x.Id == FamilyId)?.FamilyName ?? "";
+            else if (FamilyWithPersonId != null)
+                CreateRequest.LastName =
+                    people.Data.FirstOrDefault(x => x.Id == FamilyWithPersonId)?.LastName ?? "";
         }
 
         _families = _families.ToSuccess(familyDefinitions);

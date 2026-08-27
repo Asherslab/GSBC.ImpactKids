@@ -16,6 +16,9 @@ public partial class CreatePersonWorkflow
     [Parameter]
     public Guid? FamilyId { get; set; }
 
+    [Parameter]
+    public Guid? FamilyWithPersonId { get; set; }
+
     private PersonDetails?    _personDetails;
     private ModificationState _state = ModificationState.Creating;
     private Guid?             _createdPersonId;

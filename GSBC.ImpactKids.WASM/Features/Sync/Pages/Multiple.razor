@@ -1,0 +1,100 @@
+@page "/Sync"
+@inject ISyncService                     SyncService
+@inject IRefreshableStore<SyncOperation> SyncStore
+
+<PageTitle>Sync</PageTitle>
+
+<MudPaper Elevation="6" Class="mt-4 pa-6">
+    <MudText Typo="Typo.h6" Class="mb-2">Create Sync</MudText>
+    <MudText Typo="Typo.body2" Class="mb-4 mud-text-secondary">
+        Reads both sides and works out what should change. Nothing is written until you execute the
+        plan it produces.
+    </MudText>
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               OnClick="@SubmitSync"
+               Disabled="@_isSubmitting"
+               StartIcon="@Icons.Material.Filled.Sync">
+        @(_isSubmitting ? "Deciding..." : "Decide Plan")
+    </MudButton>
+</MudPaper>
+
+@if (PendingReviewCount > 0)
+{
+    <MudAlert Severity="Severity.Warning" Class="mt-4" Icon="@Icons.Material.Filled.RateReview">
+        <MudText>
+            <b>@PendingReviewCount</b> match@(PendingReviewCount == 1 ? "" : "es") pending manual review — open a sync operation to approve or deny.
+        </MudText>
+    </MudAlert>
+}
+
+<MudPaper Elevation="6" Class="mt-4 relative">
+    <MudOverlay Visible="@_operations.IsLoading" DarkBackground Absolute>
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+    @if (_operations.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="ma-4">@_operations.Error</MudAlert>
+    }
+    <MudTable Items="@(_operations.Data ?? [])" Hover Breakpoint="Breakpoint.None">
+        <HeaderContent>
+            <MudTh>Status</MudTh>
+            <MudTh>Started</MudTh>
+            <MudTh>Completed</MudTh>
+            <MudTh>Plan</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Status">
+                @if (context.Status.HasValue)
+                {
+                    <MudChip T="string" Color="@StatusColor(context.Status.Value)" Size="Size.Small">@context.Status</MudChip>
+                }
+                else
+                {
+                    <MudChip T="string" Color="Color.Default" Size="Size.Small">Running</MudChip>
+                }
+            </MudTd>
+            <MudTd DataLabel="Started">@context.LocalStartedAt.ToString("dd/MM/yyyy HH:mm:ss")</MudTd>
+            <MudTd DataLabel="Completed">@(context.LocalCompletedAt?.ToString("dd/MM/yyyy HH:mm:ss") ?? "-")</MudTd>
+            <MudTd DataLabel="Plan">
+                @if (context.PendingPlanItems == 0)
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">-</MudText>
+                }
+                else if (context.PlanIsExecutable)
+                {
+                    <MudChip T="string" Color="Color.Warning" Size="Size.Small"
+                             Title="@($"Expires {context.LocalPlanExpiresAt:dd/MM/yyyy HH:mm}")">
+                        @context.PendingPlanItems waiting
+                    </MudChip>
+                }
+                else
+                {
+                    <MudChip T="string" Color="Color.Default" Size="Size.Small"
+                             Title="A plan is only executable for a few hours - the roll may have moved since.">
+                        expired
+                    </MudChip>
+                }
+            </MudTd>
+            <MudTd>
+                <MudStack Row Spacing="2">
+                    <MudButton Variant="Variant.Outlined" Href="@($"/Sync/{context.Id}")">View</MudButton>
+                    @if (context.PlanIsExecutable)
+                    {
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Warning"
+                                   StartIcon="@Icons.Material.Filled.PlayArrow"
+                                   Disabled="@_isSubmitting"
+                                   OnClick="@(() => ExecutePlan(context))">
+                            Execute
+                        </MudButton>
+                    }
+                </MudStack>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText Class="pa-4">No sync operations yet.</MudText>
+        </NoRecordsContent>
+    </MudTable>
+</MudPaper>

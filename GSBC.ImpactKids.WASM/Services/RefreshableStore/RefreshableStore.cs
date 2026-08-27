@@ -36,7 +36,7 @@ public partial class RefreshableStore<T>(
             resp = await actionExecutor.ExecuteCachedAsync(
                 key,
                 RetrieveEntities,
-                loading: s => s with { Entities = s.Entities.ToLoading() },
+                loading: s => s with { Entities = s.Entities.ToLoadingPreserved() },
                 success: (s, resp) => resp.HasError()
                     ? s with { Entities = s.Entities.ToFailure(resp.Error ?? "An unexpected error occurred") }
                     : s with { Entities = s.Entities.ToSuccess(resp.Entities) },
