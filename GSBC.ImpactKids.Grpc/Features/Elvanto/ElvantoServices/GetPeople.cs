@@ -182,13 +182,59 @@ public partial class ElvantoService
     }
 
 
+    private const int PageSize = 1000;
+    private const int MaxAttemptsPerPage = 3;
+
+    /// <summary>
+    /// Fetches every person, or throws. There is deliberately no third outcome: a caller that
+    /// receives a list can rely on it being the whole list, because everything downstream -
+    /// archiving in particular - treats absence from this list as proof of deletion.
+    /// </summary>
     private async Task<List<ElvantoPerson>> RetrieveElvantoPeople(CancellationToken token = default)
     {
         int                 page          = 1;
-        bool                hasNextPage   = true;
-        int                 perPage       = 1000;
+        int?                expectedTotal = null;
         List<ElvantoPerson> elvantoPeople = [];
-        while (hasNextPage)
+
+        while (true)
+        {
+            PeopleResponse? resp = await FetchPageWithRetries(page, token);
+
+            // Out of retries. Returning what we have would look identical to a complete fetch.
+            if (resp?.People?.Person is null)
+                throw new ElvantoFetchException(
+                    $"Elvanto people/getAll failed on page {page} after {MaxAttemptsPerPage} attempts. "
+                    + $"{elvantoPeople.Count} people had been fetched so far; refusing to treat a partial "
+                    + "result as the full roll.");
+
+            // Elvanto reports the authoritative count on every page, so it is checked once and
+            // then held to at the end.
+            expectedTotal ??= resp.People.Total;
+
+            elvantoPeople.AddRange(resp.People.Person);
+
+            if (!int.TryParse(resp.People.PerPage, out int perPage) || perPage <= 0)
+                perPage = PageSize;
+
+            int totalPages = (int)Math.Ceiling(resp.People.Total / (double)perPage);
+            if (totalPages <= resp.People.Page) break;
+
+            page++;
+        }
+
+        // Belt and braces: pages could each succeed and still not add up, e.g. if the roll
+        // changed underneath us mid-fetch. Better a failed sync than a mass archive.
+        if (expectedTotal is not null && elvantoPeople.Count < expectedTotal)
+            throw new ElvantoFetchException(
+                $"Elvanto reported {expectedTotal} people but only {elvantoPeople.Count} were fetched. "
+                + "Refusing to continue with an incomplete roll.");
+
+        return elvantoPeople;
+    }
+
+    private async Task<PeopleResponse?> FetchPageWithRetries(int page, CancellationToken token)
+    {
+        for (int attempt = 1; attempt <= MaxAttemptsPerPage; attempt++)
         {
             PeopleResponse? resp = await SendMessage<PeopleRequest, PeopleResponse>(
                 new PeopleRequest
@@ -197,7 +243,7 @@ public partial class ElvantoService
                     Contact = "no",
                     Archived = "no",
                     Page = page,
-                    PageSize = perPage,
+                    PageSize = PageSize,
                     Fields =
                     [
                         "school_grade",
@@ -210,25 +256,19 @@ public partial class ElvantoService
                 token
             );
 
-            if (resp?.People?.Person == null)
-            {
-                hasNextPage = false;
-                continue;
-            }
+            if (resp?.People?.Person is not null) return resp;
 
-            elvantoPeople.AddRange(resp.People.Person);
-
-            int totalPages = (int)Math.Ceiling(resp.People.Total / double.Parse(resp.People.PerPage ?? "0"));
-            if (totalPages <= resp.People.Page)
+            if (attempt < MaxAttemptsPerPage)
             {
-                hasNextPage = false;
-            }
-            else
-            {
-                page++;
+                // A rate limit or a blip is the usual cause, so back off rather than hammering.
+                TimeSpan delay = TimeSpan.FromSeconds(2 * attempt);
+                logger.LogWarning(
+                    "Elvanto people/getAll page {Page} returned nothing (attempt {Attempt}/{Max}); retrying in {Delay}s",
+                    page, attempt, MaxAttemptsPerPage, delay.TotalSeconds);
+                await Task.Delay(delay, token);
             }
         }
 
-        return elvantoPeople;
+        return null;
     }
 }

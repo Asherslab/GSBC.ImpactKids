@@ -9,6 +9,7 @@ using GSBC.ImpactKids.Shared.Contracts.Services.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.Scheduling;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.Scheduling.School;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.Scripture;
+using GSBC.ImpactKids.Shared.Contracts.Services.Features.Sync;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.Scripture.Memorisation;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
@@ -111,6 +112,7 @@ builder.Services.AddAuthenticatedGrpcClient<IAttendanceItemTypeService>();
 builder.Services.AddAuthenticatedGrpcClient<IAttendanceItemRecordService>();
 builder.Services.AddAuthenticatedGrpcClient<IGamePointRecordService>();
 builder.Services.AddAuthenticatedGrpcClient<IGameBoardService>();
+builder.Services.AddAuthenticatedGrpcClient<ISyncService>();
 
 // Offline first, so it outlives any page and keeps its outbox for the whole session.
 builder.Services.AddSingleton<IGamePointsService, GamePointsService>();

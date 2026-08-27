@@ -56,8 +56,53 @@ ToolSearch  query: "select:mcp__rider__execute_run_configuration,mcp__rider__get
   not in a healthy state` with the exception text in its health report. **Do not diagnose a
   non-starting stack by poking at processes.** Ask the dashboard.
 
-  If the key rotates (a Production-profile run regenerates it), `/mcp` answers 404 rather than 401 —
-  re-read it from user secrets into `.mcp.json`.
+  **It only connects if the AppHost was already running when the Claude Code session started.**
+  This is the usual reason the tools are missing, and it is not a config fault — an `http` MCP server
+  is dialled once at session startup, so a stack you start *during* the session cannot be attached to
+  and no amount of fixing `.mcp.json` helps. Start the app first, then start the session. If you are
+  already mid-session without it, say so and work from `psql`, the browser console and
+  `read_network_requests` instead — do not conclude the config is stale.
+
+  Confirm reachability before blaming anything, and note the scheme — the endpoint is plain
+  **`http`**, so probing `https://localhost:16036` returns `000` (connection refused) and looks
+  exactly like a dead dashboard:
+
+  ```bash
+  curl -s -o /dev/null -w '%{http_code}\n' -m 3 http://localhost:16036/mcp                 # 404 = up, needs key
+  curl -s -o /dev/null -w '%{http_code}\n' -m 3 -X POST http://localhost:16036/mcp \
+    -H "x-mcp-api-key: $(dotnet user-secrets list --project GSBC.ImpactKids.AppHost \
+        | sed -n 's/^AppHost:McpApiKey = //p')" \
+    -H 'Accept: application/json, text/event-stream' -H 'Content-Type: application/json' \
+    -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"probe","version":"1"}}}'
+  # 200 = endpoint and key are both good
+  ```
+
+  **Both values have an authoritative source — read them, never guess or ask for them:**
+
+  - **Key** — `dotnet user-secrets list --project GSBC.ImpactKids.AppHost`, entry `AppHost:McpApiKey`.
+    (`secrets.json` is written with a UTF-8 BOM, so `json.load` on it throws
+    `Unexpected UTF-8 BOM`; use `encoding='utf-8-sig'` or just use the CLI.)
+  - **Port** — `ASPIRE_DASHBOARD_MCP_ENDPOINT_URL` in
+    `GSBC.ImpactKids.AppHost/Properties/launchSettings.json`, set on *both* the `http` and `https`
+    profiles. It is pinned there rather than allocated per run, so it does not normally move. Read it
+    from the running process instead if you want ground truth: `ps eww <apphost-pid> | tr ' ' '\n' |
+    grep ASPIRE_DASHBOARD_MCP`. Confirm something is actually bound with
+    `lsof -nP -iTCP:16036 -sTCP:LISTEN` — that shows `dcpctrl`, not a `dotnet` process.
+
+  Either value *can* change — a Production-profile run regenerates the key, and editing
+  `launchSettings.json` moves the port — so if `/mcp` answers 404 to a keyed request, or the port is
+  not listening, re-read both from the sources above and write them into `.mcp.json`:
+
+  ```json
+  { "mcpServers": { "gsbc-impactkids-aspire": {
+      "type": "http", "url": "http://localhost:<port>/mcp",
+      "headers": { "x-mcp-api-key": "<AppHost:McpApiKey>" } } } }
+  ```
+
+  A **404 to a keyed request** means a stale key; **401** means the key was rejected; **000** means
+  nothing is listening (or you used `https`). `.mcp.json` is gitignored — the key stays out of git,
+  so never paste it into a doc, a commit or a summary. The edit only takes effect on the **next**
+  session, per the startup rule above.
 - **Claude Browser** (`mcp__Claude_Browser__*`) — already loaded, no ToolSearch needed.
   `preview_start`, `navigate`, `computer`, `read_page`, `javascript_tool`,
   `read_console_messages`, `read_network_requests`, `resize_window`.
@@ -77,6 +122,30 @@ configuration, or ask the user.
 
 `dotnet ef` is fine to run directly — it is the CLI exception, since there is no MCP
 equivalent for migrations.
+
+**Check the DLL is actually newer than your edit before generating a migration.**
+`build_solution` can return `{isSuccess: true, problems: []}` without recompiling the project
+you just changed, and `dotnet ef migrations add` reads the built assembly, not your source. The
+result is a migration file with an empty `Up()` — which looks like "EF found no model change"
+and invites you to go hunting for a modelling mistake that isn't there. This has already
+happened twice, once on a `HasData` seed change and once on an index change.
+
+```bash
+stat -f '%Sm  %N' -t '%H:%M:%S' GSBC.ImpactKids.Grpc/bin/Debug/net10.0/GSBC.ImpactKids.Grpc.dll
+```
+
+If that timestamp predates your edit, rebuild with `mcp__rider__build_solution {rebuild: true}`
+and check again. An empty migration is the symptom; a stale assembly is the cause.
+
+Two related traps in the same area:
+
+- `dotnet ef migrations add --no-build` is safe *only* after you have verified the timestamp.
+  Without `--no-build` it builds itself, which is slower but cannot go stale.
+- `dotnet ef migrations remove` needs a working database connection, and
+  `GsbcDbContextFactory` hardcodes port 60536 while a persistent container keeps whatever port
+  it was first created with. When it fails with `28P01: password authentication failed` or a
+  refused connection, delete the migration's two `.cs` files and
+  `git checkout -- .../GsbcDbContextModelSnapshot.cs` instead.
 
 If the Rider MCP is unavailable for *running*, say so and ask the user to start it from
 Rider rather than falling back to `dotnet run`.
@@ -230,6 +299,31 @@ gets an authenticated SPA whose every call 401s.
 - `/Games/Points`, `/Games/Scores` — `[Authorize]`, need the user to sign in first.
 
 A 401 on `/bff/user` from an anonymous page is expected, not a fault.
+
+## Always drive the app as a user
+
+**Never drive the UI with JavaScript. Never.** `javascript_tool` is for *reading* state and
+`form_input` is not a substitute for typing. Clicks go through `computer left_click` (on a
+`ref` or on coordinates from a screenshot), text goes in with `computer type`, and keys with
+`computer key`. If a control cannot be reached that way, say so and ask - do not reach for
+`.click()` as a fallback.
+
+This is not a style preference. Blazor binds on the events a real interaction raises, so a
+JS-set value or a synthetic `.click()` updates the DOM and changes nothing underneath:
+
+- `form_input` on a MudBlazor text field sets `input.value`, the screen shows the new text,
+  and the component never sees it. Save and the old value is still in the database.
+- A field can be `readOnly` until an edit mode is entered. Writing to it with JS "succeeds"
+  and is silently discarded.
+- `.click()` on a Mud button often does nothing at all, and MudMenu popovers never open.
+
+Every one of those has already produced a confident, wrong conclusion here - a "saved" edit
+that was never saved, and an interceptor declared broken when it had simply never been given a
+real edit to observe. A test driven by JavaScript proves nothing about the app.
+
+So: take a screenshot, find the control, click it, type into it, click the save button, then
+verify the result in the database or by re-reading the page. Slower, and the only way the
+answer means anything.
 
 ## Inspecting the UI
 

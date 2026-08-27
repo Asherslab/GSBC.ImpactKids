@@ -5,7 +5,12 @@
                 <DetailsModificationCard
                     Id="Id"
                     DetailsComponentType="@(typeof(PersonDetails))"
-                    ExtraParameters="_personDetailsExtraParams"/>
+                    ExtraParameters="_personDetailsExtraParams">
+                    <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                        <MudText Typo="Typo.h6" Align="Align.Start">Details</MudText>
+                        <PersonElvantoLink Id="Id"/>
+                    </MudStack>
+                </DetailsModificationCard>
             </MudItem>
             @if (!HideMemorisationEntries)
             {
@@ -53,7 +58,7 @@
                             <ListComponent T="Person"
                                            EnableLoading
                                            Filter="@(x => x.Id == Id)"
-                                           SecondaryFilter="@((person, x) => x.FamilyId == person.FamilyId)"
+                                           SecondaryFilter="@((person, x) => x.SharesFamilyWith(person))"
                                            Ordering="@(list => list.OrderByDescending(x => x.FamilyGuardian).ThenBy(x => x.LocalDateOfBirth).ThenBy(x => x.FirstName))"
                                            Context="personId">
                                 <MudItem xs="12" lg="6">

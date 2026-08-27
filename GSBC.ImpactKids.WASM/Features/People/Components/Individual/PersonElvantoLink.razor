@@ -1,0 +1,11 @@
+@inherits DisplayComponent<Person>
+
+@if (!string.IsNullOrEmpty(Entity.Data?.ElvantoId))
+{
+    <MudTooltip Text="View in Elvanto">
+        <MudIconButton Icon="@Icons.Material.Filled.Link"
+                       Size="Size.Small"
+                       Href="@ElvantoLinks.GetPersonUrl(Entity.Data.ElvantoId)"
+                       Target="_blank"/>
+    </MudTooltip>
+}

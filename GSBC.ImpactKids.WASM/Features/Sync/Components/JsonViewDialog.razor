@@ -1,0 +1,48 @@
+@using System.Text.Json
+@using System.Text.Json.Nodes
+
+<MudDialog>
+    <TitleContent>@MudDialog.Title</TitleContent>
+    <DialogContent>
+        <pre class="json">@Pretty</pre>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => MudDialog.Close())">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    public required IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter, EditorRequired]
+    public string Raw { get; set; } = "";
+
+    /// <summary>
+    /// Falls back to the raw string when it will not parse. A plan row's value is whatever the
+    /// engine observed, so a value that only looks like JSON must still be readable rather than
+    /// swallowed by an exception.
+    /// </summary>
+    private string Pretty
+    {
+        get
+        {
+            try
+            {
+                JsonNode? node = JsonNode.Parse(Raw);
+                return node?.ToJsonString(new JsonSerializerOptions { WriteIndented = true }) ?? Raw;
+            }
+            catch (JsonException)
+            {
+                return Raw;
+            }
+        }
+    }
+
+    public static Task Open(IDialogService dialogService, string title, string raw) =>
+        dialogService.ShowAsync<JsonViewDialog>(
+            title,
+            new DialogParameters<JsonViewDialog> { { x => x.Raw, raw } },
+            new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Medium }
+        );
+}

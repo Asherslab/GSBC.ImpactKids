@@ -129,11 +129,7 @@ public partial class SignIn
 
         _person = _person.ToSuccess(person);
 
-        string familyName = people.Data
-            .Where(x => x.FamilyId == person.FamilyId)
-            .GroupBy(y => y.LastName)
-            .MaxBy(y => y.Count())!
-            .Key;
+        string familyName = Person.FamilyNameOf(person, people.Data);
 
         _breadcrumbs[1] = new BreadcrumbItem(familyName,
             href: $"/Attendance/Family/{Id}?{nameof(Family.ServiceId)}={_service.Data?.Id}");

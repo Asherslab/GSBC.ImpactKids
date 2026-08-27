@@ -2,7 +2,6 @@
 @page "/People"
 @inject IRefreshableStore<Person>      PeopleStore
 @inject IRefreshableStore<SchoolGrade> SchoolGradeStore
-@inject IPersonService                 PersonService
 
 <PageTitle>People</PageTitle>
 
@@ -14,7 +13,7 @@
     </MudOverlay>
     <MudButton FullWidth
                Class="py-5"
-               OnClick="@SyncElvantoPeople"
+               Href="/Sync"
                StartIcon="@Icons.Material.Filled.Sync">
         Sync Elvanto Users
     </MudButton>

@@ -76,6 +76,10 @@
                     Variant="Variant.Filled"
 
                     Clearable>
+                    @* "No family" is a real choice now, and it needs a real item: the select renders
+                       whatever it is bound to, so without one a person with no household showed the
+                       raw "00000000-0000-0000-0000-000000000000" in the field. *@
+                    <MudSelectItem T="Guid?" Value="@Guid.Empty">No family</MudSelectItem>
                     @if (_families.HasData)
                     {
                         foreach (FamilyDefinition family in _families.Data!)

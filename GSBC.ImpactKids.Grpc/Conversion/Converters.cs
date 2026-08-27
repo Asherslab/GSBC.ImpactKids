@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using GSBC.ImpactKids.Grpc.Data.Models;
 using GSBC.ImpactKids.Grpc.Data.Models.Attendance;
 using GSBC.ImpactKids.Grpc.Data.Models.Games;
+using GSBC.ImpactKids.Grpc.Data.Models.Sync;
 using GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses;
 using GSBC.ImpactKids.Grpc.Data.Models.People;
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling;
@@ -9,6 +10,7 @@ using GSBC.ImpactKids.Grpc.Data.Models.Scheduling.School;
 using GSBC.ImpactKids.Shared.Contracts.Entities;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Attendance;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Games;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Sync;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.Allergies;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.MedicalNotes;
@@ -17,6 +19,9 @@ using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
 using Riok.Mapperly.Abstractions;
+using GSBC.ImpactKids.Grpc.Features.People.Sync.Models;
+using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.People;
+using ContractReviewStatus = GSBC.ImpactKids.Shared.Contracts.Entities.Features.Sync.ManualReviewStatus;
 
 namespace GSBC.ImpactKids.Grpc.Conversion;
 
@@ -192,4 +197,94 @@ public partial class GamePointRecordConverter(
     [MapperIgnoreTarget(nameof(GamePointRecord.LocalAwarded))]
     [MapperIgnoreTarget(nameof(GamePointRecord.IsBehaviour))]
     public partial GamePointRecord Convert(DbGamePointRecord input);
+}
+
+[Mapper]
+public partial class SyncOperationConverter(
+    IConverter<DateTimeOffset, DateTime> dateTimeConverter
+) : IConverter<DbSyncOperation, SyncOperation>
+{
+    [UseMapper]
+    private readonly IConverter<DateTimeOffset, DateTime> _dateTimeConverter = dateTimeConverter;
+
+    [MapperIgnoreSource(nameof(DbSyncOperation.AuditLogs))]
+    [MapperIgnoreSource(nameof(DbSyncOperation.PlannedChanges))]
+    // Not a column: the read fills it in, because "does this operation still have work waiting?" is
+    // the whole question the Execute button asks.
+    [MapperIgnoreTarget(nameof(SyncOperation.PendingPlanItems))]
+    public partial SyncOperation Convert(DbSyncOperation input);
+}
+
+[Mapper]
+public partial class SyncPlannedChangeConverter(
+    IConverter<DateTimeOffset, DateTime> dateTimeConverter
+) : IConverter<DbSyncPlannedChange, SyncPlannedChange>
+{
+    [UseMapper]
+    private readonly IConverter<DateTimeOffset, DateTime> _dateTimeConverter = dateTimeConverter;
+
+    [MapperIgnoreSource(nameof(DbSyncPlannedChange.SyncOperation))]
+    [MapperIgnoreSource(nameof(DbSyncPlannedChange.Person))]
+    [MapperIgnoreSource(nameof(DbSyncPlannedChange.ObservedAppHash))]
+    [MapperIgnoreSource(nameof(DbSyncPlannedChange.ObservedElvantoHash))]
+    public partial SyncPlannedChange Convert(DbSyncPlannedChange input);
+}
+
+[Mapper]
+public partial class SyncAuditLogConverter(
+    IConverter<DateTimeOffset, DateTime> dateTimeConverter
+) : IConverter<DbSyncAuditLog, SyncAuditLog>
+{
+    [UseMapper]
+    private readonly IConverter<DateTimeOffset, DateTime> _dateTimeConverter = dateTimeConverter;
+
+    [MapperIgnoreSource(nameof(DbSyncAuditLog.SyncOperation))]
+    public partial SyncAuditLog Convert(DbSyncAuditLog input);
+}
+
+public class SyncPendingReviewConverter(
+    IConverter<DateTimeOffset, DateTime> dateTimeConverter
+) : IConverter<DbSyncPendingReview, SyncManualReviewEntry>
+{
+    public SyncManualReviewEntry Convert(DbSyncPendingReview review) => new()
+    {
+        Id              = review.Id,
+        PersonId        = review.PersonId,
+        ElvantoId       = review.ElvantoId,
+        PersonName      = review.PersonName,
+        MatchStrategy   = review.MatchStrategy,
+        MatchConfidence = review.MatchConfidence,
+        Status          = (ContractReviewStatus)(int)review.Status,
+        ReviewedAt      = review.ReviewedAt.HasValue ? dateTimeConverter.Convert(review.ReviewedAt.Value) : null,
+        CreatedAt       = dateTimeConverter.Convert(review.CreatedAt)
+    };
+}
+
+public class SyncResultConverter : IConverter<SyncResult, SyncResponse>
+{
+    public SyncResponse Convert(SyncResult result) => new()
+    {
+        Success = result.Success,
+        Error = result.Error,
+        OperationId = result.OperationId.ToString(),
+        PeopleProcessed = result.PeopleProcessed,
+        InboundPeople = result.InboundPeople,
+        InboundFields = result.InboundFields,
+        OutboundPeople = result.OutboundPeople,
+        OutboundFields = result.OutboundFields,
+        Conflicts = result.Conflicts,
+        AutoLinked = result.AutoLinked,
+        ManualReviewQueued = result.ManualReviewQueued,
+        Archived = result.Archived,
+        Diverged = result.Diverged,
+        PlannedChanges = result.PlannedChanges,
+        StaleItems = result.StaleItems,
+        ManualReviewItems = result.ManualReviewItems.Select(m => new SyncManualReviewItem
+        {
+            PersonId = m.PersonId.ToString(),
+            ElvantoId = m.ElvantoId,
+            Reason = m.Reason,
+            MatchConfidence = m.MatchConfidence
+        }).ToList()
+    };
 }
