@@ -1,0 +1,59 @@
+@page "/Display/Pickup"
+@page "/Display/Pickup/{ServiceId:guid}"
+@using GSBC.ImpactKids.WASM.Features.Games.Layout
+@layout DisplayLayout
+@inherits GSBC.ImpactKids.WASM.Features.Attendance.Components.PickupWatcherComponent
+@* Overrides the blanket [Authorize] in Features/_Imports.razor. A screen on a wall
+   cannot sign in, and this page only ever renders a display name and a waiting time. *@
+@attribute [AllowAnonymous]
+
+<PageTitle>Pickup</PageTitle>
+
+<div class="pickup">
+    @* Slow drifting glow behind everything, so a wall with nobody waiting on it still
+       looks alive from across the room. *@
+    <div class="pickup-ambient"></div>
+
+    @if (Pickups == null)
+    {
+        <div class="pickup-message">
+            <span class="pickup-dots">Connecting<span>.</span><span>.</span><span>.</span></span>
+        </div>
+    }
+    else if (!Pickups.Success)
+    {
+        <div class="pickup-message">@(Pickups.Error ?? "No pickups yet")</div>
+    }
+    else
+    {
+        <div class="pickup-header">
+            <span class="pickup-heading">Ready for pickup</span>
+            @if (!string.IsNullOrWhiteSpace(Pickups.ServiceTitle))
+            {
+                <span class="pickup-service">@Pickups.ServiceTitle</span>
+            }
+        </div>
+
+        @if (_rows.Count == 0)
+        {
+            @* A deliberate empty screen. A wall that goes black reads as broken. *@
+            <div class="pickup-message">Nobody waiting</div>
+        }
+        else
+        {
+            @* Names shrink as the list grows, so ten of them still fill the wall - the
+               same --rows / --scale approach as the score board. *@
+            <div class="pickup-list" style="@($"--rows: {_rows.Count}; --scale: {RowScale};")">
+                @foreach (PickupRow row in _rows)
+                {
+                    <div class="pickup-row @(row.IsNew ? "pickup-row-new" : "") @(IsOverdue(row) ? "pickup-row-overdue" : "")"
+                         style="@($"--index: {row.Index};")"
+                         @key="row.Key">
+                        <span class="pickup-name">@row.Name</span>
+                        <span class="pickup-wait">@WaitText(row)</span>
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>

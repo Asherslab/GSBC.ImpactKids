@@ -4,6 +4,7 @@ using GSBC.ImpactKids.Grpc.Data;
 using GSBC.ImpactKids.Grpc.Data.Models.Games;
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling;
 using GSBC.ImpactKids.Grpc.Extensions;
+using GSBC.ImpactKids.Grpc.Services;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Games;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Games;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Features.Games;
@@ -57,7 +58,7 @@ public class GameDisplayService(
         {
             // Claimed before the read, so a write that lands while we are reading still
             // wakes the wait below instead of sitting until the next tick.
-            GameDataChangeSubscription pending = changes.Subscribe();
+            DataChangeSubscription pending = changes.Subscribe();
 
             // A fresh context per look: this call outlives any sane scoped lifetime.
             GameScoreboardResponse board = await dbFactory.RunWithNewDbContext(

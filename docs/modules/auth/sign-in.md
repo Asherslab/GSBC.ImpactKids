@@ -33,8 +33,20 @@ The proxy routes (`appsettings.json`) decide which applies:
 |---|---|---|
 | `/gRPC/GSBC.ImpactKids.{service}/**` | `Default` | cookie required, bearer attached |
 | `/api/**` | `Default` | same |
-| `/public/GSBC.ImpactKids.Games.Display/**` | none | anonymous on purpose — the wall display cannot sign in |
+| `/public/GSBC.ImpactKids.Games.Display/**` | none | anonymous on purpose — the score wall cannot sign in. Aggregate scores only |
+| `/public/GSBC.ImpactKids.Attendance.Display/**` | none | anonymous on purpose — the pickup wall cannot sign in. Display names of children currently requested and not yet signed out, nothing else |
 | `{**catch-all}` | none | the WASM app itself |
+
+**`public/` is routed one named service at a time, never as a prefix.** Two services are listed
+above because two exist, not because the prefix is open. A `/public/{**catch-all}` match would
+make every service anyone later names under that prefix anonymous by default, and the mistake
+would be invisible — it is a route that already works.
+
+**A service under `public/` with no route entry fails silently and misleadingly.** It falls
+through to the WASM catch-all, which answers `index.html` with a **200**, and grpc-web reports
+`Bad gRPC response. Invalid content-type value: text/html` — the same symptom as an expired
+session below, and on signage with nobody standing at it, it reads as "Connecting…" forever.
+Adding a service under `public/` means adding its route here in the same commit.
 
 The transform attaches a token only when the route has a policy, and Duende's token manager handles
 refresh (`AddBearerTokenToHeadersTransform.cs:38`).

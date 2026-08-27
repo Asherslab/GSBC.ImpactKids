@@ -1,0 +1,64 @@
+@using GSBC.ImpactKids.Shared.Contracts.Services.Features.Attendance
+@inherits EntityUtilityComponent
+@inject IRefreshableStore<AttendanceRecord> AttendanceRecordsStore
+@inject IRefreshableStore<User>             UsersStore
+@inject IAttendanceRecordService            AttendanceRecordsService
+
+@* A plain wrapper, not the MudButton itself: CSS isolation stamps its b-hash only on elements
+   in this markup, so a class sitting on a MudBlazor component never matches its own rule. *@
+<div class="pickup">
+    @if (Record is { SignedOut: not null })
+    {
+        <div class="pickup-done">
+            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small"/>
+            <MudText Typo="Typo.body2">Signed out @_signedOutAt</MudText>
+        </div>
+    }
+    else if (Record is { AwaitingPickup: true })
+    {
+        @* Requested is a STATE, not a second press of the same button. Two leaders work this
+           desk at once: once A requests a child, B's screen shows the same row, and if the big
+           target still toggled, B taps it for the parent standing in front of them and silently
+           un-requests a child nobody is now fetching. So the target that was "request" becomes
+           inert and informative, and clearing moves to its own small, deliberate control. *@
+        <div class="pickup-state">
+            <div class="pickup-state-text">
+                <MudIcon Icon="@Icons.Material.Filled.NotificationsActive" Size="Size.Small"/>
+                <span class="pickup-state-label">
+                    <MudText Typo="Typo.body1">Requested @_requestedAgo</MudText>
+                    @if (_requestedBy != null)
+                    {
+                        <MudText Typo="Typo.caption">@_requestedAt · @_requestedBy</MudText>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.caption">@_requestedAt</MudText>
+                    }
+                </span>
+            </div>
+            @* Small on purpose. A mis-request costs three seconds to undo through a deliberate
+               control; an accidental clear costs a child nobody is fetching. *@
+            <span class="pickup-clear">
+                <MudIconButton
+                    Icon="@Icons.Material.Filled.Close"
+                    Size="Size.Small"
+                    aria-label="Clear pickup request"
+                    Disabled="@_busy"
+                    OnClick="@Clear"/>
+            </span>
+        </div>
+    }
+    else if (Record != null)
+    {
+        <MudButton
+            FullWidth
+            Size="Size.Large"
+            Variant="Variant.Filled"
+            Color="Color.Info"
+            StartIcon="@Icons.Material.Outlined.NotificationsNone"
+            Disabled="@_busy"
+            OnClick="@Request">
+            Request Pickup
+        </MudButton>
+    }
+</div>

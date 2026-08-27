@@ -87,6 +87,16 @@ builder.Services
     .ConfigureChannel(x => { x.UnsafeUseInsecureChannelCallCredentials = true; })
     .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(new HttpClientHandler()));
 
+// Pickup wall client - unauthenticated for the same reason, and its own service rather
+// than the games one because it deliberately carries people.
+builder.Services
+    .AddCodeFirstGrpcClient<IAttendancePickupDisplayService>(
+        typeof(IAttendancePickupDisplayService).FullName!,
+        x => { x.Address = new Uri("https://yarp"); }
+    )
+    .ConfigureChannel(x => { x.UnsafeUseInsecureChannelCallCredentials = true; })
+    .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(new HttpClientHandler()));
+
 // builder.Services.AddScoped<UnauthorizedMessageHandler>();
 builder.Services.AddAuthenticatedGrpcClient<IMetabaseService>();
 builder.Services.AddAuthenticatedGrpcClient<IUsersService>();
