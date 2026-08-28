@@ -32,10 +32,33 @@ response from *before* the mutation and the screen does not settle. `RefreshEven
 key first, then refreshes.
 
 This one hides: the SSE invalidation from the event bus usually lands a moment later and updates the
-page anyway, so a `RefreshAll` after a write looks like it works. It fails where the timing is
-tightest — a batch of two writes left one child's row showing the new state and the other showing the
-old, with **both already written in the database**. `RefreshAll` is for arriving on a page;
-`RefreshEvent` is for having just changed something.
+page anyway, so a `RefreshAll` after a write looks like it works. `RefreshAll` is for arriving on a
+page; `RefreshEvent` is for having just changed something.
+
+## Refreshes after a write are serialised, and must stay that way
+
+`RefreshEvent` holds a per-entity-type `SemaphoreSlim` and **invalidates the cache inside it**. Do
+not "simplify" that away, and do not invalidate before taking the gate.
+
+The action executor coalesces concurrent calls for one key. Every write raises its own SSE event, so
+a burst produces overlapping refreshes — and a refresh asked for *now* could be answered by a request
+that started **before** the write it exists to pick up. That stale answer then filled the 30 minute
+cache, so nothing fetched again.
+
+Measured on a household sign-out, two writes about a second apart:
+
+| | writes | `BasicReadMultiple` | result |
+|---|---|---|---|
+| before | 2 | **1** — and it straddled the second write | one row stale, DB correct |
+| after | 2 | 3, serialised | both rows correct |
+
+The giveaway when this recurs: **fewer reads than writes** in the network panel, and a screen that
+disagrees with the database then fixes itself when something unrelated triggers another refresh.
+
+A trailing debounce on the SSE refresh (`SseClientService.Refresh<T>`) sits in front of the gate and
+collapses a burst into one refresh. It is a load optimisation, **not** the correctness fix — on its
+own it made things worse, by removing the second read that had been accidentally correcting the
+first. Keep both, and keep the debounce trailing.
 
 **A blank-looking page is usually mid-load.** Only conclude data is missing after the store has
 resolved — the same trap applies when inspecting it in a browser (see the `run-and-inspect-app` skill).

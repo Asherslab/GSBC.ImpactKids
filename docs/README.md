@@ -52,10 +52,11 @@ Present tense, kept current, no dates.
 
 ### Open
 
-- [A screen misses an update when two writes land within about a second](open-questions/sse-updates-lost-when-writes-land-together.md)
-  — the database is right and the screen is not, then fixes itself ten seconds later. Server-side
-  event loss is ruled out; the suspect is the action executor coalescing a refresh onto a request
-  that started before the write, and caching that answer for thirty minutes.
+Nothing. Add an entry when you open an `open-questions/` doc.
+
+(The one that was here — a screen missing an update when two writes landed together — was measured,
+fixed and folded into
+[GSBC.ImpactKids.WASM/AGENTS.md](../GSBC.ImpactKids.WASM/AGENTS.md#refreshes-after-a-write-are-serialised-and-must-stay-that-way).)
 
 ## Lifecycle
 
