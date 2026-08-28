@@ -30,6 +30,19 @@ public class DbPickupDisplayKey
     /// </summary>
     public required string KeyHash { get; set; }
 
+    /// <summary>
+    /// Signs the tokens the wall displays present to the gRPC service. Minted fresh on every
+    /// rotation alongside <see cref="KeyHash"/>, which is what makes a rotation reach the
+    /// tokens as well as the cookies: every token issued under the previous key stops
+    /// verifying, with no revocation list and no expiry to wait out.
+    /// <para>
+    /// Unlike <see cref="KeyHash"/> this is the secret itself, not a digest - the service
+    /// both signs and verifies with it, so it has to be recoverable. It never leaves the
+    /// cluster: the proxy is handed finished tokens and never sees this value.
+    /// </para>
+    /// </summary>
+    public required string TokenSigningKey { get; set; }
+
     public required DateTimeOffset RotatedAt { get; set; }
 
     /// <summary>Who pressed the button, so the admin page can say. Null for a key minted before there were users.</summary>

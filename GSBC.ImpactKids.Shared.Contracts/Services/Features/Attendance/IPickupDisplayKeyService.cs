@@ -4,9 +4,9 @@ using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Features.Attendance;
 namespace GSBC.ImpactKids.Shared.Contracts.Services.Features.Attendance;
 
 /// <summary>
-/// Administers the one key a pickup wall enrols with. Routed under "gRPC/" and behind
-/// <c>Policies.EnabledOnly</c> like every other authorized service - it is the opposite end
-/// of <see cref="IAttendancePickupDisplayService"/>, not a sibling of it.
+/// Administers the one key every wall display enrols with - the pickup list and the game
+/// boards share it. Leader only, like everything the gRPC service does not explicitly open:
+/// this is the console that hands a display its credential, and no display may ever reach it.
 /// <para>
 /// There is deliberately no read-the-key operation. Only a hash is stored, so
 /// <see cref="PickupDisplayKeyResponse.Key"/> comes back once, from

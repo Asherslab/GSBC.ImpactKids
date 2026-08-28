@@ -1,0 +1,35 @@
+@using GSBC.ImpactKids.Shared.Contracts.Services.Features.Attendance
+@using GSBC.ImpactKids.WASM.Features.Attendance
+@inherits EntityUtilityComponent
+@inject IRefreshableStore<AttendanceRecord>     AttendanceRecordsStore
+@inject IRefreshableStore<AttendanceItemRecord> AttendanceItemRecordsStore
+@inject IRefreshableStore<AttendanceItemType>   AttendanceItemTypesStore
+@inject IAttendanceRecordService                AttendanceRecordsService
+
+@* A plain wrapper, not the MudButton itself: CSS isolation stamps its b-hash only on elements
+   in this markup, so a class sitting on a MudBlazor component never matches its own rule. *@
+@if (Record is { SignedOut: null })
+{
+    <div class="sign-out">
+        @* Only when there is something to say. A child with nothing outstanding signs out on
+           one press and never sees this; a child holding a phone cannot be signed out without
+           it being on screen first. *@
+        @if (_confirming && _outstanding.Count > 0)
+        {
+            <div class="sign-out-items">
+                <MudIcon Icon="@Icons.Material.Filled.Backpack" Size="Size.Small"/>
+                <span class="sign-out-items-label">@_outstandingLabel</span>
+            </div>
+        }
+        <MudButton
+            FullWidth
+            Size="Size.Large"
+            Variant="@(_confirming ? Variant.Filled : Variant.Outlined)"
+            Color="@(_confirming ? Color.Warning : Color.Error)"
+            StartIcon="@(_confirming ? Icons.Material.Filled.Warning : Icons.Material.Filled.Logout)"
+            Disabled="@_busy"
+            OnClick="@Press">
+            @(_confirming ? "Press again to sign out" : "Sign Out")
+        </MudButton>
+    </div>
+}

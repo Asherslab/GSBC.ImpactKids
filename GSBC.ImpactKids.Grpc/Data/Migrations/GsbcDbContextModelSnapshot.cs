@@ -137,6 +137,10 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.Property<Guid?>("RotatedByUserId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("TokenSigningKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.HasIndex("RotatedByUserId");

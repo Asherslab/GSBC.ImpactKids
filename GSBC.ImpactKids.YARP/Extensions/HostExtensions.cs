@@ -13,6 +13,12 @@ namespace GSBC.ImpactKids.YARP.Extensions;
 
 internal static class HostExtensions
 {
+    /// <summary>
+    /// Named on the <c>grpc</c> and <c>api</c> routes in <c>appsettings.json</c>. Admits both
+    /// caller types; see where it is built for why that is not a widening.
+    /// </summary>
+    internal const string LeaderOrDisplayPolicy = "LeaderOrDisplay";
+
     extension(IHostApplicationBuilder builder)
     {
         public IHostApplicationBuilder AddReverseProxy()
@@ -30,20 +36,17 @@ internal static class HostExtensions
                     // builderContext.RequestTransforms.Add(builderContext.Services.GetRequiredService<ValidateAntiforgeryTokenRequestTransform>());
                     builderContext.RequestTransforms.Add(new RequestHeaderRemoveTransform("Cookie"));
 
-                    // The pickup wall's policy is the one policy that must NOT bring a
-                    // bearer token with it. Its cookie is a screen's enrolment, not a
-                    // person's session - there is no Auth0 token behind it to fetch, and
-                    // the display service is anonymous by design. Asking the token manager
-                    // for one would fail on every request and log an error saying so.
-                    bool attachBearer =
-                        !string.IsNullOrEmpty(builderContext.Route.AuthorizationPolicy) &&
-                        !string.Equals(
-                            builderContext.Route.AuthorizationPolicy,
-                            DisplayAuthOptions.PolicyName,
-                            StringComparison.OrdinalIgnoreCase
-                        );
-
-                    if (attachBearer)
+                    // Every route that requires a caller of any kind carries a token to the
+                    // gRPC service. Which token depends on who the caller is, and the
+                    // transform decides that per request - a leader's Auth0 token, or the
+                    // display token the screen was handed at enrolment.
+                    //
+                    // This used to be the other way round for the display: the pickup route
+                    // deliberately attached nothing, because the service behind it was
+                    // anonymous. It is not anonymous any more, which is the whole point of
+                    // the change - the gRPC service now authenticates a display itself
+                    // rather than trusting this proxy to have done it.
+                    if (!string.IsNullOrEmpty(builderContext.Route.AuthorizationPolicy))
                     {
                         builderContext.RequestTransforms.Add(builderContext.Services
                             .GetRequiredService<AddBearerTokenToHeadersTransform>());
@@ -199,6 +202,23 @@ internal static class HostExtensions
                 // setup link, by anybody or nobody, and that is the only way in.
                 .AddPolicy(DisplayAuthOptions.PolicyName, policy => policy
                     .AddAuthenticationSchemes(DisplayAuthOptions.SchemeName)
+                    .RequireAuthenticatedUser()
+                )
+                // What the gRPC and api routes require: a leader session OR an enrolled
+                // screen. It says only "you are one of the two callers this app has" - which
+                // of them may call WHAT is decided at the gRPC service, per method, and a
+                // display reaches only the reads marked for it and can never write.
+                //
+                // Being permissive here is deliberate and is not the weakening it looks
+                // like. Before this change the proxy was the ONLY thing standing between a
+                // display and the data; now it proves enrolment and the service behind it
+                // authenticates the display independently, so the gate that matters has
+                // moved to where it can actually see what is being asked for.
+                .AddPolicy(LeaderOrDisplayPolicy, policy => policy
+                    .AddAuthenticationSchemes(
+                        CookieAuthenticationDefaults.AuthenticationScheme,
+                        DisplayAuthOptions.SchemeName
+                    )
                     .RequireAuthenticatedUser()
                 );
 

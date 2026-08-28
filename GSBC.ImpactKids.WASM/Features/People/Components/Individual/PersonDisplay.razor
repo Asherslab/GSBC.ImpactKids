@@ -1,44 +1,57 @@
 @inherits DisplayComponent<Person>
 @inject IRefreshableStore<SchoolGrade> SchoolGradesStore
 
-<MudPaper Elevation="6" Class="relative">
-    <MudOverlay Visible="@(Entity.IsLoading)" DarkBackground="true" Absolute="true">
-        <MudProgressCircular Indeterminate/>
-    </MudOverlay>
-    <MudLink Underline="Underline.None" Href="@Href">
-        <MudPaper Elevation="0" Class="@Css">
-            <MudAvatar Rounded Color="@_avatarColor" Class="ma-3">
-                @_avatarDisplay
-            </MudAvatar>
-            <MudPaper Elevation="0" Class="d-flex justify-center flex-column flex-grow-1">
-                <MudText>
-                    @_displayText
-                </MudText>
-                @if (Entity.Data != null)
-                {
+@* A plain wrapper, not the MudPaper itself: CSS isolation only stamps its b-hash on elements in
+   this markup, so a class sitting on a MudBlazor component never matches its own rule. Everything
+   below is reached through ::deep from here. *@
+<div class="person-card">
+    <MudPaper Elevation="6" Class="person-card-surface relative">
+        <MudOverlay Visible="@(Entity.IsLoading)" DarkBackground="true" Absolute="true">
+            <MudProgressCircular Indeterminate/>
+        </MudOverlay>
+        <MudLink Underline="Underline.None" Href="@Href" Class="person-card-link">
+            <MudPaper Elevation="0" Class="@Css">
+                <MudAvatar Rounded Color="@_avatarColor" Class="ma-3">
+                    @_avatarDisplay
+                </MudAvatar>
+                <MudPaper Elevation="0" Class="person-card-name d-flex justify-center flex-column flex-grow-1">
                     <MudText>
-                        @(Entity.Data.FamilyGuardian ? "Guardian" : "Child")
+                        @_displayText
                     </MudText>
-                }
+                    @if (Entity.Data != null)
+                    {
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                            @(Entity.Data.FamilyGuardian ? "Guardian" : "Child")
+                        </MudText>
+                    }
+                </MudPaper>
+                <MudPaper Elevation="0" Class="person-card-suffix d-flex justify-center flex-column flex-grow-0">
+                    @if (SuffixContent != null)
+                    {
+                        @SuffixContent(Entity.Data)
+                    }
+                    else if (ShowGrade)
+                    {
+                        <MudText Typo="Typo.h6">
+                            @GetSchoolGrade()
+                        </MudText>
+                    }
+                    else if (Entity.Data?.GetAge() != null)
+                    {
+                        <MudText Typo="Typo.h6">
+                            @Entity.Data?.GetAge()
+                        </MudText>
+                    }
+                </MudPaper>
             </MudPaper>
-            <MudPaper Elevation="0" Class="d-flex justify-center flex-column flex-grow-0 mr-5">
-                @if (SuffixContent != null)
-                {
-                    @SuffixContent(Entity.Data)
-                }
-                else if (ShowGrade)
-                {
-                    <MudText Typo="Typo.h6">
-                        @GetSchoolGrade()
-                    </MudText>
-                }
-                else if (Entity.Data?.GetAge() != null)
-                {
-                    <MudText Typo="Typo.h6">
-                        @Entity.Data?.GetAge()
-                    </MudText>
-                }
-            </MudPaper>
-        </MudPaper>
-    </MudLink>
-</MudPaper>
+        </MudLink>
+        @* Outside the MudLink on purpose: the footer holds real controls, and nested inside an
+           anchor a press on one would also follow the card's own link. *@
+        @if (FooterContent != null)
+        {
+            <div class="person-card-footer">
+                @FooterContent(Entity.Data)
+            </div>
+        }
+    </MudPaper>
+</div>

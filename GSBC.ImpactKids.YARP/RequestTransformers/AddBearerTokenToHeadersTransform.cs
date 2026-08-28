@@ -1,7 +1,9 @@
 using System.Net.Http.Headers;
 using Duende.AccessTokenManagement;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Duende.AccessTokenManagement.OpenIdConnect;
 using GSBC.ImpactKids.YARP.DevAuth;
+using GSBC.ImpactKids.YARP.DisplayAuth;
 using Microsoft.Extensions.Options;
 using Yarp.ReverseProxy.Transforms;
 
@@ -17,6 +19,32 @@ internal sealed partial class AddBearerTokenToHeadersTransform(
     {
         if (context.HttpContext.User.Identity is not { IsAuthenticated: true })
         {
+            return;
+        }
+
+        // A wall display. Its token was minted by the gRPC service at enrolment and has been
+        // riding on the display cookie ever since, so there is nothing to fetch or refresh -
+        // and nothing for the token manager below to do, which is why this returns rather
+        // than falling through. Asking Duende for a token on a session Auth0 never issued
+        // fails on every request and logs an error saying so.
+        //
+        // A LEADER SESSION WINS when both cookies are present, and that case is the normal
+        // one rather than an edge: the person who sets a TV up enrols it from the browser
+        // they also work in, so their laptop holds both. The authorization policy authenticates
+        // both schemes and merges the identities, so without this check the display token -
+        // which is only ever allowed to read - would be attached to that person's requests and
+        // silently demote them on every write they attempted.
+        bool isLeader = context.HttpContext.User.Identities.Any(identity =>
+            identity.IsAuthenticated
+            && identity.AuthenticationType == CookieAuthenticationDefaults.AuthenticationScheme
+        );
+
+        string? displayToken = context.HttpContext.User
+            .FindFirst(DisplayAuthOptions.TokenClaimType)?.Value;
+
+        if (!isLeader && displayToken != null)
+        {
+            context.ProxyRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", displayToken);
             return;
         }
 

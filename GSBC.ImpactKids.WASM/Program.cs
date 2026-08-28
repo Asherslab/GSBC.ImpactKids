@@ -77,27 +77,13 @@ builder.Services
 
 builder.Services.AddSingleton<ISseClientService, SseClientService>();
 
-// Wall display client - unauthenticated on purpose, routed past the proxy's auth
-// policy so a screen with no login can still read the scoreboard.
-builder.Services
-    .AddCodeFirstGrpcClient<IGameDisplayService>(
-        typeof(IGameDisplayService).FullName!,
-        x => { x.Address = new Uri("https://yarp"); }
-    )
-    .ConfigureChannel(x => { x.UnsafeUseInsecureChannelCallCredentials = true; })
-    .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(new HttpClientHandler()));
-
-// Pickup wall client - unauthenticated for the same reason, and its own service rather
-// than the games one because it deliberately carries people.
-builder.Services
-    .AddCodeFirstGrpcClient<IAttendancePickupDisplayService>(
-        typeof(IAttendancePickupDisplayService).FullName!,
-        x => { x.Address = new Uri("https://yarp"); }
-    )
-    .ConfigureChannel(x => { x.UnsafeUseInsecureChannelCallCredentials = true; })
-    .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(new HttpClientHandler()));
+// The scoreboard wall. No longer a special, unauthenticated client: a games wall enrols on
+// the display key like the pickup wall does, and its enrolment cookie rides on the ordinary
+// route. There is no pickup display client at all any more - that screen reads the
+// attendance, people and service stores like every other page.
 
 // builder.Services.AddScoped<UnauthorizedMessageHandler>();
+builder.Services.AddAuthenticatedGrpcClient<IGameDisplayService>();
 builder.Services.AddAuthenticatedGrpcClient<IMetabaseService>();
 builder.Services.AddAuthenticatedGrpcClient<IUsersService>();
 builder.Services.AddAuthenticatedGrpcClient<IPersonService>();

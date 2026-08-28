@@ -31,6 +31,21 @@ internal static class PickupDisplayKeys
     }
 
     /// <summary>
+    /// A signing key for the tokens displays present to the gRPC service, minted alongside
+    /// the enrolment key it belongs to. 48 bytes rather than 32: HMAC-SHA256 gains nothing
+    /// past its block size, and this one is never typed by a human, so there is no reason to
+    /// be stingy.
+    /// </summary>
+    public static string GenerateSigningKey()
+    {
+        Span<byte> bytes = stackalloc byte[48];
+
+        RandomNumberGenerator.Fill(bytes);
+
+        return Convert.ToBase64String(bytes);
+    }
+
+    /// <summary>
     /// Base64 SHA-256. A plain digest rather than a password hash is the right call here and
     /// only here: the input is 32 random bytes, so there is no guessable space for a work
     /// factor to defend.

@@ -2,52 +2,71 @@
 @page "/Display/Pickup/{ServiceId:guid}"
 @using GSBC.ImpactKids.WASM.Features.Games.Layout
 @layout DisplayLayout
-@inherits GSBC.ImpactKids.WASM.Features.Attendance.Components.PickupWatcherComponent
-@* Overrides the blanket [Authorize] in Features/_Imports.razor. A screen on a wall
-   cannot sign in, and this page only ever renders a display name and a waiting time. *@
+@* Overrides the blanket [Authorize] in Features/_Imports.razor. A screen on a wall has no
+   Auth0 login, so it has no client side principal for [Authorize] to be satisfied by - its
+   credential is the enrolment cookie, which the proxy checks and the gRPC service checks
+   again. The gate is on the data, not on rendering this page. *@
 @attribute [AllowAnonymous]
 
 <PageTitle>Pickup</PageTitle>
 
-<div class="pickup">
+@* ?transparent=true turns this from a wall display into a layer. Everything that exists to
+   stop a black screen reading as broken - the ambient glow, "Nobody waiting", the full
+   screen messages - is exactly wrong over live worship media, so in transparent mode the
+   page renders nothing at all unless it has something to say. *@
+<div class="pickup @(Transparent ? "pickup-transparent" : "")">
     @* Slow drifting glow behind everything, so a wall with nobody waiting on it still
-       looks alive from across the room. *@
-    <div class="pickup-ambient"></div>
+       looks alive from across the room. Never in transparent mode: the thing underneath
+       is the background. *@
+    @if (!Transparent)
+    {
+        <div class="pickup-ambient"></div>
+    }
 
     @* Checked before everything else, deliberately. An unenrolled screen must never sit on
        "Connecting..." - that is what a wall shows when nobody has noticed it is broken, and
        this one has a remedy somebody walking past can act on. *@
     @if (Unauthorised)
     {
-        <div class="pickup-message pickup-message-stack">
+        @* Still shown when transparent, but as a corner pill rather than across the
+           service's screen. Silence would be worse: an overlay that has quietly stopped
+           working looks identical to one with nobody waiting. *@
+        <div class="@(Transparent ? "pickup-status" : "pickup-message pickup-message-stack")">
             <span>This screen needs setting up again</span>
-            <span class="pickup-message-detail">Open it from the pickup display link on the admin page</span>
+            @if (!Transparent)
+            {
+                <span class="pickup-message-detail">Open it from the pickup display link on the admin page</span>
+            }
         </div>
     }
-    else if (Pickups == null)
+    else if (!Loaded)
     {
-        <div class="pickup-message">
+        <div class="@(Transparent ? "pickup-status" : "pickup-message")">
             <span class="pickup-dots">Connecting<span>.</span><span>.</span><span>.</span></span>
         </div>
     }
-    else if (!Pickups.Success)
-    {
-        <div class="pickup-message">@(Pickups.Error ?? "No pickups yet")</div>
-    }
     else
     {
-        <div class="pickup-header">
-            <span class="pickup-heading">Ready for pickup</span>
-            @if (!string.IsNullOrWhiteSpace(Pickups.ServiceTitle))
-            {
-                <span class="pickup-service">@Pickups.ServiceTitle</span>
-            }
-        </div>
+        @if (!Transparent || _rows.Count > 0)
+        {
+            <div class="pickup-header">
+                <span class="pickup-heading">Ready for pickup</span>
+                @if (!string.IsNullOrWhiteSpace(ServiceTitle))
+                {
+                    <span class="pickup-service">@ServiceTitle</span>
+                }
+            </div>
+        }
 
         @if (_rows.Count == 0)
         {
-            @* A deliberate empty screen. A wall that goes black reads as broken. *@
-            <div class="pickup-message">Nobody waiting</div>
+            @* A deliberate empty screen. A wall that goes black reads as broken - but a
+               layer that paints anything at all when nobody is waiting is a layer sitting
+               on top of the service for no reason, so transparent mode renders nothing. *@
+            @if (!Transparent)
+            {
+                <div class="pickup-message">Nobody waiting</div>
+            }
         }
         else
         {

@@ -1,5 +1,4 @@
 using System.Text;
-using GSBC.ImpactKids.Grpc.Features.Attendance.AttendancePickupDisplayServices;
 using GSBC.ImpactKids.Grpc.Features.Games.GameDisplayServices;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Attendance;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Games;
@@ -11,9 +10,8 @@ namespace GSBC.ImpactKids.Grpc.Features.Eventing.Services;
 public class RabbitWorker(
     IConnection             connection,
     EventingChannelsService eventingChannelsService,
-    GameDataChangeNotifier       gameDataChangeNotifier,
-    AttendanceDataChangeNotifier attendanceDataChangeNotifier,
-    ILogger<RabbitWorker>        logger
+    GameDataChangeNotifier  gameDataChangeNotifier,
+    ILogger<RabbitWorker>   logger
 ) : BackgroundService
 {
     /// <summary>
@@ -24,15 +22,6 @@ public class RabbitWorker(
     [
         typeof(GamePointRecord).FullName!,
         typeof(GameBoard).FullName!
-    ];
-
-    /// <summary>
-    /// Entity types the pickup wall cares about. A pickup request and a sign out are both
-    /// writes to the same record, so one type covers the whole wall.
-    /// </summary>
-    private static readonly HashSet<string> PickupTypes =
-    [
-        typeof(AttendanceRecord).FullName!
     ];
 
 
@@ -61,9 +50,6 @@ public class RabbitWorker(
 
         if (ScoreboardTypes.Contains(entityType))
             gameDataChangeNotifier.NotifyChanged();
-
-        if (PickupTypes.Contains(entityType))
-            attendanceDataChangeNotifier.NotifyChanged();
 
         await eventingChannelsService.FanoutEvent(entityType);
     }

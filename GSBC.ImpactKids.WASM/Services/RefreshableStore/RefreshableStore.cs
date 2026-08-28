@@ -20,6 +20,14 @@ public partial class RefreshableStore<T>(
 )
     : IRefreshableStore<T>
 {
+    /// <summary>
+    /// Whether this is one of the screens that cannot sign in. Everything under /Display is,
+    /// and nothing else is - the same prefix the proxy will only redirect an enrolment to.
+    /// </summary>
+    private bool IsDisplaySurface =>
+        new Uri(navigation.Uri).AbsolutePath
+            .StartsWith("/Display", StringComparison.OrdinalIgnoreCase);
+
     public async Task RefreshAll()
     {
         string name = typeof(T).Name;
@@ -49,11 +57,28 @@ public partial class RefreshableStore<T>(
             // The session died out from under us - the cached client side principal can
             // outlive the proxy's cookie. Get a fresh one rather than sitting on a page
             // where nothing will ever load.
-            if (e.StatusCode is StatusCode.Unauthenticated)
+            //
+            // Never on a wall display. A screen has no Auth0 login to send anybody to, and
+            // nobody standing at it to complete one - redirecting a TV to a sign in page
+            // replaces the wall with a login form until a human notices. Its remedy is to be
+            // re-enrolled from the setup link, so the store is left in its failure state and
+            // the page says so.
+            if (e.StatusCode is StatusCode.Unauthenticated && !IsDisplaySurface)
             {
                 navigation.NavigateTo(
                     $"bff/login?returnUrl={Uri.EscapeDataString(navigation.Uri)}",
                     forceLoad: true
+                );
+
+                return;
+            }
+
+            if (e.StatusCode is StatusCode.Unauthenticated)
+            {
+                await store.UpdateAsync(s => s with
+                    {
+                        Entities = s.Entities.ToFailure(RefreshableStoreErrors.NotEnrolled)
+                    }
                 );
             }
 

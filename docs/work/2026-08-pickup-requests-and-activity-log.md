@@ -93,22 +93,45 @@ mode this feature introduces, and therefore the one it has to answer for.
 
 ## The privacy decision, stated plainly
 
-`docs/modules/games/README.md` says of the anonymous display service: *"Only ever put
-aggregate scores through that service — no people, no service detail beyond a title."* This
-feature deliberately puts **people** on an anonymous screen, so it does not reuse that
-service — it gets its own, with its own narrower rules:
+> **Superseded on 28 Aug 2026 — read this first.** The rules below described a purpose-built
+> display service that returned a name and a time and nothing else. **That service no longer
+> exists.** The wall now reads the ordinary attendance, people and service endpoints and works
+> out who is waiting client side, so a display can read everything a `Person` carries — date
+> of birth, allergies, medical notes, family.
+>
+> That was a deliberate trade, made by the owner: the bespoke contract, service and stream
+> were a few hundred lines existing only to narrow a response, and the control that actually
+> matters is the enrolment key, which is his and lives on screens he controls. What replaced
+> the narrowing is a **hard read-only guarantee** — a display cannot write anything, enforced
+> both by the per-method policies and by an EF interceptor that refuses `SaveChanges` for a
+> display caller. See `docs/modules/auth/sign-in.md`.
+>
+> **Read-only is about integrity, not confidentiality.** It stops a screen changing anything;
+> it does not narrow what a screen can see. The paragraphs below are kept because the
+> *reasoning* about what is legible from the third row is unchanged and still governs what the
+> page renders — but they no longer describe the transport.
 
-- A **separate** service, `public/GSBC.ImpactKids.Attendance.Display`. The games rule is
-  left exactly as it is; nothing person-shaped is added to `IGameDisplayService`.
-- It returns **a display name only** — first name plus last initial ("Jonah P."). No last
-  name, no date of birth, no family, no medical or allergy detail, no ids that can be
-  turned back into a person.
-- It returns **only children currently requested and not yet signed out** for one service —
+`docs/modules/games/README.md` says of the games display service: *"Only ever put aggregate
+scores through that service — no people, no service detail beyond a title."* That rule stands
+and nothing person-shaped was ever added to `IGameDisplayService`.
+
+What the **page** puts on a wall is still the narrow thing, and this part is unchanged:
+
+- It renders **a display name only** — full first and last name ("Jonah Parry"). No date of
+  birth, no family, no medical or allergy detail, no ids.
+
+  > Widened on 28 Aug 2026. This was first name plus last initial ("Jonah P."), and the
+  > paragraph below already said that changing it is a decision rather than a refactor — so,
+  > recorded as one. The rest of the list is unchanged: the extra field is the surname and
+  > nothing else.
+- It renders **only children currently requested and not yet signed out** for one service —
   never the roster, never who is signed in, never a history.
 - The screen is in a room full of the parents of those children, which is the only reason
   a name on a wall is acceptable at all. It is not a general-purpose reason.
 
-That set of rules is the contract. Widening it is a decision, not a refactor.
+That set of rules is the contract **for what the page draws**. Widening it is a decision, not
+a refactor. What the transport permits is now wider than what the page draws, and the note at
+the top of this section is where that was decided.
 
 ## The data
 
@@ -210,7 +233,7 @@ public class PickupDisplayResponse : BasicResponse
     public List<PickupDisplayEntry>  Waiting      { get; init; } = [];
 }
 
-/// <summary>First name plus last initial, and nothing else. No id — nothing here
+/// <summary>A display name and a time, and nothing else. No id — nothing here
 /// may be turned back into a person.</summary>
 public class PickupDisplayEntry
 {
