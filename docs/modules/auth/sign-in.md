@@ -301,6 +301,7 @@ returning 200 and `/bff/user` reporting `permissions: user:enabled`.
 | Rotation | old cookie → 401 immediately; old key link → 401 with readable words; new key enrols and reads |
 | An unenrolled wall | renders "This screen needs setting up again", never "Connecting…" and never an Auth0 redirect |
 | Leader unaffected | attendance tool and `PickupDisplaySetup` load normally |
+| Leader holding BOTH cookies | leader-only `GetKeyInfo` → 200, `/bff/user` → 200, attendance tool loads — re-verified after the production fix below, with the dev identity shaped like Auth0's |
 
 Two things were **found by running it** that reading could not have settled, and both are recorded where
 they bite rather than only here:
@@ -312,8 +313,19 @@ they bite rather than only here:
   It still fails closed, and **do not move it back onto the methods**.
 - **A leader session must win when both cookies are present**, which is the normal case rather than an
   edge — the person who sets a TV up enrols it from the browser they work in. The proxy transform
-  attached the display token first, which would have demoted that person to read-only on every write.
-  Fixed in `AddBearerTokenToHeadersTransform`, and verified with both cookies in one browser.
+  attached the display token first, which demotes that person on every call.
+
+  **The first fix for this was wrong and reached production.** It asked whether any identity on the
+  principal had `AuthenticationType == "Cookies"`. That is true for the dev bypass, which mints its
+  own identity with that type — and false for a real Auth0 session, where the identity in the cookie
+  was minted by the OpenIdConnect handler. So it passed every local test and failed for every
+  genuinely signed in leader: 401 on everything, then an endless bounce through `/bff/login`.
+  Reported from production on 2026-08-28.
+
+  The fix is to **ask the scheme** — `AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme)`
+  — never to infer a caller's kind from an identity's authentication type. `DevAuthEndpoints` now mints
+  its identity with the OIDC scheme too, so the bypass stops hiding this class of divergence: the
+  local environment should fail the same way production would.
 
 **The read-only interceptor was verified by deliberately mis-configuring it**: a delete was opened to
 displays, a throwaway row inserted, and the call made with a display cookie. The row survived. Note
