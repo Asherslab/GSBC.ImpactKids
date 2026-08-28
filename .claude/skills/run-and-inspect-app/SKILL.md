@@ -103,9 +103,25 @@ ToolSearch  query: "select:mcp__rider__execute_run_configuration,mcp__rider__get
   nothing is listening (or you used `https`). `.mcp.json` is gitignored — the key stays out of git,
   so never paste it into a doc, a commit or a summary. The edit only takes effect on the **next**
   session, per the startup rule above.
-- **Claude Browser** (`mcp__Claude_Browser__*`) — already loaded, no ToolSearch needed.
-  `preview_start`, `navigate`, `computer`, `read_page`, `javascript_tool`,
-  `read_console_messages`, `read_network_requests`, `resize_window`.
+- **Claude in Chrome** (`mcp__claude-in-chrome__*`) — drives the user's own Chrome.
+  `tabs_context_mcp`, `navigate`, `computer`, `read_page`, `javascript_tool`,
+  `read_console_messages`, `read_network_requests`, `resize_window`. Call
+  `tabs_context_mcp` once before anything else.
+
+  **"Browser extension is not connected" means Chrome is closed. ASK THE USER TO REOPEN IT.**
+  It is not a broken extension, not a login problem, and not a cue to go and do the job another
+  way. The correct response is one sentence — "Chrome looks closed, can you reopen it?" — and
+  then wait. Do not silently fall back to curl, and do not start editing code to print
+  diagnostics that the page would have shown you.
+
+  This has already gone wrong repeatedly in one session: the fallback turns a thirty second look
+  at a page into a chain of `pkill`, rebuild, restart and hand-encoded protobuf frames, several
+  minutes each. The user's words, after the second time: *"if you can't connect it's because I
+  closed chrome. just ask me to reopen it."*
+
+  **The narrow exception** is a fact a browser genuinely cannot show: gRPC trailers
+  (`grpc-status`/`grpc-message`), or a cookie-only session that has to stay separate from the
+  browser's. Reach for `curl` for those and say why — never as a substitute for looking.
 - **MudBlazor MCP** (`mcp__mudblazor__*`) — component API reference, for checking a
   parameter exists before guessing at it.
 
@@ -258,13 +274,16 @@ hashes, the SW keeps serving the old manifest and the page fails to boot — eve
 new tab, and even though `curl` and a normal browser fetch both return 200 for the asset it
 claims is missing. Unregistering the SW from JS is not enough.
 
-Restart the browser pane:
+Open a fresh tab and hard-reload it:
 
 ```
-mcp__Claude_Browser__preview_list          # get the serverId (browser-preview-…)
-mcp__Claude_Browser__preview_stop          # serverId, NOT the previewId
-mcp__Claude_Browser__preview_start         # url: https://localhost:7263/…
+mcp__claude-in-chrome__tabs_create_mcp     # a new tab in the MCP group
+mcp__claude-in-chrome__navigate            # url: https://localhost:7263/…
 ```
+
+If the stale worker survives that, ask the user to close every tab on the origin — a new
+worker stays in *waiting* while any client of the old one exists, and reloading a tab does
+not release it.
 
 Diagnostic that identifies this: `navigator.serviceWorker.controller` is non-null while a
 `_framework` asset 404s in the console but fetches 200.
@@ -312,7 +331,7 @@ with no prior worker boots off the current manifest and will work while a stuck 
 ## Auth
 
 Auth0 with **Google SSO only**. Never drive that sign-in — ask the user to complete it in
-the browser pane; the BFF cookie then persists for the session and authed pages work.
+the browser; the BFF cookie then persists for the session and authed pages work.
 
 ### Dev bypass — sign yourself in without Auth0
 
@@ -380,8 +399,8 @@ Viewport: pass `width` + `height` alone. Passing `preset` together with `width`/
 silently resets to native size instead.
 
 ```
-mcp__Claude_Browser__resize_window  width: 1920  height: 1080   # desktop
-mcp__Claude_Browser__resize_window  preset: "mobile"            # 375x812
+mcp__claude-in-chrome__resize_window  width: 1920  height: 1080   # desktop
+mcp__claude-in-chrome__resize_window  preset: "mobile"            # 375x812
 ```
 
 The nav drawer stays open when going desktop → mobile and overlays the page; it is not a
