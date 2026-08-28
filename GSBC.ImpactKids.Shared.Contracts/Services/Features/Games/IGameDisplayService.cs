@@ -4,14 +4,16 @@ using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Features.Games;
 namespace GSBC.ImpactKids.Shared.Contracts.Services.Features.Games;
 
 /// <summary>
-/// Read only, unauthenticated, for the wall display.
+/// Read only, for the wall display. Only ever expose aggregate scores through here.
 /// <para>
-/// Deliberately routed under "public/" rather than "gRPC/" - the reverse proxy
-/// requires a signed in cookie for everything under "gRPC/", and a screen on a
-/// wall cannot log in. Only ever expose aggregate scores through here.
+/// Routed under "gRPC/" like everything else. It used to sit under "public/" because it was
+/// anonymous and the proxy demanded a leader's cookie on "gRPC/" - neither is true now. A
+/// games wall enrols on the display key, the proxy admits either caller on this prefix, and
+/// the gRPC service decides what each may do per method: this one is marked
+/// <c>EnabledOrDisplay</c>, and a display can never write anywhere.
 /// </para>
 /// </summary>
-[Service("public/GSBC.ImpactKids.Games.Display")]
+[Service("gRPC/GSBC.ImpactKids.Games.Display")]
 public interface IGameDisplayService
 {
     Task<GameScoreboardResponse> GetScoreboard(

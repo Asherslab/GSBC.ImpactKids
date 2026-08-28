@@ -1,0 +1,68 @@
+/* The card fills its grid cell rather than sitting at its own intrinsic height. Without this a
+   row of cards whose suffixes differ in height - one person signed out, the next not - leaves
+   each card floating at a different depth in an equal-height cell, and the row bottoms go
+   ragged. MudGrid already stretches the cells; only the card needed telling. */
+.person-card {
+    height: 100%;
+}
+
+.person-card ::deep .person-card-surface {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* The link wraps the person row, so it has to carry the growth rather than sit at content
+   height, or the footer rides up under the name instead of sitting at the foot of the card. */
+.person-card ::deep .person-card-link {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+}
+
+.person-card ::deep .person-card-row {
+    flex: 1 1 auto;
+    align-items: center;
+    min-height: 64px;
+}
+
+/* min-width: 0 lets a long name ellipsis instead of forcing the row wider; without it a flex
+   item refuses to shrink below its longest word and the suffix gets pushed out of the card. */
+.person-card ::deep .person-card-name {
+    min-width: 0;
+    padding-block: 0.5rem;
+}
+
+.person-card ::deep .person-card-name .mud-typography {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Actions are pinned to the right of the row at a fixed column width so that every card on the
+   page puts its button in the same place. Letting this column size to its content is what made
+   the grid look broken: "Sign In" is 68px wide and "View / Sign Out" 162px, and the name column
+   absorbed the difference, so no two buttons on screen shared an x. */
+.person-card ::deep .person-card-suffix {
+    flex: 0 0 auto;
+    align-items: flex-end;
+    padding-inline-end: 1rem;
+}
+
+/* A column, so a card can carry more than one full-width control - the pickup request and the
+   sign out both live down here and both want the whole tile width. */
+.person-card ::deep .person-card-footer {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0 0.75rem 0.75rem;
+}
+
+/* A footer whose content renders nothing still leaves its own padding behind - a 12px strip at
+   the foot of the card with nothing in it. :empty will not do here, because razor leaves
+   whitespace text nodes inside the wrapper; "no element children" is the test that holds. */
+.person-card ::deep .person-card-footer:not(:has(*)) {
+    display: none;
+}

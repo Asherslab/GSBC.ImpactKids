@@ -4,6 +4,7 @@ using GSBC.ImpactKids.Grpc.Data;
 using GSBC.ImpactKids.Grpc.Data.Models.Games;
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling;
 using GSBC.ImpactKids.Grpc.Extensions;
+using GSBC.ImpactKids.Grpc.Services;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Games;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Games;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Features.Games;
@@ -13,8 +14,15 @@ using Microsoft.EntityFrameworkCore;
 namespace GSBC.ImpactKids.Grpc.Features.Games.GameDisplayServices;
 
 /// <summary>
-/// Unauthenticated on purpose - see <see cref="IGameDisplayService"/>. Returns
-/// aggregate team scores only; never add anything person shaped to this response.
+/// The wall scoreboard - see <see cref="IGameDisplayService"/>. Returns aggregate team
+/// scores only; never add anything person shaped to this response.
+/// <para>
+/// No longer anonymous. A games wall enrols on the same display key as the pickup wall and
+/// presents the same token, so both screens are one caller type with one credential and one
+/// rotation. Both methods are opened to displays at the mapping site in <c>Program.cs</c> -
+/// there is no class level attribute anywhere in this service, deliberately; see
+/// <see cref="Policies"/>.
+/// </para>
 /// </summary>
 public class GameDisplayService(
     GsbcDbContext                  db,
@@ -57,7 +65,7 @@ public class GameDisplayService(
         {
             // Claimed before the read, so a write that lands while we are reading still
             // wakes the wait below instead of sitting until the next tick.
-            GameDataChangeSubscription pending = changes.Subscribe();
+            DataChangeSubscription pending = changes.Subscribe();
 
             // A fresh context per look: this call outlives any sane scoped lifetime.
             GameScoreboardResponse board = await dbFactory.RunWithNewDbContext(

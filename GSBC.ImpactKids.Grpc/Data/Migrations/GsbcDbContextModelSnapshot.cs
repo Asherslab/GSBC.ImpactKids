@@ -85,6 +85,12 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.Property<Guid>("PersonId")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTimeOffset?>("PickupRequested")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("PickupRequestedUserId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("ServiceId")
                         .HasColumnType("uuid");
 
@@ -104,6 +110,8 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
 
                     b.HasIndex("PersonId");
 
+                    b.HasIndex("PickupRequestedUserId");
+
                     b.HasIndex("ServiceId");
 
                     b.HasIndex("SignedInUserId");
@@ -111,6 +119,33 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.HasIndex("SignedOutUserId");
 
                     b.ToTable("AttendanceRecords");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Attendance.DbPickupDisplayKey", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("KeyHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("RotatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("RotatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TokenSigningKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RotatedByUserId");
+
+                    b.ToTable("PickupDisplayKeys");
                 });
 
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.DbBibleVerse", b =>
@@ -974,6 +1009,10 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.DbUser", "PickupRequestedUser")
+                        .WithMany()
+                        .HasForeignKey("PickupRequestedUserId");
+
                     b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.DbService", "Service")
                         .WithMany()
                         .HasForeignKey("ServiceId")
@@ -992,11 +1031,22 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
 
                     b.Navigation("Person");
 
+                    b.Navigation("PickupRequestedUser");
+
                     b.Navigation("Service");
 
                     b.Navigation("SignedInUser");
 
                     b.Navigation("SignedOutUser");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Attendance.DbPickupDisplayKey", b =>
+                {
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.DbUser", "RotatedByUser")
+                        .WithMany()
+                        .HasForeignKey("RotatedByUserId");
+
+                    b.Navigation("RotatedByUser");
                 });
 
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.DbDollarStoreEntry", b =>

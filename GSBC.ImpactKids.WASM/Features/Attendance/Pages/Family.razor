@@ -1,4 +1,5 @@
-@using PersonDisplay = GSBC.ImpactKids.WASM.Features.Attendance.Features.AttendanceItemTypes.Components.Individual.AttendanceItemTypeDisplay
+@using GSBC.ImpactKids.WASM.Features.Attendance.Components.Individual
+@using GSBC.ImpactKids.WASM.Features.People.Components.Individual
 @inherits EntityUtilityComponent
 @page "/Attendance/Family/{Id:guid}"
 @inject IRefreshableStore<Service>          ServicesStore
@@ -55,6 +56,13 @@
         <MudPaper Elevation="0" Class="pa-4">
             @if (_person.HasData)
             {
+                @* Above the rows, not among them: it acts on the whole household. Renders
+                   nothing unless there are two or more children it could act on. *@
+                <FamilyBatchActions
+                    Members="_members"
+                    Records="_peopleAttendance.Data"
+                    OnChanged="RetrieveAttendanceRecords"/>
+
                 @* The person themselves, then anyone in their household. Filtering on family alone
                    dropped a person with no family off their OWN page - and this page is where they
                    get signed in, so it left no way to do it. Adds nothing for someone who has a
@@ -69,37 +77,51 @@
                     <MudItem xs="12" md="4">
                         <PersonDisplay Id="personId">
                             <SuffixContent>
-                                <MudStack Row>
+                                @* A plain wrapper, not a MudStack: scoped CSS never reaches a
+                                   MudBlazor component's own markup, and this needs a fixed column
+                                   width so every card on the page lands its buttons at the same x. *@
+                                <div class="row-actions">
                                     @if (_peopleAttendance.IsLoading)
                                     {
-                                        <MudProgressCircular Indeterminate/>
+                                        <MudProgressCircular Indeterminate Size="Size.Small"/>
                                     }
-                                    else if (_peopleAttendance.Data != null && personId != null)
+                                    else if (_peopleAttendance.HasData && personId != null)
                                     {
-                                        if (_peopleAttendance.Data.TryGetValue(personId.Value, out Guid attendanceId))
+                                        @* Signing out moved to the footer, where it is one press
+                                           rather than a page. What is left here is the way in to
+                                           the details and the item list. *@
+                                        @if (RecordFor(personId) is { SignedOut: null })
                                         {
                                             <MudButton
+                                                Size="Size.Small"
                                                 Color="Color.Success"
                                                 Href="@($"/Attendance/SignIn/{personId}?{nameof(SignIn.ServiceId)}={_service.Data?.Id}")">
                                                 View
-                                            </MudButton>
-                                            <MudButton
-                                                Color="Color.Error"
-                                                Href="@($"/Attendance/SignOut/{personId}?{nameof(SignOut.AttendanceRecordId)}={attendanceId}")">
-                                                Sign Out
                                             </MudButton>
                                         }
                                         else
                                         {
                                             <MudButton
+                                                Size="Size.Small"
                                                 Color="Color.Success"
                                                 Href="@($"/Attendance/SignIn/{personId}?{nameof(SignIn.ServiceId)}={_service.Data?.Id}")">
                                                 Sign In
                                             </MudButton>
                                         }
                                     }
-                                </MudStack>
+                                </div>
                             </SuffixContent>
+                            @* Below the row rather than beside it: on a phone this is the control
+                               being aimed at, so it gets the full tile width. Beside the name it
+                               stole 94px from the column and shoved the card 37px taller than the
+                               one next to it. *@
+                            <FooterContent>
+                                @if (_peopleAttendance.HasData && personId != null)
+                                {
+                                    <PickupRequestButton Record="@RecordFor(personId)"/>
+                                    <SignOutButton Record="@RecordFor(personId)"/>
+                                }
+                            </FooterContent>
                         </PersonDisplay>
                     </MudItem>
                 </ListComponent>

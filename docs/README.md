@@ -46,10 +46,17 @@ Present tense, kept current, no dates.
 - [Elvanto sync — full-feature test, ending in real writes](work/2026-08-elvanto-write-testing.md)
   — the test plan, and **the halt-and-verify gate that must be satisfied before any write reaches
   Elvanto**. Read the gate before touching `Elvanto:AllowWrites`.
+- [Elvanto sync — the plan table shows raw ids for translated fields](work/2026-08-sync-plan-table-identifiers.md)
+  — `proposed`, not started. Why a school grade row shows two different GUIDs for the same grade, and
+  the three ways to fix the reading problem without changing what gets sent.
 
 ### Open
 
 Nothing. Add an entry when you open an `open-questions/` doc.
+
+(The one that was here — a screen missing an update when two writes landed together — was measured,
+fixed and folded into
+[GSBC.ImpactKids.WASM/AGENTS.md](../GSBC.ImpactKids.WASM/AGENTS.md#refreshes-after-a-write-are-serialised-and-must-stay-that-way).)
 
 ## Lifecycle
 

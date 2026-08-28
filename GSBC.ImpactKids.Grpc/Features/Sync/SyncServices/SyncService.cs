@@ -8,11 +8,9 @@ using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Sync;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.People;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.Sync;
-using Microsoft.AspNetCore.Authorization;
 
 namespace GSBC.ImpactKids.Grpc.Features.Sync.SyncServices;
 
-[Authorize(Policy = Policies.EnabledOnly)]
 public partial class SyncService(
     GsbcDbContext                                          db,
     IConverter<DbSyncOperation, SyncOperation>             operationConverter,

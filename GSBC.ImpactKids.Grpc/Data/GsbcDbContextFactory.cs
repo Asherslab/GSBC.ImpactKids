@@ -26,6 +26,7 @@ public class GsbcDbContextFactory : IDesignTimeDbContextFactory<GsbcDbContext>
             AttendanceRecords = null!,
             AttendanceItemTypes = null!,
             AttendanceItemRecords = null!,
+            PickupDisplayKeys     = null!,
 
             GamePointRecords = null!,
             GameBoards = null!,

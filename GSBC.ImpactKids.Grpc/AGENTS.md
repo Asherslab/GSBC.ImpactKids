@@ -26,7 +26,6 @@ Features/People/AllergyServices/
 The root file carries the whole declaration and often no body at all:
 
 ```csharp
-[Authorize(Policy = Policies.EnabledOnly)]
 public partial class SyncService(
     GsbcDbContext                              db,
     IConverter<DbSyncOperation, SyncOperation> operationConverter,
@@ -97,14 +96,47 @@ collaborators. See [docs/work/2026-08-elvanto-sync-refactor.md](../docs/work/202
 
 # Authorization
 
-- `[Authorize(Policy = Policies.EnabledOnly)]` on the service class. 22 of the 24 services mapped in
-  `Program.cs` carry it; the two exceptions are deliberate:
-  - `LoginService` — `[Authorize]` only, because it is what a user hits before they are enabled.
-  - `GameDisplayService` — no attribute at all, routed under `public/` for the wall display, which
-    cannot sign in. **Only aggregate scores may go through it** — no people, no medical detail.
-    Adding a method here is a decision about what an unauthenticated screen can read.
+**There is no class-level `[Authorize]` in this service, and adding one is a mistake.** The
+authorization fallback policy is `Policies.EnabledOnly`, so a method with no attribute at all is
+leader-only — a method somebody forgets to annotate fails **closed**.
 
-  `EventingChannelsService` is a singleton helper, not a mapped gRPC service; it needs no policy.
+That inverts the annotation burden, and this is the rule to remember: **you never mark a write. You
+mark only the reads a wall display is allowed to make**, with `[Authorize(Policy =
+Policies.EnabledOrDisplay)]` on the method.
+
+A class-level attribute would undo this. Broad on the class plus a narrow one missing from one method
+is exactly the fail-open case the arrangement exists to prevent — and note that authorization
+metadata **accumulates**: a class attribute plus a method attribute means both must pass, so you
+cannot open a single method on an otherwise-restricted class either way.
+
+There are two callers, and `Policies.cs` is the one place that says who may call what:
+
+| Policy | Admits | Where it is used |
+|---|---|---|
+| `EnabledOnly` | a signed-in, enabled leader | the fallback — everywhere, by saying nothing |
+| `DisplayOnly` | an enrolled wall display | nothing at present |
+| `EnabledOrDisplay` | either | the few reads a wall makes — grep this name to find every one |
+
+Every policy **names its authentication schemes**, so a display token does not merely fail
+`EnabledOnly`, it is never authenticated against it.
+
+Exceptions, all deliberate and all explicit:
+- `LoginService.IsUserEnabled` — a bare `[Authorize]`, weaker than the fallback on purpose, because
+  it is the question "am I enabled yet" that a not-yet-enabled person has to be able to ask.
+- `internal/pickup-display-key/*`, the health checks and the root signpost — `.AllowAnonymous()`.
+  The proxy calls the internal ones with no credential, because validating the enrolment key is the
+  step that happens *before* there is one.
+- `GameDisplayService` — both methods `EnabledOrDisplay`. **Only aggregate scores may go through
+  it** — no people, no medical detail.
+
+**A display is read-only, and that is enforced, not trusted.** A policy cannot tell a read from a
+write, so `DisplayReadOnlyInterceptor` refuses `SaveChanges` outright when the caller on the current
+request is a display. `EnabledOrDisplay` mistakenly applied to a write method still cannot let a
+screen mutate anything. Displays read the ordinary services — there is no display-shaped service or
+contract any more, and do not add one; see
+[docs/modules/auth/sign-in.md](../docs/modules/auth/sign-in.md).
+
+`EventingChannelsService` is a singleton helper, not a mapped gRPC service; it needs no policy.
 - `Policies.EnabledOnly` requires the claim `Enabled=true`, which `CustomClaimsTransformation` adds by
   looking the caller's `sub` up in `Users` — not something Auth0 sends. An unknown `sub` is inserted as
   a **disabled** user, so a new account gets 403 until someone enables it on the admin page. The whole
@@ -184,6 +216,31 @@ failing to start, not as a runtime error.
 Database models use `DateTimeOffset`, contracts use UTC `DateTime`, and `DateTimeConverter` in
 `Conversion/Converters.cs` bridges them. Keep new columns `DateTimeOffset` — it maps to `timestamptz`
 regardless of Npgsql's legacy-timestamp switch, which this repo deliberately never sets.
+
+**A `DateTimeOffset` you compare against in a query must have offset zero.** Npgsql refuses to write
+any other offset to a `timestamptz`:
+
+```
+Cannot write DateTimeOffset with Offset=10:00:00 to PostgreSQL type
+'timestamp with time zone', only offset 0 (UTC) is supported.
+```
+
+It **builds fine and throws at execution**, so it surfaces as a failed request rather than a
+compiler error — and on a wall display with nobody standing at it, as "Connecting…" forever.
+
+This bites exactly where the *logic* is correctly local. Working out "today" means the local day,
+because a Friday evening service here is already Saturday in UTC — but the bounds must be converted
+before they reach the query:
+
+```csharp
+DateTime       localToday = DateTime.Today;
+DateTimeOffset dayStart   = new DateTimeOffset(localToday, TimeZoneInfo.Local.GetUtcOffset(localToday))
+    .ToUniversalTime();          // same instant, offset 0 - without this it throws
+```
+
+Everywhere else in this project reaches offset zero via
+`new DateTimeOffset(DateTime.SpecifyKind(value, DateTimeKind.Utc))`. Use that when the value is
+already UTC, and `ToUniversalTime()` when you deliberately started from a local wall-clock day.
 
 # Converters
 
