@@ -14,8 +14,15 @@ using Microsoft.EntityFrameworkCore;
 namespace GSBC.ImpactKids.Grpc.Features.Games.GameDisplayServices;
 
 /// <summary>
-/// Unauthenticated on purpose - see <see cref="IGameDisplayService"/>. Returns
-/// aggregate team scores only; never add anything person shaped to this response.
+/// The wall scoreboard - see <see cref="IGameDisplayService"/>. Returns aggregate team
+/// scores only; never add anything person shaped to this response.
+/// <para>
+/// No longer anonymous. A games wall enrols on the same display key as the pickup wall and
+/// presents the same token, so both screens are one caller type with one credential and one
+/// rotation. Both methods are opened to displays at the mapping site in <c>Program.cs</c> -
+/// there is no class level attribute anywhere in this service, deliberately; see
+/// <see cref="Policies"/>.
+/// </para>
 /// </summary>
 public class GameDisplayService(
     GsbcDbContext                  db,

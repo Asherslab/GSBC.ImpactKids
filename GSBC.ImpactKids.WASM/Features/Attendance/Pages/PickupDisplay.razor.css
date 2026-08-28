@@ -1,4 +1,11 @@
 .pickup {
+    /* The row surface, as variables rather than literals, because the arrival animation
+       ends by restating it. Overlay mode needs a much heavier scrim and if these were
+       literal the animation's last keyframe would repaint every arrived row back to the
+       near-invisible wall value the moment it finished. */
+    --row-bg: rgba(255, 255, 255, .04);
+    --row-ring: rgba(255, 255, 255, .06);
+
     position: relative;
     display: flex;
     flex-direction: column;
@@ -157,8 +164,8 @@
 
     padding: 0 2.5vmin;
     border-radius: 1.5vmin;
-    background: rgba(255, 255, 255, .04);
-    box-shadow: inset 0 0 0 .2vmin rgba(255, 255, 255, .06);
+    background: var(--row-bg);
+    box-shadow: inset 0 0 0 .2vmin var(--row-ring);
 
     /* The names already waiting when the screen boots are not arrivals - they get the
        quiet staggered fade instead. */
@@ -195,8 +202,8 @@
     100% {
         opacity: 1;
         transform: none;
-        background: rgba(255, 255, 255, .04);
-        box-shadow: inset 0 0 0 .2vmin rgba(255, 255, 255, .06);
+        background: var(--row-bg);
+        box-shadow: inset 0 0 0 .2vmin var(--row-ring);
     }
 }
 
@@ -262,4 +269,86 @@
     .pickup-row-new {
         animation-duration: .01s;
     }
+}
+
+/* ---------------------------------------------------------------------------
+   Transparent mode (?transparent=true)
+
+   A layer, not a screen. The page paints no background of its own; killing the
+   opaque surfaces further up the tree needs a global rule, because they belong
+   to DisplayLayout and to body, and scoped CSS cannot reach either - see the
+   pickup-transparent block in wwwroot/css/app.css.
+   --------------------------------------------------------------------------- */
+
+/* Heavier than the wall's near-invisible .04 for one reason: the thing behind a row is
+   now moving worship footage rather than a near-black wall, and white text on an
+   unpredictable background is unreadable about a third of the time. This is the same
+   finding as the scrim on the ProPresenter alpha test card. */
+.pickup-transparent {
+    --row-bg: rgba(0, 0, 0, .62);
+    --row-ring: rgba(255, 255, 255, .14);
+
+    padding: 3vmin;
+}
+
+.pickup-transparent .pickup-name {
+    text-shadow: 0 .2vmin .9vmin rgba(0, 0, 0, .95);
+}
+
+/* The overdue row sets its own background as a literal, so it wins over --row-bg and an
+   overdue row would otherwise lose the scrim entirely - 10% amber over live video, with an
+   amber name on top of it. Here the amber is layered *over* the dark scrim rather than
+   replacing it: a gradient of one flat colour is the way to stack a tint on a background
+   colour in a single declaration. */
+.pickup-transparent .pickup-row-overdue {
+    background:
+        linear-gradient(rgba(251, 191, 36, .16), rgba(251, 191, 36, .16)),
+        rgba(0, 0, 0, .62);
+}
+
+.pickup-transparent .pickup-wait {
+    color: rgba(255, 255, 255, .78);
+    text-shadow: 0 .2vmin .9vmin rgba(0, 0, 0, .95);
+}
+
+/* The heading is background-clipped text, so it has no way to carry its own shadow -
+   it needs a surface behind it or it dissolves into whatever is playing. */
+.pickup-transparent .pickup-header {
+    align-self: center;
+    padding: 1.2vmin 3.5vmin;
+    border-radius: 1.5vmin;
+    background: rgba(0, 0, 0, .55);
+}
+
+/* Every not-ok state, reduced to a corner pill. Loud enough that an operator watching
+   their own output notices it, small enough that it is not an announcement to the room.
+   Fixed, so it sits in the corner of the frame rather than wherever the layout puts it. */
+.pickup-status {
+    position: fixed;
+    left: 2vmin;
+    bottom: 2vmin;
+    z-index: 2;
+
+    display: flex;
+    align-items: center;
+    gap: .8vmin;
+
+    padding: .9vmin 1.8vmin;
+    border-radius: 99vmin;
+
+    background: rgba(0, 0, 0, .72);
+    box-shadow: inset 0 0 0 .2vmin rgba(251, 191, 36, .55);
+
+    color: #fcd34d;
+    font-size: 1.8vmin;
+    letter-spacing: .06em;
+
+    /* Not pickup-fade-in: that one settles at .65 opacity, which is right for a dimmed
+       message filling a wall and wrong for the only thing saying the overlay is broken. */
+    animation: pickup-status-in .6s ease-out both;
+}
+
+@keyframes pickup-status-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
 }

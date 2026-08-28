@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Attendance;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Attendance.AttendanceRecords;
@@ -44,9 +43,6 @@ public partial class FamilyBatchActions
     private IReadOnlyList<AttendanceRecord> _requestable = [];
     private IReadOnlyList<AttendanceRecord> _signOutable = [];
     private IReadOnlyList<OutstandingItem>  _outstanding = [];
-
-    /// <summary>One thing a child is still holding, named well enough to go and find it.</summary>
-    private sealed record OutstandingItem(string PersonName, string Label);
 
     protected override async Task OnInitializedAsync()
     {
@@ -109,43 +105,22 @@ public partial class FamilyBatchActions
     }
 
     /// <summary>
-    /// Outstanding means the item type says it must come back and the record does not say it
-    /// has. An item type that has not loaded is treated as <em>not</em> outstanding: the
-    /// panel exists to name specific things, and "something, possibly" sends nobody anywhere.
+    /// Shared with the per-child sign out button, so the household control and the row control
+    /// can never disagree about what is still to come back.
     /// </summary>
     private IReadOnlyList<OutstandingItem> BuildOutstanding(IReadOnlyList<AttendanceRecord> live)
     {
-        ImmutableList<AttendanceItemRecord>? itemRecords = AttendanceItemRecordsStore.GetState().Entities.Data;
-        ImmutableList<AttendanceItemType>?   itemTypes   = AttendanceItemTypesStore.GetState().Entities.Data;
-
-        if (itemRecords == null || itemTypes == null || Members == null)
+        if (Members == null)
             return [];
 
-        Dictionary<Guid, AttendanceItemType> typesById = itemTypes.ToDictionary(x => x.Id);
-        Dictionary<Guid, string>             nameByPersonId = Members.ToDictionary(x => x.Id, DisplayNameOf);
+        Dictionary<Guid, string> nameByPersonId = Members.ToDictionary(x => x.Id, DisplayNameOf);
 
-        List<OutstandingItem> outstanding = [];
-
-        foreach (AttendanceRecord record in live)
-        {
-            foreach (AttendanceItemRecord item in itemRecords.Where(x => x.AttendanceRecordId == record.Id))
-            {
-                if (item.ItemReturned == true)
-                    continue;
-
-                if (item.AttendanceItemTypeId == null ||
-                    !typesById.TryGetValue(item.AttendanceItemTypeId.Value, out AttendanceItemType? type) ||
-                    !type.RequiresReturning)
-                    continue;
-
-                outstanding.Add(new OutstandingItem(
-                    nameByPersonId.GetValueOrDefault(record.PersonId, "Someone"),
-                    type.Label
-                ));
-            }
-        }
-
-        return outstanding;
+        return OutstandingItems.For(
+            live,
+            AttendanceItemRecordsStore.GetState().Entities.Data,
+            AttendanceItemTypesStore.GetState().Entities.Data,
+            personId => nameByPersonId.GetValueOrDefault(personId, "Someone")
+        );
     }
 
     private static string DisplayNameOf(Person person) =>

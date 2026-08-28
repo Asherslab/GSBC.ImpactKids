@@ -94,7 +94,7 @@ public partial class AttendanceActivityLog
 
         ImmutableList<ActivityEntry> entries = records.Data
             .Where(x => !x.Deleted && x.ServiceId == ServiceId)
-            .SelectMany(x => FanOut(x, personNames, userNames))
+            .SelectMany(x => FanOut(x, ServiceId.Value, personNames, userNames))
             .OrderByDescending(x => x.At)
             .Take(Limit)
             .ToImmutableList();
@@ -105,29 +105,36 @@ public partial class AttendanceActivityLog
 
     private static IEnumerable<ActivityEntry> FanOut(
         AttendanceRecord         record,
+        Guid                     serviceId,
         Dictionary<Guid, string> personNames,
         Dictionary<Guid, string> userNames
     )
     {
         string name = personNames.GetValueOrDefault(record.PersonId, "Unknown");
 
-        yield return Entry(record.LocalSignedIn, name, "signed in", "in",
+        // Built once per record rather than in the markup: the log redraws on every store push
+        // and a string built in a @* attribute *@ is built again for all sixty rows each time.
+        string href = $"/Attendance/Family/{record.PersonId}"
+                    + $"?{nameof(Pages.Family.ServiceId)}={serviceId}";
+
+        yield return Entry(record.LocalSignedIn, name, href, "signed in", "in",
             record.SignedInUserId, userNames);
 
         // Deliberately not gated on SignedOut: a request that was later fulfilled still happened,
         // and "signed out after being requested" is exactly what the log exists to show.
         if (record.LocalPickupRequested is { } requested)
-            yield return Entry(requested, name, "requested", "requested",
+            yield return Entry(requested, name, href, "requested", "requested",
                 record.PickupRequestedUserId, userNames);
 
         if (record.LocalSignedOut is { } signedOut)
-            yield return Entry(signedOut, name, "signed out", "out",
+            yield return Entry(signedOut, name, href, "signed out", "out",
                 record.SignedOutUserId, userNames);
     }
 
     private static ActivityEntry Entry(
         DateTime                 at,
         string                   personName,
+        string                   href,
         string                   action,
         string                   actionClass,
         Guid?                    actorId,
@@ -138,6 +145,7 @@ public partial class AttendanceActivityLog
             At          = at,
             Time        = at.ToString("h:mmtt").ToLowerInvariant(),
             PersonName  = personName,
+            Href        = href,
             Action      = action,
             ActionClass = actionClass,
             ActorName   = actorId != null && userNames.TryGetValue(actorId.Value, out string? actor)
@@ -156,6 +164,9 @@ public partial class AttendanceActivityLog
         public required DateTime At          { get; init; }
         public required string   Time        { get; init; }
         public required string   PersonName  { get; init; }
+
+        /// <summary>The child's household page for this service - the log's only way in.</summary>
+        public required string   Href        { get; init; }
         public required string   Action      { get; init; }
         public required string   ActionClass { get; init; }
         public required string?  ActorName   { get; init; }

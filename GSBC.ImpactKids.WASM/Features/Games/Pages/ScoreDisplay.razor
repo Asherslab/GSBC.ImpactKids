@@ -15,7 +15,16 @@
        looks alive from across the room. *@
     <div class="display-ambient"></div>
 
-    @if (Board == null)
+    @* Checked before everything else, deliberately. An unenrolled screen must never sit on
+       "Connecting..." - that is what a wall shows when nobody has noticed it is broken, and
+       this one has a remedy somebody walking past can act on. *@
+    @if (Unauthorised)
+    {
+        <div class="display-message">
+            <span>This screen needs setting up again</span>
+        </div>
+    }
+    else if (Board == null)
     {
         <div class="display-message">
             <span class="display-dots">Connecting<span>.</span><span>.</span><span>.</span></span>

@@ -31,7 +31,10 @@
             {
                 <div class="log-row">
                     <span class="log-time">@entry.Time</span>
-                    <span class="log-name">@entry.PersonName</span>
+                    @* A plain anchor, not MudLink: the scoped rule below only matches this
+                       component's own markup, and Blazor's router intercepts a same-origin
+                       href so this still navigates without a page load. *@
+                    <a class="log-name" href="@entry.Href">@entry.PersonName</a>
                     <span class="log-action log-action--@entry.ActionClass">@entry.Action</span>
                     @if (entry.ActorName != null)
                     {

@@ -4,11 +4,9 @@ using GSBC.ImpactKids.Grpc.Data;
 using GSBC.ImpactKids.Grpc.Features.Elvanto.ElvantoServices.Interfaces;
 using GSBC.ImpactKids.Grpc.Features.Elvanto.ElvantoServices.Models;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.Elvanto;
-using Microsoft.AspNetCore.Authorization;
 
 namespace GSBC.ImpactKids.Grpc.Features.Elvanto.ElvantoServices;
 
-[Authorize(Policy = Policies.EnabledOnly)]
 public partial class ElvantoService(
     GsbcDbContext           db,
     HttpClient              httpClient,

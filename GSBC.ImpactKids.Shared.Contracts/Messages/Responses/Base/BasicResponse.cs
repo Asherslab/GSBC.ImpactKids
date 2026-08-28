@@ -1,13 +1,13 @@
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base.Interfaces;
-using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Features.Attendance;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
-// protobuf-net only carries a base type's members into a derived contract when the base
-// declares the subtype. Without this, a PickupDisplayResponse would serialise its own
-// fields and silently drop Success and Error - the wall would read every board as failed.
-[ProtoInclude(100, typeof(PickupDisplayResponse))]
+// NOTE: protobuf-net only carries a base type's members into a derived contract when the
+// base declares the subtype with [ProtoInclude]. Tag 100 held PickupDisplayResponse, which
+// has been deleted - displays read the ordinary services now. A derived response added here
+// later needs its own tag, and 100 is free again only because nothing on the wire used it
+// after that deletion.
 public class BasicResponse : ISuccessResponse, IErrorResponse
 {
     public required bool    Success { get; init; }

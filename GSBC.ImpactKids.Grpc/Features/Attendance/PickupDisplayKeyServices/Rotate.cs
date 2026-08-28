@@ -31,7 +31,8 @@ public partial class PickupDisplayKeyService
         if (userId == null)
             return PickupDisplayKeyResponse.WithError(PermissionDenied);
 
-        string key = PickupDisplayKeys.Generate();
+        string key        = PickupDisplayKeys.Generate();
+        string signingKey = PickupDisplayKeys.GenerateSigningKey();
 
         List<DbPickupDisplayKey> existing = await db.PickupDisplayKeys.ToListAsync(token);
 
@@ -41,6 +42,7 @@ public partial class PickupDisplayKeyService
         {
             Id = Guid.NewGuid(),
             KeyHash = PickupDisplayKeys.Hash(key),
+            TokenSigningKey = signingKey,
             RotatedAt = DateTimeOffset.UtcNow,
             RotatedByUserId = Guid.Parse(userId)
         };
@@ -48,6 +50,11 @@ public partial class PickupDisplayKeyService
         db.PickupDisplayKeys.Add(minted);
 
         await db.SaveChangesAsync(token);
+
+        // Rotation has to reach the tokens as well as the cookies, and it does so by the new
+        // signing key refusing every token signed with the old one. Pushed to the validator
+        // here so it is immediate in this process rather than waiting out its refresh tick.
+        await signingKeys.RefreshAsync(token);
 
         // No log line here, on purpose, and none on the enrolment path either. A key in a
         // log is a key in every log shipper downstream of it.

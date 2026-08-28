@@ -27,11 +27,29 @@
     font-variant-numeric: tabular-nums;
 }
 
+/* The name is the row's handle through to the child's household page. Kept in the normal text
+   colour rather than a link colour - sixty coloured names in a column this dense stops being a
+   log you can glance at - with a faint underline as the only resting cue that it is pressable.
+   Not --mud-palette-lines-default for that underline: it is rgb(51,50,62) against a rgb(30,30,45)
+   row, which renders as no cue at all. */
 .log-name {
     flex: 1 1 auto;
     overflow: hidden;
     text-overflow: ellipsis;
     font-weight: 500;
+    color: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-decoration-color: var(--mud-palette-text-secondary);
+    text-underline-offset: 0.2em;
+}
+
+.log-name:hover,
+.log-name:focus-visible {
+    color: var(--mud-palette-primary);
+    text-decoration-style: solid;
+    text-decoration-color: currentColor;
 }
 
 .log-action {

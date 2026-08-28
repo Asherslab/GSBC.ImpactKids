@@ -1,0 +1,31 @@
+.sign-out {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* Same 56px target as the pickup control above it - this is pressed by someone holding a
+   clipboard, and both buttons on the tile should take the same thumb. Outlined at rest so the
+   destructive action is not the loudest thing on a card; MudBlazor fills it once armed. */
+.sign-out ::deep .mud-button-root {
+    min-height: 56px;
+    font-size: 1rem;
+    text-transform: none;
+}
+
+/* Named, not counted. "1 item outstanding" makes a leader go and look it up; "Phone still to
+   hand back" sends them to the shelf. */
+.sign-out-items {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--mud-default-borderradius);
+    background-color: var(--mud-palette-warning-hover);
+    border: 1px solid var(--mud-palette-warning);
+}
+
+.sign-out-items-label {
+    font-size: 0.875rem;
+    line-height: 1.3;
+}

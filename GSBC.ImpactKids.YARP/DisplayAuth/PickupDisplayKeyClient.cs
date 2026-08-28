@@ -7,7 +7,8 @@ namespace GSBC.ImpactKids.YARP.DisplayAuth;
 /// the gRPC service, so both questions about it are asked there:
 /// <list type="bullet">
 /// <item>at enrolment, "is this key the current one" - asked once, when the setup link is
-/// opened;</item>
+/// opened. The answer also carries the token the screen presents to the gRPC service from
+/// then on; this proxy never sees what signed it and holds no signing key of its own;</item>
 /// <item>on every later request, "is the generation on this cookie still the current one" -
 /// answered from a short lived cache, because a wall display reconnects its stream all
 /// night.</item>
@@ -30,8 +31,11 @@ internal sealed class PickupDisplayKeyClient(
     /// </summary>
     private static Guid? _lastKnownGeneration;
 
-    /// <summary>Null when the key is wrong, or when no key has been minted yet.</summary>
-    public async Task<Guid?> ValidateAsync(string key, CancellationToken token)
+    /// <summary>
+    /// Null when the key is wrong, or when no key has been minted yet. Otherwise the
+    /// generation to stamp on the cookie and the bearer token to carry on it.
+    /// </summary>
+    public async Task<DisplayEnrolment?> ValidateAsync(string key, CancellationToken token)
     {
         HttpResponseMessage response = await http.PostAsJsonAsync(
             "internal/pickup-display-key/validate",
@@ -48,7 +52,12 @@ internal sealed class PickupDisplayKeyClient(
 
         KeyGeneration? body = await response.Content.ReadFromJsonAsync<KeyGeneration>(token);
 
-        return body?.Generation;
+        // Both halves or nothing. A generation with no token would enrol a screen the proxy
+        // is happy with and the gRPC service rejects, which shows up as a wall stuck on
+        // "Connecting..." with a valid looking cookie.
+        return body?.Generation is { } generation && !string.IsNullOrEmpty(body.Token)
+            ? new DisplayEnrolment(generation, body.Token)
+            : null;
     }
 
     /// <summary>
@@ -85,5 +94,8 @@ internal sealed class PickupDisplayKeyClient(
         }
     }
 
-    private sealed record KeyGeneration(Guid? Generation);
+    private sealed record KeyGeneration(Guid? Generation, string? Token);
+
+    /// <summary>What a screen walks away from enrolment with.</summary>
+    internal sealed record DisplayEnrolment(Guid Generation, string Token);
 }

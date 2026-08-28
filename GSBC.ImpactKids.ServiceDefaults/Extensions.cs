@@ -115,14 +115,20 @@ public static class Extensions
         // See https://aka.ms/dotnet/aspire/healthchecks for details before enabling these endpoints in non-development environments.
         if (app.Environment.IsDevelopment())
         {
+            // Anonymous explicitly. A host that sets a deny-by-default FallbackPolicy - the
+            // gRPC service does - would otherwise close these to Aspire, which probes them
+            // with no credential and reports the resource unhealthy forever.
+            //
             // All health checks must pass for app to be considered ready to accept traffic after starting
-            app.MapHealthChecks(HealthEndpointPath);
+            app.MapHealthChecks(HealthEndpointPath)
+                .AllowAnonymous();
 
             // Only health checks tagged with the "live" tag must pass for app to be considered alive
             app.MapHealthChecks(AlivenessEndpointPath, new HealthCheckOptions
-            {
-                Predicate = r => r.Tags.Contains("live")
-            });
+                {
+                    Predicate = r => r.Tags.Contains("live")
+                })
+                .AllowAnonymous();
         }
 
         return app;

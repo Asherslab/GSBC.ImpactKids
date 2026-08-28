@@ -45,20 +45,44 @@
     opacity: 0.6;
 }
 
-/* Wraps to a column on a phone, where these are thumbed one-handed at a desk. */
+/* Buttons and the note share one row, so the width the buttons stopped taking is used rather
+   than left as a band of empty panel. Both wrap to their own line when there is no room. */
+.batch-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1.25rem;
+}
+
 .batch-buttons {
     display: flex;
     flex-wrap: wrap;
     gap: 0.75rem;
 }
 
+/* Sized to their labels with a floor, not stretched across the row. Stretching is what made
+   this strip dominate the page: on a wide screen two buttons sharing the full content width
+   came out ~590px each, so the household shortcut was several times the size of the per child
+   controls it is a shortcut for. The 56px height stays - it is a thumb target at a desk. */
 .batch-buttons ::deep .mud-button-root {
     min-height: 56px;
-    flex: 1 1 14rem;
+    flex: 0 1 auto;
+    min-width: 12rem;
     font-size: 1rem;
     text-transform: none;
 }
 
+/* On a phone they are thumbed one-handed, and there is no width to spare - full width each,
+   stacked, which is what the row-stretching above was really for. */
+@media (max-width: 600px) {
+    .batch-buttons ::deep .mud-button-root {
+        flex: 1 1 100%;
+    }
+}
+
 .batch-note {
-    opacity: 0.7;
+    flex: 1 1 14rem;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: var(--mud-palette-text-secondary);
 }
