@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using Duende.AccessTokenManagement;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Duende.AccessTokenManagement.OpenIdConnect;
 using GSBC.ImpactKids.YARP.DevAuth;
@@ -22,29 +23,38 @@ internal sealed partial class AddBearerTokenToHeadersTransform(
             return;
         }
 
-        // A wall display. Its token was minted by the gRPC service at enrolment and has been
-        // riding on the display cookie ever since, so there is nothing to fetch or refresh -
-        // and nothing for the token manager below to do, which is why this returns rather
-        // than falling through. Asking Duende for a token on a session Auth0 never issued
-        // fails on every request and logs an error saying so.
+        // A LEADER SESSION WINS when both cookies are present, and that is the normal case
+        // rather than an edge: the person who sets a TV up enrols it from the browser they
+        // also work in, so their laptop holds both. The authorization policy authenticates
+        // both schemes and merges the identities, so without this the display token - which
+        // may only ever read - would be attached to that person's requests and demote them.
         //
-        // A LEADER SESSION WINS when both cookies are present, and that case is the normal
-        // one rather than an edge: the person who sets a TV up enrols it from the browser
-        // they also work in, so their laptop holds both. The authorization policy authenticates
-        // both schemes and merges the identities, so without this check the display token -
-        // which is only ever allowed to read - would be attached to that person's requests and
-        // silently demote them on every write they attempted.
-        bool isLeader = context.HttpContext.User.Identities.Any(identity =>
-            identity.IsAuthenticated
-            && identity.AuthenticationType == CookieAuthenticationDefaults.AuthenticationScheme
-        );
+        // ASK THE SCHEME, never the identity's AuthenticationType. That is what this used to
+        // do, and it shipped broken: the dev bypass mints its identity with "Cookies" as the
+        // authentication type, so the check passed locally, while a real Auth0 session stores
+        // an identity minted by the OpenIdConnect handler whose type is NOT "Cookies". Every
+        // genuinely signed in leader who had ever enrolled a display in the same browser was
+        // therefore handed the display's token, got 401 on everything, and was bounced into a
+        // sign in loop. Reported from production on 2026-08-28.
+        AuthenticateResult leader = await context.HttpContext
+            .AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
-        string? displayToken = context.HttpContext.User
-            .FindFirst(DisplayAuthOptions.TokenClaimType)?.Value;
-
-        if (!isLeader && displayToken != null)
+        if (!leader.Succeeded)
         {
-            context.ProxyRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", displayToken);
+            // A wall display. Its token was minted by the gRPC service at enrolment and has
+            // ridden on the display cookie ever since, so there is nothing to fetch or
+            // refresh - and nothing for the token manager below to do, which is why this
+            // returns rather than falling through. Asking Duende for a token on a session
+            // Auth0 never issued fails on every request and logs an error saying so.
+            string? displayToken = context.HttpContext.User
+                .FindFirst(DisplayAuthOptions.TokenClaimType)?.Value;
+
+            if (displayToken != null)
+            {
+                context.ProxyRequest.Headers.Authorization =
+                    new AuthenticationHeaderValue("Bearer", displayToken);
+            }
+
             return;
         }
 
@@ -53,7 +63,7 @@ internal sealed partial class AddBearerTokenToHeadersTransform(
         // token rides on the cookie. Unreachable unless the bypass is open.
         if (DevAuthGate.IsOpen(environment, devAuthOptions))
         {
-            string? devToken = context.HttpContext.User.FindFirst(DevAuthOptions.TokenClaimType)?.Value;
+            string? devToken = leader.Principal?.FindFirst(DevAuthOptions.TokenClaimType)?.Value;
 
             if (devToken != null)
             {
