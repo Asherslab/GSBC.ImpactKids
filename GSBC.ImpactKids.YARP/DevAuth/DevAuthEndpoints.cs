@@ -4,6 +4,7 @@ using System.Text;
 using GSBC.ImpactKids.YARP.Extensions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -41,7 +42,15 @@ internal static class DevAuthEndpoints
                     new Claim("name", dev.Name),
                     new Claim(DevAuthOptions.TokenClaimType, token)
                 ],
-                CookieAuthenticationDefaults.AuthenticationScheme,
+                // Deliberately the OIDC scheme, matching what a real Auth0 sign in leaves in
+                // the cookie - the identity is minted by the OpenIdConnect handler there, not
+                // by the cookie handler, so its authentication type is NOT "Cookies".
+                //
+                // This used to say CookieAuthenticationDefaults.AuthenticationScheme, and that
+                // divergence hid a production bug: code that asked "is this a leader?" by
+                // comparing the authentication type passed locally and failed against Auth0.
+                // Keep the bypass shaped like the real thing, so that mistake fails here too.
+                OpenIdConnectDefaults.AuthenticationScheme,
                 nameType: ClaimTypes.NameIdentifier,
                 roleType: ClaimTypes.Role
             );
