@@ -98,11 +98,74 @@ public sealed class SseClientService(
         }
     }
 
+    /// <summary>
+    /// How long a burst of events for one entity type is allowed to settle before the store
+    /// is refreshed. Trailing, never leading - see <see cref="Refresh{T}" />.
+    /// </summary>
+    private static readonly TimeSpan RefreshDebounce = TimeSpan.FromMilliseconds(300);
+
+    private readonly Dictionary<string, CancellationTokenSource> _pendingRefreshes = new();
+    private readonly object                                      _pendingGate      = new();
+
+    /// <summary>
+    /// Refreshes the store for <typeparamref name="T" />, after a short quiet period.
+    /// <para>
+    /// <b>The debounce is what stops a screen missing an update.</b> Every write raises its
+    /// own event, so signing a household out fires several within a second. Each one used to
+    /// start its own refresh, and those refreshes overlap: the read for the first write can
+    /// still be in flight when the read for the last one comes back, and whichever finishes
+    /// last is the one that writes the store. When the slow, early read lands last it puts
+    /// the pre-write list back, and the row it covers shows the old state until something
+    /// else happens to refresh it. Measured: two writes, two reads, one row correct and one
+    /// stale, with both rows already correct in the database.
+    /// </para>
+    /// <para>
+    /// Collapsing the burst into one refresh that starts after the last event removes the
+    /// overlap rather than racing it. It must be <b>trailing</b> - firing on the first event
+    /// and ignoring the rest reads the data before the later writes land, which is the same
+    /// bug wearing a different hat.
+    /// </para>
+    /// </summary>
     public async Task Refresh<T>()
     {
+        string key = typeof(T).Name;
+
+        CancellationTokenSource cts = new();
+
+        lock (_pendingGate)
+        {
+            if (_pendingRefreshes.Remove(key, out CancellationTokenSource? superseded))
+            {
+                superseded.Cancel();
+                superseded.Dispose();
+            }
+
+            _pendingRefreshes[key] = cts;
+        }
+
+        try
+        {
+            await Task.Delay(RefreshDebounce, cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            // A newer event for this type arrived, and it owns the refresh now.
+            return;
+        }
+        finally
+        {
+            lock (_pendingGate)
+            {
+                if (_pendingRefreshes.TryGetValue(key, out CancellationTokenSource? current) && current == cts)
+                    _pendingRefreshes.Remove(key);
+            }
+
+            cts.Dispose();
+        }
+
         IRefreshableStore<T>? refreshableService = services.GetService<IRefreshableStore<T>>();
 
-        await lazyCache.RemoveAsync($"{typeof(T).Name}-list");
+        await lazyCache.RemoveAsync($"{key}-list");
         if (refreshableService != null)
             await refreshableService.RefreshEvent();
     }

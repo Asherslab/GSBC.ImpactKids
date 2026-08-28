@@ -9,8 +9,11 @@ public static class EventEndoints
 {
     public static IEndpointRouteBuilder AddEventEndpoints(this IEndpointRouteBuilder group)
     {
+        // Displays as well as leaders. This is how a wall notices a change now that the
+        // display services no longer stream their own lists - the same push every signed in
+        // page already runs on.
         group.MapGet("api/stream", Stream)
-            .RequireAuthorization();
+            .RequireAuthorization(Policies.EnabledOrDisplay);
 
         return group;
     }

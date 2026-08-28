@@ -1,0 +1,90 @@
+@using GSBC.ImpactKids.Shared.Contracts.Services.Features.Attendance
+@inherits EntityUtilityComponent
+@inject IRefreshableStore<AttendanceRecord>     AttendanceRecordsStore
+@inject IRefreshableStore<AttendanceItemRecord> AttendanceItemRecordsStore
+@inject IRefreshableStore<AttendanceItemType>   AttendanceItemTypesStore
+@inject IAttendanceRecordService                AttendanceRecordsService
+
+@* Parents arrive per household, not per child. Three children today is three trips through
+   the search box and three passes of the stepper, forty times over in the last ten minutes. *@
+@if (_requestable.Count >= 2 || _signOutable.Count >= 2)
+{
+    <div class="batch">
+        @* The items panel is not a warning attached to the button - it is on screen whenever
+           anything is outstanding, because it is what the desk has to act on either way. *@
+        @if (_outstanding.Count > 0)
+        {
+            <div class="batch-items">
+                <div class="batch-items-head">
+                    <MudIcon Icon="@Icons.Material.Filled.Backpack" Size="Size.Small"/>
+                    <MudText Typo="Typo.subtitle2">To hand back before they go</MudText>
+                </div>
+                <ul class="batch-items-list">
+                    @foreach (OutstandingItem item in _outstanding)
+                    {
+                        <li>
+                            <span class="batch-items-who">@item.PersonName</span>
+                            <span class="batch-items-what">@item.Label</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+
+        <div class="batch-actions">
+            <div class="batch-buttons">
+                @if (_requestable.Count >= 2)
+                {
+                    @* Outlined, not filled. This is a shortcut past the per child buttons, not a
+                       louder version of them - filled it read as the primary thing on the page and
+                       the rows underneath, which are the actual work, came second. *@
+                    <MudButton
+                        Variant="Variant.Outlined"
+                        Color="Color.Info"
+                        Size="Size.Large"
+                        StartIcon="@Icons.Material.Outlined.NotificationsNone"
+                        Disabled="@_busy"
+                        OnClick="@RequestAll">
+                        Request all @_requestable.Count
+                    </MudButton>
+                }
+
+                @if (_signOutable.Count >= 2)
+                {
+                    @* Two presses when something is still outstanding. Not a dialog: the list is
+                       already on screen above, and a dialog would cover it at the moment it
+                       matters most. *@
+                    @* Quiet until it is committing to something. Signing out a whole household is
+                       the destructive act here, so at rest it is the calmest control on the strip;
+                       it only fills once the press has consequences worth shouting about. *@
+                    <MudButton
+                        Variant="@(_confirmingSignOut ? Variant.Filled : Variant.Outlined)"
+                        Color="@(_confirmingSignOut ? Color.Warning : Color.Error)"
+                        Size="Size.Large"
+                        StartIcon="@(_confirmingSignOut ? Icons.Material.Filled.Warning : Icons.Material.Filled.Logout)"
+                        Disabled="@_busy"
+                        OnClick="@SignOutAll">
+                        @if (_confirmingSignOut)
+                        {
+                            @($"Press again — {_outstanding.Count} still to hand back")
+                        }
+                        else
+                        {
+                            @($"Sign out all {_signOutable.Count}")
+                        }
+                    </MudButton>
+                }
+            </div>
+
+            @* Separated parents, a grandparent taking one child early. The batch is a default,
+               never the only path - the per child controls stay exactly where they were. Sits
+               beside the buttons rather than under them: they no longer span the strip, and the
+               note is what fills the width they gave back. A plain span, not a MudText, because
+               CSS isolation never stamps its hash onto a MudBlazor component's own markup - the
+               .batch-note rule had been dead the whole time it sat on one. *@
+            <span class="batch-note">
+                Collected separately? Use the buttons on each child instead.
+            </span>
+        </div>
+    </div>
+}

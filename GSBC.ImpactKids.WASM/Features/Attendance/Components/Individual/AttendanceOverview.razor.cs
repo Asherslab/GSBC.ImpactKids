@@ -62,15 +62,27 @@ public partial class AttendanceOverview
         StateHasChanged();
     }
 
-    private int? AttendanceCount() => _attendanceRecords.Data?
-        .DistinctBy(x => x.PersonId)
-        .Count();
+    /// <summary>
+    /// One record per person - the <em>latest</em> one, which is the only one that says
+    /// where the child is now.
+    /// <para>
+    /// <c>DistinctBy</c> keeps the <em>first</em> match in enumeration order, and the server
+    /// returns records ordered by <c>SignedIn</c> ascending
+    /// (<c>AttendanceRecordServices/ReadMultiple.cs</c>). So a child signed in, signed out
+    /// by mistake, and signed back in was counted by their first record - signed out - and
+    /// the number a leader reads to decide the building is empty said the child had gone
+    /// while they were still in the room. <c>Family.razor.cs</c> already does it this way.
+    /// </para>
+    /// </summary>
+    private IEnumerable<AttendanceRecord>? LatestPerPerson() => _attendanceRecords.Data?
+        .GroupBy(x => x.PersonId)
+        .Select(g => g.MaxBy(x => x.SignedIn)!);
 
-    private int? CurrentSignedInDistinctCount() => _attendanceRecords.Data?
-        .DistinctBy(x => x.PersonId)
+    private int? AttendanceCount() => LatestPerPerson()?.Count();
+
+    private int? CurrentSignedInDistinctCount() => LatestPerPerson()?
         .Count(x => x.LocalSignedOut == null);
 
-    private int? CurrentSignedOutDistinctCount() => _attendanceRecords.Data?
-        .DistinctBy(x => x.PersonId)
+    private int? CurrentSignedOutDistinctCount() => LatestPerPerson()?
         .Count(x => x.LocalSignedOut != null);
 }

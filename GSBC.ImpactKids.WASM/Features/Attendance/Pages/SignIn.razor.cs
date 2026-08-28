@@ -93,9 +93,11 @@ public partial class SignIn
 
         _service = service != null
             ? _service.ToSuccess(service)
+            // No ServiceId means we looked today up by date, so say so. These two were the
+            // wrong way round.
             : ServiceId == null
-                ? _service.ToFailure("Failed to find Service for Id")
-                : _service.ToFailure("Failed to find Service for Today");
+                ? _service.ToFailure("Failed to find Service for Today")
+                : _service.ToFailure("Failed to find Service for Id");
 
         if (service != null)
         {

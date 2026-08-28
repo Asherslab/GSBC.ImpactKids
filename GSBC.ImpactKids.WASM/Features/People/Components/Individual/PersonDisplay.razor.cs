@@ -19,6 +19,14 @@ public partial class PersonDisplay
     [Parameter]
     public RenderFragment<Person?>? SuffixContent { get; set; }
 
+    /// <summary>
+    /// Renders below the person row, spanning the full width of the card. For a control that is
+    /// the thing being aimed at rather than a secondary action - it gets the whole tile, and it
+    /// sits outside the card's link so pressing it cannot navigate.
+    /// </summary>
+    [Parameter]
+    public RenderFragment<Person?>? FooterContent { get; set; }
+
     [Parameter]
     public string? Class { get; set; }
     
@@ -28,7 +36,7 @@ public partial class PersonDisplay
 
     private string Css => CssBuilder.Empty()
         .AddClass("clickable mud-ripple", Href != null)
-        .AddClass("d-flex justify-start flex-direction-row flex-grow-0")
+        .AddClass("person-card-row d-flex justify-start flex-direction-row flex-grow-0")
         .AddClass(Class)
         .Build();
 

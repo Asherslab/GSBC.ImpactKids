@@ -3,10 +3,12 @@ using GSBC.ImpactKids.Grpc.Data;
 using GSBC.ImpactKids.Grpc.Data.Interceptors;
 using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Grpc.Features.People.Sync.Interfaces;
+using GSBC.ImpactKids.Grpc.Features.Attendance.PickupDisplayKeyServices;
 using GSBC.ImpactKids.Grpc.Features.Attendance.AttendanceItemRecordServices;
 using GSBC.ImpactKids.Grpc.Features.Attendance.AttendanceItemTypeServices;
 using GSBC.ImpactKids.Grpc.Features.Attendance.AttendanceRecordServices;
 using GSBC.ImpactKids.Grpc.Features.Authentication;
+using GSBC.ImpactKids.Grpc.Features.Authentication.DisplayAuth;
 using GSBC.ImpactKids.Grpc.Features.Authentication.UsersServices;
 using GSBC.ImpactKids.Grpc.Features.DataDisplay;
 using GSBC.ImpactKids.Grpc.Features.DollarStore.DollarStoreEntryServices;
@@ -34,6 +36,8 @@ using GSBC.ImpactKids.Grpc.Features.Scripture.Memorisation.MemoryVersesServices;
 using GSBC.ImpactKids.Grpc.Services;
 using GSBC.ImpactKids.ServiceDefaults;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using ProtoBuf.Grpc.Server;
 using RabbitMQ.Client;
@@ -54,8 +58,19 @@ bool devAuthEnabled = builder.Environment.IsDevelopment() &&
 string? devAuthSigningKey = builder.Configuration["DevAuth:SigningKey"];
 bool devAuthUsable = devAuthEnabled && (devAuthSigningKey?.Length ?? 0) >= 32;
 
-builder.Services.AddAuthentication()
-    .AddJwtBearer("Bearer", jwtOptions =>
+// Holds the current display signing key in memory: JwtBearer resolves signing keys
+// synchronously and this one lives behind a database read. Registered as both a singleton
+// and a hosted service so the same instance does the refreshing and the answering.
+builder.Services.AddSingleton<DisplaySigningKeyProvider>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<DisplaySigningKeyProvider>());
+builder.Services.AddHttpContextAccessor();
+
+// The default scheme is pinned rather than inferred. With one scheme registered ASP.NET
+// makes it the default automatically; the display scheme below is a second one, which
+// silently removes that inference and would leave every leader-only endpoint with no scheme
+// to authenticate against.
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, jwtOptions =>
     {
         jwtOptions.Authority = $"https://{builder.Configuration["Auth0:Domain"]}";
         jwtOptions.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
@@ -77,13 +92,35 @@ builder.Services.AddAuthentication()
                 System.Text.Encoding.UTF8.GetBytes(devAuthSigningKey!)
             )
         ];
+    })
+    // A screen on a wall, not a person. Its token is minted by this service at enrolment and
+    // signed with a key that lives on the enrolment key row in this service's own database,
+    // so there is no shared secret to distribute and rotation invalidates every outstanding
+    // token by replacing what verifies them.
+    .AddJwtBearer(DisplayAuthDefaults.SchemeName);
+
+// Configured separately from the scheme above because the key resolver needs a service, and
+// the AddJwtBearer overload that takes a lambda has no way to reach one.
+builder.Services.AddOptions<JwtBearerOptions>(DisplayAuthDefaults.SchemeName)
+    .Configure<DisplaySigningKeyProvider>((displayOptions, signingKeys) =>
+    {
+        // Nothing here talks to an authority - this service issued the token itself.
+        displayOptions.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            ValidIssuer = DisplayAuthDefaults.Issuer,
+            ValidAudience = DisplayAuthDefaults.Audience,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKeyResolver = (_, _, _, _) => signingKeys.Resolve()
+        };
+
+        // A display token carries no subject, and this stops one being invented for it. The
+        // inbound map turns "sub" into a nameidentifier claim, and CustomClaimsTransformation
+        // creates a DbUser row for any nameidentifier it does not recognise - so a mapped
+        // subject would manufacture a user row for every wall in the building.
+        displayOptions.MapInboundClaims = false;
     });
 
-builder.Services.AddAuthorization(opts =>
-    {
-        opts.AddPolicy(Policies.EnabledOnly, policy => policy.RequireClaim("Enabled", true.ToString()));
-    }
-);
+builder.Services.AddAuthorization(opts => opts.AddGsbcPolicies());
 builder.Services.AddTransient<ILogger>(p =>
 {
     var loggerFactory = p.GetRequiredService<ILoggerFactory>();
@@ -96,6 +133,9 @@ builder.Services.AddGrpc();
 builder.Services.AddConverters();
 builder.Services.AddPeopleSync();
 builder.Services.AddSingleton<FieldChangeTrackingInterceptor>();
+// A display may read and may never write - enforced at the database rather than trusted to
+// the policy attributes. See the class remarks.
+builder.Services.AddSingleton<DisplayReadOnlyInterceptor>();
 builder.Services.AddTransient<ElvantoService>();
 builder.Services.AddSingleton<EventingChannelsService>();
 // Wakes the wall display's scoreboard stream - see GameDisplayService.WatchScoreboard.
@@ -108,6 +148,7 @@ builder.Services.AddPooledDbContextFactory<GsbcDbContext>((sp, o) =>
 {
     o.UseNpgsql(builder.Configuration.GetConnectionString("impact-kids"));
     o.AddInterceptors(sp.GetRequiredService<FieldChangeTrackingInterceptor>());
+    o.AddInterceptors(sp.GetRequiredService<DisplayReadOnlyInterceptor>());
     // o.AddInterceptors(new GSBC.ImpactKids.Grpc.Data.Interceptors.LatencyInterceptor(TimeSpan.FromSeconds(1.5)));
 });
 
@@ -156,7 +197,7 @@ app.UseAuthorization();
 app.MapGrpcService<LoginService>();
 app.MapGrpcService<MetabaseService>();
 app.MapGrpcService<UsersService>();
-app.MapGrpcService<PersonService>();
+app.MapGrpcService<PersonService>().AllowDisplay("BasicReadMultiple");
 app.MapGrpcService<AllergyService>();
 app.MapGrpcService<AllergenService>();
 app.MapGrpcService<MedicalNoteService>();
@@ -164,26 +205,38 @@ app.MapGrpcService<MedicalTypeService>();
 app.MapGrpcService<SchoolGradeService>();
 app.MapGrpcService<ElvantoService>();
 app.MapGrpcService<SchoolTermService>();
-app.MapGrpcService<ServicesService>();
+app.MapGrpcService<ServicesService>().AllowDisplay("BasicReadMultiple");
 app.MapGrpcService<ServiceTypeService>();
 app.MapGrpcService<DollarStoreEntryService>();
 app.MapGrpcService<BibleService>();
 app.MapGrpcService<MemoryVersesService>();
 app.MapGrpcService<MemoryVerseListsService>();
 app.MapGrpcService<MemorisationEntriesService>();
-app.MapGrpcService<AttendanceRecordService>();
+app.MapGrpcService<AttendanceRecordService>().AllowDisplay("BasicReadMultiple");
 app.MapGrpcService<AttendanceItemTypeService>();
 app.MapGrpcService<AttendanceItemRecordService>();
 app.MapGrpcService<GamePointRecordService>();
 app.MapGrpcService<GameBoardService>();
-// Unauthenticated - wall display only, aggregate scores only.
-app.MapGrpcService<GameDisplayService>();
+// Wall display only, aggregate scores only. No longer anonymous: a games wall enrols on the
+// same display key as the pickup wall and presents the same token.
+app.MapGrpcService<GameDisplayService>().AllowDisplay("GetScoreboard", "WatchScoreboard");
+// The console that hands out a display's key, not a display itself. Leader only by falling
+// back, like everything else here.
+app.MapGrpcService<PickupDisplayKeyService>();
 app.MapGrpcService<SyncService>();
+// Anonymous, and explicitly so now that the fallback policy would otherwise close it. It is
+// a signpost for somebody who opened the address in a browser and says nothing at all about
+// this service's data.
 app.MapGet("/",
-    () =>
-        "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");
+        () =>
+            "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909")
+    .AllowAnonymous();
 
 app.AddEventEndpoints();
+
+// Cluster-internal only - the proxy asks these when a pickup wall enrols. Deliberately not
+// routed in GSBC.ImpactKids.YARP/appsettings.json; see the class remarks.
+app.AddPickupDisplayKeyEndpoints();
 
 using (IServiceScope scope = app.Services.CreateScope())
 {

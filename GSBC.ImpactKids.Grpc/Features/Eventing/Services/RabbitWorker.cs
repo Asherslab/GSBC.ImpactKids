@@ -1,5 +1,6 @@
 using System.Text;
 using GSBC.ImpactKids.Grpc.Features.Games.GameDisplayServices;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Attendance;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Games;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;

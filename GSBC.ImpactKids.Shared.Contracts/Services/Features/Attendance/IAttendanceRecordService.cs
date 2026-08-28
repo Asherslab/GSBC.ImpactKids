@@ -9,4 +9,14 @@ public interface IAttendanceRecordService
     : IBasicReadMultipleService<AttendanceRecord>,
         ICreateService<SignInAttendanceRecordRequest>,
         IUpdateService<SignOutAttendanceRecordRequest>,
-        IBasicDeleteService<AttendanceRecord>;
+        IBasicDeleteService<AttendanceRecord>
+{
+    /// <summary>
+    /// Toggles "a parent has asked for this child". A named method rather than another
+    /// generic base because <see cref="IUpdateService{T}"/> is already spent on the sign out.
+    /// </summary>
+    Task<BasicResponse> RequestPickup(
+        RequestPickupAttendanceRecordRequest request,
+        CallContext                          context = default
+    );
+}

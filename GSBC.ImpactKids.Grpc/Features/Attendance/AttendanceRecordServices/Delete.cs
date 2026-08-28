@@ -19,7 +19,10 @@ public partial class AttendanceRecordService
 
         attendanceRecord.Deleted = true;
 
-        db.AttendanceRecords.Update(attendanceRecord);
+        // Only the column this operation owns - see the sign out for why the row is now
+        // genuinely multi writer.
+        db.Entry(attendanceRecord).Property(x => x.Deleted).IsModified = true;
+
         await db.SaveChangesAsync(token);
         await eventService.SendUpdatedEvent(token);
 
