@@ -119,6 +119,30 @@ public partial class RefreshableStore<T>(
         };
     }
 
+    /// <summary>
+    /// One refresh-after-a-write at a time, per entity type. This store is registered as a
+    /// singleton per <typeparamref name="T" />, so this gate covers every caller.
+    /// </summary>
+    private readonly SemaphoreSlim _refreshGate = new(1, 1);
+
+    /// <summary>
+    /// Refresh because something changed. Unlike <see cref="RefreshAll" /> this always goes
+    /// to the server.
+    /// <para>
+    /// <b>The gate and the ordering inside it are the whole point.</b> The action executor
+    /// coalesces concurrent calls for one key, so a refresh asked for now can be answered by
+    /// a request that started <em>before</em> the write it is meant to pick up - and that
+    /// stale answer then fills the thirty minute cache, so nothing fetches again. Measured on
+    /// a household sign-out: two writes, <b>one</b> read, and that read straddled the second
+    /// write. One row correct on screen, one stale, both correct in the database.
+    /// </para>
+    /// <para>
+    /// Waiting for any in-flight refresh to finish before invalidating means this one starts
+    /// afterwards and therefore sees the write. <b>Invalidate inside the gate, never before
+    /// it</b> - an invalidation that happens while the earlier request is still running is
+    /// undone when that request completes and re-fills the cache.
+    /// </para>
+    /// </summary>
     public async Task RefreshEvent()
     {
         if (store.GetState().Entities.IsNotAsked)
@@ -126,7 +150,16 @@ public partial class RefreshableStore<T>(
 
         string name = typeof(T).Name;
         string key  = $"{name}-list";
-        actionExecutor.InvalidateCache(key);
-        await RefreshAll();
+
+        await _refreshGate.WaitAsync();
+        try
+        {
+            actionExecutor.InvalidateCache(key);
+            await RefreshAll();
+        }
+        finally
+        {
+            _refreshGate.Release();
+        }
     }
 }
