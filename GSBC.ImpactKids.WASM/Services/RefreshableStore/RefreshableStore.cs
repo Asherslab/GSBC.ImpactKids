@@ -120,46 +120,82 @@ public partial class RefreshableStore<T>(
     }
 
     /// <summary>
-    /// One refresh-after-a-write at a time, per entity type. This store is registered as a
-    /// singleton per <typeparamref name="T" />, so this gate covers every caller.
+    /// Refresh because something changed. Unlike <see cref="RefreshAll" /> this always goes to
+    /// the server - but a burst of callers costs at most two reads, not one each.
+    /// <para>
+    /// <b>Two things have to hold at once, and they pull against each other.</b>
+    /// </para>
+    /// <para>
+    /// <b>Nothing may be answered by a read that started before it.</b> The action executor
+    /// coalesces concurrent calls for one key, so a refresh asked for now could be satisfied by
+    /// a request already in flight - one that read the database before the write this refresh
+    /// exists to pick up. That stale answer then filled the thirty minute cache, so nothing
+    /// fetched again. Measured on a household sign-out: two writes, <b>one</b> read, and that
+    /// read straddled the second write; one row correct on screen and one stale, with both
+    /// correct in the database.
+    /// </para>
+    /// <para>
+    /// <b>And a burst must not multiply.</b> Every write raises its own event to every
+    /// connected client, so twenty quick writes must not become twenty one reads each. Serving
+    /// them one at a time fixes the staleness and causes exactly that.
+    /// </para>
+    /// <para>
+    /// The counter satisfies both. Callers bump <see cref="_refreshWanted" /> and return; one
+    /// loop fetches, and re-checks afterwards whether anything was asked for <em>while</em> it
+    /// was fetching. So there is always a fetch that starts after the last request - never a
+    /// stale answer - and a burst of any size collapses into at most two: the one already
+    /// running, and one more covering everything that arrived during it.
+    /// </para>
+    /// <para>
+    /// <b>Invalidate inside the loop, never before it</b> - an invalidation that happens while
+    /// an earlier request is still running is undone when that request completes and re-fills
+    /// the cache.
+    /// </para>
     /// </summary>
-    private readonly SemaphoreSlim _refreshGate = new(1, 1);
+    /// <summary>Bumped by every caller asking for a refresh.</summary>
+    private long _refreshWanted;
 
-    /// <summary>
-    /// Refresh because something changed. Unlike <see cref="RefreshAll" /> this always goes
-    /// to the server.
-    /// <para>
-    /// <b>The gate and the ordering inside it are the whole point.</b> The action executor
-    /// coalesces concurrent calls for one key, so a refresh asked for now can be answered by
-    /// a request that started <em>before</em> the write it is meant to pick up - and that
-    /// stale answer then fills the thirty minute cache, so nothing fetches again. Measured on
-    /// a household sign-out: two writes, <b>one</b> read, and that read straddled the second
-    /// write. One row correct on screen, one stale, both correct in the database.
-    /// </para>
-    /// <para>
-    /// Waiting for any in-flight refresh to finish before invalidating means this one starts
-    /// afterwards and therefore sees the write. <b>Invalidate inside the gate, never before
-    /// it</b> - an invalidation that happens while the earlier request is still running is
-    /// undone when that request completes and re-fills the cache.
-    /// </para>
-    /// </summary>
+    /// <summary>The highest <see cref="_refreshWanted" /> a completed fetch has covered.</summary>
+    private long _refreshServed;
+
+    private bool _refreshRunning;
+
     public async Task RefreshEvent()
     {
         if (store.GetState().Entities.IsNotAsked)
             return;
 
-        string name = typeof(T).Name;
-        string key  = $"{name}-list";
+        string key = $"{typeof(T).Name}-list";
 
-        await _refreshGate.WaitAsync();
+        _refreshWanted++;
+
+        // Somebody is already looping. The bump above is enough - they re-check the counter
+        // after every fetch, so they will do another one on our behalf. This is what stops
+        // twenty writes costing twenty one reads on every connected client.
+        if (_refreshRunning)
+            return;
+
+        _refreshRunning = true;
+
         try
         {
-            actionExecutor.InvalidateCache(key);
-            await RefreshAll();
+            // Re-check rather than fetch once: a request that arrived while the previous
+            // fetch was in flight has not been covered by it, so it needs another.
+            while (_refreshServed < _refreshWanted)
+            {
+                long target = _refreshWanted;
+
+                actionExecutor.InvalidateCache(key);
+                await RefreshAll();
+
+                // Only what had been asked for when this fetch STARTED. Anything asked for
+                // during it has not been read yet and must go round again.
+                _refreshServed = target;
+            }
         }
         finally
         {
-            _refreshGate.Release();
+            _refreshRunning = false;
         }
     }
 }
