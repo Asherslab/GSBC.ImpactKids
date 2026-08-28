@@ -46,13 +46,23 @@ public partial class Tool
             NoSchoolGradesPersonFilter
         ];
 
+        // == true, not != false. Data is null while the store is loading AND when it has
+        // failed, and `null != false` is true - so every one of these used to degrade to
+        // "show the entire roster" at exactly the moment the leader could not tell.
+        // "Signed In" listing 900 names and "Signed In" listing 3 look like the same
+        // control working. The Requested filter is the end of night sweep for children
+        // asked for and never signed out, so for that one the distinction between "none"
+        // and "not loaded" is the whole point of the screen.
         _filters["All"] = _ => true;
         _filters["Signed In"] = x => _attendanceRecords.Data?
-            .Any(y => y.PersonId == x.Id && y.LocalSignedOut == null) != false;
+            .Any(y => y.PersonId == x.Id && y.LocalSignedOut == null) == true;
+        // AwaitingPickup rather than an inline test, so this and the wall can never disagree.
+        _filters["Requested"] = x => _attendanceRecords.Data?
+            .Any(y => y.PersonId == x.Id && y.AwaitingPickup) == true;
         _filters["Signed Out"] = x => _attendanceRecords.Data?
-            .Any(y => y.PersonId == x.Id && y.LocalSignedOut != null) != false;
+            .Any(y => y.PersonId == x.Id && y.LocalSignedOut != null) == true;
         _filters["Attended"] = x => _attendanceRecords.Data?
-            .Any(y => y.PersonId == x.Id) != false;
+            .Any(y => y.PersonId == x.Id) == true;
     }
 
     protected override async Task OnInitializedAsync()
@@ -103,9 +113,12 @@ public partial class Tool
 
         _service = service != null
             ? _service.ToSuccess(service)
+            // No ServiceId means we looked today up by date, so say so. These two were the
+            // wrong way round, and this is the message a leader reads when the night will
+            // not load - it pointed at the wrong problem.
             : ServiceId == null
-                ? _service.ToFailure("Failed to find Service for Id")
-                : _service.ToFailure("Failed to find Service for Today");
+                ? _service.ToFailure("Failed to find Service for Today")
+                : _service.ToFailure("Failed to find Service for Id");
 
         RetrieveAttendanceRecords();
         StateHasChanged();

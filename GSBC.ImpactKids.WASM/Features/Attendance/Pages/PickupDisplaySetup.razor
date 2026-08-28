@@ -1,0 +1,65 @@
+@using GSBC.ImpactKids.Shared.Contracts.Services.Features.Attendance
+@page "/Attendance/PickupDisplaySetup"
+@inject IPickupDisplayKeyService PickupDisplayKeyService
+@inject NavigationManager        Navigation
+
+<PageTitle>Pickup Display</PageTitle>
+
+<MudPaper Elevation="6" Class="mt-4 pa-6">
+    <MudText Typo="Typo.h5" Class="mb-2">Pickup display</MudText>
+
+    <MudText Typo="Typo.body2" Class="mb-4">
+        The TV in the room shows the children who have been asked for and have not yet gone.
+        It cannot sign in, so it is enrolled once from a setup link and remembers it
+        afterwards. Open the link on the TV, then bookmark that same link - if the TV ever
+        forgets, opening the bookmark enrols it again with nobody involved.
+    </MudText>
+
+    @if (_error != null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
+    }
+
+    @* Shown once, on the response to the rotation that minted it. Only a hash is stored,
+       so there is no second chance to read it and no page that can show it again. *@
+    @if (_setupUrl != null)
+    {
+        <MudAlert Severity="Severity.Warning" Class="mb-2">
+            This link is shown once. Open it on the TV now, or copy it somewhere safe -
+            it cannot be recovered, only replaced by rotating again.
+        </MudAlert>
+
+        <MudTextField T="string"
+                      Value="@_setupUrl"
+                      Label="Setup link"
+                      ReadOnly
+                      Lines="3"
+                      Class="mb-4"/>
+    }
+
+    <MudText Typo="Typo.body2" Class="mb-4">
+        @if (_rotatedAt == null)
+        {
+            <text>No key has been set up yet - the display will not show anyone until one is.</text>
+        }
+        else
+        {
+            <text>
+                Current key set up @_rotatedAt.Value.ToLocalTime().ToString("d MMM yyyy, h:mm tt")@(_rotatedBy == null ? "" : $" by {_rotatedBy}").
+            </text>
+        }
+    </MudText>
+
+    <MudAlert Severity="Severity.Info" Class="mb-4">
+        Rotating takes effect immediately and everywhere. Every screen already set up stops
+        showing names and asks to be opened again from the new link.
+    </MudAlert>
+
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               StartIcon="@Icons.Material.Filled.Autorenew"
+               Disabled="@_busy"
+               OnClick="@Rotate">
+        @(_rotatedAt == null ? "Create a key" : "Rotate the key")
+    </MudButton>
+</MudPaper>

@@ -13,7 +13,13 @@
 <div class="reveal">
     <div class="reveal-ambient"></div>
 
-    @if (Board == null)
+    @* Before everything else: an unenrolled screen must say so rather than sit on
+       "Connecting…" until somebody notices it has been dead all night. *@
+    @if (Unauthorised)
+    {
+        <div class="reveal-holding">This screen needs setting up again</div>
+    }
+    else if (Board == null)
     {
         <div class="reveal-holding">Connecting…</div>
     }

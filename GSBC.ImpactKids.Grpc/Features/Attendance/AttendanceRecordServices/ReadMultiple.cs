@@ -8,6 +8,18 @@ namespace GSBC.ImpactKids.Grpc.Features.Attendance.AttendanceRecordServices;
 
 public partial class AttendanceRecordService
 {
+    /// <summary>
+    /// Open to wall displays as well as leaders - the pickup wall works out who is waiting
+    /// from <see cref="AttendanceRecord.AwaitingPickup"/> over these rows. Read only: a
+    /// display that tried to sign a child out would be refused by the policy on
+    /// <c>Update</c>, and refused again at the database by
+    /// <see cref="Data.Interceptors.DisplayReadOnlyInterceptor"/>.
+    /// <para>
+    /// Opened to displays in <c>Program.cs</c>, not by an attribute here - see
+    /// <see cref="Features.Authentication.DisplayAuth.DisplayEndpointExtensions"/> for why an
+    /// attribute on this method would be silently ignored.
+    /// </para>
+    /// </summary>
     public async IAsyncEnumerable<BasicReadMultipleResponse<AttendanceRecord>> BasicReadMultiple(
         BasicReadMultipleRequest request,
         CallContext              context = default

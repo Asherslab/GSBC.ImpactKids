@@ -1,0 +1,354 @@
+.pickup {
+    /* The row surface, as variables rather than literals, because the arrival animation
+       ends by restating it. Overlay mode needs a much heavier scrim and if these were
+       literal the animation's last keyframe would repaint every arrived row back to the
+       near-invisible wall value the moment it finished. */
+    --row-bg: rgba(255, 255, 255, .04);
+    --row-ring: rgba(255, 255, 255, .06);
+
+    position: relative;
+    display: flex;
+    flex-direction: column;
+
+    width: 100%;
+    height: 100%;
+    padding: 2vmin 3vmin;
+
+    font-family: system-ui, sans-serif;
+    overflow: hidden;
+}
+
+/* Two blooms drifting behind the list. Cheap, GPU only, and it stops a wall with
+   nobody waiting on it from reading as a frozen screen. */
+.pickup-ambient {
+    position: absolute;
+    inset: -30%;
+    z-index: 0;
+
+    background:
+        radial-gradient(35vmax 35vmax at 30% 25%, rgba(52, 211, 153, .16), transparent 60%),
+        radial-gradient(30vmax 30vmax at 70% 75%, rgba(96, 165, 250, .16), transparent 60%);
+
+    animation: pickup-drift 24s ease-in-out infinite alternate;
+    pointer-events: none;
+}
+
+@keyframes pickup-drift {
+    from { transform: translate3d(-4%, -3%, 0) scale(1); }
+    to   { transform: translate3d(4%, 3%, 0) scale(1.12); }
+}
+
+/* Connecting, error and "nobody waiting" all land here. A wall that goes black reads
+   as broken, so every one of them is a deliberate screen. */
+.pickup-message {
+    position: relative;
+    z-index: 1;
+
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 6vmin;
+    letter-spacing: .05em;
+    opacity: .65;
+
+    animation: pickup-fade-in .6s ease-out both;
+}
+
+@keyframes pickup-fade-in {
+    from { opacity: 0; }
+    to   { opacity: .65; }
+}
+
+/* The unenrolled screen. Two lines rather than one: the first says what is wrong from
+   across the room, the second says what to do from arm's length. */
+.pickup-message-stack {
+    flex-direction: column;
+    gap: 2vmin;
+    text-align: center;
+    padding: 0 6vmin;
+}
+
+.pickup-message-detail {
+    font-size: 3vmin;
+    letter-spacing: .08em;
+    opacity: .7;
+}
+
+.pickup-dots span {
+    animation: pickup-blink 1.4s infinite;
+}
+
+.pickup-dots span:nth-child(2) { animation-delay: .2s; }
+.pickup-dots span:nth-child(3) { animation-delay: .4s; }
+
+@keyframes pickup-blink {
+    0%, 60%, 100% { opacity: .15; }
+    30%           { opacity: 1; }
+}
+
+.pickup-header {
+    position: relative;
+    z-index: 1;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1vmin;
+
+    margin-bottom: 2.5vmin;
+    text-align: center;
+}
+
+/* A slow sheen crossing the title. On a quiet night it is the only moving thing on the
+   screen, so it carries the "this is live" job on its own. */
+.pickup-heading {
+    background: linear-gradient(100deg,
+        #fff 0%, #fff 38%,
+        rgba(110, 231, 183, 1) 50%,
+        #fff 62%, #fff 100%);
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+
+    font-size: 5vmin;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+
+    animation: pickup-sheen 7s linear infinite, pickup-drop-in .7s cubic-bezier(.2, .9, .25, 1) both;
+}
+
+@keyframes pickup-sheen {
+    from { background-position: 150% 0; }
+    to   { background-position: -150% 0; }
+}
+
+@keyframes pickup-drop-in {
+    from { opacity: 0; transform: translateY(-1.5vmin); }
+    to   { opacity: 1; transform: none; }
+}
+
+.pickup-service {
+    font-size: 2.4vmin;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    opacity: .5;
+}
+
+/* Names shrink as the list grows, so a ten name end of night still fills the wall
+   rather than scrolling off it. */
+.pickup-list {
+    position: relative;
+    z-index: 1;
+
+    display: flex;
+    flex-direction: column;
+
+    flex: 1;
+    min-height: 0;
+
+    --gap: calc(2vmin * var(--scale, 1));
+    gap: var(--gap);
+}
+
+.pickup-row {
+    display: flex;
+    flex: 1 1 0;
+    min-height: 0;
+    align-items: center;
+    justify-content: space-between;
+    column-gap: 3vmin;
+
+    padding: 0 2.5vmin;
+    border-radius: 1.5vmin;
+    background: var(--row-bg);
+    box-shadow: inset 0 0 0 .2vmin var(--row-ring);
+
+    /* The names already waiting when the screen boots are not arrivals - they get the
+       quiet staggered fade instead. */
+    animation: pickup-row-seed .5s cubic-bezier(.2, .9, .25, 1) both;
+    animation-delay: calc(var(--index, 0) * 70ms);
+}
+
+@keyframes pickup-row-seed {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+/* The whole job of this screen is telling a room that a name is new, so an arrival
+   sweeps in and flares once. It runs once and stays run: the class is sticky in C# and
+   the row keeps its @key, so the 30s stream keepalive cannot replay it. */
+.pickup-row-new {
+    animation: pickup-row-in 1.5s cubic-bezier(.2, .9, .25, 1) both;
+    animation-delay: 0s;
+}
+
+@keyframes pickup-row-in {
+    0% {
+        opacity: 0;
+        transform: translateX(6vmin) scale(.94);
+        background: rgba(52, 211, 153, .45);
+        box-shadow: 0 0 6vmin rgba(52, 211, 153, .55), inset 0 0 0 .3vmin rgba(52, 211, 153, .9);
+    }
+    35% {
+        opacity: 1;
+        transform: none;
+        background: rgba(52, 211, 153, .35);
+        box-shadow: 0 0 5vmin rgba(52, 211, 153, .45), inset 0 0 0 .3vmin rgba(52, 211, 153, .8);
+    }
+    100% {
+        opacity: 1;
+        transform: none;
+        background: var(--row-bg);
+        box-shadow: inset 0 0 0 .2vmin var(--row-ring);
+    }
+}
+
+/* The biggest thing on the screen. A child looking for their own name reads this from
+   the back of the room; everything else on the row is support. */
+.pickup-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    font-size: calc(10vmin * var(--scale, 1));
+    font-weight: 800;
+    letter-spacing: .04em;
+    line-height: 1.05;
+
+    text-shadow: 0 0 3vmin rgba(255, 255, 255, .18);
+}
+
+.pickup-wait {
+    flex: none;
+
+    color: rgba(255, 255, 255, .55);
+    font-size: calc(4vmin * var(--scale, 1));
+    font-weight: 700;
+    letter-spacing: .06em;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* Eight minutes on this wall means the child has been forgotten rather than fetched.
+   The row says so without saying anything - the time is already there, this just makes
+   it impossible to miss. */
+.pickup-row-overdue {
+    background: rgba(251, 191, 36, .10);
+    box-shadow: inset 0 0 0 .25vmin rgba(251, 191, 36, .45);
+}
+
+.pickup-row-overdue .pickup-name {
+    color: #fcd34d;
+    text-shadow: 0 0 3vmin rgba(251, 191, 36, .35);
+}
+
+.pickup-row-overdue .pickup-wait {
+    color: #fbbf24;
+    animation: pickup-overdue-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes pickup-overdue-pulse {
+    0%, 100% { opacity: .5; }
+    50%      { opacity: 1; }
+}
+
+/* A wall display runs unattended for hours; honour the setting anyway for anyone
+   previewing it on a machine that asks for stillness. */
+@media (prefers-reduced-motion: reduce) {
+    .pickup-ambient,
+    .pickup-heading,
+    .pickup-row-overdue .pickup-wait {
+        animation: none;
+    }
+
+    .pickup-row-new {
+        animation-duration: .01s;
+    }
+}
+
+/* ---------------------------------------------------------------------------
+   Transparent mode (?transparent=true)
+
+   A layer, not a screen. The page paints no background of its own; killing the
+   opaque surfaces further up the tree needs a global rule, because they belong
+   to DisplayLayout and to body, and scoped CSS cannot reach either - see the
+   pickup-transparent block in wwwroot/css/app.css.
+   --------------------------------------------------------------------------- */
+
+/* Heavier than the wall's near-invisible .04 for one reason: the thing behind a row is
+   now moving worship footage rather than a near-black wall, and white text on an
+   unpredictable background is unreadable about a third of the time. This is the same
+   finding as the scrim on the ProPresenter alpha test card. */
+.pickup-transparent {
+    --row-bg: rgba(0, 0, 0, .62);
+    --row-ring: rgba(255, 255, 255, .14);
+
+    padding: 3vmin;
+}
+
+.pickup-transparent .pickup-name {
+    text-shadow: 0 .2vmin .9vmin rgba(0, 0, 0, .95);
+}
+
+/* The overdue row sets its own background as a literal, so it wins over --row-bg and an
+   overdue row would otherwise lose the scrim entirely - 10% amber over live video, with an
+   amber name on top of it. Here the amber is layered *over* the dark scrim rather than
+   replacing it: a gradient of one flat colour is the way to stack a tint on a background
+   colour in a single declaration. */
+.pickup-transparent .pickup-row-overdue {
+    background:
+        linear-gradient(rgba(251, 191, 36, .16), rgba(251, 191, 36, .16)),
+        rgba(0, 0, 0, .62);
+}
+
+.pickup-transparent .pickup-wait {
+    color: rgba(255, 255, 255, .78);
+    text-shadow: 0 .2vmin .9vmin rgba(0, 0, 0, .95);
+}
+
+/* The heading is background-clipped text, so it has no way to carry its own shadow -
+   it needs a surface behind it or it dissolves into whatever is playing. */
+.pickup-transparent .pickup-header {
+    align-self: center;
+    padding: 1.2vmin 3.5vmin;
+    border-radius: 1.5vmin;
+    background: rgba(0, 0, 0, .55);
+}
+
+/* Every not-ok state, reduced to a corner pill. Loud enough that an operator watching
+   their own output notices it, small enough that it is not an announcement to the room.
+   Fixed, so it sits in the corner of the frame rather than wherever the layout puts it. */
+.pickup-status {
+    position: fixed;
+    left: 2vmin;
+    bottom: 2vmin;
+    z-index: 2;
+
+    display: flex;
+    align-items: center;
+    gap: .8vmin;
+
+    padding: .9vmin 1.8vmin;
+    border-radius: 99vmin;
+
+    background: rgba(0, 0, 0, .72);
+    box-shadow: inset 0 0 0 .2vmin rgba(251, 191, 36, .55);
+
+    color: #fcd34d;
+    font-size: 1.8vmin;
+    letter-spacing: .06em;
+
+    /* Not pickup-fade-in: that one settles at .65 opacity, which is right for a dimmed
+       message filling a wall and wrong for the only thing saying the overlay is broken. */
+    animation: pickup-status-in .6s ease-out both;
+}
+
+@keyframes pickup-status-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}

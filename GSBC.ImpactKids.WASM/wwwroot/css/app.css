@@ -92,3 +92,37 @@ code {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+/* ---------------------------------------------------------------------------
+   Pickup display, transparent mode (/Display/Pickup?transparent=true)
+
+   Global rather than scoped, and it has to be. The two surfaces that have to
+   stop painting are <html> (MudBlazor paints it rgb(50,51,61)) and
+   DisplayLayout's .display-root (#0b0b0f) - both ancestors of the page, and
+   Blazor's CSS isolation only ever stamps a component's own markup.
+
+   Driven by a class the page puts on <html> from C#, NOT by :has(). :has()
+   reads better and works in Chrome, but WebKit only got it in Safari 15.4 and
+   it fails silently - on an older engine <html> just stays grey and the whole
+   feature looks broken with no error anywhere. The host for this is a
+   ProPresenter web element, so an old WebKit is the expected case, not the
+   edge case.
+
+   !important because the rules being beaten are MudBlazor theme output.
+   --------------------------------------------------------------------------- */
+html.pickup-transparent-host,
+html.pickup-transparent-host body,
+html.pickup-transparent-host #app,
+html.pickup-transparent-host .display-root {
+    background: transparent !important;
+}
+
+/* The same thing again for engines that have :has(), purely so it lands on the
+   first paint instead of one frame later when the interop returns. Harmless
+   where :has() is unsupported - the whole selector is simply dropped. Do not
+   let this be the only rule: that was the bug. */
+html:has(.pickup-transparent),
+body:has(.pickup-transparent),
+body:has(.pickup-transparent) #app,
+body:has(.pickup-transparent) .display-root {
+    background: transparent !important;
+}

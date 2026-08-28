@@ -1,0 +1,11 @@
+/* A fixed column, not a content-sized one. "Sign In" measures 68px and "View / Sign Out" 162px,
+   and while this sized to its content the name column next to it absorbed the difference - so
+   the same button sat at three different x positions in one screenful. */
+.row-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    flex: 0 0 auto;
+    min-width: 9.5rem;
+}

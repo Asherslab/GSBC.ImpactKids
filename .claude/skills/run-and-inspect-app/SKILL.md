@@ -207,6 +207,50 @@ until curl -sk -f -o /dev/null -m 3 https://localhost:7263/_framework/dotnet.js 
 
 Assets can 404 briefly while the devserver warms up — that race is transient, not a bug.
 
+### When a `_framework` asset 404s and stays 404 — the clean rebuild
+
+**This is the recovery. Reach for it early; do not grind on the browser.**
+
+The symptom is a boot stuck at `100%` with
+
+```
+download '…/GSBC.ImpactKids.<Project>.<hash>.pdb' … failed 404
+```
+
+and the giveaway is that **`curl` and an in-page `fetch()` both return 200 for that exact
+URL** while the runtime still cannot load it. At that point it is not the service worker and
+not the browser cache — both can be ruled out in one call (`navigator.serviceWorker.controller`
+false, `fetch(url, {cache:'reload'})` 200) — and no amount of unregistering, hard-reloading or
+opening fresh tabs will fix it. One known cause: the devserver snapshots
+`bin/Debug/net10.0/wwwroot/_framework/` on startup, and if the AppHost's own build is still
+writing assets at that moment it serves a snapshot that never existed. Compare
+`ps -o lstart=` on `blazor-devserver` against the asset's `stat` mtime — a devserver older
+than the assets is the tell.
+
+Kill the app, wipe every `bin`/`obj`, restore, build, then start the run configuration again:
+
+```bash
+# 1. kill the app - AppHost FIRST, or DCP restarts the children you just killed.
+#    Match on the built binary path, never `pkill -f GSBC.ImpactKids`: agent sessions carry
+#    these project names in their command lines and would be killed too.
+ah=$(ps ax -o pid=,command= | awk '$2 ~ /GSBC\.ImpactKids\.AppHost\/bin\/Debug/ {print $1}')
+kill -9 $ah
+until ! ps ax -o pid=,command= | awk '$2 ~ /GSBC\.ImpactKids.*bin\/Debug/ {f=1} END{exit !f}'; do sleep 2; done
+
+# 2. wipe every bin/ and obj/
+./clean.sh
+
+# 3. restore and build the whole solution
+dotnet restore
+```
+
+Then build through Rider (`mcp__rider__build_solution`) and start
+`GSBC.ImpactKids.AppHost: https` through `execute_run_configuration` as usual.
+
+Budget two attempts at the browser-side explanations (service worker, cache) before doing
+this. Once `fetch()` says 200 and the runtime still says 404, more browser tricks are wasted
+turns — this session burned about a dozen of them proving that.
+
 ## Browser: restart it after an app restart
 
 The app registers a **Blazor PWA service worker**. After the app restarts with new asset
@@ -356,6 +400,15 @@ before concluding anything about the data.
 `.click()`), so menu items and the dialogs behind them are hard to reach programmatically.
 Ask the user to open those, or verify the markup another way — do not claim a dialog works
 because it compiled.
+
+**On a MudButton, click the coordinate, not the `ref`.** `computer left_click` with a `ref`
+from `read_page`/`find` reports "Clicked on element ref_N" and **nothing happens** — no
+error, no change. The same button clicked at its screenshot coordinates fires normally. This
+cost a confused minute on `ROTATE THE KEY`, where the success path is a page that rewrites
+itself, so "no visible change" read as a broken handler rather than a click that never
+landed. The reported success is about dispatching, not about Blazor receiving it: **verify
+the effect** (re-read the page, or check the row in Postgres), never the tool's own
+acknowledgement.
 
 ## Scoped CSS does not reach MudBlazor components
 

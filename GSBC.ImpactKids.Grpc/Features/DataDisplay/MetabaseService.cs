@@ -3,13 +3,11 @@ using System.Text;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.DataDisplay;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using CallContext = ProtoBuf.Grpc.CallContext;
 
 namespace GSBC.ImpactKids.Grpc.Features.DataDisplay;
 
-[Authorize(Policy = Policies.EnabledOnly)]
 public class MetabaseService(
     IConfiguration configuration
 ) : IMetabaseService

@@ -25,6 +25,54 @@ await Task.WhenAll(PeopleStore.RefreshAll());              // then fetch
 - Derived state is computed in a `Retrieve*` method that ends in `StateHasChanged()`, not in the
   markup. A property that filters a store list runs on every render.
 
+**After a write, call `RefreshEvent()` — never `RefreshAll()`.** `RefreshAll` goes through the
+action executor's cache with `cacheFor: TimeSpan.FromMinutes(30)`
+(`Services/RefreshableStore/RefreshableStore.cs`), so immediately after a mutation it hands back the
+response from *before* the mutation and the screen does not settle. `RefreshEvent` invalidates the
+key first, then refreshes.
+
+This one hides: the SSE invalidation from the event bus usually lands a moment later and updates the
+page anyway, so a `RefreshAll` after a write looks like it works. `RefreshAll` is for arriving on a
+page; `RefreshEvent` is for having just changed something.
+
+## `RefreshEvent` coalesces with a counter, and both halves matter
+
+`RefreshEvent` is not a plain "fetch now". Callers bump `_refreshWanted`; **one** loop fetches and
+re-checks the counter afterwards. Do not "simplify" it into a single fetch, a plain lock, or a
+fetch-if-not-already-running.
+
+It is holding two requirements apart that pull against each other:
+
+**Nothing may be answered by a read that started before it.** The action executor coalesces
+concurrent calls for one key, so a refresh asked for now could be satisfied by a request already in
+flight — one that read the database *before* the write this refresh exists to pick up. That stale
+answer then filled the 30 minute cache, so nothing fetched again.
+
+**And a burst must not multiply.** Every write raises its own event to *every connected client*, so
+twenty quick writes must not become twenty-one reads each. Serving refreshes strictly one at a time
+fixes the staleness and causes exactly that.
+
+The counter gives both: there is always a fetch that *starts* after the last request, and a burst of
+any size costs at most two reads — the one already running, and one more covering everything that
+arrived during it.
+
+Measured on a household batch, two writes about a second apart:
+
+| | writes | `BasicReadMultiple` | result |
+|---|---|---|---|
+| original | 2 | **1** — it straddled the second write | one row stale, DB correct |
+| lock only | 2 | 3, one per request | correct, but scales as N+1 |
+| counter | 2 | **2**, both after both writes | correct, and bounded |
+
+Two giveaways when this recurs: **fewer reads than writes** means something was answered by a stale
+in-flight read; **one read per write** means the coalescing has been lost and a busy night will
+hammer every connected client.
+
+`SseClientService.Refresh<T>` puts a **trailing** debounce in front of this, which collapses events
+arriving within 300ms. That is a load optimisation, **not** the correctness fix — on its own it made
+things worse, by removing the second read that had been accidentally correcting the first. Keep both,
+and keep the debounce trailing: a leading one reads before the later writes land.
+
 **A blank-looking page is usually mid-load.** Only conclude data is missing after the store has
 resolved — the same trap applies when inspecting it in a browser (see the `run-and-inspect-app` skill).
 

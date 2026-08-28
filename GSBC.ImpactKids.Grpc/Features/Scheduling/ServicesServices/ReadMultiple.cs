@@ -8,6 +8,16 @@ namespace GSBC.ImpactKids.Grpc.Features.Scheduling.ServicesServices;
 
 public partial class ServicesService
 {
+    /// <summary>
+    /// Open to wall displays as well as leaders. A display with no service id in its url
+    /// picks today's service out of this list itself, which is the logic that used to live
+    /// server side in the deleted pickup display service.
+    /// <para>
+    /// Opened to displays in <c>Program.cs</c>, not by an attribute here - see
+    /// <see cref="Features.Authentication.DisplayAuth.DisplayEndpointExtensions"/> for why an
+    /// attribute on this method would be silently ignored.
+    /// </para>
+    /// </summary>
     public async IAsyncEnumerable<BasicReadMultipleResponse<Service>> BasicReadMultiple(
         BasicReadMultipleRequest request,
         CallContext              context = default
