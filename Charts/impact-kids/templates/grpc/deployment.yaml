@@ -23,7 +23,8 @@ spec:
                 name: "grpc-config"
             - secretRef:
                 name: "grpc-secrets"
-            # Photos__AccessKey / Photos__SecretKey for the object store.
+            # Photos__AccessKey / Photos__SecretKey for the object store. Created out of
+            # band with kubectl like the others; the chart only references it.
             - secretRef:
                 name: "photos-secret"
           ports:
