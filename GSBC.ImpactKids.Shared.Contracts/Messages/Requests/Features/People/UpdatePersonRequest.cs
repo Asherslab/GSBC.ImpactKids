@@ -45,6 +45,9 @@ public class UpdatePersonRequest : ReadRequestBase, IUpdateRequest<Person, Updat
     public DeltaUpdate<Guid?> FamilyId       { get; set; } = new();
     public DeltaUpdate<bool> FamilyGuardian { get; set; } = new();
 
+    /// <inheritdoc cref="Person.PhotoNeedsUpdate"/>
+    public DeltaUpdate<bool> PhotoNeedsUpdate { get; set; } = new();
+
     public static UpdatePersonRequest FromEntity(Person entity)
     {
         UpdatePersonRequest request = new()
@@ -66,6 +69,7 @@ public class UpdatePersonRequest : ReadRequestBase, IUpdateRequest<Person, Updat
 
         request.FamilyId.SetInitialValue(entity.FamilyId);
         request.FamilyGuardian.SetInitialValue(entity.FamilyGuardian);
+        request.PhotoNeedsUpdate.SetInitialValue(entity.PhotoNeedsUpdate);
 
         return request;
     }

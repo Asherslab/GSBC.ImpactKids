@@ -1,5 +1,8 @@
 using GSBC.ImpactKids.Grpc.Data;
+using GSBC.ImpactKids.Grpc.Data.Models.People;
+using GSBC.ImpactKids.Grpc.Services;
 using Microsoft.EntityFrameworkCore;
+using ContractPerson = GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.Person;
 
 namespace GSBC.ImpactKids.Grpc.Features.People.Photos;
 
@@ -66,6 +69,75 @@ public static class PersonPhotoEndpoints
             return Results.File(photo.Bytes, photo.ContentType);
         });
 
+        // Taking a photo. The body is the encoded image itself rather than a multipart form: the
+        // capture view already has the exact bytes it wants to store, from a canvas it cropped and
+        // downscaled, and wrapping them in a form only to unwrap them again buys nothing.
+        group.MapPost("", async (
+            Guid                id,
+            HttpRequest         request,
+            GsbcDbContext       db,
+            PhotoStore          store,
+            PhotoStoreConfig    config,
+            IEventService<ContractPerson> events,
+            CancellationToken   token
+        ) =>
+        {
+            DbPerson? person = await db.People.FirstOrDefaultAsync(x => x.Id == id, token);
+            if (person is null)
+                return Results.NotFound();
+
+            if (IsBlockedByMediaConsent(config, person.MediaConsent))
+                return Results.Problem(
+                    $"This person's media consent ({person.MediaConsent}) is listed in "
+                    + "Photos:BlockedMediaConsent, so they may not hold a photo.",
+                    statusCode: StatusCodes.Status403Forbidden);
+
+            string contentType = request.ContentType ?? "";
+            if (!contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+                return Results.BadRequest("Expected an image/* body.");
+
+            // A 500x500 JPEG is 20-50 KB. A megabyte is far above anything the capture view
+            // produces and still small enough that a mistake cannot fill the store.
+            using MemoryStream buffer = new();
+            await request.Body.CopyToAsync(buffer, token);
+            if (buffer.Length == 0)
+                return Results.BadRequest("Empty body.");
+            if (buffer.Length > MaxPhotoBytes)
+                return Results.BadRequest($"Photo is larger than {MaxPhotoBytes / 1024} KB.");
+
+            string version = await store.PutAsync(buffer.ToArray(), contentType, token);
+
+            person.PhotoVersion = version;
+            // Taking the photo is what answers "this face is out of date", so nothing else has to
+            // clear the flag - and clearing it is what drops the child off the Photos list, which is
+            // the tool's only progress indicator.
+            person.PhotoNeedsUpdate = false;
+
+            await db.SaveChangesAsync(token);
+            await events.SendUpdatedEvent(token);
+
+            return Results.Ok(new PhotoUploadedResponse(version));
+        });
+
         return builder;
     }
+
+    private const long MaxPhotoBytes = 1024 * 1024;
+
+    /// <summary>
+    /// Whether this person's media consent forbids them a photo.
+    ///
+    /// <b>Empty by default, and that is the decision.</b> An identification photo for signing a
+    /// child in is internal safeguarding rather than publication, so everyone gets one unless the
+    /// church says otherwise — and when it does, that is a configuration change rather than a code
+    /// change, because it is a policy question and not an engineering one.
+    /// </summary>
+    internal static bool IsBlockedByMediaConsent(PhotoStoreConfig config, string? mediaConsent) =>
+        !string.IsNullOrWhiteSpace(config.BlockedMediaConsent)
+        && config.BlockedMediaConsent
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Any(blocked => string.Equals(blocked, mediaConsent, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>Public because minimal API result serialisation has to see it.</summary>
+    public sealed record PhotoUploadedResponse(string PhotoVersion);
 }

@@ -29,17 +29,22 @@
     height: 100%;
     object-fit: cover;
 
-    /* Starts invisible and fades in on load, so a slow photo never flashes in over the initial. */
-    opacity: 0;
-    transition: opacity 150ms ease-in;
+    /* Fades in from nothing, so a slow photo never flashes in over the initial.
+
+       An animation, not a transition driven by an onload handler: with a year-long immutable
+       cache the image is usually already complete before Blazor can attach @onload, so the event
+       never fires and anything waiting on it would leave the photo invisible for good. An
+       animation runs when the element is inserted, whatever the image did. */
+    animation: person-avatar-fade-in 150ms ease-in both;
 }
 
-.person-avatar .person-avatar-photo.is-loaded {
-    opacity: 1;
+@keyframes person-avatar-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {
     .person-avatar .person-avatar-photo {
-        transition: none;
+        animation: none;
     }
 }
