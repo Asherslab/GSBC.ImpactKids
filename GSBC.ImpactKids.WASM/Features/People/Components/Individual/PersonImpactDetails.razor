@@ -47,6 +47,8 @@
                              Label="Gender"
                              Variant="Variant.Filled"
 
+                             ErrorFunc="@GenderGetError"
+
                              Clearable>
         @foreach (Gender gender in Enum.GetValues<Gender>())
         {
