@@ -188,6 +188,18 @@ public partial class ElvantoService
     }
 
 
+    /// <summary>
+    /// Every person exactly as Elvanto returned them, without the DbPerson reconciliation
+    /// <see cref="GetPeople"/> does.
+    ///
+    /// Exists for the photo backfill, which wants <c>picture</c> and nothing else — that field is
+    /// returned by default, never asked for, and is not part of any sync descriptor, so there is
+    /// nothing for it on the reconciled shape. Throws rather than returning a partial roll, like
+    /// every other read here.
+    /// </summary>
+    public Task<List<ElvantoPerson>> GetPeopleWithPicturesAsync(CancellationToken token = default) =>
+        RetrieveElvantoPeople(token);
+
     private const int PageSize = 1000;
     private const int MaxAttemptsPerPage = 3;
 

@@ -144,6 +144,21 @@ public class ElvantoPerson
     public SchoolGrade? SchoolGrade { get; set; }
 
     /// <summary>
+    /// The profile picture URL, and the exact inverse of <see cref="Gender"/>: it is returned by
+    /// default and <b>naming it in the requested <c>Fields</c> array fails the entire call</b> with
+    /// <c>code 250: A field does not exist (picture)</c> — which downstream reads as an empty roll.
+    ///
+    /// <para>
+    /// Three shapes come back and only one is a real upload: a <c>cdn.elvanto.com.au</c>
+    /// default-avatar, a gravatar fallback, and a <c>d2dek0x2lg6bxh.cloudfront.net/.../members/...</c>
+    /// URL. Over half of that last group are malformed by Elvanto itself and 403 permanently. Read
+    /// only — there is no way to write a picture through the API.
+    /// </para>
+    /// </summary>
+    [JsonPropertyName("picture")]
+    public string? Picture { get; set; }
+
+    /// <summary>
     /// When Elvanto last changed this person, as "yyyy-MM-dd HH:mm:ss" in UTC (verified against a
     /// known edit). Returned on every people response and cannot be asked for through "fields" -
     /// requesting it by name is rejected as a field that does not exist.

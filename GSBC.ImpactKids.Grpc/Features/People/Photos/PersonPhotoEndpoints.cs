@@ -86,7 +86,7 @@ public static class PersonPhotoEndpoints
             if (person is null)
                 return Results.NotFound();
 
-            if (IsBlockedByMediaConsent(config, person.MediaConsent))
+            if (config.IsBlockedByMediaConsent(person.MediaConsent))
                 return Results.Problem(
                     $"This person's media consent ({person.MediaConsent}) is listed in "
                     + "Photos:BlockedMediaConsent, so they may not hold a photo.",
@@ -123,20 +123,6 @@ public static class PersonPhotoEndpoints
     }
 
     private const long MaxPhotoBytes = 1024 * 1024;
-
-    /// <summary>
-    /// Whether this person's media consent forbids them a photo.
-    ///
-    /// <b>Empty by default, and that is the decision.</b> An identification photo for signing a
-    /// child in is internal safeguarding rather than publication, so everyone gets one unless the
-    /// church says otherwise — and when it does, that is a configuration change rather than a code
-    /// change, because it is a policy question and not an engineering one.
-    /// </summary>
-    internal static bool IsBlockedByMediaConsent(PhotoStoreConfig config, string? mediaConsent) =>
-        !string.IsNullOrWhiteSpace(config.BlockedMediaConsent)
-        && config.BlockedMediaConsent
-            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Any(blocked => string.Equals(blocked, mediaConsent, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>Public because minimal API result serialisation has to see it.</summary>
     public sealed record PhotoUploadedResponse(string PhotoVersion);

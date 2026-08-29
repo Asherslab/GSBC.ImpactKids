@@ -23,6 +23,9 @@ spec:
                 name: "grpc-config"
             - secretRef:
                 name: "grpc-secrets"
+            # Photos__AccessKey / Photos__SecretKey for the object store.
+            - secretRef:
+                name: "photos-secret"
           ports:
             - name: "http"
               protocol: "TCP"
