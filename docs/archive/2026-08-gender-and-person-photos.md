@@ -1,7 +1,13 @@
 ---
 title: Gender, person photos, and the photos tool
 kind: plan
-status: accepted
+status: folded
+closed: 2026-08-29
+folded_into:
+  - docs/modules/people/gender.md
+  - docs/modules/people/photos.md
+  - docs/modules/infrastructure/object-store.md
+  - docs/modules/elvanto/api-reference.md
 module: people
 opened: 2026-08-29
 verified: 2026-08-29
@@ -161,7 +167,7 @@ Elvanto has blank, which then reads as an app-side change against the settled ba
 correct end state and the reason the sync is bidirectional, so it is a feature rather than a leak.
 
 The one obligation it creates is a reporting one, not a blocking one: whoever next runs the gate in
-[the write-testing handover](2026-08-elvanto-write-testing.md) will see gender rows in the plan and
+[the write-testing handover](../work/2026-08-elvanto-write-testing.md) will see gender rows in the plan and
 must approve them knowingly. That is exactly what the gate is for — it is a human approval of
 whatever plan is about to execute, not a prohibition on the plan gaining fields — and `AllowWrites`
 is off, so nothing can leave in the meantime. Ship it `Bidirectional`.

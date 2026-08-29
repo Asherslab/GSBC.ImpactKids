@@ -24,7 +24,7 @@ Present tense, kept current, no dates.
 |---|---|
 | **games** | [team points, wall displays and the reveal](modules/games/README.md) |
 | **auth** | [the cookie, the bearer token, and the local bypass](modules/auth/sign-in.md) |
-| **people** | [school grades and who is in the program](modules/people/school-grades-and-programs.md) |
+| **people** | [the person record: school grades, gender, and photos](modules/people/README.md) |
 | **elvanto** | [the API doc pages, and where they are wrong](modules/elvanto/api-reference.md) |
 | **infrastructure** | [generated passwords, persistent volumes, and the photo object store](modules/infrastructure/README.md) |
 
@@ -50,11 +50,6 @@ Present tense, kept current, no dates.
 - [Elvanto sync — the plan table shows raw ids for translated fields](work/2026-08-sync-plan-table-identifiers.md)
   — `proposed`, not started. Why a school grade row shows two different GUIDs for the same grade, and
   the three ways to fix the reading problem without changing what gets sent.
-- [Gender, person photos, and the photos tool](work/2026-08-gender-and-person-photos.md)
-  — `accepted`, on `feature/gender-and-person-photos`. The what and the why; also what the Elvanto
-  API measurably returns for `gender` and `picture` as opposed to what it documents.
-  [The execution handover](work/2026-08-gender-and-person-photos-execution.md) is the how — slice
-  order, what to parallelise, and the traps that have already cost time here.
 
 ### Open
 
