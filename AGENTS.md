@@ -31,6 +31,10 @@ Read before acting:
   proxy or adding a route. **Two layers, not one:** a cookie in the browser and a bearer token the gRPC
   service validates. Also why being enabled is a database fact, and how the Development-only sign-in
   bypass is gated.
+- [docs/modules/elvanto/api-reference.md](docs/modules/elvanto/api-reference.md) — **before any work
+  that touches the Elvanto API.** Links to every Elvanto doc page, and records where this account
+  departs from them: which fields may not be named in `fields` (asking for `picture` fails the whole
+  call), which must ride under `fields`, and what `gender` and `picture` really return.
 - [docs/modules/people/school-grades-and-programs.md](docs/modules/people/school-grades-and-programs.md)
   — before changing a grade list or an age rule. Age can override the grade on file, an unknown age is
   never guessed upward, and the attendance tiers are search priority rather than access control.
@@ -91,8 +95,9 @@ Each slice is finished when it:
   the WASM app
 - **has been seen working in the running app.** Use the `run-and-inspect-app` skill: start it through
   Rider, sign in with `/bff/dev-login`, drive the page, read the rows it actually wrote. This is a hard
-  gate, not a nicety — it is where integration bugs surface, and this repo has no test projects, so it
-  is the only gate there is.
+  gate, not a nicety — it is where integration bugs surface. `GSBC.ImpactKids.Grpc.Tests` covers the
+  sync reconciler and the field descriptors and nothing else, so for anything with a UI this is still
+  the only gate there is.
 - updates any `docs/modules/` doc whose documented behaviour it changed, per [docs/AGENTS.md](docs/AGENTS.md)
 
 The only thing allowed through the gate unfinished is something a later slice in the same feature will
@@ -105,8 +110,10 @@ frontend.
 ## Migrations and contracts
 
 - **Migrations** — fine as long as they are non-destructive of existing data. Additive columns, new
-  tables, widening types, new indexes: no approval needed, but the `dotnet ef` command is the user's to
-  run. See [GSBC.ImpactKids.Grpc/AGENTS.md](GSBC.ImpactKids.Grpc/AGENTS.md).
+  tables, widening types, new indexes: no approval needed, and **run `dotnet ef` yourself** — locally
+  the worst case is `./db-restore.sh`, which puts a known prod dump back and re-migrates it. Do not
+  stop to ask for an additive migration to be applied. See
+  [GSBC.ImpactKids.Grpc/AGENTS.md](GSBC.ImpactKids.Grpc/AGENTS.md).
 - **Contracts** — change freely. They move often and every consumer is in this repo.
 
 ## When to stop and ask
