@@ -264,12 +264,16 @@ app.AddEventEndpoints();
 app.AddPickupDisplayKeyEndpoints();
 
 // Leader only by falling through to the EnabledOnly fallback policy, which is what keeps a wall
-// display structurally unable to reach a child's face. Registered whether or not a store is
-// configured; without one the endpoint simply 404s, which is what the client already handles.
-app.AddPersonPhotoEndpoints();
-
+// display structurally unable to reach a child's face.
+//
+// Mapped only when a store is configured. A deployment without one is a legitimate state - no
+// photos, every face falls back to its coloured initial - and leaving the routes unmapped makes
+// that a 404, which is exactly what PersonAvatar already handles. Mapping them anyway would answer
+// 500 instead, because the handlers resolve PhotoStore.
 if (app.Services.GetService<PhotoStoreConfig>() is not null)
 {
+    app.AddPersonPhotoEndpoints();
+
     using IServiceScope photoScope = app.Services.CreateScope();
     await photoScope.ServiceProvider.GetRequiredService<PhotoStore>().EnsureBucketAsync();
 }

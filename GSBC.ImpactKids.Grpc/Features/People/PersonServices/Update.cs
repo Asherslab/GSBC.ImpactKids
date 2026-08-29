@@ -99,6 +99,13 @@ public partial class PersonService
             person.FamilyGuardian = request.FamilyGuardian.Value;
         }
 
+        // Only ever set here. Clearing it is the photo endpoint's job, because taking the photo is
+        // what answers the question this flag asks.
+        if (request.PhotoNeedsUpdate.IsUpdated)
+        {
+            person.PhotoNeedsUpdate = request.PhotoNeedsUpdate.Value;
+        }
+
         await db.SaveChangesAsync(token);
         await eventService.SendUpdatedEvent(token);
 

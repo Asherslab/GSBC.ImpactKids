@@ -14,8 +14,23 @@
     }
     @* The face, above the name fields. With no photo this is the same coloured initial the person
        cards already show, so the card reads as it did before photos existed. *@
-    <MudPaper Elevation="0" Class="d-flex justify-center mb-4">
+    <MudPaper Elevation="0" Class="d-flex flex-column align-center mb-4">
         <PersonAvatar Person="@Entity.Data" Color="@AvatarColor" Size="Size.Large"/>
+        @* Set by anyone who notices an out-of-date face; the Photos tool clears it by taking a new
+           one. Hidden while creating, because a person who does not exist yet cannot have a stale
+           photo. *@
+        @* Not in BasicView: that is the reduced card the sign-in "Confirm" step shows, where this is
+           clutter on a screen a leader is trying to get past. The avatar stays there - a face helps
+           confirm the right child - but the flag belongs on the full person page. *@
+        @if (!BasicView && State != ModificationState.Creating)
+        {
+            <MudCheckBoxCreateOrUpdate
+                Read="@UpdateRequest.PhotoNeedsUpdate.Value"
+                @bind-Update="@UpdateRequest.PhotoNeedsUpdate.Value"
+                State="State"
+
+                Label="Needs a new photo"/>
+        }
     </MudPaper>
 
     <MudPaper Elevation="0" Class="d-flex flex-row flex-grow-1 mb-4">

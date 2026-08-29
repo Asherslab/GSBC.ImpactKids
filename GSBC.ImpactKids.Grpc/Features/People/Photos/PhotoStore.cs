@@ -61,8 +61,11 @@ public class PhotoStore(
             BucketName  = config.BucketName,
             Key         = KeyFor(version),
             InputStream = stream,
-            ContentType = contentType,
-            DisablePayloadSigning = true
+            ContentType = contentType
+            // No DisablePayloadSigning. The SDK refuses it over plain HTTP - "When
+            // DisablePayloadSigning is true, the request must be sent over HTTPS" - and the store is
+            // reached over HTTP inside the cluster, so it turned every upload into a 500. SeaweedFS
+            // accepts an ordinary signed payload.
         }, token);
 
         return version;

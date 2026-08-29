@@ -1,0 +1,101 @@
+/* Full screen, and dark regardless of theme: the subject is what should be lit, not the chrome
+   around it. The leader is holding a phone at arm's length in a hall. */
+.photo-capture {
+    position: fixed;
+    inset: 0;
+    z-index: 1400;
+    display: flex;
+    flex-direction: column;
+    background: #000;
+    color: #fff;
+}
+
+.photo-capture-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    flex: 0 0 auto;
+}
+
+/* The stage takes every pixel the header and the actions do not, so the preview is as large as the
+   phone allows. */
+.photo-capture-stage {
+    position: relative;
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.photo-capture-video,
+.photo-capture-preview {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+}
+
+/* Hidden rather than removed: @ref has to point at a real element before start() is called, and a
+   @if around the <video> made it arrive one render too late. */
+.photo-capture-video.is-hidden {
+    display: none;
+}
+
+/* The preview only. The stored photo is not mirrored - a mirrored face is subtly wrong to anyone
+   matching it against the child in front of them - so the flip is undone on the canvas. */
+.photo-capture-video.is-mirrored {
+    transform: scaleX(-1);
+}
+
+/* The square the crop will take. Purely a sighting aid; the actual crop happens on the canvas. */
+.photo-capture-guide {
+    position: absolute;
+    aspect-ratio: 1;
+    width: min(80vw, 80vh);
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+    pointer-events: none;
+}
+
+.photo-capture-spinner {
+    position: absolute;
+}
+
+.photo-capture-actions {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 1rem;
+    /* Clear of the home indicator on a phone, where this view is actually used. */
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+/* A big target. This is pressed once per child, at arm's length, by someone also holding a child's
+   attention. */
+.photo-capture-actions ::deep .photo-capture-shutter {
+    width: 72px;
+    height: 72px;
+    border: 3px solid #fff;
+}
+
+/* The file input covers its label so the whole button is the target, rather than only the small
+   native control - which is otherwise invisible against the dark chrome. */
+.photo-capture-file {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.photo-capture-file ::deep input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+}

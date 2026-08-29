@@ -54,8 +54,9 @@ public partial class Tool
         // asked for and never signed out, so for that one the distinction between "none"
         // and "not loaded" is the whole point of the screen.
         _filters["All"] = _ => true;
-        _filters["Signed In"] = x => _attendanceRecords.Data?
-            .Any(y => y.PersonId == x.Id && y.LocalSignedOut == null) == true;
+        // Shared with the Photos tool's list, so the two screens cannot disagree about who is
+        // present. See AttendanceRecord.IsSignedIn for why it is == true and not != false.
+        _filters["Signed In"] = x => AttendanceRecord.IsSignedIn(_attendanceRecords.Data, x.Id);
         // AwaitingPickup rather than an inline test, so this and the wall can never disagree.
         _filters["Requested"] = x => _attendanceRecords.Data?
             .Any(y => y.PersonId == x.Id && y.AwaitingPickup) == true;

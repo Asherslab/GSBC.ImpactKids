@@ -30,7 +30,6 @@ public partial class PersonAvatar
     [Parameter]
     public string? Class { get; set; }
 
-    private bool _loaded;
     private bool _failed;
 
     private string Initial => Person?.FirstName is { Length: > 0 } name
@@ -50,11 +49,8 @@ public partial class PersonAvatar
             return;
 
         _renderedFor = Person;
-        _loaded      = false;
         _failed      = false;
     }
-
-    private void OnPhotoLoaded() => _loaded = true;
 
     private void OnPhotoError() => _failed = true;
 }
