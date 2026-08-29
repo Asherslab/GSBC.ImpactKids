@@ -101,6 +101,18 @@ IResourceBuilder<ProjectResource> grpcService = builder.AddProject<Projects.GSBC
     .WithEnvironment("Photos__SecretKey", s3SecretKey)
     .WaitFor(s3);
 
+// A one-off, so it is declared with an explicit start rather than running on every stack start:
+// it makes hundreds of outbound requests to Elvanto's CDN and there is nothing to gain from
+// repeating it. Start it from the dashboard when a backfill is actually wanted.
+builder.AddProject<Projects.GSBC_ImpactKids_Workers_PhotoBackfill>("photo-backfill")
+    .WithReference(db)
+    .WaitForCompletion(migrations)
+    .WithEnvironment("Photos__ServiceUrl", s3.GetEndpoint("s3"))
+    .WithEnvironment("Photos__AccessKey", s3AccessKey)
+    .WithEnvironment("Photos__SecretKey", s3SecretKey)
+    .WaitFor(s3)
+    .WithExplicitStart();
+
 IResourceBuilder<ProjectResource> wasm =
     builder.AddStandaloneBlazorWebAssemblyProject<Projects.GSBC_ImpactKids_WASM>("wasm");
 

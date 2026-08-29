@@ -2,6 +2,8 @@ image_tag: 0.0.1
 parameters:
   migrations:
     migrations_image: "docker.io/asherslab/gsbc-kids-migrations"
+  photo_backfill:
+    photo_backfill_image: "docker.io/asherslab/gsbc-kids-photo-backfill"
   grpc:
     port_http: 80
     grpc_image: "docker.io/asherslab/gsbc-kids-grpc"
@@ -29,6 +31,14 @@ config:
     RABBITMQ_DEFAULT_USER: "guest"
   s3:
     bucket: "photos"
+  photos:
+    # Media consent values that may not hold a photo, comma separated (e.g. "StrictlyNo").
+    #
+    # Empty by default, and that is the decision rather than an oversight: an identification photo
+    # for signing a child in is internal safeguarding, not publication, so everyone gets one. It is
+    # a knob because it is a policy question for the church, not an engineering one - setting it
+    # later suppresses capture, hides the control and stops the backfill with no code change.
+    blocked_media_consent: ""
   sql:
     POSTGRES_HOST_AUTH_METHOD: "scram-sha-256"
     POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
@@ -69,6 +79,15 @@ secrets:
     # The hourly backup job's identity. Granted Read and List on the photos bucket and nothing else.
     backupAccessKey: ""
     backupSecretKey: ""
+
+# The one-off Elvanto photo backfill.
+#
+# Off by default and deliberately not a helm hook: it is a head start, not a correctness
+# requirement, and re-running it on every deploy would re-fetch the whole Elvanto roll to do
+# nothing (it skips anyone who already has a photo). Turn it on for one upgrade, let the Job
+# finish, then turn it back off.
+photo_backfill:
+  enabled: false
 
 # Hourly offsite copy of the photos bucket to Backblaze B2.
 #

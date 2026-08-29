@@ -29,4 +29,17 @@ public class PhotoStoreConfig
     /// because it is a policy question for the church rather than an engineering one.
     /// </summary>
     public string BlockedMediaConsent { get; set; } = "";
+
+    /// <summary>
+    /// Whether this person's media consent forbids them a photo.
+    ///
+    /// Lives here rather than on either caller because both the upload endpoint and the backfill
+    /// worker have to agree: a policy that stops a leader taking a photo but lets the backfill pull
+    /// one in anyway is not a policy.
+    /// </summary>
+    public bool IsBlockedByMediaConsent(string? mediaConsent) =>
+        !string.IsNullOrWhiteSpace(BlockedMediaConsent)
+        && BlockedMediaConsent
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Any(blocked => string.Equals(blocked, mediaConsent, StringComparison.OrdinalIgnoreCase));
 }

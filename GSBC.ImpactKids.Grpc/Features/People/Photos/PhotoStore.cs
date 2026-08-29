@@ -61,11 +61,22 @@ public class PhotoStore(
             BucketName  = config.BucketName,
             Key         = KeyFor(version),
             InputStream = stream,
-            ContentType = contentType
-            // No DisablePayloadSigning. The SDK refuses it over plain HTTP - "When
+            ContentType = contentType,
+
+            // Both of these are load-bearing, and the second one silently corrupted every photo
+            // before it was set.
+            //
+            // DisablePayloadSigning cannot be used here: the SDK refuses it over plain HTTP - "When
             // DisablePayloadSigning is true, the request must be sent over HTTPS" - and the store is
-            // reached over HTTP inside the cluster, so it turned every upload into a 500. SeaweedFS
-            // accepts an ordinary signed payload.
+            // reached over HTTP inside the cluster, so it turned every upload into a 500.
+            //
+            // With signing on, the SDK defaults to aws-chunked streaming
+            // (STREAMING-AWS4-HMAC-SHA256-PAYLOAD), and SeaweedFS 3.98 stores that framing verbatim
+            // instead of decoding it. The object is then the right size and the right content type
+            // and is NOT a JPEG - it begins "<hex length>;chunk-signature=..." - so nothing fails,
+            // the row is written, and the face simply never renders. Verified by reading an object
+            // back with xxd. UseChunkEncoding = false sends the body plainly, still signed.
+            UseChunkEncoding = false
         }, token);
 
         return version;
@@ -88,13 +99,51 @@ public class PhotoStore(
             using MemoryStream buffer = new();
             await response.ResponseStream.CopyToAsync(buffer, token);
 
-            return new PhotoBytes(buffer.ToArray(), response.Headers.ContentType ?? "image/jpeg");
+            byte[] bytes = buffer.ToArray();
+
+            // Cheap, and it exists because the alternative already happened: an upload wrote
+            // aws-chunked framing instead of the image, and every downstream signal - status, size,
+            // content type, the database row - said the photo was fine while the bytes were not.
+            // Refusing here turns that into a 404, which the avatar already handles by showing the
+            // initial, plus one loud log line naming the object.
+            if (!LooksLikeAnImage(bytes))
+            {
+                logger.LogError(
+                    "Photo {Version} is stored but is not image data ({Bytes} bytes, starts {Head}). "
+                    + "Refusing to serve it. This is a storage bug, not a missing photo.",
+                    version, bytes.Length,
+                    Convert.ToHexString(bytes.AsSpan(0, Math.Min(8, bytes.Length))));
+                return null;
+            }
+
+            return new PhotoBytes(bytes, response.Headers.ContentType ?? "image/jpeg");
         }
         catch (AmazonS3Exception e) when (e.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
             logger.LogWarning("Photo {Version} is named by a person row but not in the store", version);
             return null;
         }
+    }
+
+    /// <summary>
+    /// Magic bytes for the formats the app can produce or ingest: JPEG, PNG, WebP. Only ever asked
+    /// "is this plausibly an image", never "is this valid" - the point is to catch bytes that are
+    /// obviously not one, cheaply, on every read.
+    /// </summary>
+    private static bool LooksLikeAnImage(ReadOnlySpan<byte> bytes)
+    {
+        if (bytes.Length < 12) return false;
+
+        // JPEG: FF D8 FF
+        if (bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF) return true;
+
+        // PNG: 89 50 4E 47
+        if (bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47) return true;
+
+        // WebP: "RIFF" .... "WEBP"
+        if (bytes[..4].SequenceEqual("RIFF"u8) && bytes[8..12].SequenceEqual("WEBP"u8)) return true;
+
+        return false;
     }
 
     public record PhotoBytes(byte[] Bytes, string ContentType);
