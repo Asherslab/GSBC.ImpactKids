@@ -82,6 +82,14 @@ public class ElvantoCreatePersonRequest : IRequestMessage
         set => (Fields ??= new ElvantoPersonFields()).FirstTimeAtImpactKids = value;
     }
 
+    /// <inheritdoc cref="ElvantoPersonFields.Gender"/>
+    [JsonIgnore]
+    public string? Gender
+    {
+        get => Fields?.Gender;
+        set => (Fields ??= new ElvantoPersonFields()).Gender = value;
+    }
+
     [JsonIgnore]
     public string? MedicalAllergyNotes
     {

@@ -82,6 +82,14 @@ public class ElvantoUpdatePersonRequest : IRequestMessage
         set => (Fields ??= new ElvantoPersonFields()).FirstTimeAtImpactKids = value;
     }
 
+    /// <inheritdoc cref="ElvantoPersonFields.Gender"/>
+    [JsonIgnore]
+    public string? Gender
+    {
+        get => Fields?.Gender;
+        set => (Fields ??= new ElvantoPersonFields()).Gender = value;
+    }
+
     /// <summary>
     /// Elvanto's school grade id — the same id <c>people/getAll</c> returns under
     /// <c>school_grade.id</c>, which is what <c>DbSchoolGrade.ElvantoId</c> stores. A standard

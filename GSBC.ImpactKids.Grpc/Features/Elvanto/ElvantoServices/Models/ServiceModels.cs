@@ -107,7 +107,19 @@ public class ElvantoPerson
     
     [JsonPropertyName("birthday")]
     public string? Birthday { get; set; }
-    
+
+    /// <summary>
+    /// Exactly "Male", "Female" or "" — no other value appeared across a full roll of 1754 people.
+    ///
+    /// <b>It has to be named in the <c>Fields</c> array</b> in <c>FetchPageWithRetries</c>. It is not
+    /// returned by default, and leaving it out is silent: the key is simply absent, this binds null
+    /// for everyone, and the gender sync does nothing while looking healthy. That is not the same
+    /// trap as <c>picture</c>, which is returned by default and fails the entire call if named.
+    /// </summary>
+    [JsonPropertyName("gender")]
+    public string? Gender { get; set; }
+
+
     [JsonPropertyName("email")]
     public string? Email { get; set; }
     

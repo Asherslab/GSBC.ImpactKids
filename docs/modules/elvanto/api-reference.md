@@ -55,7 +55,12 @@ The `fields` array on `people/getAll` requests *optional* fields. Asking for som
 returned by default is sometimes fine and sometimes fatal, and there is no way to tell from the
 docs:
 
-- `gender` — accepted in `fields`, and also returned without asking.
+- **`gender` — must be named in `fields`.** It is *not* returned by default, in spite of what an
+  earlier reading of this account suggested: a `getAll` without it omits the key entirely, whether
+  or not a `fields` array is supplied at all. Measured 2026-08-29 against the live account. Leaving
+  it out is silent — the call succeeds, `ElvantoPerson.Gender` binds null for every person, and the
+  gender sync does nothing while looking healthy. Confirmed by exactly that: `GenderDescriptor`
+  shipped without it and wrote 1735 null snapshots and zero inbound rows.
 - **`picture` — rejected outright**: `code 250: A field does not exist (picture)`. The whole call
   fails, so a page fetch returns nothing and the roll looks empty. It is returned by default.
   **Never add it to the `Fields` array in `ElvantoService.FetchPageWithRetries`.**
@@ -65,6 +70,10 @@ docs:
 Values are exactly `"Male"`, `"Female"` and `""`. Writable, but only nested under `fields` on
 `create`/`edit`, never at the top level. Coverage in this account is poor — about a third of
 children have it blank.
+
+On a read it has to be **requested** by name in `fields`, per the section above. `gender` is
+therefore the one field in this app that must be named in the array on the way in *and* nested under
+`fields` on the way out.
 
 ### `picture` — read-only, and mostly not a photo
 

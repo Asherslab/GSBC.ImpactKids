@@ -49,7 +49,11 @@ Probed read-only against the live account on 2026-08-29, `people/getAll` page 1 
 
 **`gender`**
 
-- Returned on every person **by default**, and also accepted in the `fields` array.
+- **Correction, measured 2026-08-29 while building A3:** it is **not** returned by default. It has
+  to be named in the `fields` array. A `getAll` without it omits the key entirely, with or without a
+  `fields` array. This doc originally said the opposite; `GenderDescriptor` was built to that claim
+  and read null for all 1735 people, writing zero inbound rows while every part of the sync looked
+  healthy. See [the API reference](../modules/elvanto/api-reference.md#gender).
 - Values are exactly `"Male"`, `"Female"` and `""`. No other value appeared.
 - Listed under `fields` on `people/create` and `people/edit`, so it is writable.
 - **Coverage is poor.** Across the 1000: 102 Male / 102 Female / 96 blank in the first 300; over
@@ -130,8 +134,9 @@ registration step.
 - `ApplyToElvantoRequest` sets `fields.gender` to `"Male"` / `"Female"`, refusing anything else —
   the same "declining is correct, reporting a decline as a push is not" rule Media Consent follows.
 - `ElvantoPerson.Gender` (`[JsonPropertyName("gender")]`, plain `string?`) and
-  `ElvantoPersonFields.Gender`. **Do not add `"gender"` to the requested `Fields` array** — it is
-  returned by default and the array is where `picture` breaks the call; leave it alone.
+  `ElvantoPersonFields.Gender`. **`"gender"` must be added to the requested `Fields` array** —
+  corrected from this doc's original instruction to leave it out, which was wrong and produced a
+  silently dead field. `picture` is the field that must never be named there.
 - `ElvantoService.GetPeople` and `CreatePerson` carry gender too.
 
 **"Take Elvanto's value when the app holds null" needs no special casing — it is already what the
