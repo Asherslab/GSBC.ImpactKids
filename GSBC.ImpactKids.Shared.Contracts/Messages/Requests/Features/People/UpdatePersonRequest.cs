@@ -33,6 +33,9 @@ public class UpdatePersonRequest : ReadRequestBase, IUpdateRequest<Person, Updat
     public DeltaUpdate<DateTime?>    DateOfBirth   { get; set; } = new();
     public DeltaUpdate<DateTime?>    FirstTime     { get; set; } = new();
 
+    /// <inheritdoc cref="Person.Gender"/>
+    public DeltaUpdate<Gender?> Gender { get; set; } = new();
+
     [ProtoIgnore]
     public DelegatingDeltaUpdate<DateTime?> LocalDateOfBirth { get; set; }
 
@@ -57,6 +60,7 @@ public class UpdatePersonRequest : ReadRequestBase, IUpdateRequest<Person, Updat
 
         request.SchoolGradeId.SetInitialValue(entity.SchoolGradeId);
         request.MediaConsent.SetInitialValue(entity.MediaConsent);
+        request.Gender.SetInitialValue(entity.Gender);
         request.LocalDateOfBirth.SetInitialValue(entity.LocalDateOfBirth);
         request.LocalFirstTime.SetInitialValue(entity.LocalFirstTime);
 

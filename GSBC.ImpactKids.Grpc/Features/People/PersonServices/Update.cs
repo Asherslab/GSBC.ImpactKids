@@ -69,6 +69,13 @@ public partial class PersonService
             person.MediaConsent = consent.ToString();
         }
 
+        if (request.Gender.IsUpdated)
+        {
+            // Null is a legitimate value here - clearing the select puts the person back to "not
+            // told" - so unlike MediaConsent there is nothing to reject, only an enum to name.
+            person.Gender = request.Gender.Value?.ToString();
+        }
+
         if (request.DateOfBirth.IsUpdated)
         {
             person.DateOfBirth = request.DateOfBirth.Value;
