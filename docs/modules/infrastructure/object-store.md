@@ -3,7 +3,7 @@ title: The photo object store
 kind: reference
 status: current
 module: infrastructure
-verified: 2026-08-29
+verified: 2026-08-30
 code:
   - GSBC.ImpactKids.AppHost/AppHost.cs
   - Charts/impact-kids/templates/s3
@@ -48,8 +48,7 @@ presigning is combined with a static `-s3.config`, which is exactly the configur
 
 ## Two identities, and one of them cannot write
 
-The chart renders `s3-identities-secret`, mounted at `/etc/seaweedfs/s3.json` and passed as
-`-s3.config`:
+`s3-identities-secret` is mounted at `/etc/seaweedfs/s3.json` and passed as `-s3.config`:
 
 | Identity | Actions | Used by |
 |---|---|---|
@@ -60,13 +59,51 @@ The split is the point: the backup job holds a credential that cannot delete the
 protect. Verified 2026-08-29 against `chrislusf/seaweedfs:3.98` — with this document the `backup`
 identity gets 200 on GET and LIST and **403 on PUT and DELETE**, and an unsigned request gets 403.
 
-Both credentials are `required` in the chart and blank in `values.yaml`. Supply them at install time.
-An install that leaves one blank fails at `helm upgrade`, which is the intended behaviour: an object
-store whose access key is the empty string is worse than a failed install.
+### The three Secrets are created by hand, and the chart only references them
 
-This differs from `sql-secrets` and `rabbitmq-secrets`, which are created out of band with `kubectl`
-and merely referenced by the chart. The s3 credentials are not loose environment variables — they are
-a structured identities document the chart has to assemble — so the chart owns the Secret.
+Same rule as `sql-secrets`, `rabbitmq-secrets` and `grpc-secrets`. **The chart renders no Secret and
+`values.yaml` has no `secrets:` block**, because values files live in the Argo repo and that is git.
+An earlier draft assembled the identities document from Helm values; it was changed for exactly this
+reason.
+
+Make all three once per environment. Generate the four credentials however you like — they are
+opaque strings; avoid punctuation, since they get pasted into shell and YAML by hand.
+
+```bash
+# 1. SeaweedFS' own identities document. Two identities: the app, and a read-only backup reader.
+cat > /tmp/s3.json <<'JSON'
+{
+  "identities": [
+    { "name": "impact-kids",
+      "credentials": [ { "accessKey": "APP_KEY", "secretKey": "APP_SECRET" } ],
+      "actions": [ "Read", "Write", "List", "Tagging", "Admin" ] },
+    { "name": "backup",
+      "credentials": [ { "accessKey": "BACKUP_KEY", "secretKey": "BACKUP_SECRET" } ],
+      "actions": [ "Read:photos", "List:photos" ] }
+  ]
+}
+JSON
+kubectl create secret generic s3-identities-secret --from-file=s3.json=/tmp/s3.json
+rm /tmp/s3.json
+
+# 2. The same app credential, in the shape .NET configuration reads. Consumed by the gRPC service
+#    and the backfill worker.
+kubectl create secret generic photos-secret \
+  --from-literal=Photos__AccessKey=APP_KEY \
+  --from-literal=Photos__SecretKey=APP_SECRET
+
+# 3. The backup job's two ends: the read-only SeaweedFS identity, and the Backblaze application key.
+#    Only needed when backup.s3.enabled is true.
+kubectl create secret generic s3-backup-secret \
+  --from-literal=RCLONE_CONFIG_SEAWEED_ACCESS_KEY_ID=BACKUP_KEY \
+  --from-literal=RCLONE_CONFIG_SEAWEED_SECRET_ACCESS_KEY=BACKUP_SECRET \
+  --from-literal=RCLONE_CONFIG_B2_ACCESS_KEY_ID=B2_KEY_ID \
+  --from-literal=RCLONE_CONFIG_B2_SECRET_ACCESS_KEY=B2_APPLICATION_KEY
+```
+
+`APP_KEY`/`APP_SECRET` must be identical in (1) and (2), and `BACKUP_KEY`/`BACKUP_SECRET` identical
+in (1) and (3). They are the same credentials expressed in two formats — SeaweedFS wants its own
+JSON, the clients want environment variables.
 
 ## The volume flags are load-bearing, not tuning
 
@@ -89,11 +126,16 @@ The symptom when this is wrong is not an out-of-space error from the API. It is 
 on every object PUT, with `No more free space left` and `failing to assign a file id` only in the
 container's log.
 
-## A rolled Secret must roll the pod
+## Changing an identity does not roll the pod
 
-The StatefulSet carries a `checksum/identities` pod annotation over the rendered Secret. Without it,
-changing a key updates the Secret in place while the running process keeps serving the identities it
-read at startup — the chart and the store then disagree with nothing to show for it.
+SeaweedFS reads `-s3.config` once at startup, and because the Secret is created out of band there is
+no rendered checksum for the chart to hang a pod annotation on. So a changed identity updates the
+Secret in place while the running process keeps serving the keys it already read — no error, no sign
+of disagreement.
+
+**Follow any identity change with `kubectl rollout restart statefulset/s3-statefulset`**, and update
+`photos-secret` in the same sitting or the app is left holding a credential the store no longer
+accepts.
 
 ## Local development
 

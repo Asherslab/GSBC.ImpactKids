@@ -62,23 +62,15 @@ config:
     services__grpc__http__0: "http://grpc-service:80"
     services__wasm__http__0: "http://wasm-service:80"
 
-# Credentials. Left blank on purpose - supply them at install time (`helm upgrade --set-string
-# secrets.s3.accessKey=...`, or a values file kept out of this repo). The templates that read them
-# use `required`, so a blank one fails the install instead of standing up an object store whose
-# access key is the empty string.
+# There is deliberately no `secrets:` block.
 #
-# sql and rabbitmq are not here: their Secrets (sql-secrets, rabbitmq-secrets) are created out of
-# band with kubectl and this chart only references them. s3 is different because its credentials are
-# not loose environment variables - they are a structured -s3.config identities document that the
-# chart has to assemble.
-secrets:
-  s3:
-    # The gRPC service's identity. Full access to the bucket; the only writer.
-    accessKey: ""
-    secretKey: ""
-    # The hourly backup job's identity. Granted Read and List on the photos bucket and nothing else.
-    backupAccessKey: ""
-    backupSecretKey: ""
+# Every credential in this deployment is a Secret created out of band with kubectl, and the chart
+# only references it by name - sql-secrets, rabbitmq-secrets, grpc-secrets, and now
+# s3-identities-secret, photos-secret and s3-backup-secret. Nothing puts a credential in a values
+# file, because values files live in the Argo repo and that is git.
+#
+# docs/modules/infrastructure/object-store.md has the exact `kubectl create secret` commands and
+# what each key must contain.
 
 # The one-off Elvanto photo backfill.
 #
@@ -92,8 +84,9 @@ photo_backfill:
 # Hourly offsite copy of the photos bucket to Backblaze B2.
 #
 # Disabled until Asher creates the B2 bucket and an application key - that is an out-of-repo
-# prerequisite and nothing here guesses it. To turn it on, set enabled, bucket, endpoint, accessKey
-# and secretKey. Leave versioning on at the B2 end (it is the default), and if a lifecycle rule is
+# prerequisite and nothing here guesses it. To turn it on: create the s3-backup-secret (see
+# docs/modules/infrastructure/object-store.md), then set enabled, bucket and endpoint here.
+# Leave versioning on at the B2 end (it is the default), and if a lifecycle rule is
 # ever added it must be the "keep prior versions for N days" kind: because the keys are content
 # hashes nothing is ever rewritten, so a plain age-based expiration rule would eventually delete
 # every current photo.
@@ -107,6 +100,5 @@ backup:
     # REPLACE ME - the region-specific Backblaze S3 endpoint, e.g.
     # "https://s3.us-west-004.backblazeb2.com". Read it off the bucket in the B2 console.
     endpoint: ""
-    # REPLACE ME - the Backblaze application key id and key.
-    accessKey: ""
-    secretKey: ""
+    # The Backblaze application key is NOT here - it lives in the s3-backup-secret created with
+    # kubectl, alongside the SeaweedFS read-only identity the job reads with.

@@ -76,6 +76,11 @@ spec:
                   value: "{{ required "backup.s3.endpoint is required when backup.s3.enabled - the region-specific Backblaze S3 endpoint" .Values.backup.s3.endpoint }}"
                 - name: "RCLONE_CONFIG_B2_FORCE_PATH_STYLE"
                   value: "false"
+              # Created out of band with kubectl. Holds the four RCLONE_CONFIG_*_ACCESS_KEY_ID /
+              # _SECRET_ACCESS_KEY values - the SeaweedFS read-only backup identity and the
+              # Backblaze application key. rclone reads its whole remote definition from
+              # RCLONE_CONFIG_<REMOTE>_<OPTION>, so there is no rclone.conf to mount; the non-secret
+              # half of that definition is the env block above.
               envFrom:
                 - secretRef:
                     name: "s3-backup-secret"

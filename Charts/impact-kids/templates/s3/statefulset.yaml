@@ -14,11 +14,6 @@ spec:
         app.kubernetes.io/name: "impact-kids-app"
         app.kubernetes.io/component: "s3"
         app.kubernetes.io/instance: "{{.Release.Name}}"
-      annotations:
-        # Roll the pod when the identities change. Without this the Secret updates in place and the
-        # running process keeps serving the keys it read at startup - the store and the chart then
-        # disagree with no sign that they do.
-        checksum/identities: "{{ include (print $.Template.BasePath "/s3/secret.yaml") . | sha256sum }}"
     spec:
       containers:
         - image: "{{ .Values.parameters.s3.s3_image }}"
@@ -56,6 +51,14 @@ spec:
         - name: "s3-data"
           persistentVolumeClaim:
             claimName: "s3-data-pvc"
+        # Created out of band with kubectl, like sql-secrets and rabbitmq-secrets - the chart only
+        # references it, so no credential is ever rendered from a values file into git. One key,
+        # s3.json, holding SeaweedFS' identities document. See
+        # docs/modules/infrastructure/object-store.md for the exact command.
+        #
+        # Because the chart does not render it, changing it does NOT roll this pod: SeaweedFS reads
+        # its identities once at startup. Follow an identity change with
+        # `kubectl rollout restart statefulset/s3-statefulset`.
         - name: "s3-identities"
           secret:
             secretName: "s3-identities-secret"
