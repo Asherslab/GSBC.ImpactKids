@@ -19,6 +19,14 @@ directory is empty**. Postgres ignores `POSTGRES_PASSWORD` on an existing cluste
 `RABBITMQ_DEFAULT_PASS` once Mnesia exists. Change the password the AppHost holds and the volumes do not
 follow — every connection is then refused with credentials both sides believe are correct.
 
+**`s3` has the same shape and not this problem.** It is `ContainerLifetime.Persistent` with a data
+volume too, but SeaweedFS holds nothing about its S3 identity on the volume — it re-reads the
+credential from the environment at every start, so a regenerated `s3-secret-key` takes effect
+immediately and the objects already stored stay readable. Verified 2026-08-29; the test is in
+[the photo object store](object-store.md#it-is-the-one-persistent-container-a-regenerated-password-cannot-break).
+Its volume still holds real photos, so it is not a thing to delete casually — it just cannot lock you
+out.
+
 ## How the passwords go out of sync
 
 Aspire generates each parameter password once and stores it in the AppHost's user secrets

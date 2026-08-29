@@ -1,0 +1,70 @@
+---
+apiVersion: "apps/v1"
+kind: "StatefulSet"
+metadata:
+  name: "s3-statefulset"
+  labels:
+    app.kubernetes.io/name: "impact-kids-app"
+    app.kubernetes.io/component: "s3"
+    app.kubernetes.io/instance: "{{.Release.Name}}"
+spec:
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: "impact-kids-app"
+        app.kubernetes.io/component: "s3"
+        app.kubernetes.io/instance: "{{.Release.Name}}"
+      annotations:
+        # Roll the pod when the identities change. Without this the Secret updates in place and the
+        # running process keeps serving the keys it read at startup - the store and the chart then
+        # disagree with no sign that they do.
+        checksum/identities: "{{ include (print $.Template.BasePath "/s3/secret.yaml") . | sha256sum }}"
+    spec:
+      containers:
+        - image: "{{ .Values.parameters.s3.s3_image }}"
+          name: "s3"
+          # server runs master, volume, filer and the S3 gateway in one process - the whole point of
+          # this deployment is one small container, not a distributed cluster.
+          #
+          # The three volume flags are not tuning, they are load-bearing. Left at their defaults,
+          # `server` allocates volume files of 1 GB each and grows them seven at a time, so three
+          # small objects took 7 GB of disk - measured 2026-08-29. Against the PVC size below that is
+          # an immediate out-of-space. At 128 MB volumes with preallocation off the same three
+          # objects take 236 KB, and eight of them is a comfortable ceiling over the ~250 MB that ten
+          # years of photos is expected to reach.
+          args:
+            - "server"
+            - "-dir=/data"
+            - "-s3"
+            - "-s3.port={{ .Values.parameters.s3.port_s3 }}"
+            - "-s3.config=/etc/seaweedfs/s3.json"
+            - "-master.volumeSizeLimitMB={{ .Values.parameters.s3.volume_size_limit_mb }}"
+            - "-master.volumePreallocate=false"
+            - "-volume.max={{ .Values.parameters.s3.volume_max }}"
+          ports:
+            - name: "s3"
+              protocol: "TCP"
+              containerPort: {{ .Values.parameters.s3.port_s3 }}
+          volumeMounts:
+            - name: "s3-data"
+              mountPath: "/data"
+            - name: "s3-identities"
+              mountPath: "/etc/seaweedfs"
+              readOnly: true
+          imagePullPolicy: "IfNotPresent"
+      volumes:
+        - name: "s3-data"
+          persistentVolumeClaim:
+            claimName: "s3-data-pvc"
+        - name: "s3-identities"
+          secret:
+            secretName: "s3-identities-secret"
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: "impact-kids-app"
+      app.kubernetes.io/component: "s3"
+      app.kubernetes.io/instance: "{{.Release.Name}}"
+  replicas: 1
+  persistentVolumeClaimRetentionPolicy: {}
+  updateStrategy:
+    type: "RollingUpdate"

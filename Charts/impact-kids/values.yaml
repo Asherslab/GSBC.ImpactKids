@@ -11,9 +11,24 @@ parameters:
   yarp:
     port_http: 80
     yarp_image: "docker.io/asherslab/gsbc-kids-yarp"
+  s3:
+    port_s3: 8333
+    s3_image: "docker.io/chrislusf/seaweedfs:3.98"
+    # Sizing from the real roll: ~340 children at 500x500 JPEG q0.85 is about 12 MB of current
+    # photos, and about 250 MB after ten years with nothing ever pruned.
+    #
+    # volume_size_limit_mb x volume_max is the hard ceiling on what SeaweedFS will allocate: 1 GB
+    # here, roughly four times the ten-year estimate. `storage` must stay comfortably above that
+    # ceiling - the volume files are not the only thing on the PVC, the filer's leveldb store shares
+    # it. Do NOT leave these at SeaweedFS' defaults; see the comment in the StatefulSet.
+    volume_size_limit_mb: 128
+    volume_max: 8
+    storage: "2Gi"
 config:
   rabbitmq:
     RABBITMQ_DEFAULT_USER: "guest"
+  s3:
+    bucket: "photos"
   sql:
     POSTGRES_HOST_AUTH_METHOD: "scram-sha-256"
     POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
@@ -36,3 +51,21 @@ config:
     ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
     services__grpc__http__0: "http://grpc-service:80"
     services__wasm__http__0: "http://wasm-service:80"
+
+# Credentials. Left blank on purpose - supply them at install time (`helm upgrade --set-string
+# secrets.s3.accessKey=...`, or a values file kept out of this repo). The templates that read them
+# use `required`, so a blank one fails the install instead of standing up an object store whose
+# access key is the empty string.
+#
+# sql and rabbitmq are not here: their Secrets (sql-secrets, rabbitmq-secrets) are created out of
+# band with kubectl and this chart only references them. s3 is different because its credentials are
+# not loose environment variables - they are a structured -s3.config identities document that the
+# chart has to assemble.
+secrets:
+  s3:
+    # The gRPC service's identity. Full access to the bucket; the only writer.
+    accessKey: ""
+    secretKey: ""
+    # The hourly backup job's identity. Granted Read and List on the photos bucket and nothing else.
+    backupAccessKey: ""
+    backupSecretKey: ""
