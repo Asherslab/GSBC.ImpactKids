@@ -38,6 +38,10 @@ Read before acting:
 - [docs/modules/people/school-grades-and-programs.md](docs/modules/people/school-grades-and-programs.md)
   — before changing a grade list or an age rule. Age can override the grade on file, an unknown age is
   never guessed upward, and the attendance tiers are search priority rather than access control.
+- [docs/modules/people/photos.md](docs/modules/people/photos.md) — **before touching the photo
+  endpoints, the capture view or the S3 client.** Two settings on the S3 client fail *silently* if
+  changed, which is why every read checks magic bytes; the front-camera preview is mirrored and the
+  stored photo must not be; and the pickup wall may never show a face.
 
 Per-area conventions, read before working in that project:
 

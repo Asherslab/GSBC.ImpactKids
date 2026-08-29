@@ -1,7 +1,13 @@
 ---
 title: Gender and person photos — execution handover
 kind: handover
-status: accepted
+status: folded
+closed: 2026-08-29
+folded_into:
+  - docs/modules/people/gender.md
+  - docs/modules/people/photos.md
+  - docs/modules/infrastructure/object-store.md
+  - docs/modules/elvanto/api-reference.md
 module: people
 opened: 2026-08-29
 verified: 2026-08-29
@@ -39,7 +45,7 @@ Read these even if you skip everything else here. Each one has already cost time
    found no model change". `stat -f '%Sm %N' GSBC.ImpactKids.Grpc/bin/Debug/net10.0/GSBC.ImpactKids.Grpc.dll`.
 4. **Never write to Elvanto by hand.** Not by `curl`, not by script, not through their UI, not "just
    to set up a test". The sync engine is the only thing that may ever write — Asher's standing
-   instruction, recorded in [the write-testing gate](2026-08-elvanto-write-testing.md). Reads are
+   instruction, recorded in [the write-testing gate](../work/2026-08-elvanto-write-testing.md). Reads are
    free and encouraged.
 5. **Never add `"picture"` to the `Fields` array** in `ElvantoService.FetchPageWithRetries`. Elvanto
    rejects it with `code 250: A field does not exist (picture)` and the *entire* people fetch fails,
@@ -167,7 +173,7 @@ Per [AGENTS.md](../../AGENTS.md), only for what editing code cannot undo:
 - **Backblaze credentials and the bucket.** Out-of-repo prerequisite. Ask Asher to create the bucket
   and supply keys; do not invent a bucket name and wire it in hopefully.
 - **Enabling `Elvanto:AllowWrites`.** Not part of this work at all. If something seems to need it,
-  stop — [the write gate](2026-08-elvanto-write-testing.md) governs it and it requires a written,
+  stop — [the write gate](../work/2026-08-elvanto-write-testing.md) governs it and it requires a written,
   human-approved verification of the exact plan about to execute.
 - **A destructive migration** — dropping a column or table, narrowing a type, a backfill that
   rewrites existing rows. There are none in this plan; every column added is nullable and the photo

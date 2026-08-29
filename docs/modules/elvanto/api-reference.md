@@ -113,7 +113,9 @@ back to `date_added`.
 
 ## Related
 
-- [Gender, person photos, and the photos tool](../../work/2026-08-gender-and-person-photos.md) —
-  where the `gender` and `picture` measurements above were taken, and what is being built on them.
+- [Gender](../people/gender.md) and [person photos](../people/photos.md) — what was built on the
+  `gender` and `picture` measurements above.
+- [The plan they came from](../../archive/2026-08-gender-and-person-photos.md) — archived, so
+  history rather than current behaviour. Worth reading only for why alternatives were rejected.
 - `GSBC.ImpactKids.Grpc/Features/People/Sync/` — the sync engine. Field behaviour lives on the
   descriptors, and each one documents what was measured for its field.
