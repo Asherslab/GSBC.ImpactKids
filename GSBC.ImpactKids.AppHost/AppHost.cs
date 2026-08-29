@@ -66,7 +66,7 @@ IResourceBuilder<ParameterResource> s3AccessKey =
 IResourceBuilder<ParameterResource> s3SecretKey = builder.AddResource(
     ParameterResourceBuilderExtensions.CreateDefaultPasswordParameter(builder, "s3-secret-key", special: false));
 
-builder.AddContainer("s3", "chrislusf/seaweedfs", "3.98")
+IResourceBuilder<ContainerResource> s3 = builder.AddContainer("s3", "chrislusf/seaweedfs", "3.98")
     // The three volume flags are not tuning, they are load-bearing. Left at their defaults, `server`
     // allocates volume files of 1 GB each and grows them seven at a time, so three small objects took
     // 7 GB of disk - measured 2026-08-29, on a Docker VM it then filled. At 128 MB volumes with
@@ -92,7 +92,14 @@ IResourceBuilder<ProjectResource> grpcService = builder.AddProject<Projects.GSBC
     .WaitFor(rabbitmq)
     .WithReference(db)
     .WithReference(migrations)
-    .WaitForCompletion(migrations);
+    .WaitForCompletion(migrations)
+    // The gRPC service is the object store's only client. Nothing else gets these, and there is no
+    // ingress and no YARP route to the store - a photo reaches the browser through the API, under
+    // the auth that already exists.
+    .WithEnvironment("Photos__ServiceUrl", s3.GetEndpoint("s3"))
+    .WithEnvironment("Photos__AccessKey", s3AccessKey)
+    .WithEnvironment("Photos__SecretKey", s3SecretKey)
+    .WaitFor(s3);
 
 IResourceBuilder<ProjectResource> wasm =
     builder.AddStandaloneBlazorWebAssemblyProject<Projects.GSBC_ImpactKids_WASM>("wasm");
