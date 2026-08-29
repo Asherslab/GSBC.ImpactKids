@@ -37,6 +37,23 @@
         }
     </MudSelectCreateOrUpdate>
 
+    <MudSelectCreateOrUpdate T="Gender?"
+                             @bind-Create="@CreateRequest.Gender"
+                             Read="@UpdateRequest.Gender.Value"
+                             @bind-Update="@UpdateRequest.Gender.Value"
+                             State="State"
+
+                             Class="mb-4"
+                             Label="Gender"
+                             Variant="Variant.Filled"
+
+                             Clearable>
+        @foreach (Gender gender in Enum.GetValues<Gender>())
+        {
+            <MudSelectItem T="Gender?" Value="@((Gender?)gender)">@gender</MudSelectItem>
+        }
+    </MudSelectCreateOrUpdate>
+
     <div class="relative mb-4">
         <MudOverlay Visible="@(SchoolGradesStore.GetState().Entities.IsLoading)"
                     DarkBackground

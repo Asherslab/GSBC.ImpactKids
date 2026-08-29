@@ -16,6 +16,16 @@ public record Person : IIdentifiable
     public required DateTime?    DateOfBirth   { get; init; }
     public required DateTime?    FirstTime     { get; init; }
 
+    /// <summary>
+    /// Male, Female, or null for "we have not been told".
+    ///
+    /// Null is the third state and it is a real answer, which is why this is a nullable enum rather
+    /// than carrying an <c>Unknown</c> member: an <c>Unknown</c> reads as a value, and a value is
+    /// something code will eventually push to Elvanto as though someone had chosen it. About a third
+    /// of children arrive from Elvanto with this blank, so the null case is the common one.
+    /// </summary>
+    public required Gender? Gender { get; init; }
+
     [ProtoIgnore]
     public DateTime? LocalDateOfBirth => DateOfBirth?.ToLocalTime();
 
@@ -77,6 +87,18 @@ public record Person : IIdentifiable
 
     public static string BuildSubscription(Guid? familyId = null, Guid? personId = null) =>
         $"{nameof(Person)}.{familyId?.ToString() ?? "*"}.{personId?.ToString() ?? "*"}";
+}
+
+/// <summary>
+/// The two values Elvanto returns. It has no others — measured across a full roll, <c>gender</c> is
+/// exactly "Male", "Female" or "" — so there is nothing to add, and "not told" is the absence of
+/// this enum rather than a member of it. See <see cref="Person.Gender"/>.
+/// </summary>
+[ProtoContract]
+public enum Gender
+{
+    Male,
+    Female
 }
 
 [ProtoContract]
