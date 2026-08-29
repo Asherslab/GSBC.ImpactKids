@@ -99,5 +99,10 @@
         <MudMenuItem Icon="@Icons.Material.Filled.Sync"
                      Label="Sync"
                      Href="/Sync"/>
+        @* Beside Sync, because it is the same job by hand: Elvanto's API cannot accept a photo, so
+           this is how photos get back into Elvanto. *@
+        <MudMenuItem Icon="@Icons.Material.Filled.Download"
+                     Label="Export Photos"
+                     Href="/People/PhotoExport"/>
     </MudNavPopout>
 </MudNavMenu>
