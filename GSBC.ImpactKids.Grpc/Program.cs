@@ -24,6 +24,9 @@ using GSBC.ImpactKids.Grpc.Features.People.AllergyServices;
 using GSBC.ImpactKids.Grpc.Features.People.MedicalNoteServices;
 using GSBC.ImpactKids.Grpc.Features.People.MedicalTypeServices;
 using GSBC.ImpactKids.Grpc.Features.People.PersonServices;
+using GSBC.ImpactKids.Grpc.Features.People.Photos;
+using Amazon.Runtime;
+using Amazon.S3;
 using GSBC.ImpactKids.Grpc.Features.Sync.SyncServices;
 using GSBC.ImpactKids.Grpc.Features.People.SchoolGradeServices;
 using GSBC.ImpactKids.Grpc.Features.Scheduling.School.SchoolTermServices;
@@ -152,6 +155,28 @@ builder.Services.AddPooledDbContextFactory<GsbcDbContext>((sp, o) =>
     // o.AddInterceptors(new GSBC.ImpactKids.Grpc.Data.Interceptors.LatencyInterceptor(TimeSpan.FromSeconds(1.5)));
 });
 
+// The photo object store. Absent configuration is a legitimate state - a deployment without a store
+// simply has no photos, every face falls back to its coloured initial, and nothing else changes - so
+// this registers nothing rather than failing to start.
+PhotoStoreConfig? photoConfig = builder.Configuration
+    .GetSection(PhotoStoreConfig.SectionName).Get<PhotoStoreConfig>();
+
+if (photoConfig is not null && !string.IsNullOrWhiteSpace(photoConfig.ServiceUrl))
+{
+    builder.Services.AddSingleton(photoConfig);
+    builder.Services.AddSingleton<IAmazonS3>(_ => new AmazonS3Client(
+        new BasicAWSCredentials(photoConfig.AccessKey, photoConfig.SecretKey),
+        new AmazonS3Config
+        {
+            ServiceURL = photoConfig.ServiceUrl,
+            // Neither SeaweedFS locally nor the in-cluster one has per-bucket DNS, so the bucket has
+            // to travel in the path rather than the hostname.
+            ForcePathStyle = true,
+            AuthenticationRegion = "us-east-1"
+        }));
+    builder.Services.AddScoped<PhotoStore>();
+}
+
 ElvantoConfig? elvantoConfig = builder.Configuration.GetSection("Elvanto").Get<ElvantoConfig>();
 if (elvantoConfig != null)
 {
@@ -237,6 +262,17 @@ app.AddEventEndpoints();
 // Cluster-internal only - the proxy asks these when a pickup wall enrols. Deliberately not
 // routed in GSBC.ImpactKids.YARP/appsettings.json; see the class remarks.
 app.AddPickupDisplayKeyEndpoints();
+
+// Leader only by falling through to the EnabledOnly fallback policy, which is what keeps a wall
+// display structurally unable to reach a child's face. Registered whether or not a store is
+// configured; without one the endpoint simply 404s, which is what the client already handles.
+app.AddPersonPhotoEndpoints();
+
+if (app.Services.GetService<PhotoStoreConfig>() is not null)
+{
+    using IServiceScope photoScope = app.Services.CreateScope();
+    await photoScope.ServiceProvider.GetRequiredService<PhotoStore>().EnsureBucketAsync();
+}
 
 using (IServiceScope scope = app.Services.CreateScope())
 {

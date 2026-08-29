@@ -26,6 +26,19 @@ public record Person : IIdentifiable
     /// </summary>
     public required Gender? Gender { get; init; }
 
+    /// <summary>
+    /// The content hash of this person's current photo, or null when they have none.
+    ///
+    /// <b>A token, never the bytes.</b> Photos are deliberately outside the store layer: a face is
+    /// fetched as an ordinary image from <c>/api/people/{id}/photo?v={PhotoVersion}</c>, under the
+    /// cookie the browser already holds, and cached by the browser like any other image. Because the
+    /// version is in the URL, a re-shot photo is a different URL and busts its own cache.
+    /// </summary>
+    public string? PhotoVersion { get; init; }
+
+    /// <summary>Whether someone has flagged this person's photo as out of date. See the Photos tool.</summary>
+    public bool PhotoNeedsUpdate { get; init; }
+
     [ProtoIgnore]
     public DateTime? LocalDateOfBirth => DateOfBirth?.ToLocalTime();
 
