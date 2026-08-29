@@ -69,3 +69,25 @@ secrets:
     # The hourly backup job's identity. Granted Read and List on the photos bucket and nothing else.
     backupAccessKey: ""
     backupSecretKey: ""
+
+# Hourly offsite copy of the photos bucket to Backblaze B2.
+#
+# Disabled until Asher creates the B2 bucket and an application key - that is an out-of-repo
+# prerequisite and nothing here guesses it. To turn it on, set enabled, bucket, endpoint, accessKey
+# and secretKey. Leave versioning on at the B2 end (it is the default), and if a lifecycle rule is
+# ever added it must be the "keep prior versions for N days" kind: because the keys are content
+# hashes nothing is ever rewritten, so a plain age-based expiration rule would eventually delete
+# every current photo.
+backup:
+  s3:
+    enabled: false
+    schedule: "0 * * * *"
+    rclone_image: "docker.io/rclone/rclone:1.71"
+    # REPLACE ME - the Backblaze B2 bucket name.
+    bucket: ""
+    # REPLACE ME - the region-specific Backblaze S3 endpoint, e.g.
+    # "https://s3.us-west-004.backblazeb2.com". Read it off the bucket in the B2 console.
+    endpoint: ""
+    # REPLACE ME - the Backblaze application key id and key.
+    accessKey: ""
+    secretKey: ""
