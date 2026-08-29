@@ -46,6 +46,12 @@ Read these even if you skip everything else here. Each one has already cost time
    which downstream reads as an empty roll. It is returned by default. See
    [the Elvanto API reference](../modules/elvanto/api-reference.md).
 
+   **`gender` is the opposite, and the plan originally said otherwise.** It must be named in that
+   array — it is not returned by default. Omitting it fails nothing and reports nothing; it just
+   binds null for every person, so the field syncs no data while every log line looks healthy.
+   Corrected in the reference and in the plan on 2026-08-29, after A3 shipped that way and wrote
+   1735 null snapshots.
+
 ## Definition of done, per slice
 
 From [AGENTS.md](../../AGENTS.md), and the third one is the one people skip:
