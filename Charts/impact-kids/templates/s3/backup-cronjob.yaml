@@ -1,0 +1,83 @@
+{{- if .Values.backup.s3.enabled }}
+---
+# Hourly offsite copy of the photos bucket to Backblaze B2, over the S3 API.
+#
+# `copy`, NEVER `sync`. copy does not delete at the destination, so a bad migration or a
+# fat-fingered bulk delete on our side cannot erase the offsite copy. Changing this one word turns
+# the backup into a mirror of a mistake.
+#
+# --immutable fails the run loudly if an object's content ever changes under a name that should be a
+# content hash. That is not a backup problem, it is a bug in the app, and this is where it surfaces.
+#
+# --size-only because the keys are content hashes and the objects are never rewritten: reconciliation
+# is a list-versus-list, so there is nothing to gain from hashing or comparing timestamps.
+#
+# This is deliberately NOT SeaweedFS' built-in filer.backup. That keeps its progress checkpoint in the
+# *source* filer, so emptying or recreating the destination bucket does not reset it and the
+# destination silently holds only what was written since - you believe you have a backup and you do
+# not. rclone derives what to send from the two bucket listings instead, so there is no checkpoint to
+# drift. See https://github.com/seaweedfs/seaweedfs/discussions/8672 before anyone "simplifies" this.
+#
+# The filer-metadata warning in that same thread does not reach us: rclone reads through the S3 API,
+# so what lands at Backblaze is plain objects at plain keys, and a restore is byte-for-byte the same
+# PUT the app performs when a leader takes a photo. It would reach us if anyone backed up the PVC
+# directly instead - that is the moment to go read the thread properly.
+apiVersion: "batch/v1"
+kind: "CronJob"
+metadata:
+  name: "s3-backup-cronjob"
+  labels:
+    app.kubernetes.io/name: "impact-kids-app"
+    app.kubernetes.io/component: "s3-backup"
+    app.kubernetes.io/instance: "{{.Release.Name}}"
+spec:
+  schedule: "{{ .Values.backup.s3.schedule }}"
+  concurrencyPolicy: "Forbid"
+  startingDeadlineSeconds: 600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: "impact-kids-app"
+            app.kubernetes.io/component: "s3-backup"
+            app.kubernetes.io/instance: "{{.Release.Name}}"
+        spec:
+          restartPolicy: "Never"
+          containers:
+            - image: "{{ .Values.backup.s3.rclone_image }}"
+              name: "rclone"
+              args:
+                - "copy"
+                - "seaweed:{{ .Values.config.s3.bucket }}"
+                - "b2:{{ required "backup.s3.bucket is required when backup.s3.enabled - ask Asher for the Backblaze bucket name" .Values.backup.s3.bucket }}"
+                - "--size-only"
+                - "--immutable"
+                - "--stats-one-line"
+                - "--stats=0"
+                - "--verbose"
+              env:
+                - name: "RCLONE_CONFIG_SEAWEED_TYPE"
+                  value: "s3"
+                - name: "RCLONE_CONFIG_SEAWEED_PROVIDER"
+                  value: "Other"
+                - name: "RCLONE_CONFIG_SEAWEED_ENDPOINT"
+                  value: "http://s3-service:{{ .Values.parameters.s3.port_s3 }}"
+                - name: "RCLONE_CONFIG_SEAWEED_FORCE_PATH_STYLE"
+                  value: "true"
+                - name: "RCLONE_CONFIG_B2_TYPE"
+                  value: "s3"
+                - name: "RCLONE_CONFIG_B2_PROVIDER"
+                  value: "Other"
+                - name: "RCLONE_CONFIG_B2_ENDPOINT"
+                  value: "{{ required "backup.s3.endpoint is required when backup.s3.enabled - the region-specific Backblaze S3 endpoint" .Values.backup.s3.endpoint }}"
+                - name: "RCLONE_CONFIG_B2_FORCE_PATH_STYLE"
+                  value: "false"
+              envFrom:
+                - secretRef:
+                    name: "s3-backup-secret"
+              imagePullPolicy: "IfNotPresent"
+{{- end }}
