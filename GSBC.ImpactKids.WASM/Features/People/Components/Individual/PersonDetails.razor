@@ -12,6 +12,12 @@
             @(Entity.Error ?? "An Unexpected error occured")
         </MudAlert>
     }
+    @* The face, above the name fields. With no photo this is the same coloured initial the person
+       cards already show, so the card reads as it did before photos existed. *@
+    <MudPaper Elevation="0" Class="d-flex justify-center mb-4">
+        <PersonAvatar Person="@Entity.Data" Color="@AvatarColor" Size="Size.Large"/>
+    </MudPaper>
+
     <MudPaper Elevation="0" Class="d-flex flex-row flex-grow-1 mb-4">
         <MudTextFieldCreateOrUpdate
             @bind-Create="@CreateRequest.FirstName"
