@@ -13,8 +13,8 @@ code:
 # The photo object store
 
 Person photos live in an S3-compatible object store, not in Postgres. One bucket, `photos`, reachable
-only from inside the cluster. This doc is the store itself — how it is declared and how it
-authenticates. What the application does with it is the gRPC service's business.
+only from inside the cluster. This doc is the store itself — how it is declared, how it authenticates,
+and how it is backed up. What the application does with it is the gRPC service's business.
 
 ## SeaweedFS, and why not the two obvious alternatives
 
@@ -54,7 +54,7 @@ The chart renders `s3-identities-secret`, mounted at `/etc/seaweedfs/s3.json` an
 | Identity | Actions | Used by |
 |---|---|---|
 | `impact-kids` | `Read`, `Write`, `List`, `Tagging`, `Admin` | the gRPC service — the only writer |
-| `backup` | `Read:photos`, `List:photos` | the offsite backup job — **not landed yet** |
+| `backup` | `Read:photos`, `List:photos` | the hourly rclone CronJob |
 
 The split is the point: the backup job holds a credential that cannot delete the thing it exists to
 protect. Verified 2026-08-29 against `chrislusf/seaweedfs:3.98` — with this document the `backup`
@@ -128,6 +128,82 @@ and reading the object back with the new credential while the old one was refuse
 
 So a regenerated `s3-secret-key` costs nothing here. The volume still holds real photos, so it is not
 a thing to delete casually — it just cannot lock you out.
+
+## Offsite backup — hourly `rclone copy` to Backblaze
+
+A `CronJob` on the `rclone/rclone` image, hourly:
+
+```
+rclone copy seaweed:photos b2:<bucket> --size-only --immutable
+```
+
+**`copy`, never `sync`.** `copy` does not delete at the destination, so a bad migration or a
+fat-fingered bulk delete on our side cannot erase the offsite copy. Changing that one word turns the
+backup into a mirror of the mistake.
+
+- `--immutable` fails the run loudly if an object's content ever changes under a name that should be
+  a content hash. That is a bug in the application, and this is where it surfaces.
+- `--size-only` because keys are content hashes and objects are never rewritten — reconciliation is a
+  list-versus-list, so hashing and timestamp comparison buy nothing.
+- `concurrencyPolicy: Forbid`, so a slow run cannot stack up behind itself.
+
+rclone's whole remote definition comes from `RCLONE_CONFIG_<REMOTE>_<OPTION>` environment variables,
+so there is no `rclone.conf` to mount. Non-secret options sit on the CronJob; the four credentials
+come from `s3-backup-secret`.
+
+The job is **disabled by default** (`backup.s3.enabled`). The Backblaze bucket, endpoint and
+application key are an out-of-repo prerequisite and nothing in the chart guesses them; every value is
+`required`, so a half-configured install fails at `helm upgrade` rather than running an hourly job
+that silently copies nothing.
+
+### Why not SeaweedFS' built-in `filer.backup`
+
+It looks like the obvious choice — same binary, Backblaze is a named sink, near real-time — and
+[discussion #8672](https://github.com/seaweedfs/seaweedfs/discussions/8672) is why it is not.
+
+The disqualifying issue is that **its progress checkpoint lives in the source filer, not the
+destination.** Emptying or recreating the Backblaze bucket does not reset it: the daemon carries on
+from where it was and the destination silently holds only what was written since. That is the failure
+mode where you believe you have a backup and do not. It is also replication rather than backup — it
+must run continually and is only eventually consistent — and it has no point-in-time recovery.
+
+`rclone` derives what to send from the two bucket listings, so there is no checkpoint to drift.
+
+**The filer-metadata complaint in that thread does not reach us, and it matters why.** rclone reads
+through the S3 API, so what lands at Backblaze is plain objects at plain keys, not volume files that
+need a filer store to say which chunks belong to which name. Restoring is byte-for-byte the same
+operation the application performs every time a leader takes a photo: a PUT through the S3 API. There
+is no metadata that can be lost, because none of it is an input to the restore — it is an output.
+
+That complaint becomes ours the moment anyone backs up the PVC directly instead. Then the bytes are
+meaningless without the filer store that indexes them, and it needs `filer.meta.backup` plus a story
+for the consistency gap between two snapshots. Backing up at the S3 layer is what avoids all of it.
+
+### Cost, and the one thing that grows
+
+Sizing from the real roll — about 340 children at 500×500 JPEG q0.85, so roughly 35 KB each:
+
+| | Objects | Size |
+|---|---|---|
+| One current photo per child | ~340 | ~12 MB |
+| Growth at ~2 re-shoots per child per year | ~680/yr | ~24 MB/yr |
+| Ten years, nothing ever pruned | ~7,000 | ~250 MB |
+
+Against B2's permanent 10 GB free tier that is free and stays free for decades. An hourly run lists
+both sides — about 48 calls a day against a free allowance of 2,500.
+
+Because the job uses `copy` and not `sync`, **a superseded photo is never removed from Backblaze.**
+That is deliberate: it is what makes an accidental bulk delete survivable, and at these sizes the
+accumulation is a free photo history rather than a cost. If it ever does need pruning, reconcile the
+bucket against the `PhotoVersion` values in the database and delete what nothing references.
+
+**Do not reach for a date-based lifecycle rule.** B2 buckets are versioned by default; leave that on.
+If a lifecycle rule is ever added it must be the *"keep prior versions for N days"* kind. Because keys
+are content hashes nothing is ever rewritten, so a plain age-based expiration rule would eventually
+match every current photo and quietly delete the entire backup.
+
+Restore is deliberately dull — `rclone copy` the other way. Worth rehearsing once on the dev stack
+before anyone needs it.
 
 ## The chart is hand-written
 
