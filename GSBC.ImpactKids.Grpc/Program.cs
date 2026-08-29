@@ -274,6 +274,10 @@ if (app.Services.GetService<PhotoStoreConfig>() is not null)
 {
     app.AddPersonPhotoEndpoints();
 
+    // The substitute for a photo sync: nothing can push a picture back through the Elvanto API, so
+    // office staff get a zip to drag into Elvanto's own UI.
+    app.AddPhotoExportEndpoints();
+
     using IServiceScope photoScope = app.Services.CreateScope();
     await photoScope.ServiceProvider.GetRequiredService<PhotoStore>().EnsureBucketAsync();
 }

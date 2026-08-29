@@ -1,0 +1,40 @@
+@using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People
+@page "/People/PhotoExport"
+@inject IRefreshableStore<Person> PeopleStore
+
+<PageTitle>Export Photos</PageTitle>
+
+<MudPaper Elevation="6" Class="mt-4 pa-6">
+    <MudText Typo="Typo.h6" Class="mb-2">Export Photos for Elvanto</MudText>
+    <MudText Typo="Typo.body2" Class="mb-4 mud-text-secondary">
+        A zip of every photo, one file per person, named
+        <code>firstname_lastname.jpg</code>. Elvanto has no way to accept a photo through its API,
+        so this is the way to get them back into Elvanto: download the zip and upload the files
+        through Elvanto's own admin.
+    </MudText>
+
+    @if (_countedPhotos is { } count)
+    {
+        <MudText Typo="Typo.body2" Class="mb-4">
+            <b>@count</b> @(count == 1 ? "person has" : "people have") a photo to export.
+        </MudText>
+    }
+
+    @* A plain anchor, not a button with a JS download: the response is a streamed zip on the same
+       origin, so the browser's own download handles it and the existing cookie is attached
+       automatically. Nothing to buffer in the client. *@
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               StartIcon="@Icons.Material.Filled.Download"
+               Href="/api/people/photos/export"
+               Disabled="@(_countedPhotos == 0)">
+        Download zip
+    </MudButton>
+
+    @if (_countedPhotos == 0)
+    {
+        <MudText Typo="Typo.body2" Class="mt-4 mud-text-secondary">
+            Nobody has a photo yet, so there is nothing to export.
+        </MudText>
+    }
+</MudPaper>
