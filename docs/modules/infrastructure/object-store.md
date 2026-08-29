@@ -92,7 +92,8 @@ kubectl create secret generic photos-secret \
   --from-literal=Photos__AccessKey=APP_KEY \
   --from-literal=Photos__SecretKey=APP_SECRET
 
-# 3. The backup job's two ends: the read-only SeaweedFS identity, and the Backblaze application key.
+# 3. The backup job's two ends. SEAWEED is the source and is read-only; B2 is the destination and
+#    must be able to write. See "The two ends need different permissions" below.
 #    Only needed when backup.s3.enabled is true.
 kubectl create secret generic s3-backup-secret \
   --from-literal=RCLONE_CONFIG_SEAWEED_ACCESS_KEY_ID=BACKUP_KEY \
@@ -193,10 +194,28 @@ rclone's whole remote definition comes from `RCLONE_CONFIG_<REMOTE>_<OPTION>` en
 so there is no `rclone.conf` to mount. Non-secret options sit on the CronJob; the four credentials
 come from `s3-backup-secret`.
 
-The job is **disabled by default** (`backup.s3.enabled`). The Backblaze bucket, endpoint and
-application key are an out-of-repo prerequisite and nothing in the chart guesses them; every value is
-`required`, so a half-configured install fails at `helm upgrade` rather than running an hourly job
-that silently copies nothing.
+### The two ends need different permissions
+
+Easy to conflate, because both live in the same Secret and the job is called "backup":
+
+| Remote | Credential | Needs | Must NOT have |
+|---|---|---|---|
+| `seaweed:` — the source | the SeaweedFS `backup` identity | `Read`, `List` | write, delete |
+| `b2:` — the destination | a Backblaze application key | list files, **write files** | **delete files** |
+
+The source credential is read-only because rclone only ever reads there; that is what stops a
+compromised or mis-typed backup job damaging the live bucket it exists to protect.
+
+The destination credential obviously has to write, or there would be no backup. **Do not give it
+delete.** `rclone copy` never issues a delete, so the capability is unused in normal operation — and
+withholding it means that neither end of this job can destroy the offsite copy, which together with
+B2's default versioning makes the backup effectively append-only. Add `readFiles` as well if you want
+the same key to serve a restore; otherwise mint a separate one when you need it.
+
+The job is **disabled by default** (`backup.s3.enabled`). The Backblaze bucket and endpoint are
+`required` when it is enabled, so a half-configured install fails at `helm upgrade` rather than
+running an hourly job that silently copies nothing. The credentials are not values at all — they are
+in `s3-backup-secret`, created by hand.
 
 ### Why not SeaweedFS' built-in `filer.backup`
 
