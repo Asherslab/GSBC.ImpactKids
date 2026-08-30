@@ -83,19 +83,20 @@ cat > /tmp/s3.json <<'JSON'
   ]
 }
 JSON
-kubectl create secret generic s3-identities-secret --from-file=s3.json=/tmp/s3.json
+kubectl -n impact-kids create secret generic s3-identities-secret \
+  --from-file=s3.json=/tmp/s3.json
 rm /tmp/s3.json
 
 # 2. The same app credential, in the shape .NET configuration reads. Consumed by the gRPC service
 #    and the backfill worker.
-kubectl create secret generic photos-secret \
+kubectl -n impact-kids create secret generic photos-secret \
   --from-literal=Photos__AccessKey=APP_KEY \
   --from-literal=Photos__SecretKey=APP_SECRET
 
 # 3. The backup job's two ends. SEAWEED is the source and is read-only; B2 is the destination and
 #    must be able to write. See "The two ends need different permissions" below.
 #    Only needed when backup.s3.enabled is true.
-kubectl create secret generic s3-backup-secret \
+kubectl -n impact-kids create secret generic s3-backup-secret \
   --from-literal=RCLONE_CONFIG_SEAWEED_ACCESS_KEY_ID=BACKUP_KEY \
   --from-literal=RCLONE_CONFIG_SEAWEED_SECRET_ACCESS_KEY=BACKUP_SECRET \
   --from-literal=RCLONE_CONFIG_B2_ACCESS_KEY_ID=B2_KEY_ID \
@@ -134,7 +135,7 @@ no rendered checksum for the chart to hang a pod annotation on. So a changed ide
 Secret in place while the running process keeps serving the keys it already read — no error, no sign
 of disagreement.
 
-**Follow any identity change with `kubectl rollout restart statefulset/s3-statefulset`**, and update
+**Follow any identity change with `kubectl -n impact-kids rollout restart statefulset/s3-statefulset`**, and update
 `photos-secret` in the same sitting or the app is left holding a credential the store no longer
 accepts.
 

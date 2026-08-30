@@ -58,7 +58,7 @@ spec:
         #
         # Because the chart does not render it, changing it does NOT roll this pod: SeaweedFS reads
         # its identities once at startup. Follow an identity change with
-        # `kubectl rollout restart statefulset/s3-statefulset`.
+        # `kubectl -n impact-kids rollout restart statefulset/s3-statefulset`.
         - name: "s3-identities"
           secret:
             secretName: "s3-identities-secret"
