@@ -19,7 +19,12 @@
 }
 
 /* The stage takes every pixel the header and the actions do not, so the preview is as large as the
-   phone allows. */
+   phone allows.
+
+   `container-type: size` is what lets the frame below be "the largest square that fits", which is
+   not otherwise expressible: the stage's height comes from flex layout rather than from any unit
+   CSS can name, so cqw/cqh are the only way to compare its two axes. Safe here because the stage
+   never took its size from its contents anyway. */
 .photo-capture-stage {
     position: relative;
     flex: 1 1 auto;
@@ -28,15 +33,34 @@
     justify-content: center;
     overflow: hidden;
     min-height: 0;
+    container-type: size;
 }
 
+/* The square that will be stored, at the largest size the stage allows.
+   The vw/vh line is the fallback for a browser without container query units - close to what the
+   old fixed guide was, and it degrades to a slightly-off square rather than to nothing, which is
+   what a dropped `width` would have collapsed this to. */
+.photo-capture-frame {
+    position: relative;
+    width: min(90vw, 90vh);
+    width: min(100cqw, 100cqh);
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 8px;
+    /* The edge of the photo, visible in both live and review. Faint - it is a boundary, not a
+       feature. */
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
+}
+
+/* `cover`, not `contain`, and this is the whole trick: on a square box it shows precisely the
+   centred square the canvas keeps, so the preview stops promising sides that get thrown away. */
 .photo-capture-video,
 .photo-capture-preview {
-    max-width: 100%;
-    max-height: 100%;
-    width: auto;
-    height: auto;
-    object-fit: contain;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 /* Hidden rather than removed: @ref has to point at a real element before start() is called, and a
@@ -51,14 +75,21 @@
     transform: scaleX(-1);
 }
 
-/* The square the crop will take. Purely a sighting aid; the actual crop happens on the canvas. */
+/* The head-and-shoulders outline, laid exactly over the crop. A sighting aid only - nothing here
+   changes what the canvas does. */
 .photo-capture-guide {
     position: absolute;
-    aspect-ratio: 1;
-    width: min(80vw, 80vh);
-    border: 2px solid rgba(255, 255, 255, 0.8);
-    border-radius: 8px;
+    inset: 0;
+    width: 100%;
+    height: 100%;
     pointer-events: none;
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.75);
+    stroke-width: 1;
+    stroke-linecap: round;
+    /* A child in a bright doorway is the case that eats a white line, so the outline carries its
+       own dark edge rather than relying on the subject being dark. */
+    filter: drop-shadow(0 0 1.5px rgba(0, 0, 0, 0.9));
 }
 
 .photo-capture-spinner {
