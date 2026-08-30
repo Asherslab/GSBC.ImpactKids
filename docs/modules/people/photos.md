@@ -3,7 +3,7 @@ title: Person photos
 kind: reference
 status: current
 module: people
-verified: 2026-08-29
+verified: 2026-08-30
 code:
   - GSBC.ImpactKids.Grpc/Features/People/Photos
   - GSBC.ImpactKids.WASM/Features/People/Components/Individual/PersonAvatar.razor
@@ -55,9 +55,23 @@ different thing from a leader's phone, and the answer is no.
 photo yet will have one tonight — so caching one immutably for a year would hide the new photo behind
 the old absence.
 
-The endpoints are mapped only when a `Photos` configuration section names a store. A deployment
-without one is a legitimate state: no routes, 404s, and every face falls back to its coloured
-initial.
+The endpoints are mapped only when a `Photos` section supplies a service URL **and both
+credentials**. Checking the URL alone would not do in the cluster: it comes from the ConfigMap and is
+therefore always set, while the keys come from `photos-secret` — so a missing Secret would register a
+store with blank credentials and 403 on every operation, instead of the feature simply being off.
+
+**Photos must never be able to stop children being signed in**, and two things enforce that:
+
+- The startup `EnsureBucketAsync` is best effort. There is no ordering guarantee in the cluster, so
+  the object store may not be up when this service starts; an unreachable store logs an error and
+  the service carries on. `PutAsync` creates the bucket on demand if that startup call did not.
+- `photos-secret` is mounted `optional: true` on the gRPC deployment. Without that, a Secret nobody
+  has created yet stops the pod starting at all.
+
+Verified by pointing the service at a dead port: the app came up, `/bff/user` answered 200, and the
+photo endpoint answered 500 while every avatar fell back to its initial. **500 rather than 404 is
+deliberate** — 404 means "this person has no photo", and a broken store must not be able to hide
+behind it.
 
 ## Two traps in the S3 client, both of which failed silently
 

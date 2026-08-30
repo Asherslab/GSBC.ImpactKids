@@ -55,6 +55,28 @@ public class PhotoStore(
     {
         string version = VersionOf(bytes);
 
+        try
+        {
+            return await PutOnceAsync(bytes, contentType, version, token);
+        }
+        catch (AmazonS3Exception e) when (e.ErrorCode == "NoSuchBucket")
+        {
+            // The startup ensure is best effort, because the store may not be up when this service
+            // starts and photos must never delay sign in. This is the other half of that: the first
+            // write after the store becomes reachable creates the bucket and carries on, rather than
+            // failing until someone restarts the service.
+            logger.LogWarning("Photo bucket {Bucket} did not exist on write; creating it", config.BucketName);
+            await EnsureBucketAsync(token);
+            return await PutOnceAsync(bytes, contentType, version, token);
+        }
+    }
+
+    private async Task<string> PutOnceAsync(
+        byte[]            bytes,
+        string            contentType,
+        string            version,
+        CancellationToken token)
+    {
         using MemoryStream stream = new(bytes);
         await s3.PutObjectAsync(new PutObjectRequest
         {

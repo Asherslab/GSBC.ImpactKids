@@ -161,7 +161,14 @@ builder.Services.AddPooledDbContextFactory<GsbcDbContext>((sp, o) =>
 PhotoStoreConfig? photoConfig = builder.Configuration
     .GetSection(PhotoStoreConfig.SectionName).Get<PhotoStoreConfig>();
 
-if (photoConfig is not null && !string.IsNullOrWhiteSpace(photoConfig.ServiceUrl))
+// Credentials are checked, not just the URL. Photos__ServiceUrl comes from the ConfigMap and is
+// therefore always set in the cluster, while the keys come from photos-secret - so testing the URL
+// alone would register a store with blank credentials whenever that Secret is missing, and every
+// photo operation would fail 403 rather than the feature simply being off.
+if (photoConfig is not null
+    && !string.IsNullOrWhiteSpace(photoConfig.ServiceUrl)
+    && !string.IsNullOrWhiteSpace(photoConfig.AccessKey)
+    && !string.IsNullOrWhiteSpace(photoConfig.SecretKey))
 {
     builder.Services.AddSingleton(photoConfig);
     builder.Services.AddSingleton<IAmazonS3>(_ => new AmazonS3Client(
@@ -278,8 +285,23 @@ if (app.Services.GetService<PhotoStoreConfig>() is not null)
     // office staff get a zip to drag into Elvanto's own UI.
     app.AddPhotoExportEndpoints();
 
+    // Best effort, and it must stay that way. There is no ordering guarantee in the cluster, so the
+    // object store may well not be up when this service starts - and photos must never be able to
+    // stop children being signed in. An unreachable store here means the avatars fall back to their
+    // coloured initials, which is exactly what PersonAvatar already does.
+    //
+    // PutAsync creates the bucket on demand if this did not manage it.
     using IServiceScope photoScope = app.Services.CreateScope();
-    await photoScope.ServiceProvider.GetRequiredService<PhotoStore>().EnsureBucketAsync();
+    try
+    {
+        await photoScope.ServiceProvider.GetRequiredService<PhotoStore>().EnsureBucketAsync();
+    }
+    catch (Exception ex)
+    {
+        photoScope.ServiceProvider.GetRequiredService<ILogger<Program>>().LogError(
+            ex, "Could not reach the photo object store at startup. Photos will be unavailable "
+                + "until it is reachable; everything else is unaffected.");
+    }
 }
 
 using (IServiceScope scope = app.Services.CreateScope())
