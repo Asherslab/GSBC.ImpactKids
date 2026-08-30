@@ -8,11 +8,15 @@
                        OnClick="@CloseAsync"/>
         <MudText Typo="Typo.h6">@(Person?.GetDisplayName() ?? "Take a photo")</MudText>
         <MudSpacer/>
+        @* Named for where it goes, not for what it is: "Switch camera" leaves a leader guessing
+           which one they are on, and on a phone the answer matters mid-queue. *@
         @if (_liveCamera && _multipleCameras)
         {
             <MudIconButton Icon="@Icons.Material.Filled.FlipCameraIos"
                            Color="Color.Inherit"
-                           aria-label="Switch camera"
+                           Disabled="@_starting"
+                           aria-label="@(Mirrored ? "Switch to the back camera" : "Switch to the front camera")"
+                           title="@(Mirrored ? "Switch to the back camera" : "Switch to the front camera")"
                            OnClick="@FlipCameraAsync"/>
         }
     </div>
@@ -127,7 +131,10 @@
                        Disabled="@_busy">
                 <label class="photo-capture-file">
                     @(_liveCamera || _starting ? "Choose from library" : "Open camera or library")
-                    <InputFile OnChange="@OnFilePickedAsync" accept="image/*" capture="user"/>
+                    @* `capture` follows the live toggle rather than being pinned to the selfie
+                       camera, so a leader who switched to the back camera keeps it when the flow
+                       falls back to the phone's own camera app. *@
+                    <InputFile OnChange="@OnFilePickedAsync" accept="image/*" capture="@CaptureAttribute"/>
                 </label>
             </MudButton>
         }
