@@ -32,6 +32,26 @@ public partial class PersonDetails
             ? MudBlazor.Color.Secondary
             : MudBlazor.Color.Primary;
 
+    /// <summary>
+    /// Whether the full-screen capture view is open for this person.
+    ///
+    /// The same <see cref="PhotoCapture"/> the Photos tool uses, so both routes crop, downscale and
+    /// upload identically — a photo taken here is byte-for-byte what one taken during sign-in would
+    /// have been, and there is no second upload path to keep in step.
+    /// </summary>
+    private bool _capturing;
+
+    private void OpenCapture() => _capturing = true;
+
+    private void CloseCapture() => _capturing = false;
+
+    /// <summary>
+    /// The upload has already raised the person update event, so the store refreshes itself and the
+    /// avatar picks up the new version on its own — re-fetching here would only race that. Closing
+    /// is all that is left.
+    /// </summary>
+    private void OnPhotoSaved(string photoVersion) => _capturing = false;
+
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
