@@ -32,24 +32,67 @@
     }
 
     <div class="photo-capture-stage">
-        @* Kept in the DOM rather than swapped out: @ref must be non-null before start() is called,
-           and a @if around it made the element arrive after the first render. Hidden instead. *@
-        <video @ref="_video"
-               class="photo-capture-video @(_liveCamera && _preview == null ? null : "is-hidden") @(Mirrored ? "is-mirrored" : null)"
-               playsinline
-               muted
-               autoplay></video>
+        @* The square IS the crop, rather than a rectangle with a square drawn on it.
+           `toSquareJpeg` keeps the centred square of the camera frame and throws the sides away, and
+           `object-fit: cover` on a square box shows exactly that same region - so what a leader
+           frames here is what gets stored, and the silhouette below can be trusted to mean
+           something. Before this the preview showed the whole letterboxed frame and the guide was a
+           fixed 80% of the viewport, so neither matched where the crop actually fell. *@
+        <div class="photo-capture-frame">
+            @* Kept in the DOM rather than swapped out: @ref must be non-null before start() is
+               called, and a @if around it made the element arrive after the first render. Hidden
+               instead. *@
+            <video @ref="_video"
+                   class="photo-capture-video @(_liveCamera && _preview == null ? null : "is-hidden") @(Mirrored ? "is-mirrored" : null)"
+                   playsinline
+                   muted
+                   autoplay></video>
 
-        @if (_preview != null)
-        {
-            <img class="photo-capture-preview" src="@($"data:image/jpeg;base64,{_preview}")" alt="The photo just taken"/>
-        }
+            @if (_preview != null)
+            {
+                <img class="photo-capture-preview" src="@($"data:image/jpeg;base64,{_preview}")" alt="The photo just taken"/>
+            }
 
-        @if (_liveCamera && _preview == null)
-        {
-            @* The crop guide. Purely visual - the square crop is done on the canvas, not here. *@
-            <div class="photo-capture-guide"></div>
-        }
+            @if (_liveCamera && _preview == null)
+            {
+                @* Head and shoulders to aim at, in the crop's own coordinates - the viewBox is
+                   100x100 and the box it fills is the square that gets stored, so every number here
+                   is a percentage of the final photo.
+
+                   Child proportions, not adult: the head is a bigger share of the frame and sits
+                   higher, which is what an eight-year-old actually looks like at arm's length.
+                   Aiming at an adult outline makes a leader step back and produces a small face in
+                   a lot of hall.
+
+                   An outline rather than a filled shape, and no scrim over the rest: the leader is
+                   in a dimly lit hall matching a face, and darkening the picture to decorate the
+                   guide would cost them the one thing they are looking at. *@
+                <svg class="photo-capture-guide"
+                     viewBox="0 0 100 100"
+                     aria-hidden="true"
+                     focusable="false">
+                    @* Head: an egg, not an ellipse - wide at the temples, tapering to the chin, which
+                       is what makes a line drawing read as a head at all. Roughly 40% of the frame
+                       tall, so a face is still legible in a 40px avatar with the hair intact. *@
+                    <path d="M 50,11
+                             C 60,11 67,19 67,30
+                             C 67,40 62,51 50,51
+                             C 38,51 33,40 33,30
+                             C 33,19 40,11 50,11
+                             Z"/>
+                    @* Neck and shoulders: one stroke per side, running in from the side edge and up
+                       the trapezius to finish just inside the jaw, so the neck disappears behind the
+                       head the way it does in a real bust.
+
+                       Broad on purpose, leaving the frame at the sides rather than the bottom - a
+                       narrow pair of shoulders invites a leader to stand too far back and hands
+                       back a small face in a lot of hall. Flatter than this stops reading as
+                       shoulders at all and becomes a horizontal line across the picture. *@
+                    <path d="M 0,88 C 5,76 18,70 33,67 C 41,65 43,61 43,47"/>
+                    <path d="M 100,88 C 95,76 82,70 67,67 C 59,65 57,61 57,47"/>
+                </svg>
+            }
+        </div>
 
         @if (_starting)
         {
