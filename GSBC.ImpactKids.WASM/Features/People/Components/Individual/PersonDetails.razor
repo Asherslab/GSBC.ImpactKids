@@ -31,6 +31,25 @@
 
                 Label="Needs a new photo"/>
         }
+        @* The second way in, for the child who is not standing in front of a leader at sign-in: the
+           Photos tool only lists people signed in tonight, so before this the face could not be set
+           or corrected from the person's own page at all.
+
+           Reading only, and not while editing. The upload writes immediately through its own
+           endpoint - it is not part of UpdateRequest and no Save button applies to it - and the
+           update event it raises is exactly what DetailsComponent watches to cancel an in-progress
+           edit with "Somebody has made modifications". Offering it mid-edit would mean a leader
+           taking a photo and losing the name they were half way through typing. *@
+        @if (!BasicView && State == ModificationState.Reading && Entity.Data != null)
+        {
+            <MudButton Variant="Variant.Text"
+                       Color="MudBlazor.Color.Primary"
+                       StartIcon="@Icons.Material.Filled.PhotoCamera"
+                       Class="mt-2"
+                       OnClick="@OpenCapture">
+                @(Entity.Data.PhotoVersion == null ? "Add photo" : "Change photo")
+            </MudButton>
+        }
     </MudPaper>
 
     <MudPaper Elevation="0" Class="d-flex flex-row flex-grow-1 mb-4">
@@ -148,4 +167,13 @@
             Id="Id"
             State="State"/>
     }
+}
+
+@* Full-screen while it is open, so it sits outside the card's markup rather than inside a column
+   of form fields. *@
+@if (_capturing)
+{
+    <PhotoCapture Person="@Entity.Data"
+                  OnSaved="@OnPhotoSaved"
+                  OnClose="@CloseCapture"/>
 }
