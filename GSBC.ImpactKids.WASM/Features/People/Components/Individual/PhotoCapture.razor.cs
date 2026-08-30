@@ -50,13 +50,33 @@ public partial class PhotoCapture : IAsyncDisposable
     private string? _error;
     private string? _cameraMessage;
 
+    private const string Front = "user";
+    private const string Back  = "environment";
+
     /// <summary>
     /// A front camera is mirrored in the preview, because a leader aiming a phone at themselves or
     /// at a child beside them expects a mirror. The stored photo is not mirrored — see the JS.
     /// </summary>
-    private bool Mirrored => _facingMode == "user";
+    private bool Mirrored => _facingMode == Front;
 
-    private string _facingMode = "user";
+    private string _facingMode = Front;
+
+    /// <summary>
+    /// Which camera the phone's own camera app should open on the fallback route, so a leader who
+    /// flipped to the back camera here does not get handed the selfie camera the moment the live
+    /// path gives out.
+    /// </summary>
+    private string CaptureAttribute => _facingMode == Front ? "user" : "environment";
+
+    /// <summary>
+    /// The leader's last choice, remembered per device.
+    ///
+    /// Photographing children means the back camera nearly every time, but the sensible default for
+    /// the first ever use is still the front one — it is the camera that exists on every device and
+    /// the one that will certainly produce a frame. So rather than guess, the second child onwards
+    /// simply opens on whatever the leader picked for the first.
+    /// </summary>
+    private const string FacingModeKey = "photoCapture:facingMode";
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -65,7 +85,7 @@ public partial class PhotoCapture : IAsyncDisposable
         _module = await Js.InvokeAsync<IJSObjectReference>(
             "import", "./js/photoCapture.js");
 
-        _multipleCameras = await _module.InvokeAsync<bool>("hasMultipleCameras");
+        _facingMode = await LoadPreferredFacingModeAsync();
 
         await StartCameraAsync();
     }
@@ -83,6 +103,12 @@ public partial class PhotoCapture : IAsyncDisposable
         _cameraMessage = result.Ok ? null : MessageFor(result.Reason);
         _starting = false;
 
+        // Asked here rather than before the camera opens, and again on every start: until permission
+        // has been granted, iOS reports one nameless camera however many the phone has, which hid
+        // the flip button on precisely the devices whose default is the selfie camera.
+        if (result.Ok)
+            _multipleCameras = await _module.InvokeAsync<bool>("hasMultipleCameras");
+
         StateHasChanged();
     }
 
@@ -99,8 +125,35 @@ public partial class PhotoCapture : IAsyncDisposable
 
     private async Task FlipCameraAsync()
     {
-        _facingMode = _facingMode == "user" ? "environment" : "user";
+        _facingMode = _facingMode == Front ? Back : Front;
+        await SavePreferredFacingModeAsync(_facingMode);
         await StartCameraAsync();
+    }
+
+    private async Task<string> LoadPreferredFacingModeAsync()
+    {
+        try
+        {
+            string? saved = await Js.InvokeAsync<string?>("localStorage.getItem", FacingModeKey);
+            return saved == Back ? Back : Front;
+        }
+        catch
+        {
+            // Storage can be unavailable (private browsing, a locked-down browser). The default
+            // camera is not worth failing the whole capture over.
+            return Front;
+        }
+    }
+
+    private async Task SavePreferredFacingModeAsync(string facingMode)
+    {
+        try
+        {
+            await Js.InvokeVoidAsync("localStorage.setItem", FacingModeKey, facingMode);
+        }
+        catch
+        {
+        }
     }
 
     private async Task TakePhotoAsync()
