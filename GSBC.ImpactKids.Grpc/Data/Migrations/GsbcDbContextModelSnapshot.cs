@@ -578,6 +578,9 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.Property<DateTimeOffset?>("FirstTime")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Gender")
+                        .HasColumnType("text");
+
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasColumnType("text");
@@ -589,6 +592,12 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                         .HasDefaultValue("NotRequested");
 
                     b.Property<string>("PhoneNumber")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("PhotoNeedsUpdate")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("PhotoVersion")
                         .HasColumnType("text");
 
                     b.Property<Guid?>("SchoolGradeId")

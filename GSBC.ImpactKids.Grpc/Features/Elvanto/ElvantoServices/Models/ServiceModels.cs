@@ -107,7 +107,19 @@ public class ElvantoPerson
     
     [JsonPropertyName("birthday")]
     public string? Birthday { get; set; }
-    
+
+    /// <summary>
+    /// Exactly "Male", "Female" or "" — no other value appeared across a full roll of 1754 people.
+    ///
+    /// <b>It has to be named in the <c>Fields</c> array</b> in <c>FetchPageWithRetries</c>. It is not
+    /// returned by default, and leaving it out is silent: the key is simply absent, this binds null
+    /// for everyone, and the gender sync does nothing while looking healthy. That is not the same
+    /// trap as <c>picture</c>, which is returned by default and fails the entire call if named.
+    /// </summary>
+    [JsonPropertyName("gender")]
+    public string? Gender { get; set; }
+
+
     [JsonPropertyName("email")]
     public string? Email { get; set; }
     
@@ -130,6 +142,21 @@ public class ElvantoPerson
     [JsonPropertyName("school_grade")]
     [JsonConverter(typeof(NullableStringConverter<SchoolGrade?>))]
     public SchoolGrade? SchoolGrade { get; set; }
+
+    /// <summary>
+    /// The profile picture URL, and the exact inverse of <see cref="Gender"/>: it is returned by
+    /// default and <b>naming it in the requested <c>Fields</c> array fails the entire call</b> with
+    /// <c>code 250: A field does not exist (picture)</c> — which downstream reads as an empty roll.
+    ///
+    /// <para>
+    /// Three shapes come back and only one is a real upload: a <c>cdn.elvanto.com.au</c>
+    /// default-avatar, a gravatar fallback, and a <c>d2dek0x2lg6bxh.cloudfront.net/.../members/...</c>
+    /// URL. Over half of that last group are malformed by Elvanto itself and 403 permanently. Read
+    /// only — there is no way to write a picture through the API.
+    /// </para>
+    /// </summary>
+    [JsonPropertyName("picture")]
+    public string? Picture { get; set; }
 
     /// <summary>
     /// When Elvanto last changed this person, as "yyyy-MM-dd HH:mm:ss" in UTC (verified against a

@@ -2,6 +2,8 @@ image_tag: 0.0.1
 parameters:
   migrations:
     migrations_image: "docker.io/asherslab/gsbc-kids-migrations"
+  photo_backfill:
+    photo_backfill_image: "docker.io/asherslab/gsbc-kids-photo-backfill"
   grpc:
     port_http: 80
     grpc_image: "docker.io/asherslab/gsbc-kids-grpc"
@@ -11,9 +13,32 @@ parameters:
   yarp:
     port_http: 80
     yarp_image: "docker.io/asherslab/gsbc-kids-yarp"
+  s3:
+    port_s3: 8333
+    s3_image: "docker.io/chrislusf/seaweedfs:3.98"
+    # Sizing from the real roll: ~340 children at 500x500 JPEG q0.85 is about 12 MB of current
+    # photos, and about 250 MB after ten years with nothing ever pruned.
+    #
+    # volume_size_limit_mb x volume_max is the hard ceiling on what SeaweedFS will allocate: 1 GB
+    # here, roughly four times the ten-year estimate. `storage` must stay comfortably above that
+    # ceiling - the volume files are not the only thing on the PVC, the filer's leveldb store shares
+    # it. Do NOT leave these at SeaweedFS' defaults; see the comment in the StatefulSet.
+    volume_size_limit_mb: 128
+    volume_max: 8
+    storage: "2Gi"
 config:
   rabbitmq:
     RABBITMQ_DEFAULT_USER: "guest"
+  s3:
+    bucket: "photos"
+  photos:
+    # Media consent values that may not hold a photo, comma separated (e.g. "StrictlyNo").
+    #
+    # Empty by default, and that is the decision rather than an oversight: an identification photo
+    # for signing a child in is internal safeguarding, not publication, so everyone gets one. It is
+    # a knob because it is a policy question for the church, not an engineering one - setting it
+    # later suppresses capture, hides the control and stops the backfill with no code change.
+    blocked_media_consent: ""
   sql:
     POSTGRES_HOST_AUTH_METHOD: "scram-sha-256"
     POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
@@ -36,3 +61,44 @@ config:
     ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
     services__grpc__http__0: "http://grpc-service:80"
     services__wasm__http__0: "http://wasm-service:80"
+
+# There is deliberately no `secrets:` block.
+#
+# Every credential in this deployment is a Secret created out of band with kubectl, and the chart
+# only references it by name - sql-secrets, rabbitmq-secrets, grpc-secrets, and now
+# s3-identities-secret, photos-secret and s3-backup-secret. Nothing puts a credential in a values
+# file, because values files live in the Argo repo and that is git.
+#
+# docs/modules/infrastructure/object-store.md has the exact `kubectl create secret` commands and
+# what each key must contain.
+
+# The one-off Elvanto photo backfill.
+#
+# Off by default and deliberately not a helm hook: it is a head start, not a correctness
+# requirement, and re-running it on every deploy would re-fetch the whole Elvanto roll to do
+# nothing (it skips anyone who already has a photo). Turn it on for one upgrade, let the Job
+# finish, then turn it back off.
+photo_backfill:
+  enabled: false
+
+# Hourly offsite copy of the photos bucket to Backblaze B2.
+#
+# Disabled until Asher creates the B2 bucket and an application key - that is an out-of-repo
+# prerequisite and nothing here guesses it. To turn it on: create the s3-backup-secret (see
+# docs/modules/infrastructure/object-store.md), then set enabled, bucket and endpoint here.
+# Leave versioning on at the B2 end (it is the default), and if a lifecycle rule is
+# ever added it must be the "keep prior versions for N days" kind: because the keys are content
+# hashes nothing is ever rewritten, so a plain age-based expiration rule would eventually delete
+# every current photo.
+backup:
+  s3:
+    enabled: false
+    schedule: "0 * * * *"
+    rclone_image: "docker.io/rclone/rclone:1.71"
+    # REPLACE ME - the Backblaze B2 bucket name.
+    bucket: ""
+    # REPLACE ME - the region-specific Backblaze S3 endpoint, e.g.
+    # "https://s3.us-west-004.backblazeb2.com". Read it off the bucket in the B2 console.
+    endpoint: ""
+    # The Backblaze application key is NOT here - it lives in the s3-backup-secret created with
+    # kubectl, alongside the SeaweedFS read-only identity the job reads with.

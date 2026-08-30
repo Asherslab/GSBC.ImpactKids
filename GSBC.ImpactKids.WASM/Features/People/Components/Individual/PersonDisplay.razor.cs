@@ -40,7 +40,6 @@ public partial class PersonDisplay
         .AddClass(Class)
         .Build();
 
-    private string? _avatarDisplay;
     private Color   _avatarColor = Color.Default;
     private string  _displayText = "Person";
 
@@ -64,8 +63,6 @@ public partial class PersonDisplay
 
     protected override void OnRetrievedEntity()
     {
-        _avatarDisplay = Entity.Data?.FirstName[0].ToString() ?? "N";
-
         _displayText = Entity.Data == null
             ? "Person"
             : $"{Entity.Data.FirstName} {Entity.Data.LastName}";

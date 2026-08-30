@@ -10,6 +10,9 @@
     <MudNavLink Href="/calendar" Icon="@Icons.Material.Filled.CalendarMonth">Calendar</MudNavLink>
 
     <MudNavLink Href="/Attendance/Tool" Icon="@Icons.Material.Filled.Checklist">Attendance</MudNavLink>
+    @* Its own top-level entry beside Attendance rather than under it: it is a job a leader does
+       for a whole service, not a step inside signing one child in. *@
+    <MudNavLink Href="/Photos" Icon="@Icons.Material.Filled.PhotoCamera">Photos</MudNavLink>
 
     <MudNavPopout Icon="@Icons.Material.Filled.EmojiEvents"
                   Title="Scoring">
@@ -96,5 +99,10 @@
         <MudMenuItem Icon="@Icons.Material.Filled.Sync"
                      Label="Sync"
                      Href="/Sync"/>
+        @* Beside Sync, because it is the same job by hand: Elvanto's API cannot accept a photo, so
+           this is how photos get back into Elvanto. *@
+        <MudMenuItem Icon="@Icons.Material.Filled.Download"
+                     Label="Export Photos"
+                     Href="/People/PhotoExport"/>
     </MudNavPopout>
 </MudNavMenu>

@@ -16,6 +16,9 @@ public class CreatePersonRequest
     public DateTime?    DateOfBirth   { get; set; }
     public DateTime?    FirstTime     { get; set; }
 
+    /// <inheritdoc cref="Person.Gender"/>
+    public Gender? Gender { get; set; }
+
     [ProtoIgnore]
     public DateTime? LocalDateOfBirth
     {
