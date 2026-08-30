@@ -10,6 +10,7 @@ public partial class PersonImpactDetails
     
     private bool? _mediaConsentError;
     private bool? _firstTimeError;
+    private bool? _genderError;
     
     protected override async Task OnInitializedAsync()
     {
@@ -27,11 +28,13 @@ public partial class PersonImpactDetails
     private async Task SendErrorsChanged()
     {
         if (_mediaConsentError == null ||
-            _firstTimeError == null)
+            _firstTimeError == null ||
+            _genderError == null)
             return;
-        
+
         bool error = _mediaConsentError.Value ||
-                     _firstTimeError.Value;
+                     _firstTimeError.Value ||
+                     _genderError.Value;
         if (ErrorsChanged != null)
             await ErrorsChanged(error);
     }
@@ -47,6 +50,22 @@ public partial class PersonImpactDetails
         return mediaConsentError;
     }
     
+    /// <summary>
+    /// Null is the error, and it is the point of the field: a child cannot be signed in against a
+    /// profile that does not say. Expect this to fire on roughly a third of children the first
+    /// night, because that is how many Elvanto has no gender for.
+    /// </summary>
+    private async Task<bool> GenderGetError(Gender? gender)
+    {
+        bool genderError = gender == null;
+        if (_genderError == genderError)
+            return genderError;
+
+        _genderError = genderError;
+        await SendErrorsChanged();
+        return genderError;
+    }
+
     private async Task<bool> FirstTimeGetError(DateTime? dateTime)
     {
         bool firstTimeError = dateTime == null;

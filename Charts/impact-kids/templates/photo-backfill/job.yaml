@@ -1,0 +1,54 @@
+{{- if .Values.photo_backfill.enabled }}
+---
+# The one-off pull of the photos Elvanto already holds.
+#
+# Deliberately NOT a helm hook, unlike migrations-job. Migrations must run on every install and
+# upgrade; this must not. It makes hundreds of outbound requests to Elvanto's CDN, it is a head
+# start rather than a correctness requirement, and re-running it on every deploy would be pure
+# waste - it skips anyone who already has a photo, so a repeat run does nothing but re-fetch the
+# Elvanto roll.
+#
+# So it is off by default and run deliberately:
+#   helm upgrade ... --set photo_backfill.enabled=true
+# then set it back to false. `ttlSecondsAfterFinished` clears the finished Job on its own.
+#
+# Expect roughly 60% of attempted fetches to succeed. Over half the real photo URLs in this account
+# are malformed by Elvanto itself and 403 permanently - see the worker, and
+# docs/modules/elvanto/api-reference.md.
+apiVersion: "batch/v1"
+kind: "Job"
+metadata:
+  name: "photo-backfill-job"
+  labels:
+    app.kubernetes.io/name: "impact-kids-app"
+    app.kubernetes.io/component: "photo-backfill"
+    app.kubernetes.io/instance: "{{.Release.Name}}"
+spec:
+  # One attempt. A failure here is worth reading rather than retrying blindly: the likely causes
+  # are a bad Elvanto credential or an unreachable object store, and neither is fixed by running
+  # the same job again.
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: "impact-kids-app"
+        app.kubernetes.io/component: "photo-backfill"
+        app.kubernetes.io/instance: "{{.Release.Name}}"
+    spec:
+      restartPolicy: Never
+      containers:
+        - image: "{{ .Values.parameters.photo_backfill.photo_backfill_image }}:{{ .Values.image_tag }}"
+          name: "photo-backfill"
+          envFrom:
+            # The database connection string and the Elvanto authentication string. Shared with the
+            # gRPC service because they are the same two credentials - this worker is read-only
+            # against Elvanto and forces its write gates off in Program.cs whatever they say here.
+            - secretRef:
+                name: "grpc-secrets"
+            - secretRef:
+                name: "photos-secret"
+            - configMapRef:
+                name: "photo-backfill-config"
+          imagePullPolicy: "IfNotPresent"
+{{- end }}

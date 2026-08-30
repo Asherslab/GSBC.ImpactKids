@@ -32,4 +32,20 @@ public record AttendanceRecord : IIdentifiable
     public required Guid  SignedInUserId  { get; init; }
     public          Guid? SignedOutUserId { get; init; }
     public required Guid  ServiceId       { get; init; }
+
+    /// <summary>
+    /// Whether this person is currently in the building — signed in for the night and not signed
+    /// out. The Attendance tool's "Signed In" filter and the Photos tool's list both ask this, and
+    /// they ask it here rather than each carrying a copy: two screens that disagree about who is
+    /// present is a worse bug than either screen being wrong.
+    ///
+    /// <para>
+    /// <b><c>== true</c>, not <c>!= false</c>.</b> <paramref name="records"/> is null both while the
+    /// store is loading and when it has failed, and <c>null != false</c> is true — which turns
+    /// "nobody is signed in" into "show the entire roster" at exactly the moment the leader cannot
+    /// tell the difference.
+    /// </para>
+    /// </summary>
+    public static bool IsSignedIn(IEnumerable<AttendanceRecord>? records, Guid personId) =>
+        records?.Any(x => x.PersonId == personId && x.LocalSignedOut == null) == true;
 }

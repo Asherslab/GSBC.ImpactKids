@@ -11,9 +11,7 @@
         </MudOverlay>
         <MudLink Underline="Underline.None" Href="@Href" Class="person-card-link">
             <MudPaper Elevation="0" Class="@Css">
-                <MudAvatar Rounded Color="@_avatarColor" Class="ma-3">
-                    @_avatarDisplay
-                </MudAvatar>
+                <PersonAvatar Person="@Entity.Data" Color="@_avatarColor" Class="ma-3"/>
                 <MudPaper Elevation="0" Class="person-card-name d-flex justify-center flex-column flex-grow-1">
                     <MudText>
                         @_displayText

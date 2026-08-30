@@ -47,6 +47,7 @@ public partial class PersonService
 
             SchoolGradeId = request.SchoolGradeId,
             MediaConsent = request.MediaConsent.ToString(),
+            Gender = request.Gender?.ToString(),
             DateOfBirth = request.DateOfBirth,
             FirstTime = request.FirstTime,
 

@@ -11,6 +11,14 @@ public class ElvantoPersonFields
     public string? Birthday { get; set; }
 
     /// <summary>
+    /// "Male" or "Female". A standard people field rather than a custom one, but like the birthday
+    /// and the school grade it is writable only under <c>fields</c>, never at the top level.
+    /// </summary>
+    [JsonPropertyName("gender")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Gender { get; set; }
+
+    /// <summary>
     /// A standard optional people field, not a custom one, so it is named plainly rather than
     /// <c>custom_&lt;id&gt;</c> - but it still lives under <c>fields</c>. Sent at the top level it is
     /// rejected outright: <c>A param does not exist (school_grade)</c>.

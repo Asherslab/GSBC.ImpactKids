@@ -14,3 +14,10 @@ data:
   OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "{{ .Values.config.grpc.OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY }}"
   ASPNETCORE_FORWARDEDHEADERS_ENABLED: "{{ .Values.config.grpc.ASPNETCORE_FORWARDEDHEADERS_ENABLED }}"
   HTTP_PORTS: "{{ .Values.config.grpc.HTTP_PORTS }}"
+  # The photo object store. Cluster-internal - there is no ingress and no YARP route to it, and
+  # this service is its only client. The credentials are not here; they are in photos-secret.
+  Photos__ServiceUrl: "http://s3-service:{{ .Values.parameters.s3.port_s3 }}"
+  Photos__BucketName: "{{ .Values.config.s3.bucket }}"
+  # Media consent values that may not hold a photo. Empty means everyone may, which is the decided
+  # default: an identification photo for signing a child in is safeguarding, not publication.
+  Photos__BlockedMediaConsent: "{{ .Values.config.photos.blocked_media_consent }}"

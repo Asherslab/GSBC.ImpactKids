@@ -1,0 +1,23 @@
+---
+# ClusterIP only, and deliberately so. Nothing outside the cluster ever reaches the object store:
+# there is no Ingress and no YARP route, and the gRPC service is its only client. Same rule, and the
+# same reason, as PickupDisplayKeyEndpoints' internal/ group.
+apiVersion: "v1"
+kind: "Service"
+metadata:
+  name: "s3-service"
+  labels:
+    app.kubernetes.io/name: "impact-kids-app"
+    app.kubernetes.io/component: "s3"
+    app.kubernetes.io/instance: "{{.Release.Name}}"
+spec:
+  type: "ClusterIP"
+  selector:
+    app.kubernetes.io/name: "impact-kids-app"
+    app.kubernetes.io/component: "s3"
+    app.kubernetes.io/instance: "{{.Release.Name}}"
+  ports:
+    - name: "s3"
+      protocol: "TCP"
+      port: {{ .Values.parameters.s3.port_s3 }}
+      targetPort: {{ .Values.parameters.s3.port_s3 }}

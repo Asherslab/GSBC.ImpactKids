@@ -24,8 +24,9 @@ Present tense, kept current, no dates.
 |---|---|
 | **games** | [team points, wall displays and the reveal](modules/games/README.md) |
 | **auth** | [the cookie, the bearer token, and the local bypass](modules/auth/sign-in.md) |
-| **people** | [school grades and who is in the program](modules/people/school-grades-and-programs.md) |
-| **infrastructure** | [generated passwords and persistent volumes](modules/infrastructure/generated-passwords.md) |
+| **people** | [the person record: school grades, gender, and photos](modules/people/README.md) |
+| **elvanto** | [the API doc pages, and where they are wrong](modules/elvanto/api-reference.md) |
+| **infrastructure** | [generated passwords, persistent volumes, and the photo object store](modules/infrastructure/README.md) |
 
 ## The other three directories
 

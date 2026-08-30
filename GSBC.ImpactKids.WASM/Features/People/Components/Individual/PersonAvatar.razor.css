@@ -1,0 +1,50 @@
+/* The wrapper takes its size from the MudAvatar inside it, and the photo is laid over that.
+   inline-flex rather than block so the avatar keeps behaving like the bare MudAvatar it replaces -
+   a row that put it beside a name still does.
+
+   The rounding lives here rather than on the photo, and the wrapper clips: the photo's own parent
+   is this div, not the MudAvatar beside it, so `border-radius: inherit` on the image would inherit
+   0 and square off a rounded avatar. */
+.person-avatar {
+    position: relative;
+    display: inline-flex;
+    flex: 0 0 auto;
+    overflow: hidden;
+}
+
+.person-avatar.is-rounded {
+    border-radius: var(--mud-default-borderradius);
+}
+
+.person-avatar.is-circle {
+    border-radius: 50%;
+}
+
+/* No ::deep here, unlike the MudAvatar rule below: the img is in this component's own markup, so
+   CSS isolation stamps it and a ::deep would push the match past it and match nothing. */
+.person-avatar .person-avatar-photo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+
+    /* Fades in from nothing, so a slow photo never flashes in over the initial.
+
+       An animation, not a transition driven by an onload handler: with a year-long immutable
+       cache the image is usually already complete before Blazor can attach @onload, so the event
+       never fires and anything waiting on it would leave the photo invisible for good. An
+       animation runs when the element is inserted, whatever the image did. */
+    animation: person-avatar-fade-in 150ms ease-in both;
+}
+
+@keyframes person-avatar-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .person-avatar .person-avatar-photo {
+        animation: none;
+    }
+}

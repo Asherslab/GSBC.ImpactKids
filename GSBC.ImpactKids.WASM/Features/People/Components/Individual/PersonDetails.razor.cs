@@ -25,6 +25,13 @@ public partial class PersonDetails
     private AsyncData<ImmutableList<FamilyDefinition>>
         _families = AsyncData<ImmutableList<FamilyDefinition>>.NotAsked();
 
+    /// <summary>Matches the person cards: a guardian is secondary, a child primary.</summary>
+    private MudBlazor.Color AvatarColor => Entity.Data == null
+        ? MudBlazor.Color.Default
+        : Entity.Data.FamilyGuardian
+            ? MudBlazor.Color.Secondary
+            : MudBlazor.Color.Primary;
+
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
