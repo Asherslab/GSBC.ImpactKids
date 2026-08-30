@@ -66,8 +66,18 @@ Same rule as `sql-secrets`, `rabbitmq-secrets` and `grpc-secrets`. **The chart r
 An earlier draft assembled the identities document from Helm values; it was changed for exactly this
 reason.
 
-Make all three once per environment. Generate the four credentials however you like — they are
-opaque strings; avoid punctuation, since they get pasted into shell and YAML by hand.
+Make all three once per environment.
+
+**Where the values come from is the part that catches people.** There are two kinds:
+
+| Value | Origin |
+|---|---|
+| `APP_KEY`, `APP_SECRET`, `BACKUP_KEY`, `BACKUP_SECRET` | **Invented.** SeaweedFS has no key-issuing step — whatever is written into `s3.json` *becomes* the valid credential and nothing else authenticates. Generate opaque strings (`openssl rand -hex 24`) and avoid punctuation; they are signed into S3 headers and pasted into shell and JSON by hand. |
+| `B2_KEY_ID`, `B2_APPLICATION_KEY` | **Issued by Backblaze** when an application key is created in the B2 console. Not chosen. |
+
+Secret (3) mixes the two: its `SEAWEED` half is the invented backup pair, its `B2` half is
+Backblaze's. Nothing validates that the copies agree — a mismatch is a 403 at runtime, not an
+install error.
 
 ```bash
 # 1. SeaweedFS' own identities document. Two identities: the app, and a read-only backup reader.
@@ -105,7 +115,7 @@ kubectl -n impact-kids create secret generic s3-backup-secret \
 
 `APP_KEY`/`APP_SECRET` must be identical in (1) and (2), and `BACKUP_KEY`/`BACKUP_SECRET` identical
 in (1) and (3). They are the same credentials expressed in two formats — SeaweedFS wants its own
-JSON, the clients want environment variables.
+JSON, the clients want environment variables. The Backblaze pair appears only in (3).
 
 ## The volume flags are load-bearing, not tuning
 
