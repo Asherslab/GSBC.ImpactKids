@@ -108,6 +108,12 @@ public partial class ElvantoService
                     ? MediaConsentHelper.FromElvanto(elvantoPerson.MediaConsent?.Name).ToString()
                     : matchedPerson?.DbPerson.MediaConsent
                       ?? MediaConsentHelper.FromElvanto(elvantoPerson.MediaConsent?.Name).ToString(),
+                // Elvanto's blank is "" here, and it is not an answer - so it never displaces what
+                // the app already holds, and never becomes an empty string in the column.
+                Gender = matchedPerson?.DbPerson.Gender
+                         ?? (string.IsNullOrWhiteSpace(elvantoPerson.Gender)
+                                 ? null
+                                 : elvantoPerson.Gender),
                 DateOfBirth = dateOfBirth,
                 FirstTime = firstTime,
 
@@ -182,6 +188,18 @@ public partial class ElvantoService
     }
 
 
+    /// <summary>
+    /// Every person exactly as Elvanto returned them, without the DbPerson reconciliation
+    /// <see cref="GetPeople"/> does.
+    ///
+    /// Exists for the photo backfill, which wants <c>picture</c> and nothing else — that field is
+    /// returned by default, never asked for, and is not part of any sync descriptor, so there is
+    /// nothing for it on the reconciled shape. Throws rather than returning a partial roll, like
+    /// every other read here.
+    /// </summary>
+    public Task<List<ElvantoPerson>> GetPeopleWithPicturesAsync(CancellationToken token = default) =>
+        RetrieveElvantoPeople(token);
+
     private const int PageSize = 1000;
     private const int MaxAttemptsPerPage = 3;
 
@@ -248,6 +266,13 @@ public partial class ElvantoService
                     [
                         "school_grade",
                         "birthday",
+                        // Must be asked for. It is NOT returned by default - measured against the
+                        // live account, a getAll with no "gender" here omits the key entirely,
+                        // whether or not a fields array is supplied at all. Leaving it out does not
+                        // fail the call, it just makes GenderDescriptor read null for every person
+                        // and the field sync silently dead. "picture" is the opposite trap: naming
+                        // it here fails the whole call with code 250.
+                        "gender",
                         $"custom_{ElvantoPerson.CustomFieldMedicalId}",
                         $"custom_{ElvantoPerson.CustomFieldMediaConsentId}",
                         $"custom_{ElvantoPerson.CustomFieldFirstTimeId}"

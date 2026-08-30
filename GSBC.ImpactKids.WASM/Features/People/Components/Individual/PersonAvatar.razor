@@ -1,0 +1,33 @@
+@using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People
+
+@* A plain wrapper, not the MudAvatar itself: CSS isolation only stamps its b-hash on elements in
+   this markup, so a class sitting on a MudBlazor component never matches its own rule. The avatar
+   is reached through ::deep from here - same rule as PersonDisplay. *@
+<div class="person-avatar @(Rounded ? "is-rounded" : "is-circle") @Class">
+    @* The ground state, always rendered. Not a fallback branch - if the photo never arrives, this
+       is simply what the component is, and the card looks exactly as it did before photos existed. *@
+    <MudAvatar Rounded="@Rounded" Color="@Color" Size="@Size">
+        @Initial
+    </MudAvatar>
+
+    @if (Person?.PhotoVersion is { } version && !_failed)
+    {
+        @* Absolutely positioned over the initial, so it occupies no space either way and there is
+           no layout shift when it loads or when it fails. onerror reveals the initial underneath -
+           a 404, a dropped connection, an offline phone and an object the store has lost all land
+           here, and none of them shows a broken-image glyph.
+
+           The fade-in is a CSS animation rather than an @onload handler on purpose. These responses
+           are cached immutably for a year, so on any repeat view the image is already complete
+           before Blazor attaches the handler - the event never fires, and a photo that depended on
+           it to become visible would sit at opacity 0 for good while the initial showed through.
+           An animation needs nothing to fire. Caught in the DOM: an <img> with naturalWidth 500 and
+           no is-loaded class. *@
+        <img class="person-avatar-photo"
+             src="@($"/api/people/{Person.Id}/photo?v={version}")"
+             alt=""
+             loading="lazy"
+             decoding="async"
+             @onerror="OnPhotoError"/>
+    }
+</div>

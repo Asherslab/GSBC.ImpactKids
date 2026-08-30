@@ -69,6 +69,13 @@ public partial class PersonService
             person.MediaConsent = consent.ToString();
         }
 
+        if (request.Gender.IsUpdated)
+        {
+            // Null is a legitimate value here - clearing the select puts the person back to "not
+            // told" - so unlike MediaConsent there is nothing to reject, only an enum to name.
+            person.Gender = request.Gender.Value?.ToString();
+        }
+
         if (request.DateOfBirth.IsUpdated)
         {
             person.DateOfBirth = request.DateOfBirth.Value;
@@ -90,6 +97,13 @@ public partial class PersonService
         if (request.FamilyGuardian.IsUpdated)
         {
             person.FamilyGuardian = request.FamilyGuardian.Value;
+        }
+
+        // Only ever set here. Clearing it is the photo endpoint's job, because taking the photo is
+        // what answers the question this flag asks.
+        if (request.PhotoNeedsUpdate.IsUpdated)
+        {
+            person.PhotoNeedsUpdate = request.PhotoNeedsUpdate.Value;
         }
 
         await db.SaveChangesAsync(token);

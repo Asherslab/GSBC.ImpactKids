@@ -1,5 +1,6 @@
 using GSBC.ImpactKids.Grpc.Data.Models.People;
 using GSBC.ImpactKids.Grpc.Features.Elvanto.ElvantoServices.Models;
+using PeopleGender = GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.Gender;
 using PeopleMediaConsent = GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.MediaConsent;
 using PeopleMediaConsentHelper = GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.MediaConsentHelper;
 
@@ -73,6 +74,11 @@ public partial class ElvantoService
             FirstTimeAtImpactKids = ToAestDate(person.FirstTime),
             MediaConsent          = Enum.TryParse<PeopleMediaConsent>(person.MediaConsent, out PeopleMediaConsent mc)
                                         ? PeopleMediaConsentHelper.ToDisplay(mc)
+                                        : null,
+            // Only ever one of the two answers Elvanto accepts. A person the app has no gender for
+            // is created without one rather than with a guess.
+            Gender                = Enum.TryParse(person.Gender, out PeopleGender gender)
+                                        ? gender.ToString()
                                         : null,
             MedicalAllergyNotes   = medicalAllergyNotes ?? MergeAllergyAndMedicalNotes(person)
         };

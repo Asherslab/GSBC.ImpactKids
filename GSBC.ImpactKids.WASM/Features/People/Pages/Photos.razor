@@ -1,0 +1,83 @@
+@using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Attendance
+@using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling
+@using GSBC.ImpactKids.WASM.Features.People.Components.Individual
+@using GSBC.ImpactKids.WASM.Features.Scheduling.Features.Services.Components.Individual
+@page "/Photos"
+@inject IRefreshableStore<Service>          ServicesStore
+@inject IRefreshableStore<Person>           PeopleStore
+@inject IRefreshableStore<AttendanceRecord> AttendanceRecordsStore
+
+<PageTitle>Photos</PageTitle>
+
+<MudBreadcrumbs Items="@_breadcrumbs"/>
+
+<MudPaper Elevation="6" Class="pt-1 px-6 pb-6">
+    <MudText Align="Align.Center" Typo="Typo.h5" Class="py-3">Photos</MudText>
+
+    <MudOverlay Visible="@(_service.IsLoading)" DarkBackground Absolute>
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+
+    @if (_service.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">
+            @(_service.Error ?? "An Unexpected error occured")
+        </MudAlert>
+    }
+
+    <MudGrid Spacing="3" Justify="Justify.Center">
+        <MudItem xs="12" md="3">
+            <ServiceDisplay Id="_service.Data?.Id" Link/>
+        </MudItem>
+        <MudItem xs="12" md="9">
+            @if (!_loaded)
+            {
+                @* Neither "everyone is done" nor a list - the page does not know yet, and saying
+                   either would be a claim it cannot make. *@
+                <MudPaper Elevation="6" Class="pa-8 d-flex justify-center">
+                    <MudProgressCircular Indeterminate/>
+                </MudPaper>
+            }
+            else if (_needingPhotos.Count == 0)
+            {
+                @* The real thing, not a blank panel - "nothing here" and "everyone is done" look
+                   identical otherwise, and only one of them is good news. *@
+                <MudPaper Elevation="6" Class="pa-8">
+                    <MudText Align="Align.Center" Typo="Typo.h6">
+                        Every child signed in has a current photo
+                    </MudText>
+                </MudPaper>
+            }
+            else
+            {
+                <MudGrid Spacing="3">
+                    @foreach (Person person in _needingPhotos)
+                    {
+                        <MudItem xs="12" md="4" @key="person.Id">
+                            <PersonDisplay Id="person.Id"
+                                           ShowGrade
+                                           Link="@($"/People/{person.Id}")">
+                                <FooterContent>
+                                    <MudButton Variant="Variant.Filled"
+                                               Color="Color.Primary"
+                                               StartIcon="@Icons.Material.Filled.PhotoCamera"
+                                               FullWidth
+                                               OnClick="@(() => OpenCapture(person))">
+                                        @(person.PhotoVersion == null ? "Take photo" : "Retake photo")
+                                    </MudButton>
+                                </FooterContent>
+                            </PersonDisplay>
+                        </MudItem>
+                    }
+                </MudGrid>
+            }
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (_capturing != null)
+{
+    <PhotoCapture Person="@_capturing"
+                  OnSaved="@OnPhotoSaved"
+                  OnClose="@CloseCapture"/>
+}

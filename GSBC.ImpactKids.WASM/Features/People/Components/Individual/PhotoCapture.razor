@@ -1,0 +1,108 @@
+@using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People
+
+<div class="photo-capture">
+    <div class="photo-capture-header">
+        <MudIconButton Icon="@Icons.Material.Filled.Close"
+                       Color="Color.Inherit"
+                       aria-label="Close"
+                       OnClick="@CloseAsync"/>
+        <MudText Typo="Typo.h6">@(Person?.GetDisplayName() ?? "Take a photo")</MudText>
+        <MudSpacer/>
+        @if (_liveCamera && _multipleCameras)
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.FlipCameraIos"
+                           Color="Color.Inherit"
+                           aria-label="Switch camera"
+                           OnClick="@FlipCameraAsync"/>
+        }
+    </div>
+
+    @if (_error != null)
+    {
+        <MudAlert Severity="Severity.Error" Class="ma-4">@_error</MudAlert>
+    }
+
+    @* One plain line, so a leader knows why the flow changed rather than thinking the tool is
+       broken. This is a normal state, not an error, so it is not an alert. *@
+    @if (!_starting && !_liveCamera && _cameraMessage != null)
+    {
+        <MudText Typo="Typo.body2" Align="Align.Center" Class="pa-4 mud-text-secondary">
+            @_cameraMessage
+        </MudText>
+    }
+
+    <div class="photo-capture-stage">
+        @* Kept in the DOM rather than swapped out: @ref must be non-null before start() is called,
+           and a @if around it made the element arrive after the first render. Hidden instead. *@
+        <video @ref="_video"
+               class="photo-capture-video @(_liveCamera && _preview == null ? null : "is-hidden") @(Mirrored ? "is-mirrored" : null)"
+               playsinline
+               muted
+               autoplay></video>
+
+        @if (_preview != null)
+        {
+            <img class="photo-capture-preview" src="@($"data:image/jpeg;base64,{_preview}")" alt="The photo just taken"/>
+        }
+
+        @if (_liveCamera && _preview == null)
+        {
+            @* The crop guide. Purely visual - the square crop is done on the canvas, not here. *@
+            <div class="photo-capture-guide"></div>
+        }
+
+        @if (_starting)
+        {
+            <MudProgressCircular Indeterminate Class="photo-capture-spinner"/>
+        }
+    </div>
+
+    <div class="photo-capture-actions">
+        @if (_preview == null)
+        {
+            @if (_liveCamera)
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.Camera"
+                               Color="Color.Primary"
+                               Size="Size.Large"
+                               Class="photo-capture-shutter"
+                               aria-label="Take photo"
+                               Disabled="@_starting"
+                               OnClick="@TakePhotoAsync"/>
+            }
+
+            @* Always offered, not only as a fallback: a leader who already took the photo outside
+               the app needs this even when the live camera works. `capture` steers a phone at its
+               camera app, which does not touch the camera roll either.
+
+               The wording only claims a fallback once the camera has actually finished trying.
+               While starting - which includes the seconds a permission prompt is on screen - it
+               says the neutral thing, because "Open camera or library" beside a spinner reads as
+               "the live camera has already failed" when it has not. *@
+            <MudButton StartIcon="@Icons.Material.Filled.PhotoLibrary"
+                       Variant="Variant.Text"
+                       Disabled="@_busy">
+                <label class="photo-capture-file">
+                    @(_liveCamera || _starting ? "Choose from library" : "Open camera or library")
+                    <InputFile OnChange="@OnFilePickedAsync" accept="image/*" capture="user"/>
+                </label>
+            </MudButton>
+        }
+        else
+        {
+            <MudButton StartIcon="@Icons.Material.Filled.Replay"
+                       Variant="Variant.Text"
+                       Disabled="@_busy"
+                       OnClick="@RetakeAsync">
+                Retake
+            </MudButton>
+            <MudButton StartIcon="@Icons.Material.Filled.Check"
+                       Color="Color.Primary"
+                       Variant="Variant.Filled"
+                       Disabled="@_busy"
+                       OnClick="@SaveAsync">
+                @(_busy ? "Saving…" : "Use this photo")
+            </MudButton>
+        }
+    </div>
+</div>

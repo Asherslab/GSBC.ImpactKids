@@ -24,6 +24,9 @@ using GSBC.ImpactKids.Grpc.Features.People.AllergyServices;
 using GSBC.ImpactKids.Grpc.Features.People.MedicalNoteServices;
 using GSBC.ImpactKids.Grpc.Features.People.MedicalTypeServices;
 using GSBC.ImpactKids.Grpc.Features.People.PersonServices;
+using GSBC.ImpactKids.Grpc.Features.People.Photos;
+using Amazon.Runtime;
+using Amazon.S3;
 using GSBC.ImpactKids.Grpc.Features.Sync.SyncServices;
 using GSBC.ImpactKids.Grpc.Features.People.SchoolGradeServices;
 using GSBC.ImpactKids.Grpc.Features.Scheduling.School.SchoolTermServices;
@@ -152,6 +155,35 @@ builder.Services.AddPooledDbContextFactory<GsbcDbContext>((sp, o) =>
     // o.AddInterceptors(new GSBC.ImpactKids.Grpc.Data.Interceptors.LatencyInterceptor(TimeSpan.FromSeconds(1.5)));
 });
 
+// The photo object store. Absent configuration is a legitimate state - a deployment without a store
+// simply has no photos, every face falls back to its coloured initial, and nothing else changes - so
+// this registers nothing rather than failing to start.
+PhotoStoreConfig? photoConfig = builder.Configuration
+    .GetSection(PhotoStoreConfig.SectionName).Get<PhotoStoreConfig>();
+
+// Credentials are checked, not just the URL. Photos__ServiceUrl comes from the ConfigMap and is
+// therefore always set in the cluster, while the keys come from photos-secret - so testing the URL
+// alone would register a store with blank credentials whenever that Secret is missing, and every
+// photo operation would fail 403 rather than the feature simply being off.
+if (photoConfig is not null
+    && !string.IsNullOrWhiteSpace(photoConfig.ServiceUrl)
+    && !string.IsNullOrWhiteSpace(photoConfig.AccessKey)
+    && !string.IsNullOrWhiteSpace(photoConfig.SecretKey))
+{
+    builder.Services.AddSingleton(photoConfig);
+    builder.Services.AddSingleton<IAmazonS3>(_ => new AmazonS3Client(
+        new BasicAWSCredentials(photoConfig.AccessKey, photoConfig.SecretKey),
+        new AmazonS3Config
+        {
+            ServiceURL = photoConfig.ServiceUrl,
+            // Neither SeaweedFS locally nor the in-cluster one has per-bucket DNS, so the bucket has
+            // to travel in the path rather than the hostname.
+            ForcePathStyle = true,
+            AuthenticationRegion = "us-east-1"
+        }));
+    builder.Services.AddScoped<PhotoStore>();
+}
+
 ElvantoConfig? elvantoConfig = builder.Configuration.GetSection("Elvanto").Get<ElvantoConfig>();
 if (elvantoConfig != null)
 {
@@ -237,6 +269,40 @@ app.AddEventEndpoints();
 // Cluster-internal only - the proxy asks these when a pickup wall enrols. Deliberately not
 // routed in GSBC.ImpactKids.YARP/appsettings.json; see the class remarks.
 app.AddPickupDisplayKeyEndpoints();
+
+// Leader only by falling through to the EnabledOnly fallback policy, which is what keeps a wall
+// display structurally unable to reach a child's face.
+//
+// Mapped only when a store is configured. A deployment without one is a legitimate state - no
+// photos, every face falls back to its coloured initial - and leaving the routes unmapped makes
+// that a 404, which is exactly what PersonAvatar already handles. Mapping them anyway would answer
+// 500 instead, because the handlers resolve PhotoStore.
+if (app.Services.GetService<PhotoStoreConfig>() is not null)
+{
+    app.AddPersonPhotoEndpoints();
+
+    // The substitute for a photo sync: nothing can push a picture back through the Elvanto API, so
+    // office staff get a zip to drag into Elvanto's own UI.
+    app.AddPhotoExportEndpoints();
+
+    // Best effort, and it must stay that way. There is no ordering guarantee in the cluster, so the
+    // object store may well not be up when this service starts - and photos must never be able to
+    // stop children being signed in. An unreachable store here means the avatars fall back to their
+    // coloured initials, which is exactly what PersonAvatar already does.
+    //
+    // PutAsync creates the bucket on demand if this did not manage it.
+    using IServiceScope photoScope = app.Services.CreateScope();
+    try
+    {
+        await photoScope.ServiceProvider.GetRequiredService<PhotoStore>().EnsureBucketAsync();
+    }
+    catch (Exception ex)
+    {
+        photoScope.ServiceProvider.GetRequiredService<ILogger<Program>>().LogError(
+            ex, "Could not reach the photo object store at startup. Photos will be unavailable "
+                + "until it is reachable; everything else is unaffected.");
+    }
+}
 
 using (IServiceScope scope = app.Services.CreateScope())
 {
