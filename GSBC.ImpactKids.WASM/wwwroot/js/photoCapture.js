@@ -80,12 +80,30 @@ export function stop() {
     stream = null;
 }
 
-/** Which cameras exist, so the front/back toggle can be hidden when there is only one. */
+/**
+ * Which cameras exist, so the front/back toggle can be hidden when there is only one.
+ *
+ * MUST be asked only once a camera has actually been opened. Until permission is granted, Safari on
+ * iOS answers with a single unlabelled videoinput no matter how many lenses the phone has - so
+ * asking first and believing the answer hid the toggle on exactly the devices that need it, leaving
+ * every leader stuck on the selfie camera. Once the stream is live the same call lists the front and
+ * back cameras properly.
+ *
+ * A blank label means we are still in that pre-permission window, so the count is not evidence of
+ * anything and the answer is "assume there is a choice": showing a toggle that turns out to do
+ * nothing is a far smaller failure than hiding the one that works.
+ */
 export async function hasMultipleCameras() {
     if (!navigator.mediaDevices?.enumerateDevices) return false;
     try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        return devices.filter(d => d.kind === 'videoinput').length > 1;
+        const cameras = (await navigator.mediaDevices.enumerateDevices())
+            .filter(d => d.kind === 'videoinput');
+
+        if (cameras.length > 1) return true;
+
+        return cameras.length === 1
+            && !cameras[0].label
+            && !!navigator.mediaDevices.getSupportedConstraints?.().facingMode;
     } catch {
         return false;
     }
