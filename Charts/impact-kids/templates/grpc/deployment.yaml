@@ -23,10 +23,16 @@ spec:
                 name: "grpc-config"
             - secretRef:
                 name: "grpc-secrets"
-            # Photos__AccessKey / Photos__SecretKey for the object store. Created out of
-            # band with kubectl like the others; the chart only references it.
+            # Photos__AccessKey / Photos__SecretKey for the object store. Created out of band with
+            # kubectl like the others; the chart only references it.
+            #
+            # optional: true on purpose. Without it a missing Secret stops this pod starting at all,
+            # which would mean a photo credential that has not been created yet takes sign in down
+            # with it. Absent, the service simply registers no photo store: the endpoints are not
+            # mapped, they 404, and every avatar falls back to its coloured initial.
             - secretRef:
                 name: "photos-secret"
+                optional: true
           ports:
             - name: "http"
               protocol: "TCP"
