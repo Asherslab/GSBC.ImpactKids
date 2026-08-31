@@ -13,6 +13,61 @@ namespace GSBC.ImpactKids.Grpc.Features.People.Sync.Services;
 public partial class ElvantoPersonSyncService
 {
     /// <summary>
+    /// Why an unlinked app person is not being pushed to Elvanto as new, or that nothing is stopping
+    /// it.
+    ///
+    /// Split out from the loop because it is the whole of the "is this person already spoken for?"
+    /// question and the only part of the create decision that can be exercised without a database —
+    /// see <c>DecideCreatesAsync</c>'s callers for the rest.
+    /// </summary>
+    public enum CreateGate
+    {
+        /// <summary>Nothing claims this person; plan the create.</summary>
+        Proceed,
+
+        /// <summary>A <c>LinkPerson</c> row was planned for them by this same run.</summary>
+        LinkedThisRun,
+
+        /// <summary>They are the app side of a review this run raised.</summary>
+        ReviewCandidate,
+
+        /// <summary>A review of theirs is still unanswered, and no denial has released them.</summary>
+        AwaitingReview
+    }
+
+    /// <summary>
+    /// The order matters and is the fix for a real plan: <c>linkedThisRunIds</c> is asked first
+    /// because a matched person is settled, and asking any later would report them as held for a
+    /// review nobody raised.
+    ///
+    /// <c>DbPerson.ElvantoId</c> cannot answer any of this. Decide writes nothing to <c>People</c>,
+    /// so a person linked at 100% confidence still reads as unlinked here — which is how Lydia and
+    /// Julia Agatep drew a <c>LinkPerson</c> row and a <c>CreateInElvanto</c> row apiece from one
+    /// run. Apply happened to skip those creates (it links first, then finds <c>ElvantoId</c> set),
+    /// but that rescue does not hold if the link goes Stale: the Elvanto record changing after the
+    /// plan was decided leaves <c>ElvantoId</c> null and the create fires, duplicating in Elvanto
+    /// the very record the person was matched to.
+    /// </summary>
+    public static CreateGate GateForCreate(
+        Guid               personId,
+        IReadOnlySet<Guid> linkedThisRunIds,
+        IReadOnlySet<Guid> reviewCandidateIds,
+        IReadOnlySet<Guid> awaitingReviewIds,
+        IReadOnlySet<Guid> deniedPairIds)
+    {
+        if (linkedThisRunIds.Contains(personId))   return CreateGate.LinkedThisRun;
+        if (reviewCandidateIds.Contains(personId)) return CreateGate.ReviewCandidate;
+
+        // A denial is the statement that these are two different people, which is exactly the case
+        // where the app person genuinely needs creating - so it releases the hold rather than adding
+        // to it.
+        if (awaitingReviewIds.Contains(personId) && !deniedPairIds.Contains(personId))
+            return CreateGate.AwaitingReview;
+
+        return CreateGate.Proceed;
+    }
+
+    /// <summary>
     /// App people who are not in Elvanto. One decision path for every mode — the two used to be
     /// separate loops, so a dry run reported work the full run would do differently.
     /// </summary>
@@ -26,6 +81,7 @@ public partial class ElvantoPersonSyncService
         HashSet<Guid>             reviewCandidateIds,
         HashSet<Guid>             deniedPairIds,
         HashSet<Guid>             awaitingReviewIds,
+        HashSet<Guid>             linkedThisRunIds,
         List<DbSyncPendingReview> newPendingReviews,
         CancellationToken         token)
     {
@@ -33,12 +89,18 @@ public partial class ElvantoPersonSyncService
 
         foreach (DbPerson local in set.AppPeople.Where(p => p.ElvantoId is null && p.DeletedAtUtc is null))
         {
-            if (reviewCandidateIds.Contains(local.Id)) continue;
+            CreateGate gate = GateForCreate(
+                local.Id, linkedThisRunIds, reviewCandidateIds, awaitingReviewIds, deniedPairIds);
+
+            // Neither work to do nor a finding to report. A person the matcher just paired with an
+            // Elvanto record has somewhere to be, and one standing as a review candidate is already
+            // counted by the loop that raised the review.
+            if (gate is CreateGate.LinkedThisRun or CreateGate.ReviewCandidate) continue;
 
             // Still waiting on a human. Audited rather than skipped in silence: the run reports the
             // full work-list, and a person sitting behind an unanswered review is a finding rather
             // than nothing to do.
-            if (awaitingReviewIds.Contains(local.Id) && !deniedPairIds.Contains(local.Id))
+            if (gate is CreateGate.AwaitingReview)
             {
                 await audit.Log(operationId, local.Id, SyncEventType.ManualReviewQueued,
                     "CreateSuppressed:AwaitingReview", direction: SyncSource.App,

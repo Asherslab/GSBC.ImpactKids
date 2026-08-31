@@ -62,6 +62,18 @@ public partial class ElvantoPersonSyncService
             // the two mean opposite things for the create decision below.
             HashSet<Guid> deniedPairIds = [];
 
+            // App people this run has planned a link for. They already exist in Elvanto, so pushing
+            // them as new would duplicate the very record they were just matched to.
+            //
+            // The create decision cannot see the link any other way: a link is a plan row, and
+            // DbPerson.ElvantoId is set by Apply, not here - so a person linked at 100% confidence
+            // still reads as unlinked further down. Apply happened to skip the create (it runs the
+            // link loop first, then finds ElvantoId set), which is why this surfaced as a
+            // contradictory pair of plan rows rather than as duplicates in Elvanto. That rescue is
+            // not one to lean on: if the link goes Stale - the Elvanto record changed after
+            // deciding, or left the roll - ElvantoId stays null and the create fires for real.
+            HashSet<Guid> linkedThisRunIds = [];
+
             // People with a review still awaiting a human. This is the live signal, and it is the one
             // the create decision asks. It used to ask DbSyncMetadata.LastSyncStatus, which is set to
             // ManualReview once and reset by nothing - so a person queued for review a single time
@@ -110,6 +122,7 @@ public partial class ElvantoPersonSyncService
 
                         set.UnlinkedApp.Remove(appPerson);
                         set.AppByElvantoId[elv.Id] = appPerson;
+                        linkedThisRunIds.Add(appPerson.Id);
                         autoLinked++;
                         // Fall through: this person's fields are decided in the same run.
                     }
@@ -130,6 +143,7 @@ public partial class ElvantoPersonSyncService
 
                             set.UnlinkedApp.Remove(appPerson);
                             set.AppByElvantoId[elv.Id] = appPerson;
+                            linkedThisRunIds.Add(appPerson.Id);
                             autoLinked++;
                         }
                         else if (existingReview?.Status == GrpcReviewStatus.Denied)
@@ -184,7 +198,8 @@ public partial class ElvantoPersonSyncService
             int archived = DecideArchives(operationId, set, plan);
             manualReview += await DecideCreatesAsync(
                 operationId, set, plan, counters, audit,
-                reviewCandidateIds, deniedPairIds, awaitingReviewIds, newPendingReviews, token);
+                reviewCandidateIds, deniedPairIds, awaitingReviewIds, linkedThisRunIds,
+                newPendingReviews, token);
 
             // Decide's own writes: the plan, the divergences, the reviews, and the settled
             // agreements. Nothing in People, so there is nothing to roll back and no transaction
