@@ -36,6 +36,13 @@ public sealed class StageDriver(
     private volatile ProPresenterTonight? _tonight;
     private          string?              _applied;
 
+    /// <summary>The row the timer was last started for, so a +5 on it moves the time left rather than starting it again.</summary>
+    private string? _appliedRow;
+
+    /// <summary>The row's zero time as the schedule had it, and as the stage's own clock has it, when the timer was last set.</summary>
+    private DateTime _appliedTarget;
+    private DateTime _stageEnd;
+
     private static DateTime ToUtc(DateTime churchTime) => ChurchTime.ToUtc(churchTime);
 
     /// <summary>Re-reads tonight from Impact Kids and puts it on the stage. Keeps the last known night if it cannot.</summary>
@@ -180,18 +187,42 @@ public sealed class StageDriver(
 
             if (view?.Now is { } onNow)
             {
-                int seconds = (int)Math.Ceiling((onNow.Target - now).TotalSeconds);
+                string rowKey = $"{timerUuid}|{onNow.Row.Id}|{onNow.Waiting}";
+
+                // A row coming onto the stage starts from its full listed length - what is beside it
+                // on the schedule - not the time left since Next was pressed, which the wait for
+                // ProPresenter's label poll would have eaten into. A row with no length of its own
+                // (fills until a time) and a row waiting for its start time count down to that time.
+                // The same row changing (+5, −1) moves what is left, rather than starting it again.
+                DateTime stageEnd;
+
+                if (rowKey != _appliedRow)
+                    stageEnd = onNow is { Waiting: false, Row.Minutes: > 0 }
+                        ? now.AddMinutes(onNow.Row.Minutes)
+                        : onNow.Target;
+                else
+                    // The stage's clock started later than the phone's (it waited for the label), so
+                    // move its own finish by exactly the change rather than recount from the phone's.
+                    stageEnd = _stageEnd + (onNow.Target - _appliedTarget);
+
+                int seconds = (int)Math.Ceiling((stageEnd - now).TotalSeconds);
 
                 if (!await proPresenter.StartCountdownAsync(timer, seconds, token))
                     return;
 
                 logger.LogInformation("Stage: {Label}{Waiting}, {Seconds}s on {Timer}",
                     onNow.Label, onNow.Waiting ? " (waiting for its start time)" : "", Math.Max(0, seconds), timer.Name);
+
+                _appliedRow = rowKey;
+                _appliedTarget = onNow.Target;
+                _stageEnd = stageEnd;
             }
             else
             {
                 await proPresenter.ResetAsync(timer, token);
                 logger.LogInformation("Stage: nothing on - {Timer} reset", timer.Name);
+
+                _appliedRow = null;
             }
 
             _applied = key;
