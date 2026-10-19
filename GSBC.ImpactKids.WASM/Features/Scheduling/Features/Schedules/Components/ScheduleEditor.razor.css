@@ -109,9 +109,16 @@
 .schedule-lane {
     container-type: inline-size;
     min-width: 0;
+    /* Lanes of a split stretch to the tallest; the list takes the spare height so Add sits at the bottom of every lane. */
+    display: flex;
+    flex-direction: column;
     background: var(--mud-palette-surface);
     border-radius: var(--mud-default-borderradius);
     padding: 6px 10px 8px;
+}
+
+.schedule-lane .schedule-items {
+    flex: 1;
 }
 
 .schedule-lane .schedule-item:last-child {
