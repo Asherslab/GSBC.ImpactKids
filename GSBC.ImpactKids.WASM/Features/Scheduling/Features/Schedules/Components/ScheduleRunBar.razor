@@ -40,7 +40,8 @@
                     </div>
                     <div class="run-muted">
                         @(now.Waiting ? "Starts in" : left < TimeSpan.Zero ? "Overtime" : "Left")
-                        @if (_view.NextLabel != null)
+                        @* While waiting, "next" is the row itself - already the title. *@
+                        @if (_view.NextLabel != null && !now.Waiting)
                         {
                             <span> · Next: @_view.NextLabel</span>
                         }

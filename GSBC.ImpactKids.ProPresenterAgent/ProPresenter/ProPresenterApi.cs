@@ -127,6 +127,36 @@ public sealed class ProPresenterApi(HttpClient http, AgentState state, ILogger<P
         }
     }
 
+    /// <summary>
+    /// Sets a timer counting down to a time of day on this Mac's clock, and starts it - ProPresenter's
+    /// own "countdown to time" type, so a wait of hours shows as a time rather than as thousands of
+    /// minutes. ProPresenter takes the time as seconds on a 12-hour clock plus am/pm (its "PreShow
+    /// Countdown" reads <c>time_of_day: 18000, period: "pm"</c> for 5:00 pm).
+    /// </summary>
+    public async Task<bool> StartCountdownToTimeAsync(TimerId timer, TimeSpan timeOfDay, CancellationToken token)
+    {
+        if (BaseUri is not { } baseUri)
+            return false;
+
+        int seconds = (int)timeOfDay.TotalSeconds % (24 * 3600);
+        string period = seconds >= 12 * 3600 ? "pm" : "am";
+
+        try
+        {
+            using HttpResponseMessage response = await http.PutAsJsonAsync(
+                new Uri(baseUri, $"v1/timer/{timer.Uuid}/start"),
+                new TimerToTimeConfig(timer, AllowsOverrun: true, new CountdownToTime(seconds % (12 * 3600), period)),
+                token);
+
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException || !token.IsCancellationRequested)
+        {
+            logger.LogWarning(exception, "Could not start ProPresenter timer {Name}", timer.Name);
+            return false;
+        }
+    }
+
     /// <summary>Stops a timer and puts it back to its start - nothing is on tonight, or the night is over.</summary>
     public async Task ResetAsync(TimerId timer, CancellationToken token)
     {
@@ -151,6 +181,15 @@ public sealed class ProPresenterApi(HttpClient http, AgentState state, ILogger<P
         [property: JsonPropertyName("index")] int    Index);
 
     private sealed record Countdown([property: JsonPropertyName("duration")] int Duration);
+
+    private sealed record CountdownToTime(
+        [property: JsonPropertyName("time_of_day")] int    TimeOfDay,
+        [property: JsonPropertyName("period")]      string Period);
+
+    private sealed record TimerToTimeConfig(
+        [property: JsonPropertyName("id")]                 TimerId         Id,
+        [property: JsonPropertyName("allows_overrun")]     bool            AllowsOverrun,
+        [property: JsonPropertyName("count_down_to_time")] CountdownToTime CountDownToTime);
 
     private sealed record TimerConfig(
         [property: JsonPropertyName("id")]             TimerId    Id,

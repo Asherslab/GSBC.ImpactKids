@@ -192,10 +192,11 @@ public static class ScheduleRun
         if (schedule.WaitingItemId is { } waitingId
             && steps.FirstOrDefault(s => s.Row.Id == waitingId) is { Row.StartsAt: { } startsAt } waiting)
         {
+            // Not started yet, so it is still what comes next - as well as what the countdown is for.
             return new RunView(
                 RunState.Waiting,
                 new RunRow(waiting.Row, waiting.Leaf, Label(waiting.Row), toUtc(serviceDate.Date + startsAt), true),
-                NextRowLabel(steps, steps.IndexOf(waiting)),
+                Label(waiting.Row),
                 waiting.Split);
         }
 

@@ -207,7 +207,13 @@ public sealed class StageDriver(
 
                 int seconds = (int)Math.Ceiling((stageEnd - now).TotalSeconds);
 
-                if (!await proPresenter.StartCountdownAsync(timer, seconds, token))
+                // Waiting for a fixed start time: ProPresenter counts down to that time itself, which
+                // shows hours as a time instead of as thousands of minutes.
+                bool started = onNow is { Waiting: true, Row.StartsAt: { } startsAt }
+                    ? await proPresenter.StartCountdownToTimeAsync(timer, startsAt, token)
+                    : await proPresenter.StartCountdownAsync(timer, seconds, token);
+
+                if (!started)
                     return;
 
                 logger.LogInformation("Stage: {Label}{Waiting}, {Seconds}s on {Timer}",

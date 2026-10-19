@@ -123,6 +123,7 @@ public class ScheduleRunTests
         Assert.Equal(RunState.Waiting, waiting.State);
         Assert.Equal("Sign Out", waiting.Now!.Label);
         Assert.Equal(At(20, 30), waiting.Now.Target);
+        Assert.Equal("Sign Out", waiting.NextLabel);
         Assert.Null(night.Items.Last().ActualStartedAt);
 
         night = Next(night, At(20, 31));
