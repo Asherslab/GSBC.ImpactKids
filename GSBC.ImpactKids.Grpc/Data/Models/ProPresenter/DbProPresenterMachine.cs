@@ -58,4 +58,10 @@ public class DbProPresenterMachine
     public string?         AgentVersion          { get; set; }
     public bool?           ProPresenterReachable { get; set; }
     public string?         ProPresenterVersion   { get; set; }
+
+    /// <summary>The timers set up in ProPresenter, as the agent last reported them - a JSON list of uuid and name.</summary>
+    public string? TimersJson { get; set; }
+
+    // Leader-owned: which ProPresenter timer follows tonight's schedule.
+    public string? ScheduleTimerUuid { get; set; }
 }

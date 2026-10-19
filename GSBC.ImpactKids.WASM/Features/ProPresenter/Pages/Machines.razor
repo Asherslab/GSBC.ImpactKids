@@ -90,6 +90,10 @@
                             null  => "Not checked yet"
                         })
                     </MudText>
+                    <MudText Typo="Typo.caption" Class="d-block">
+                        Schedule timer: @(context.Timers.FirstOrDefault(t => t.Uuid == context.ScheduleTimerUuid)?.Name
+                                          ?? (context.ScheduleTimerUuid == null ? "none chosen" : "no longer in ProPresenter"))
+                    </MudText>
                 </MudTd>
                 <MudTd DataLabel="Tool">@(context.AgentVersion ?? "-")</MudTd>
                 <MudTd>
@@ -128,7 +132,19 @@
         </MudText>
         <MudTextField T="string" @bind-Value="_editing.Name" Label="Name" MaxLength="100" Class="mb-2"/>
         <MudTextField T="string" @bind-Value="_editing.ProPresenterHost" Label="ProPresenter address" MaxLength="255" Class="mb-2"/>
-        <MudNumericField T="int" @bind-Value="_editing.ProPresenterPort" Label="ProPresenter port" Min="1" Max="65535" Class="mb-4"/>
+        <MudNumericField T="int" @bind-Value="_editing.ProPresenterPort" Label="ProPresenter port" Min="1" Max="65535" Class="mb-2"/>
+        @* The timers come from ProPresenter itself, as the Mac last reported them. *@
+        <MudSelect T="string"
+                   @bind-Value="_editing.ScheduleTimerUuid"
+                   Label="Timer that follows the schedule"
+                   HelperText="@(_editingTimers.Count == 0 ? "No timers reported yet - is ProPresenter open on the Mac?" : "The one ProPresenter timer tonight's schedule counts down on")"
+                   Clearable="true"
+                   Class="mb-4">
+            @foreach (ProPresenterTimer timer in _editingTimers)
+            {
+                <MudSelectItem T="string" Value="@timer.Uuid">@timer.Name</MudSelectItem>
+            }
+        </MudSelect>
         <MudStack Row Spacing="2">
             <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@_busy" OnClick="@SaveEdit">Save</MudButton>
             <MudButton Variant="Variant.Text" Disabled="@_busy" OnClick="@(() => _editing = null)">Cancel</MudButton>

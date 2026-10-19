@@ -19,6 +19,12 @@ public record Schedule : IIdentifiable
     public ImmutableList<ScheduleGroup> Groups { get; init; } = [];
     public ImmutableList<ScheduleBlock> Blocks { get; init; } = [];
 
+    /// <summary>
+    /// On the night: the row whose fixed start time Next has reached early. It is shown counting down
+    /// to its time, not started - nothing starts by itself, so the next Next starts it.
+    /// </summary>
+    public Guid? WaitingItemId { get; init; }
+
     [ProtoIgnore]
     public bool IsTemplate => ServiceId == null;
 
@@ -58,6 +64,12 @@ public record ScheduleLane
     /// <summary>The groups this lane covers in a split. Meaningless in a together block.</summary>
     public ImmutableList<Guid> GroupIds { get; init; } = [];
 
+    /// <summary>
+    /// The lane the stage timer follows during its split, chosen by a leader. When no lane is chosen,
+    /// it follows the one that sets the split's length (see <see cref="ScheduleRun.LeadLane"/>).
+    /// </summary>
+    public bool OnScreen { get; init; }
+
     public ImmutableList<ScheduleItem> Items { get; init; } = [];
 }
 
@@ -81,6 +93,15 @@ public record ScheduleItem
 
     /// <summary>The items under a section, in order. Always empty on an item that is not one.</summary>
     public ImmutableList<ScheduleItem> Children { get; init; } = [];
+
+    /// <summary>When it really started on the night, in UTC - set by Next. Null until then.</summary>
+    public DateTime? ActualStartedAt { get; init; }
+
+    /// <summary>When it really finished, in UTC. Started and not finished is "on now".</summary>
+    public DateTime? ActualEndedAt { get; init; }
+
+    [ProtoIgnore]
+    public bool IsRunning => ActualStartedAt != null && ActualEndedAt == null;
 
     /// <summary>The length it runs for: the plan plus whatever was added or taken away on the night.</summary>
     [ProtoIgnore]

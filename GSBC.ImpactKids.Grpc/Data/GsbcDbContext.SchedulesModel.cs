@@ -13,6 +13,7 @@ public partial class GsbcDbContext
     public required DbSet<DbScheduleLane>           ScheduleLanes           { get; set; }
     public required DbSet<DbScheduleItem>           ScheduleItems           { get; set; }
     public required DbSet<DbScheduleItemAdjustment> ScheduleItemAdjustments { get; set; }
+    public required DbSet<DbScheduleRunStep>        ScheduleRunSteps        { get; set; }
 
     private static void BuildSchedulesModel(ModelBuilder modelBuilder)
     {
@@ -95,6 +96,16 @@ public partial class GsbcDbContext
         modelBuilder.Entity<DbScheduleItem>()
             .Property(x => x.FillIn)
             .HasMaxLength(200);
+
+        modelBuilder.Entity<DbScheduleRunStep>()
+            .HasOne(x => x.Schedule)
+            .WithMany()
+            .HasForeignKey(x => x.ScheduleId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Back reads the latest press on one track.
+        modelBuilder.Entity<DbScheduleRunStep>()
+            .HasIndex(x => new { x.ScheduleId, x.LaneId, x.At });
 
         modelBuilder.Entity<DbScheduleItemAdjustment>()
             .HasOne(x => x.Item)

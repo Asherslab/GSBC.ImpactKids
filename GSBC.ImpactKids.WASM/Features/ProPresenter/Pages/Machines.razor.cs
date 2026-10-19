@@ -34,6 +34,7 @@ public partial class Machines
 
     private UpdateProPresenterMachineRequest? _editing;
     private string?                           _editingName;
+    private ImmutableList<ProPresenterTimer>  _editingTimers = [];
     private bool                              _busy;
     private Timer?                            _redraw;
 
@@ -69,6 +70,11 @@ public partial class Machines
     {
         _editing = UpdateProPresenterMachineRequest.FromEntity(machine);
         _editingName = machine.Name;
+
+        // Keep a chosen timer listed even if ProPresenter has since lost it, so saving does not silently clear it.
+        _editingTimers = machine.ScheduleTimerUuid is { } chosen && machine.Timers.All(t => t.Uuid != chosen)
+            ? machine.Timers.Add(new ProPresenterTimer { Uuid = chosen, Name = "(no longer in ProPresenter)" })
+            : machine.Timers;
     }
 
     private async Task SaveEdit()

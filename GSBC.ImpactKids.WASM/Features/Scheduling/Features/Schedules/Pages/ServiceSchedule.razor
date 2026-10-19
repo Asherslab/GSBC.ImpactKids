@@ -50,6 +50,11 @@
     }
     else
     {
+        @* The night's controls, on the service's own day. *@
+        @if (_service?.LocalDate.Date == DateTime.Today)
+        {
+            <ScheduleRunBar Schedule="_schedule" LocalDate="_service.LocalDate"/>
+        }
         <ScheduleEditor ScheduleId="_schedule.Id" LocalDate="_service?.LocalDate"/>
     }
 </div>

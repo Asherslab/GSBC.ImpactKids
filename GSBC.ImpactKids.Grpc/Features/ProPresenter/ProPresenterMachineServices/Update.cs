@@ -8,7 +8,7 @@ namespace GSBC.ImpactKids.Grpc.Features.ProPresenter.ProPresenterMachineServices
 public partial class ProPresenterMachineService
 {
     /// <summary>
-    /// Writes only the three columns a leader owns. The agent writes the status columns on the same
+    /// Writes only the columns a leader owns. The agent writes the status columns on the same
     /// row every 30 seconds, so a whole-entity update here would revert whatever it last reported.
     /// The agent picks the change up on its next configuration pull.
     /// </summary>
@@ -40,6 +40,7 @@ public partial class ProPresenterMachineService
         machine.Name = name;
         machine.ProPresenterHost = host;
         machine.ProPresenterPort = request.ProPresenterPort;
+        machine.ScheduleTimerUuid = string.IsNullOrWhiteSpace(request.ScheduleTimerUuid) ? null : request.ScheduleTimerUuid.Trim();
 
         await db.SaveChangesAsync(token);
         await eventService.SendUpdatedEvent(token);

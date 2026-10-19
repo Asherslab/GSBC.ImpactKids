@@ -72,6 +72,7 @@ public static class ScheduleCopy
                                     BlockId = blockId,
                                     Position = l.Position,
                                     GroupIds = l.GroupIds.Where(groupIds.ContainsKey).Select(id => groupIds[id]).ToList(),
+                                    OnScreen = l.OnScreen,
                                     Items = l.Items.Select(i => Copy(i, laneId, null)).ToList()
                                 };
                             })

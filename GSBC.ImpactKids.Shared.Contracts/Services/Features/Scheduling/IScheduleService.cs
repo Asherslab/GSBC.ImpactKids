@@ -35,4 +35,12 @@ public interface IScheduleService
     Task<BasicResponse> MoveItem(MoveScheduleItemRequest     request, CallContext context = default);
     Task<BasicResponse> AdjustItem(AdjustScheduleItemRequest request, CallContext context = default);
     Task<BasicResponse> RemoveItem(BasicReadRequest          request, CallContext context = default);
+
+    Task<BasicResponse> SetLaneOnScreen(SetScheduleLaneOnScreenRequest request, CallContext context = default);
+
+    /// <summary>Next on the night - see <see cref="ScheduleRun"/> for what one press does.</summary>
+    Task<BasicResponse> RunNext(RunScheduleRequest request, CallContext context = default);
+
+    /// <summary>Undoes the last Next on the same track, exactly.</summary>
+    Task<BasicResponse> RunBack(RunScheduleRequest request, CallContext context = default);
 }

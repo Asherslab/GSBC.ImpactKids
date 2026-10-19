@@ -24,6 +24,9 @@ public class DbSchedule
     [MapperIgnore]
     public DbServiceType? DefaultForServiceType { get; set; }
 
+    /// <summary>On the night: the row Next has reached before its fixed start time, waiting for it.</summary>
+    public Guid? WaitingItemId { get; set; }
+
     [MapperIgnore]
     public List<DbScheduleGroup> Groups { get; set; } = [];
 

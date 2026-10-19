@@ -71,6 +71,84 @@ public sealed class ProPresenterApi(HttpClient http, AgentState state, ILogger<P
         }
     }
 
+    /// <summary>The timers set up in ProPresenter, for the admin page to offer. Null when ProPresenter does not answer.</summary>
+    public async Task<List<TimerId>?> GetTimersAsync(CancellationToken token)
+    {
+        if (BaseUri is not { } baseUri)
+            return null;
+
+        try
+        {
+            List<TimerConfig> timers = await http.GetFromJsonAsync<List<TimerConfig>>(new Uri(baseUri, "v1/timers"), token) ?? [];
+            return timers.Select(t => t.Id).ToList();
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException || !token.IsCancellationRequested)
+        {
+            logger.LogDebug(exception, "Could not list ProPresenter's timers");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Sets a timer counting down from <paramref name="seconds"/> and starts it, allowed to run on past
+    /// zero into overtime - which on the night is normal, and is how the stage shows it.
+    /// <para>
+    /// The <c>PUT …/start</c> form with the whole config, <c>id</c> included: proven on ProPresenter
+    /// 22 to set and start in one call, where <c>GET …/start</c> on a just-changed timer answered and
+    /// did not start. See docs/work/2026-10-propresenter-agent.md.
+    /// </para>
+    /// </summary>
+    public async Task<bool> StartCountdownAsync(TimerId timer, int seconds, CancellationToken token)
+    {
+        if (BaseUri is not { } baseUri)
+            return false;
+
+        try
+        {
+            using HttpResponseMessage response = await http.PutAsJsonAsync(
+                new Uri(baseUri, $"v1/timer/{timer.Uuid}/start"),
+                new TimerConfig(timer, AllowsOverrun: true, new Countdown(Math.Max(0, seconds))),
+                token);
+
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException || !token.IsCancellationRequested)
+        {
+            logger.LogWarning(exception, "Could not start ProPresenter timer {Name}", timer.Name);
+            return false;
+        }
+    }
+
+    /// <summary>Stops a timer and puts it back to its start - nothing is on tonight, or the night is over.</summary>
+    public async Task ResetAsync(TimerId timer, CancellationToken token)
+    {
+        if (BaseUri is not { } baseUri)
+            return;
+
+        try
+        {
+            using HttpResponseMessage stop  = await http.GetAsync(new Uri(baseUri, $"v1/timer/{timer.Uuid}/stop"), token);
+            using HttpResponseMessage reset = await http.GetAsync(new Uri(baseUri, $"v1/timer/{timer.Uuid}/reset"), token);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException || !token.IsCancellationRequested)
+        {
+            logger.LogWarning(exception, "Could not reset ProPresenter timer {Name}", timer.Name);
+        }
+    }
+
+    /// <summary>A timer's identity as ProPresenter gives it - all three parts go back in its config.</summary>
+    public sealed record TimerId(
+        [property: JsonPropertyName("uuid")]  string Uuid,
+        [property: JsonPropertyName("name")]  string Name,
+        [property: JsonPropertyName("index")] int    Index);
+
+    private sealed record Countdown([property: JsonPropertyName("duration")] int Duration);
+
+    private sealed record TimerConfig(
+        [property: JsonPropertyName("id")]             TimerId    Id,
+        [property: JsonPropertyName("allows_overrun")] bool       AllowsOverrun,
+        [property: JsonPropertyName("countdown")]      Countdown? Countdown);
+
     private sealed record VersionResponse([property: JsonPropertyName("host_description")] string? HostDescription);
 
     // /v1/stage/screens answers a flat id; /v1/stage/screen/{id}/layout the same shape for the layout.

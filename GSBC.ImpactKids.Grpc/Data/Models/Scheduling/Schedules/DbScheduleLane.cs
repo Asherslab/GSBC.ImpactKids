@@ -12,6 +12,9 @@ public class DbScheduleLane
     /// <summary>The groups this lane covers in a split. Ignored in a block with one lane, which is everybody.</summary>
     public List<Guid> GroupIds { get; set; } = [];
 
+    /// <summary>The lane the stage timer follows during its split, when a leader has chosen one.</summary>
+    public bool OnScreen { get; set; }
+
     [MapperIgnore]
     public DbScheduleBlock? Block { get; set; }
 

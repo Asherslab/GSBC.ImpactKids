@@ -105,9 +105,18 @@ public partial class ScheduleEditor
         return names.Count == 0 ? "No group" : string.Join(", ", names);
     }
 
-    private bool IsNow(TimedItem? timed) =>
-        LocalDate?.Date == DateTime.Today && timed is { Start: { } start, End: { } end }
-                                         && start <= DateTime.Now && DateTime.Now < end;
+    /// <summary>
+    /// The row on now: once the night has been started with Next, what is actually running; before
+    /// that, on the service's day, whatever the plan puts at this time.
+    /// </summary>
+    private bool IsNow(ScheduleItem item, TimedItem? timed)
+    {
+        if (_schedule!.AllItems.Any(i => i.ActualStartedAt != null))
+            return item.IsRunning;
+
+        return LocalDate?.Date == DateTime.Today && timed is { Start: { } start, End: { } end }
+                                                && start <= DateTime.Now && DateTime.Now < end;
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -297,6 +306,9 @@ public partial class ScheduleEditor
 
         await Send(null, () => ScheduleService.RemoveBlock(new BasicReadRequest { Guid = block.Id }));
     }
+
+    private Task SetOnScreen(ScheduleLane lane, bool onScreen) =>
+        Send(null, () => ScheduleService.SetLaneOnScreen(new SetScheduleLaneOnScreenRequest { LaneId = lane.Id, OnScreen = onScreen }));
 
     private async Task RemoveLane(ScheduleLane lane)
     {

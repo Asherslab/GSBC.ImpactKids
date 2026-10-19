@@ -5,6 +5,7 @@ using GSBC.ImpactKids.ProPresenterAgent.Enrolment;
 using GSBC.ImpactKids.ProPresenterAgent.Feeds;
 using GSBC.ImpactKids.ProPresenterAgent.ImpactKids;
 using GSBC.ImpactKids.ProPresenterAgent.ProPresenter;
+using GSBC.ImpactKids.ProPresenterAgent.Stage;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.ProPresenter;
 using Microsoft.Extensions.Options;
 
@@ -38,6 +39,12 @@ builder.Services.AddSingleton<CredentialStore>();
 builder.Services.AddSingleton<EnrolmentFlow>();
 builder.Services.AddSingleton<ImpactKidsClient>();
 builder.Services.AddSingleton<FirstTimersFeed>();
+builder.Services.AddSingleton<StageDriver>();
+builder.Services.AddSingleton<ScheduleFeeds>();
+
+// The event stream stays open all night; Impact Kids' heartbeats keep it moving.
+builder.Services.AddHttpClient(EventStreamListener.HttpClientName, http => http.Timeout = Timeout.InfiniteTimeSpan);
+builder.Services.AddHostedService<EventStreamListener>();
 
 builder.Services.AddHttpClient<TokenClient>((sp, http) =>
     http.BaseAddress = sp.GetRequiredService<IOptions<AgentOptions>>().Value.ImpactKidsUrl);
@@ -51,5 +58,8 @@ WebApplication app = builder.Build();
 
 app.MapGet(ProPresenterFeeds.FirstTimersPath,
     (FirstTimersFeed feed, CancellationToken token) => feed.HandleAsync(token));
+
+app.MapGet(ProPresenterFeeds.NowPath, (ScheduleFeeds feeds, string? group) => feeds.Now(group));
+app.MapGet(ProPresenterFeeds.NextPath, (ScheduleFeeds feeds) => feeds.Next());
 
 app.Run();

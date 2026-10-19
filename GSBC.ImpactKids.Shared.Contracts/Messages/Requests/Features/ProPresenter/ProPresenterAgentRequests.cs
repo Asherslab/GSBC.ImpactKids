@@ -1,3 +1,5 @@
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.ProPresenter;
+
 namespace GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.ProPresenter;
 
 /// <summary>
@@ -15,4 +17,7 @@ public class ReportProPresenterAgentStatusRequest
     public required string  AgentVersion          { get; set; }
     public required bool    ProPresenterReachable { get; set; }
     public          string? ProPresenterVersion   { get; set; }
+
+    /// <summary>The timers set up in ProPresenter right now. Empty when it could not be asked.</summary>
+    public List<ProPresenterTimer> Timers { get; set; } = [];
 }

@@ -126,6 +126,25 @@ public class MoveScheduleItemRequest
     public int   Position  { get; set; }
 }
 
+/// <summary>
+/// Next or Back on the night: on the stage's track, or on one lane of a split (<see cref="LaneId"/>)
+/// stepping through its own items off the stage.
+/// </summary>
+[ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
+public class RunScheduleRequest
+{
+    public Guid  ScheduleId { get; set; }
+    public Guid? LaneId     { get; set; }
+}
+
+/// <summary>Makes a lane the one the stage follows during its split, or hands that back to the longest lane.</summary>
+[ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
+public class SetScheduleLaneOnScreenRequest
+{
+    public Guid LaneId   { get; set; }
+    public bool OnScreen { get; set; }
+}
+
 /// <summary>+5, −1: added to the plan before the night, recorded as an adjustment during it.</summary>
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
 public class AdjustScheduleItemRequest

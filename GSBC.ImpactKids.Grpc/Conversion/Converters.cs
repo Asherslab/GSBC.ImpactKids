@@ -312,6 +312,7 @@ public class ScheduleConverter : IConverter<DbSchedule, Schedule>
         Name = schedule.Name,
         ServiceId = schedule.ServiceId,
         DefaultForServiceTypeId = schedule.DefaultForServiceTypeId,
+        WaitingItemId = schedule.WaitingItemId,
         Groups = schedule.Groups
             .OrderBy(g => g.Position)
             .Select(g => new ScheduleGroup { Id = g.Id, Name = g.Name })
@@ -327,6 +328,7 @@ public class ScheduleConverter : IConverter<DbSchedule, Schedule>
                     {
                         Id = l.Id,
                         GroupIds = l.GroupIds.ToImmutableList(),
+                        OnScreen = l.OnScreen,
                         Items = l.Items
                             .OrderBy(i => i.Position)
                             .Select(Item)
@@ -348,7 +350,9 @@ public class ScheduleConverter : IConverter<DbSchedule, Schedule>
         AdjustmentMinutes = item.AdjustmentMinutes,
         StartsAt = item.StartsAt,
         IsSection = item.IsSection,
-        Children = item.Children.OrderBy(c => c.Position).Select(Item).ToImmutableList()
+        Children = item.Children.OrderBy(c => c.Position).Select(Item).ToImmutableList(),
+        ActualStartedAt = item.ActualStartedAt?.UtcDateTime,
+        ActualEndedAt = item.ActualEndedAt?.UtcDateTime
     };
 }
 
@@ -373,6 +377,10 @@ public class ProPresenterMachineConverter(
         LastSeenAt            = machine.LastSeenAt.HasValue ? dateTimeConverter.Convert(machine.LastSeenAt.Value) : null,
         AgentVersion          = machine.AgentVersion,
         ProPresenterReachable = machine.ProPresenterReachable,
-        ProPresenterVersion   = machine.ProPresenterVersion
+        ProPresenterVersion   = machine.ProPresenterVersion,
+        Timers                = machine.TimersJson == null
+            ? []
+            : System.Text.Json.JsonSerializer.Deserialize<List<ProPresenterTimer>>(machine.TimersJson)?.ToImmutableList() ?? [],
+        ScheduleTimerUuid     = machine.ScheduleTimerUuid
     };
 }

@@ -59,7 +59,8 @@ public class GsbcDbContextFactory : IDesignTimeDbContextFactory<GsbcDbContext>
             ScheduleBlocks          = null!,
             ScheduleLanes           = null!,
             ScheduleItems           = null!,
-            ScheduleItemAdjustments = null!
+            ScheduleItemAdjustments = null!,
+            ScheduleRunSteps        = null!
         };
     }
 }

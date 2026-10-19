@@ -3,6 +3,7 @@ using GSBC.ImpactKids.ProPresenterAgent.Credentials;
 using GSBC.ImpactKids.ProPresenterAgent.Enrolment;
 using GSBC.ImpactKids.ProPresenterAgent.ImpactKids;
 using GSBC.ImpactKids.ProPresenterAgent.ProPresenter;
+using GSBC.ImpactKids.ProPresenterAgent.Stage;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.ProPresenter;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.ProPresenter;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
@@ -10,19 +11,18 @@ using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 namespace GSBC.ImpactKids.ProPresenterAgent;
 
 /// <summary>
-/// The agent's life: get connected if it is not, then every 30 seconds pull its configuration and
-/// report how it and ProPresenter are doing. The report is the heartbeat the admin page's "online"
-/// is worked out from.
-/// <para>
-/// Polling rather than a server stream, for now. Configuration changes rarely and a half-minute delay
-/// is invisible; a stream earns its keep when the agent has commands to react to immediately.
-/// </para>
+/// The agent's life: get connected if it is not, then every 30 seconds pull its configuration,
+/// report how it and ProPresenter are doing - its timers included, for the admin page to choose
+/// from - and re-read tonight's schedule. The report is the heartbeat the admin page's "online" is
+/// worked out from. Changes that must land at once (a press of Next) come over the event stream
+/// instead; see <see cref="EventStreamListener"/>.
 /// </summary>
 public sealed class AgentWorker(
     CredentialStore        credentials,
     EnrolmentFlow          enrolment,
     ImpactKidsClient       impactKids,
     ProPresenterApi        proPresenter,
+    StageDriver            stage,
     AgentState             state,
     ILogger<AgentWorker>   logger
 ) : BackgroundService
@@ -111,13 +111,18 @@ public sealed class AgentWorker(
             state.Configuration = configuration.Entity;
         }
 
-        string? proPresenterVersion = await proPresenter.GetVersionAsync(token);
+        string?                         proPresenterVersion = await proPresenter.GetVersionAsync(token);
+        List<ProPresenterApi.TimerId>? timers              = proPresenterVersion == null ? null : await proPresenter.GetTimersAsync(token);
 
         await impactKids.Agent.ReportStatus(new ReportProPresenterAgentStatusRequest
         {
             AgentVersion = AgentOptions.Version,
             ProPresenterReachable = proPresenterVersion != null,
-            ProPresenterVersion = proPresenterVersion
+            ProPresenterVersion = proPresenterVersion,
+            Timers = timers?.Select(t => new ProPresenterTimer { Uuid = t.Uuid, Name = t.Name }).ToList() ?? []
         }, token);
+
+        // The event stream normally brings changes within a second; this is the fallback if it is down.
+        await stage.RefreshAsync(token);
     }
 }

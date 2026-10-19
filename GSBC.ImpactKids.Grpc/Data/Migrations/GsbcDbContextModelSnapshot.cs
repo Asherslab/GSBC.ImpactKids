@@ -693,7 +693,13 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.Property<string>("ProPresenterVersion")
                         .HasColumnType("text");
 
+                    b.Property<string>("ScheduleTimerUuid")
+                        .HasColumnType("text");
+
                     b.Property<string>("SecretHash")
+                        .HasColumnType("text");
+
+                    b.Property<string>("TimersJson")
                         .HasColumnType("text");
 
                     b.Property<string>("TokenSigningKey")
@@ -771,6 +777,9 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.Property<Guid?>("ServiceId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("WaitingItemId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("DefaultForServiceTypeId")
@@ -830,6 +839,12 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ActualEndedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("ActualStartedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("AdjustmentMinutes")
                         .HasColumnType("integer");
@@ -946,6 +961,9 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                         .IsRequired()
                         .HasColumnType("uuid[]");
 
+                    b.Property<bool>("OnScreen")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("Position")
                         .HasColumnType("integer");
 
@@ -954,6 +972,35 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.HasIndex("BlockId");
 
                     b.ToTable("ScheduleLanes");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.Schedules.DbScheduleRunStep", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("At")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Before")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("LaneId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ScheduleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ScheduleId", "LaneId", "At");
+
+                    b.ToTable("ScheduleRunSteps");
                 });
 
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.School.DbSchoolTerm", b =>
@@ -1691,6 +1738,17 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Block");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.Schedules.DbScheduleRunStep", b =>
+                {
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.Schedules.DbSchedule", "Schedule")
+                        .WithMany()
+                        .HasForeignKey("ScheduleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Schedule");
                 });
 
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Sync.DbSyncAuditLog", b =>

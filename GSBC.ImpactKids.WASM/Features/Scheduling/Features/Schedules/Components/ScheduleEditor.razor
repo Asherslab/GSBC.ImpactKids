@@ -94,7 +94,7 @@ else
     private RenderFragment ItemRow(ScheduleItem item) => __builder =>
     {
         TimedItem? timed = _timed.GetValueOrDefault(item.Id);
-        string     state = $"{(timed?.Clash == true ? "clash" : "")} {(IsNow(timed) ? "now" : "")}";
+        string     state = $"{(timed?.Clash == true ? "clash" : "")} {(IsNow(item, timed) ? "now" : "")}";
 
         if (item.IsSection)
         {
@@ -226,6 +226,10 @@ else
                     <div class="schedule-lane mud-elevation-2" @key="lane.Id">
                         <div class="schedule-lane-header">
                             <span class="schedule-lane-name">@LaneName(lane)</span>
+                            @if (ScheduleRun.LeadLane(block)?.Id == lane.Id)
+                            {
+                                <span class="schedule-muted">· on stage</span>
+                            }
                             @if (timing.SpareMinutes > 0)
                             {
                                 <span class="schedule-muted">· @timing.SpareMinutes min spare</span>
@@ -233,6 +237,9 @@ else
                             <MudSpacer/>
                             <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="true" AriaLabel="Lane options">
                                 <MudMenuItem OnClick="@(() => ChooseLaneGroups(lane))">Choose groups…</MudMenuItem>
+                                <MudMenuItem OnClick="@(() => SetOnScreen(lane, !lane.OnScreen))">
+                                    @(lane.OnScreen ? "Stop choosing this lane for the stage" : "Follow this lane on the stage")
+                                </MudMenuItem>
                                 <MudMenuItem Disabled="@(block.Lanes.Count <= 2)" OnClick="@(() => RemoveLane(lane))">Remove lane</MudMenuItem>
                             </MudMenu>
                         </div>

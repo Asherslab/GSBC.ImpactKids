@@ -15,6 +15,14 @@ public static class EventEndoints
         group.MapGet("api/stream", Stream)
             .RequireAuthorization(Policies.EnabledOrDisplay);
 
+        // The same stream for a ProPresenter machine, which is how a press of Next reaches the stage
+        // in under a second. A second path rather than a wider policy on the first: the proxy's
+        // api/ route demands a browser session and turns a bearer-only caller away before it gets
+        // here, and /machine/** is the one route that passes a machine's own token through. The
+        // events carry only an entity type's name, never data.
+        group.MapGet("machine/stream", Stream)
+            .RequireAuthorization(Policies.MachineOnly);
+
         return group;
     }
 

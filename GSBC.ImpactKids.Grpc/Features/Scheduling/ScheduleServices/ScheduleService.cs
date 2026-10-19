@@ -29,22 +29,28 @@ public partial class ScheduleService(
 {
     private static readonly TimeZoneInfo SydneyZone = TimeZoneInfo.FindSystemTimeZoneById("Australia/Sydney");
 
-    private IQueryable<DbSchedule> WholeSchedules => db.Schedules
-        .Include(x => x.Groups)
-        .Include(x => x.Blocks)
-        .ThenInclude(x => x.Lanes)
-        .ThenInclude(x => x.Items)
-        .ThenInclude(x => x.Children)
-        .AsSplitQuery();
+    private IQueryable<DbSchedule> WholeSchedules => db.WholeSchedules();
 
-    /// <summary>What an edit may want besides the tree: whether the night has started, and who is editing.</summary>
-    private sealed record EditContext(bool Underway, Guid? UserId);
+    /// <summary>
+    /// What an edit may want besides the tree: whether the night has started, who is editing, and the
+    /// service's local date - null for a template.
+    /// </summary>
+    private sealed record EditContext(bool Underway, Guid? UserId, DateTime? ServiceDate);
 
-    private async Task<BasicResponse> EditAsync(
+    private Task<BasicResponse> EditAsync(
         Guid?                                          scheduleId,
         Func<DbSchedule, EditContext, BasicResponse?> edit,
         ServerCallContext?                             call,
         CancellationToken                              token
+    ) =>
+        EditAwaitingAsync(scheduleId, (schedule, context) => Task.FromResult(edit(schedule, context)), call, token);
+
+    /// <summary>The same, for an edit that has to query the database itself while it holds the lock.</summary>
+    private async Task<BasicResponse> EditAwaitingAsync(
+        Guid?                                                scheduleId,
+        Func<DbSchedule, EditContext, Task<BasicResponse?>> edit,
+        ServerCallContext?                                   call,
+        CancellationToken                                    token
     )
     {
         if (scheduleId == null)
@@ -63,9 +69,10 @@ public partial class ScheduleService(
         DbSchedule schedule = await WholeSchedules.FirstAsync(x => x.Id == scheduleId, token);
         SortByPosition(schedule);
 
-        EditContext context = new(await IsUnderwayAsync(schedule, token), UserIdOf(call));
+        DateTime?   serviceDate = await ServiceDateAsync(schedule, token);
+        EditContext context     = new(IsUnderway(schedule, serviceDate), UserIdOf(call), serviceDate);
 
-        BasicResponse? refused = edit(schedule, context);
+        BasicResponse? refused = await edit(schedule, context);
 
         if (refused != null)
             return refused;
@@ -207,24 +214,33 @@ public partial class ScheduleService(
         }
     }
 
-    private async Task<bool> IsUnderwayAsync(DbSchedule schedule, CancellationToken token)
+    /// <summary>The service's date in Sydney, which is the day its clock times are on. Null for a template.</summary>
+    private async Task<DateTime?> ServiceDateAsync(DbSchedule schedule, CancellationToken token)
     {
         if (schedule.ServiceId == null)
-            return false;
+            return null;
 
         DateTimeOffset? serviceDate = await db.Services
             .Where(x => x.Id == schedule.ServiceId)
             .Select(x => (DateTimeOffset?)x.Date)
             .FirstOrDefaultAsync(token);
 
+        return serviceDate == null ? null : TimeZoneInfo.ConvertTime(serviceDate.Value, SydneyZone).Date;
+    }
+
+    private bool IsUnderway(DbSchedule schedule, DateTime? serviceDate)
+    {
         if (serviceDate == null)
             return false;
 
-        DateTime localServiceDate = TimeZoneInfo.ConvertTime(serviceDate.Value, SydneyZone).Date;
-        DateTime localNow         = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, SydneyZone).DateTime;
+        DateTime localNow = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, SydneyZone).DateTime;
 
-        return ScheduleTimeline.IsUnderway(converter.Convert(schedule), localServiceDate, localNow);
+        return ScheduleTimeline.IsUnderway(converter.Convert(schedule), serviceDate.Value, localNow);
     }
+
+    /// <summary>A Sydney wall-clock time as UTC - how a fixed start time becomes an instant.</summary>
+    private static DateTime SydneyToUtc(DateTime local) =>
+        TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(local, DateTimeKind.Unspecified), SydneyZone);
 
     private static Guid? UserIdOf(ServerCallContext? call) =>
         Guid.TryParse(call?.GetHttpContext().User.FindFirstValue("UserId"), out Guid id) ? id : null;

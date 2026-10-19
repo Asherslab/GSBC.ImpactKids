@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace GSBC.ImpactKids.Shared.Contracts.Entities.Features.ProPresenter;
 
 /// <summary>
@@ -41,6 +43,12 @@ public record ProPresenterMachine
 
     /// <summary>ProPresenter's own description of itself, e.g. "ProPresenter 22".</summary>
     public string? ProPresenterVersion { get; init; }
+
+    /// <summary>The timers set up in ProPresenter, as the agent last reported them - what the admin page offers to choose from.</summary>
+    public ImmutableList<ProPresenterTimer> Timers { get; init; } = [];
+
+    /// <summary>The one ProPresenter timer that follows tonight's schedule. Null until a leader picks one.</summary>
+    public string? ScheduleTimerUuid { get; init; }
 
     [ProtoIgnore]
     public DateTime LocalCreatedAt => CreatedAt.ToLocalTime();

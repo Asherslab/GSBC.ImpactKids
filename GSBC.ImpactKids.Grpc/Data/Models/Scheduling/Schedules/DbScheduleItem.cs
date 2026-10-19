@@ -46,6 +46,11 @@ public class DbScheduleItem
 
     public TimeSpan? StartsAt { get; set; }
 
+    /// <summary>When Next really started it on the night. With <see cref="ActualEndedAt"/>, the time it actually took.</summary>
+    public DateTimeOffset? ActualStartedAt { get; set; }
+
+    public DateTimeOffset? ActualEndedAt { get; set; }
+
     [MapperIgnore]
     public DbScheduleLane? Lane { get; set; }
 

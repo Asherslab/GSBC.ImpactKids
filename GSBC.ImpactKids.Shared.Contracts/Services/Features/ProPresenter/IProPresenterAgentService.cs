@@ -37,4 +37,10 @@ public interface IProPresenterAgentService
         ProPresenterAgentRequest request,
         CallContext              context = default
     );
+
+    /// <summary>Today's service's schedule, with what has run so far. Entity null when there is none tonight.</summary>
+    Task<BasicReadResponse<ProPresenterTonight>> GetTonight(
+        ProPresenterAgentRequest request,
+        CallContext              context = default
+    );
 }
