@@ -1,0 +1,57 @@
+@inherits DetailsComponent<ScheduleItemTemplate, CreateScheduleItemTemplateRequest, UpdateScheduleItemTemplateRequest>
+
+<MudPaper Elevation="0" Class="d-flex flex-column flex-grow-1">
+    <MudOverlay Visible="@(Entity.IsLoading)"
+                DarkBackground="true"
+                Absolute="true">
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+    @if (Entity.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">
+            @(Entity.Error ?? "An Unexpected error occured")
+        </MudAlert>
+    }
+    <MudTextFieldCreateOrUpdate
+        @bind-Create="@CreateRequest.Name"
+        Read="@UpdateRequest.Name.Value"
+        @bind-Update="@UpdateRequest.Name.Value"
+        State="State"
+
+        Class="mb-4"
+        Label="Name"
+        Placeholder="Welcome & Games, Song 1, Lesson"
+        Variant="Variant.Filled"
+        Immediate/>
+    <MudNumericFieldCreateorUpdate
+        T="int"
+        @bind-Create="@CreateRequest.Minutes"
+        Read="@UpdateRequest.Minutes.Value"
+        @bind-Update="@UpdateRequest.Minutes.Value"
+        State="State"
+
+        Class="mb-4"
+        Label="Length (minutes)"
+        Min="0"
+        Max="@ScheduleRules.MaxMinutes"
+        Variant="Variant.Filled"/>
+    <ScheduleTimeField
+        Value="@StartsAt"
+        ValueChanged="@SetStartsAt"
+        ReadOnly="@(State == ModificationState.Reading)"
+        Class="mb-4"
+        Label="Starts at"
+        HelperText="Optional. Leave empty to run on from the item before"/>
+    <MudCheckBoxCreateOrUpdate
+        @bind-Create="@CreateRequest.NeedsFillIn"
+        Read="@UpdateRequest.NeedsFillIn.Value"
+        @bind-Update="@UpdateRequest.NeedsFillIn.Value"
+        State="State"
+        Label="Placeholder, filled in on each service (e.g. Song 1)"/>
+    <MudCheckBoxCreateOrUpdate
+        @bind-Create="@CreateRequest.IsSection"
+        Read="@UpdateRequest.IsSection.Value"
+        @bind-Update="@UpdateRequest.IsSection.Value"
+        State="State"
+        Label="Section, with items under it (e.g. Songs, Games)"/>
+</MudPaper>

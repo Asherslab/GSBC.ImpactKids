@@ -76,6 +76,49 @@ and keep the debounce trailing: a leading one reads before the later writes land
 **A blank-looking page is usually mid-load.** Only conclude data is missing after the store has
 resolved — the same trap applies when inspecting it in a browser (see the `run-and-inspect-app` skill).
 
+# Loading, errors and card actions look the same everywhere
+
+A page is usually several cards side by side (a service's page is five), so one card drawing its
+loading state differently stands out at once. These are the house patterns - copy them, do not invent.
+
+**Loading is a dark overlay with a spinner, over the content.** Not a progress bar, not a skeleton,
+not text:
+
+```razor
+<MudCard Elevation="6" Class="relative">          @* or any container - it must be relative *@
+    <MudOverlay Visible="@(_things.IsLoading)" DarkBackground Absolute>
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+    ...content, rendered underneath as usual...
+</MudCard>
+```
+
+- The container needs `relative`, or the overlay covers the whole page instead of the card.
+- Keep the content rendered beneath it. When there is nothing to render yet, give the container a
+  `min-height` (48–120px) so the spinner has somewhere to sit.
+- `MudProgressLinear` is for measuring something - a confidence score, a sync's progress - never for
+  "waiting for data".
+- **One exception: a view edited live**, like the schedule editor, shows the overlay on first load
+  only. Every edit refreshes its store, and an overlay on each tap of +5 would flash the whole view
+  dark. Such a view applies the edit to a local copy instead (see `ScheduleEditor`).
+
+**Errors are a `MudAlert`**, `Severity.Error`, with the store's message:
+
+```razor
+@if (_things.HasError)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">@(_things.Error ?? "An Unexpected error occured")</MudAlert>
+}
+```
+
+**A card's action in its header is an icon button**, not a text button: a pencil
+(`Icons.Material.Filled.Edit`) to edit, a bin to delete - as `DetailsModificationCard` draws them.
+Give it an `aria-label`, since there is no text.
+
+**Muted text is `Style="opacity: 0.7"`, not `Color.Secondary`.** In this theme `Secondary` is pink, so
+a "secondary" line of help text comes out looking like an error. The Sync pages still use `Secondary`
+for some muted text and dashes; they predate this note and have not been changed.
+
 # Scoped CSS does not reach MudBlazor components
 
 Blazor CSS isolation stamps its `b-<hash>` attribute only on elements in the component's own markup. A

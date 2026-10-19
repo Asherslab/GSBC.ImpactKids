@@ -78,4 +78,22 @@ public static class ErrorConstants
         "This link can only connect the computer it was opened on. Start the setup again from the ProPresenter machine";
     public const string ProPresenterChallengeInvalid =
         "This connect link is incomplete or damaged. Start the setup again from the ProPresenter machine";
+
+    public const string ScheduleItemTemplateNotFound = "Schedule Item Template Not Found";
+    public const string ScheduleItemNameNull         = "Schedule Item Name Must Be Set";
+    public const string ScheduleItemMinutesInvalid   = "Schedule Item Length Must Be Between 0 And 600 Minutes";
+    public const string ScheduleItemStartsAtInvalid  = "Schedule Item Start Time Must Be A Time Of Day";
+    public const string ScheduleNotFound             = "Schedule Not Found";
+    public const string ScheduleNameNull             = "Schedule Template Name Must Be Set";
+    public const string ScheduleNotATemplate         = "That Schedule Is Not A Template";
+    public const string ScheduleDefaultTaken         = "Another Template Is Already The Default For That Service Type";
+    public const string ScheduleGroupNameNull        = "Group Name Must Be Set";
+    public const string ScheduleGroupNameTaken       = "This Schedule Already Has A Group With That Name";
+    public const string ScheduleBlockLanesInvalid    = "A Split Must Have Between 2 And 6 Lanes";
+    public const string ScheduleLastLane             = "A Split Needs At Least Two Lanes - Remove The Split Instead";
+    public const string ScheduleItemNotFound         = "Schedule Item Not Found";
+    public const string ScheduleSectionInSection     = "A Section Cannot Go Inside Another Section";
+    public const string ScheduleRunNotAService       = "Only A Service's Schedule Can Be Run, Not A Template";
+    public const string ScheduleRunNothingNext       = "There Is Nothing To Move On To";
+    public const string ScheduleRunNothingBack       = "There Is Nothing To Go Back To";
 }

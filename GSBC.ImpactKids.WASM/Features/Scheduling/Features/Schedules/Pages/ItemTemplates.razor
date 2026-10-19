@@ -1,0 +1,72 @@
+@inherits EntityUtilityComponent
+@page "/Schedules/Items"
+@inject IRefreshableStore<ScheduleItemTemplate> ItemTemplatesStore
+@inject IScheduleItemTemplateService            ItemTemplatesService
+
+<PageTitle>Schedule Items</PageTitle>
+
+<MudPaper Elevation="6" Class="mt-4 relative">
+    <MudOverlay Visible="@(_templates.IsLoading)"
+                DarkBackground
+                Absolute>
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+    <MudStack Row AlignItems="AlignItems.Center" Class="px-6 pt-4">
+        <MudText Typo="Typo.h6">Schedule Items</MudText>
+        <MudSpacer/>
+        <MudButton Href="/Schedules/Templates" Variant="Variant.Text">Schedule templates</MudButton>
+    </MudStack>
+    <MudText Typo="Typo.body2" Class="px-6 pb-2" Style="opacity: 0.7">
+        The items a schedule is built from. Adding one to a schedule copies it, so changing an item here
+        changes no schedule that already has it.
+    </MudText>
+    @if (_templates.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mx-6 mb-4">@_templates.Error</MudAlert>
+    }
+    <MudTable Items="@_templates.Data" Hover="true" Breakpoint="Breakpoint.None">
+        <HeaderContent>
+            <MudTh>
+                <MudTooltip Text="Add an item">
+                    <MudIconButton OnClick="@Create"
+                                   Icon="@Icons.Material.Filled.PostAdd"
+                                   aria-label="Add an item"/>
+                </MudTooltip>
+            </MudTh>
+            <MudTh>Name</MudTh>
+            <MudTh>Length</MudTh>
+            <MudTh>Starts at</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>
+                <MudButtonGroup Variant="Variant.Outlined">
+                    <MudIconButton OnClick="@(() => Edit(context))"
+                                   Icon="@Icons.Material.Filled.Edit"
+                                   aria-label="@($"Edit {context.Name}")"/>
+                    <MudIconButton OnClick="@(() => Delete(context))"
+                                   Icon="@Icons.Material.Filled.Delete"
+                                   aria-label="@($"Delete {context.Name}")"/>
+                </MudButtonGroup>
+            </MudTd>
+            <MudTd DataLabel="Name">
+                @context.Name
+                @if (context.NeedsFillIn)
+                {
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Class="ml-2">fill in</MudChip>
+                }
+                @if (context.IsSection)
+                {
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Class="ml-2">section</MudChip>
+                }
+            </MudTd>
+            <MudTd DataLabel="Length">@ScheduleFormat.Minutes(context.Minutes)</MudTd>
+            <MudTd DataLabel="Starts at">@(context.StartsAt is { } at ? ScheduleFormat.Clock(at) : "")</MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            @if (_templates.HasData)
+            {
+                <MudText>No items yet. Add "Welcome &amp; Games", "Song 1", "Lesson" and so on.</MudText>
+            }
+        </NoRecordsContent>
+    </MudTable>
+</MudPaper>

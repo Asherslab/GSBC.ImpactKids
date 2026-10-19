@@ -68,6 +68,15 @@ public sealed class ImpactKidsClient : IDisposable
         await _tokens.GetAccessTokenAsync(credential, token);
     }
 
+    /// <summary>An access token for a call that is not gRPC - the event stream.</summary>
+    public async Task<string> AccessTokenAsync(CancellationToken token)
+    {
+        MachineCredential credential = _credential
+            ?? throw new InvalidOperationException("No machine credential yet - enrol first");
+
+        return await _tokens.GetAccessTokenAsync(credential, token);
+    }
+
     public void UseCredential(MachineCredential? credential)
     {
         _credential = credential;

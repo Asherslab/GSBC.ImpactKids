@@ -1,0 +1,106 @@
+@inherits EntityUtilityComponent
+@inject IRefreshableStore<Schedule> SchedulesStore
+
+<MudCard Elevation="6" Class="relative">
+    <MudOverlay Visible="@(!_loaded)" DarkBackground Absolute>
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudStack Row AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.h6">Schedule</MudText>
+                <MudSpacer/>
+                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                               Href="@($"/Services/{ServiceId}/Schedule")"
+                               aria-label="Edit the schedule"/>
+            </MudStack>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        @if (!_loaded)
+        {
+            @* Room for the overlay's spinner until the schedule arrives. *@
+            <div style="min-height: 48px"></div>
+        }
+        else if (_schedule == null)
+        {
+            <MudText Style="opacity: 0.7">No schedule yet.</MudText>
+        }
+        else
+        {
+            <div class="card-schedule">
+                <div class="card-summary">
+                    @ScheduleFormat.Minutes(ScheduleTimeline.TotalMinutes(_schedule))
+                    @if (_start is { } start && _end is { } end)
+                    {
+                        <span> · @ScheduleFormat.Clock(start)–@ScheduleFormat.Clock(end)</span>
+                    }
+                    @if (_unfilled > 0)
+                    {
+                        <span class="card-fill-in"> · @_unfilled to fill in</span>
+                    }
+                </div>
+
+                @foreach (ScheduleEntry entry in _entries)
+                {
+                    if (entry.Item != null)
+                    {
+                        @Row(entry.Item)
+                    }
+                    else if (entry.Split is { } split)
+                    {
+                        if (split.Lanes.Count > MaxLanesShown)
+                        {
+                            @* Too many lanes to read side by side in a card: one line for the whole split. *@
+                            <div class="card-row">
+                                <span class="card-time">@Clock(SplitStart(split))</span>
+                                <span class="card-name">Split <span class="card-muted">· @split.Lanes.Count groups</span></span>
+                                <span class="card-length">@SplitLength(split)</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="card-split" style="--lanes: @split.Lanes.Count">
+                                @foreach (ScheduleLane lane in split.Lanes)
+                                {
+                                    <div class="card-lane">
+                                        <div class="card-lane-name">@LaneName(lane)</div>
+                                        @foreach (ScheduleItem item in lane.Items)
+                                        {
+                                            @Row(item)
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    }
+                }
+            </div>
+        }
+    </MudCardContent>
+</MudCard>
+
+@code {
+
+    // A line: start time, name, length. A section's name is bold - it holds the time - and the items
+    // under it follow, indented, with no time of their own.
+    private RenderFragment Row(ScheduleItem item) => __builder =>
+    {
+        TimedItem? timed = _timed.GetValueOrDefault(item.Id);
+
+        <div class="card-row @(item.IsSection ? "card-section" : "")">
+            <span class="card-time">@Clock(timed?.Start)</span>
+            <span class="card-name">
+                @item.DisplayName
+                @foreach (ScheduleItem child in item.Children)
+                {
+                    <span class="card-child">@child.DisplayName</span>
+                }
+            </span>
+            <span class="card-length">
+                @(timed is { Fills: true, End: { } end } ? $"until {ScheduleFormat.Clock(end)}" : ScheduleFormat.Minutes(item.Minutes))
+            </span>
+        </div>
+    };
+
+}

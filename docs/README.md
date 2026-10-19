@@ -52,9 +52,13 @@ Present tense, kept current, no dates.
   the three ways to fix the reading problem without changing what gets sent.
 
 - [ProPresenter agent — a connected machine, enrolled from the browser, driving segment timers](work/2026-10-propresenter-agent.md)
-  — `in-progress`. Machines and the agent are built and verified; segment timers are next. What
+  — `in-progress`. Machines, the agent and segment timers are built. What
   ProPresenter 22 was proven to do for labelled text (RSS labels need a forced redraw), and why the
   agent's credential is a file rather than a Keychain item.
+- [Service schedules — templates, split groups, and changes on the night](work/2026-10-service-schedules.md)
+  — `in-progress`. The running order under each service: groups, splits, sections, clock times; why a
+  change of length during the night is recorded as an adjustment; and running the night with Next,
+  including why the ProPresenter timer waits for its labels.
 
 ### Open
 

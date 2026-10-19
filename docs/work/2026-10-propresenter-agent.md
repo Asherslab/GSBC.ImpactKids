@@ -30,8 +30,12 @@ why the auth is shaped the way it is.
 machines admin page, the agent with its LaunchAgent install, the release job, and — as the first
 feature, to prove the whole path — a feed of first-timers' first names. The verification table is in
 [../modules/auth/sign-in.md](../modules/auth/sign-in.md#a-propresenter-machine--the-third-caller).
-**Segment timers are not built**; that is the next piece of work. Not yet proven: the release job
-itself (it runs on the first push to `master`) and `install.sh` on a real Mac.
+**Segment timers are built (2026-10-20)** as one schedule timer per machine driven from the service's
+schedule, rather than the "slots" this plan first sketched — see
+[2026-10-service-schedules.md](2026-10-service-schedules.md#segment-timing-decided-2026-10-19-built-2026-10-20)
+for the rules, the event-stream path, and what ProPresenter's 10-second feed poll forced on the
+timer. Not yet proven: the release job itself (it runs on the first push to `master`) and
+`install.sh` on a real Mac.
 
 **The enrolment flow is a credential issuer, and the one rule that keeps it safe is that a code may
 only ever be redirected to a loopback address.** PKCE protects a code from being intercepted; it does
@@ -314,7 +318,10 @@ replacement Mac needs nothing.
 2. ~~The agent: enrolment, credential, LaunchAgent and `install.sh`, configuration pull, status report,
    the admin page with its download link, and the release job.~~ Done 2026-10-19, except that the
    release job and `install.sh` have not run for real yet.
-3. Segment timers: slots, feeds, the redraw, the control surface — and `WatchCommands`.
+3. ~~Segment timers: slots, feeds, the redraw, the control surface — and `WatchCommands`.~~ Done
+   2026-10-20, differently: one timer chosen per machine, now/next feeds, the run bar on the phone,
+   and the existing event stream at `machine/stream` instead of a `WatchCommands` stream. See
+   [2026-10-service-schedules.md](2026-10-service-schedules.md).
 
 Each step's behaviour lands in `docs/modules/propresenter/` in the same commit, per
 [../AGENTS.md](../AGENTS.md).

@@ -1,0 +1,207 @@
+---
+title: Service schedules — templates, split groups, and changes on the night
+kind: plan
+status: in-progress
+module: scheduling
+opened: 2026-10-19
+verified: 2026-10-20
+code:
+  - GSBC.ImpactKids.Shared.Contracts/Entities/Features/Scheduling/Schedules
+  - GSBC.ImpactKids.Grpc/Features/Scheduling/ScheduleServices
+  - GSBC.ImpactKids.Grpc/Features/Scheduling/ScheduleItemTemplateServices
+  - GSBC.ImpactKids.WASM/Features/Scheduling/Features/Schedules
+  - GSBC.ImpactKids.ProPresenterAgent/Stage
+  - GSBC.ImpactKids.Shared.Contracts/ChurchTime.cs
+---
+
+# Service schedules — templates, split groups, and changes on the night
+
+The running order of a service — "Start Night 18:30, Songs 10m, Lesson 15m …" — kept under the
+service, built from templates, and changed live by leaders on phones during the night. It is the
+ground the ProPresenter segment timers stand on ([2026-10-propresenter-agent.md](2026-10-propresenter-agent.md)):
+those need to know what is on now and what is next, per group.
+
+**Where it stands (2026-10-20).** All five steps below are built. Driven in the app: item templates,
+schedule templates with groups, splits and sections, a new service taking its type's default,
+applying a template, clock times, +5 / −1, the item dialog, and running a night with Start / Next /
+Back (each press checked in the database). Against a real ProPresenter 22: the timer list reaching
+the admin page, the chosen timer following Next and Back, the now/next feeds, countdown-to-time while
+waiting. **Not yet seen working:** dragging, which the browser used for testing cannot do — it needs
+a phone and a desktop; and the release build of the agent, which first ships with this branch.
+
+**Start times are two selects, hour then minute.** The browser's own `<input type="time">` was tried
+first: Safari on a Mac offers it as typing only, with no picker, and a time typed into it was saved as
+null. MudTimePicker's clock dial was ruled out before that, as too slow to use.
+
+**The editor is deliberately quiet.** The first version put −1 / +1 / +5, group toggles, an add-item
+box and four block icons on screen at once, and was hard to read. Now the adjust buttons show only on
+a service's schedule on its own day, block and lane actions sit in ⋮ menus, a lane is labelled by its
+groups, and adding is one small menu per lane.
+
+## What was asked for (2026-10-19)
+
+- A schedule is a list of items under a **service**. Most services share one, so there are
+  **schedule templates**.
+- An item is a name and a time: either a **length** ("15 minutes") or a **clock time** it starts at
+  ("Start Night — 18:30"). A clock-timed item still has a length.
+- **Item templates** — "Song 1", "Song 2" — are placeholders that get a name filled in on the
+  service ("Song 1 — Way Maker"), and later a song from a song list. Left unfilled, it reads "Song 1".
+- Reordering is **drag and drop**, on phones, including during the night.
+- On the night: add and take away time quickly (+5), add and remove items.
+- Each item will record the **time it actually took**, for comparing against the plan over many
+  weeks. That arrives with segment timing; the plan and the adjustments are kept apart now so the
+  comparison is honest when it does.
+- **Splits.** Groups sometimes run separately and simultaneously (Prep–3 doing songs and a lesson
+  while 4–6 play games), and meet together for other parts. Any number of lanes, all under one
+  service. Kids Life starts together with songs and then splits three ways.
+- The label feed takes a **group** query parameter, so one ProPresenter text box can follow the
+  younger groups and another the older.
+- A template may be the default for **one** service type, and a new service gets its type's default.
+  Any other template may be applied instead. Services are not synced with Elvanto.
+
+## Decisions
+
+| Question | Answer | Why |
+|---|---|---|
+| What does a clock time mean? | When the item **starts** | asked; "Start Night — 18:30" |
+| Where do groups live? | Once per schedule; a lane covers one or more | asked (option A). Keeps `?group=` stable all night, through a two-way and then a three-way split |
+| When does a split end? | When its longest lane finishes | asked |
+| When does a change count as "on the night"? | Once the first item's time has passed | asked. Before that, a length change is just planning |
+| Template applied to a service | **Copied**, not linked | editing a template must not rewrite past services, or the plan-vs-actual history lies |
+| Templates and service schedules | One structure, `Schedule`, owned by either a service or nobody (a template) | one editor, one set of operations, and applying a template is a deep copy of the same shape |
+
+## Shape
+
+```
+Schedule            a template (ServiceId null, has a Name, optionally a default ServiceTypeId)
+│                   or a service's schedule (ServiceId set)
+├── Group           "Prep–3", "4–6"          - ordered
+└── Block           ordered
+    └── Lane        ordered; one lane = together, two or more = a split
+        │           a lane in a split lists the groups it covers
+        └── Item    ordered: name, fill-in, planned minutes, starts-at, adjustment minutes
+```
+
+**A block with one lane is "together"**, whatever groups it lists: everybody is in it. A block with
+two or more lanes is a split, and each lane names the groups it covers. Uniform on purpose — the feed
+and the timeline walk one structure, not two.
+
+**But a leader sees one list, not blocks.** The main list holds the together items and each split as a
+single entry, and a split is dragged among the items like one of them (asked for 2026-10-19). Stored,
+it is still blocks; `ScheduleLayout` maps between the two, and one rule keeps them in step after every
+edit — together blocks only ever sit between splits. Adjacent together blocks merge, empty ones go, and
+a split dropped between two items cuts their block in two around it. The server applies the rule to
+the database (`ScheduleService.Rebuild`), the phone to its instant copy of a drag. There is no
+"together block" anywhere in the UI, and a split always has at least two lanes.
+
+### Sections
+
+Songs and Games are **sections**: a heading row with items under it (asked for 2026-10-19). The
+section holds the time — it is what the timeline, the stage timer and the label feed use — and the
+items under it ("Way Maker", "Dodgeball") are what was actually done, with no planned length of their
+own. Games is usually planned as a section of 0 minutes with nothing under it, and games are added on
+the night; each one's actual time is recorded as the leader steps through with Next, for planning
+later. Songs today is a section holding the "Song 1/2/3" placeholders; both will draw from libraries
+later. One level only: a section never sits under another. Stored as items with a `ParentItemId`
+(and no lane).
+
+### A 0-minute item fills
+
+Games at 0 minutes means "as long as the other lane's lesson". So a 0-minute item that ends a lane of
+a split runs to the end of the split, and one followed by a fixed start time runs up to it. The editor
+shows it as "until 19:25", and +5 on the lesson moves it too.
+
+### Segment timing (decided 2026-10-19, built 2026-10-20)
+
+The rules are `ScheduleRun` in Contracts — pure, unit tested, and read by the server (which applies
+each press under the schedule's lock), the phone (the run bar) and the agent (the stage).
+
+- **One ProPresenter timer all night**, chosen per machine on the admin page from the timers the agent
+  reports; it shows the current section or item's countdown; the label is its name (a section's,
+  never a song's).
+- **During a split** the timer follows the lane that sets the split's length (not the one at Games),
+  with a per-lane override in the lane's ⋮ for when that guess is wrong. `?group=` feeds still give
+  each group its own label.
+- **In a gap before a fixed time** (20:15 → Sign Out at 20:30) it shows the next item counting down
+  to its start — not a fixed "free time" label.
+- **Nothing moves on by itself**, fixed times included. At 0 the timer goes into overtime and stays
+  there until a leader taps Next; overtime is common. Back undoes a mistaken Next. Next steps through
+  the items under a section, recording each one's actual time, then on to the next row.
+- **A second label feed shows what is next** in the schedule — purely the next row's name. While a
+  row waits for its start time, it is both what is on and what is next.
+- **Each press is logged** (`ScheduleRunSteps`) with what it changed, so Back undoes exactly one press;
+  items record their actual start and end, songs and games under sections included. A lane off the
+  stage has its own Next and Back, so games in another room still get their times.
+
+#### Getting it onto the stage
+
+- **A press reaches the Mac over the event stream**, not the 30-second check-in: the agent listens on
+  `machine/stream` — the browser's stream at the one path the proxy passes a machine's own token
+  through — and re-reads tonight on a schedule event. Measured: the ProPresenter timer changed 0.48 s
+  after a tap of Next.
+- **ProPresenter reads a label feed every 10 seconds, and nothing makes it read sooner.** Tried on
+  2026-10-20: re-applying the stage layout (accepted, 204) and switching to another layout and back —
+  the fetches stayed on ProPresenter's own 10-second beat both times.
+- **So the timer waits for its labels.** When Next moves to a row whose now or next label differs, the
+  agent holds the timer until ProPresenter has fetched every feed it reads with the new text, and
+  starts it with that fetch's redraw. Without this the timer led the labels by up to 10 seconds. A
+  hold's 15-second fallback ends only that hold — an earlier one firing during a later hold started
+  timers early.
+- **A new row starts from its full listed length** (10:00 for a 10-minute item), not from the time
+  left since Next — the wait for the labels would otherwise eat into it. A +5 on the row already
+  showing moves the stage's own finish by exactly that. A row waiting for its start time uses
+  ProPresenter's "countdown to time" type (`count_down_to_time`, seconds on a 12-hour clock plus
+  am/pm), which shows hours as a time instead of as thousands of minutes.
+- **The stage message (`PUT /v1/stage/message`) updates instantly**, unlike a feed — proven 2026-10-20 —
+  but there is only one, shared with anything a person sends from ProPresenter. Not used; kept here in
+  case a single instant label is wanted later.
+
+### Time
+
+- `PlannedMinutes` is what the schedule was set up with.
+- `AdjustmentMinutes` is the sum of the changes made on the night; each change is also logged
+  (`ScheduleItemAdjustment`: minutes, when, by whom).
+- An item's length is the two added together.
+- Actual start and end times arrive with segment timing.
+
+One operation adds or takes away time, and the server decides which column it lands in: before
+the night it changes the plan, during the night it is an adjustment. The phone does not get to choose,
+so two phones cannot disagree about it.
+
+The timeline — each item's clock start and end — is computed by one helper in Contracts, shared by
+the phone, the server and (later) the agent:
+
+- A clock-timed item starts at its time. If the items before it overrun that time, the clash is shown
+  rather than anything being squeezed.
+- Otherwise an item starts when the one before it in its lane ends.
+- Every lane of a block starts when the previous block ends; the block ends when its longest lane does.
+- Items before the first clock-timed item have no clock time, only their lengths.
+
+### Editing by several phones at once
+
+Every mutation locks the schedule's row (`SELECT … FOR UPDATE`) for its transaction, loads the
+graph, changes it, renumbers positions and saves. Two leaders dragging at the same moment are applied
+one after the other, never interleaved into a scrambled order. Each mutation ends with an event, so
+every phone showing the schedule refreshes.
+
+### What the phone may get wrong, and does not matter
+
+A drag, a +5 and a group toggle are applied to the phone's own copy first (`ScheduleEdits`) and then
+sent; the server's answer replaces the copy a moment later. Adding, removing and the dialogs wait for
+the server instead. The phone guesses plan-versus-adjustment the same way the server decides it, so
+the number does not jump when the answer lands.
+
+### Drag and drop
+
+SortableJS, vendored into `wwwroot/lib`. MudBlazor's drop container is built on HTML5 drag events,
+which iPhone Safari does not deliver from a touch reliably, and this list is dragged on phones in the
+middle of a programme. SortableJS has a touch path of its own and handles dragging between lists
+(lane to lane, together to split).
+
+## Order of work
+
+1. Item templates — the flat library, admin page.
+2. Schedule templates — the structure, its editor, groups, blocks, lanes, items, dragging.
+3. A service's schedule — applied from a template, the service type default, the service page.
+4. The night — the timeline with clock times, +5 / −1, adjustments logged.
+5. Then segment timing and the per-group label feed, in the ProPresenter plan.

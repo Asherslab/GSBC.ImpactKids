@@ -9,6 +9,8 @@ using GSBC.ImpactKids.Grpc.Data.Models.ProPresenter;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.ProPresenter;
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling;
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling.School;
+using GSBC.ImpactKids.Grpc.Data.Models.Scheduling.Schedules;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.Schedules;
 using GSBC.ImpactKids.Shared.Contracts.Entities;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Attendance;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Games;
@@ -114,6 +116,12 @@ public partial class ServiceConverter(
 public partial class ServiceTypeConverter : IConverter<DbServiceType, ServiceType>
 {
     public partial ServiceType Convert(DbServiceType input);
+}
+
+[Mapper]
+public partial class ScheduleItemTemplateConverter : IConverter<DbScheduleItemTemplate, ScheduleItemTemplate>
+{
+    public partial ScheduleItemTemplate Convert(DbScheduleItemTemplate input);
 }
 
 [Mapper]
@@ -292,6 +300,63 @@ public class SyncResultConverter : IConverter<SyncResult, SyncResponse>
 }
 
 /// <summary>
+/// By hand: a schedule is a tree, and every list in it is ordered by <c>Position</c>, which Mapperly
+/// would neither sort nor carry. The query must include the whole graph - groups, blocks, lanes, items,
+/// and the items under sections.
+/// </summary>
+public class ScheduleConverter : IConverter<DbSchedule, Schedule>
+{
+    public Schedule Convert(DbSchedule schedule) => new()
+    {
+        Id = schedule.Id,
+        Name = schedule.Name,
+        ServiceId = schedule.ServiceId,
+        DefaultForServiceTypeId = schedule.DefaultForServiceTypeId,
+        WaitingItemId = schedule.WaitingItemId,
+        Groups = schedule.Groups
+            .OrderBy(g => g.Position)
+            .Select(g => new ScheduleGroup { Id = g.Id, Name = g.Name })
+            .ToImmutableList(),
+        Blocks = schedule.Blocks
+            .OrderBy(b => b.Position)
+            .Select(b => new ScheduleBlock
+            {
+                Id = b.Id,
+                Lanes = b.Lanes
+                    .OrderBy(l => l.Position)
+                    .Select(l => new ScheduleLane
+                    {
+                        Id = l.Id,
+                        GroupIds = l.GroupIds.ToImmutableList(),
+                        OnScreen = l.OnScreen,
+                        Items = l.Items
+                            .OrderBy(i => i.Position)
+                            .Select(Item)
+                            .ToImmutableList()
+                    })
+                    .ToImmutableList()
+            })
+            .ToImmutableList()
+    };
+
+    private static ScheduleItem Item(DbScheduleItem item) => new()
+    {
+        Id = item.Id,
+        Name = item.Name,
+        FillIn = item.FillIn,
+        NeedsFillIn = item.NeedsFillIn,
+        ItemTemplateId = item.ItemTemplateId,
+        PlannedMinutes = item.PlannedMinutes,
+        AdjustmentMinutes = item.AdjustmentMinutes,
+        StartsAt = item.StartsAt,
+        IsSection = item.IsSection,
+        Children = item.Children.OrderBy(c => c.Position).Select(Item).ToImmutableList(),
+        ActualStartedAt = item.ActualStartedAt?.UtcDateTime,
+        ActualEndedAt = item.ActualEndedAt?.UtcDateTime
+    };
+}
+
+/// <summary>
 /// By hand rather than Mapperly: half the contract is derived - who approved it by name, whether the
 /// code was ever exchanged - and the row's credential columns must never be mapped anywhere.
 /// <see cref="DbProPresenterMachine.CreatedByUser"/> has to be included by the query for the name.
@@ -312,6 +377,10 @@ public class ProPresenterMachineConverter(
         LastSeenAt            = machine.LastSeenAt.HasValue ? dateTimeConverter.Convert(machine.LastSeenAt.Value) : null,
         AgentVersion          = machine.AgentVersion,
         ProPresenterReachable = machine.ProPresenterReachable,
-        ProPresenterVersion   = machine.ProPresenterVersion
+        ProPresenterVersion   = machine.ProPresenterVersion,
+        Timers                = machine.TimersJson == null
+            ? []
+            : System.Text.Json.JsonSerializer.Deserialize<List<ProPresenterTimer>>(machine.TimersJson)?.ToImmutableList() ?? [],
+        ScheduleTimerUuid     = machine.ScheduleTimerUuid
     };
 }

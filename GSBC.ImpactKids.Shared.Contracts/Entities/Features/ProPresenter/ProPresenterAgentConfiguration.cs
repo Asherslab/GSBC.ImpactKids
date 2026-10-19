@@ -12,4 +12,7 @@ public record ProPresenterAgentConfiguration
     public required string Name             { get; init; }
     public required string ProPresenterHost { get; init; }
     public required int    ProPresenterPort { get; init; }
+
+    /// <summary>The ProPresenter timer that follows tonight's schedule; null leaves every timer alone.</summary>
+    public string? ScheduleTimerUuid { get; init; }
 }

@@ -1,0 +1,280 @@
+@inherits EntityUtilityComponent
+@inject IRefreshableStore<Schedule>             SchedulesStore
+@inject IRefreshableStore<ScheduleItemTemplate> ItemTemplatesStore
+@inject IScheduleService                        ScheduleService
+@inject IJSRuntime                              Js
+
+@if (_schedule == null)
+{
+    @if (_status.HasError)
+    {
+        <MudAlert Severity="Severity.Error">@_status.Error</MudAlert>
+    }
+    else if (_status.HasData)
+    {
+        <MudAlert Severity="Severity.Warning">This schedule no longer exists.</MudAlert>
+    }
+    else
+    {
+        @* First load only. Every edit refreshes the store, and an overlay on each +5 would flash the
+           whole schedule dark mid-programme; the instant local copy covers those. *@
+        <div class="relative" style="min-height: 120px">
+            <MudOverlay Visible DarkBackground Absolute>
+                <MudProgressCircular Indeterminate/>
+            </MudOverlay>
+        </div>
+    }
+}
+else
+{
+    <div class="schedule" data-schedule-id="@_schedule.Id" @ref="_root">
+        <div class="schedule-top">
+            <span class="schedule-summary">
+                @ScheduleFormat.Minutes(ScheduleTimeline.TotalMinutes(_schedule))
+                @if (StartsAt is { } startsAt && EndsAt is { } endsAt)
+                {
+                    <span class="schedule-muted"> · @ScheduleFormat.Clock(startsAt)–@ScheduleFormat.Clock(endsAt)</span>
+                }
+                @if (_underway)
+                {
+                    <span class="schedule-underway">· underway, changes are recorded</span>
+                }
+            </span>
+            <span class="schedule-groups">
+                <span class="schedule-muted">Groups</span>
+                @foreach (ScheduleGroup group in _schedule.Groups)
+                {
+                    <MudMenu Label="@group.Name" Size="Size.Small" Variant="Variant.Text" Dense="true">
+                        <MudMenuItem OnClick="@(() => RenameGroup(group))">Rename</MudMenuItem>
+                        <MudMenuItem OnClick="@(() => RemoveGroup(group))">Remove</MudMenuItem>
+                    </MudMenu>
+                }
+                <MudIconButton Icon="@Icons.Material.Filled.Add"
+                               Size="Size.Small"
+                               aria-label="Add a group"
+                               OnClick="@AddGroup"/>
+            </span>
+        </div>
+
+        <MudPaper Elevation="3">
+            <div class="schedule-sheet">
+                @* The main list: together items and whole splits, one entry each, all draggable among each other. *@
+                <div class="schedule-items schedule-main" data-lane-id="main">
+                    @foreach (ScheduleEntry entry in _entries)
+                    {
+                        if (entry.Item != null)
+                        {
+                            @ItemRow(entry.Item)
+                        }
+                        else if (entry.Split != null)
+                        {
+                            @SplitRow(entry.Split)
+                        }
+                    }
+                </div>
+                <div class="schedule-add">
+                    <MudMenu Label="Add" StartIcon="@Icons.Material.Filled.Add" Size="Size.Small" Variant="Variant.Text" Dense="true">
+                        @AddItemMenuItems(null)
+                        <MudDivider/>
+                        <MudMenuItem OnClick="@(() => AddSplit())">
+                            Split @(_schedule.Groups.Count >= 2 ? $"by group ({_schedule.Groups.Count} lanes)" : "(2 lanes)")
+                        </MudMenuItem>
+                        <MudMenuItem Href="/Schedules/Items">Edit the item list…</MudMenuItem>
+                    </MudMenu>
+                </div>
+            </div>
+        </MudPaper>
+    </div>
+}
+
+@code {
+
+    // One entry of a list, the same in the main list and in a split's lane. A section is its heading
+    // row, the items under it, and an Add of its own - dragged as one.
+    private RenderFragment ItemRow(ScheduleItem item) => __builder =>
+    {
+        TimedItem? timed = _timed.GetValueOrDefault(item.Id);
+        string     state = $"{(timed?.Clash == true ? "clash" : "")} {(IsNow(item, timed) ? "now" : "")}";
+
+        if (item.IsSection)
+        {
+            <div class="schedule-section" data-item-id="@item.Id" data-section="true" @key="item.Id">
+                <div class="schedule-item schedule-section-header @state">
+                    @RowCells(item, timed)
+                </div>
+                <div class="schedule-children" data-section-id="@item.Id">
+                    @foreach (ScheduleItem child in item.Children)
+                    {
+                        <div class="schedule-child" data-item-id="@child.Id" @key="child.Id">
+                            <span class="schedule-drag-handle" aria-label="Drag to move">
+                                <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small"/>
+                            </span>
+                            <span class="schedule-item-name" @onclick="@(() => EditChild(child, item))">
+                                @child.DisplayName
+                                @if (child.NeedsFillIn && string.IsNullOrWhiteSpace(child.FillIn))
+                                {
+                                    <span class="schedule-fill-in">to fill in</span>
+                                }
+                            </span>
+                            <span class="schedule-item-remove">
+                                <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                               Size="Size.Small"
+                                               Color="Color.Error"
+                                               aria-label="@($"Remove {child.DisplayName}")"
+                                               OnClick="@(() => RemoveItem(child))"/>
+                            </span>
+                        </div>
+                    }
+                </div>
+                <div class="schedule-add schedule-section-add">
+                    <MudMenu Label="@($"Add to {item.Name}")" StartIcon="@Icons.Material.Filled.Add" Size="Size.Small" Variant="Variant.Text" Dense="true">
+                        @AddItemMenuItems(null, item.Id)
+                    </MudMenu>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="schedule-item @state" data-item-id="@item.Id" @key="item.Id">
+                @RowCells(item, timed)
+            </div>
+        }
+    };
+
+    // The cells of an item's row - or of a section's heading row.
+    private RenderFragment RowCells(ScheduleItem item, TimedItem? timed) => __builder =>
+    {
+            <span class="schedule-drag-handle" aria-label="Drag to move">
+                <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small"/>
+            </span>
+            <span class="schedule-item-time">
+                @(timed?.Start is { } start ? ScheduleFormat.Clock(start) : "")
+            </span>
+            <span class="schedule-item-name" @onclick="@(() => EditItem(item))">
+                @item.DisplayName
+                @if (item.NeedsFillIn && string.IsNullOrWhiteSpace(item.FillIn))
+                {
+                    <span class="schedule-fill-in">to fill in</span>
+                }
+                @if (timed?.Clash == true)
+                {
+                    <span class="schedule-clash-note">the items before run past @ScheduleFormat.Clock(item.StartsAt!.Value)</span>
+                }
+            </span>
+            <span class="schedule-item-length" @onclick="@(() => EditItem(item))">
+                @(timed?.Fills == true ? FillLabel(timed) : ScheduleFormat.Minutes(item.Minutes))
+                @if (item.AdjustmentMinutes != 0)
+                {
+                    <span class="schedule-adjustment">@($"{item.AdjustmentMinutes:+0;-0}")</span>
+                }
+            </span>
+            @if (ShowAdjust)
+            {
+                <span class="schedule-item-actions">
+                    <MudButton Size="Size.Small" Variant="Variant.Text"
+                               OnClick="@(() => Adjust(item, -1))">−1</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Text"
+                               OnClick="@(() => Adjust(item, 1))">+1</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
+                               OnClick="@(() => Adjust(item, 5))">+5</MudButton>
+                </span>
+            }
+            <span class="schedule-item-remove">
+                <MudIconButton Icon="@Icons.Material.Filled.Close"
+                               Size="Size.Small"
+                               Color="Color.Error"
+                               aria-label="@($"Remove {item.DisplayName}")"
+                               OnClick="@(() => RemoveItem(item))"/>
+            </span>
+    };
+
+    // A split as one entry of the main list: ruled above and below like an item, its lanes raised as cards.
+    private RenderFragment SplitRow(ScheduleBlock block) => __builder =>
+    {
+        ImmutableList<LaneTiming> laneTimings = ScheduleTimeline.Lanes(block);
+        List<TimedItem> timedItems = block.Lanes.SelectMany(l => l.Items)
+            .Select(i => _timed.GetValueOrDefault(i.Id))
+            .OfType<TimedItem>()
+            .ToList();
+        DateTime? splitStart = timedItems.Where(t => t.Start != null).Select(t => t.Start).Min();
+        DateTime? splitEnd   = timedItems.Where(t => t.End != null).Select(t => t.End).Max();
+
+        <div class="schedule-split" data-block-id="@block.Id" @key="block.Id">
+            <div class="schedule-split-header">
+                <span class="schedule-drag-handle" aria-label="Drag to move">
+                    <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small"/>
+                </span>
+                <span class="schedule-item-time">@(splitStart is { } start ? ScheduleFormat.Clock(start) : "")</span>
+                <span>
+                    <span class="schedule-split-title">Split</span>
+                    @if (splitStart is { } from && splitEnd is { } to)
+                    {
+                        <span class="schedule-muted"> · @ScheduleFormat.Clock(from)–@ScheduleFormat.Clock(to)</span>
+                    }
+                </span>
+                <span class="schedule-item-length">@ScheduleFormat.Minutes(laneTimings.Count == 0 ? 0 : laneTimings.Max(l => l.Minutes))</span>
+                <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="true" AriaLabel="Split options">
+                    <MudMenuItem Disabled="@(block.Lanes.Count >= ScheduleRules.MaxLanes)" OnClick="@(() => AddLane(block))">Add a lane</MudMenuItem>
+                    <MudMenuItem OnClick="@(() => RemoveBlock(block))">Remove split</MudMenuItem>
+                </MudMenu>
+            </div>
+            <div class="schedule-lanes" style="--lanes: @block.Lanes.Count">
+                @foreach (ScheduleLane lane in block.Lanes)
+                {
+                    LaneTiming timing = laneTimings.First(t => t.LaneId == lane.Id);
+
+                    <div class="schedule-lane mud-elevation-2" @key="lane.Id">
+                        <div class="schedule-lane-header">
+                            <span class="schedule-lane-name">@LaneName(lane)</span>
+                            @if (ScheduleRun.LeadLane(block)?.Id == lane.Id)
+                            {
+                                <span class="schedule-muted">· on stage</span>
+                            }
+                            @if (timing.SpareMinutes > 0)
+                            {
+                                <span class="schedule-muted">· @timing.SpareMinutes min spare</span>
+                            }
+                            <MudSpacer/>
+                            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="true" AriaLabel="Lane options">
+                                <MudMenuItem OnClick="@(() => ChooseLaneGroups(lane))">Choose groups…</MudMenuItem>
+                                <MudMenuItem OnClick="@(() => SetOnScreen(lane, !lane.OnScreen))">
+                                    @(lane.OnScreen ? "Stop choosing this lane for the stage" : "Follow this lane on the stage")
+                                </MudMenuItem>
+                                <MudMenuItem Disabled="@(block.Lanes.Count <= 2)" OnClick="@(() => RemoveLane(lane))">Remove lane</MudMenuItem>
+                            </MudMenu>
+                        </div>
+                        <div class="schedule-items" data-lane-id="@lane.Id">
+                            @foreach (ScheduleItem item in lane.Items)
+                            {
+                                @ItemRow(item)
+                            }
+                        </div>
+                        <div class="schedule-add">
+                            <MudMenu Label="Add" StartIcon="@Icons.Material.Filled.Add" Size="Size.Small" Variant="Variant.Text" Dense="true">
+                                @AddItemMenuItems(lane.Id)
+                            </MudMenu>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    };
+
+    // The library to add from. Under a section, sections are left out (one level only) and lengths are
+    // not shown, since items there have none that counts.
+    private RenderFragment AddItemMenuItems(Guid? laneId, Guid? sectionId = null) => __builder =>
+    {
+        @foreach (ScheduleItemTemplate template in _itemTemplates.Where(t => sectionId == null || !t.IsSection))
+        {
+            <MudMenuItem OnClick="@(() => AddFromTemplate(laneId, sectionId, template.Id))">
+                @template.Name
+                @if (sectionId == null)
+                {
+                    <span class="schedule-muted"> · @(template.IsSection ? "section" : ScheduleFormat.Minutes(template.Minutes))</span>
+                }
+            </MudMenuItem>
+        }
+        <MudMenuItem OnClick="@(() => ScheduleItemDialog.Open(DialogService, null, ScheduleId, laneId, _underway, sectionId))">One-off item…</MudMenuItem>
+    };
+
+}

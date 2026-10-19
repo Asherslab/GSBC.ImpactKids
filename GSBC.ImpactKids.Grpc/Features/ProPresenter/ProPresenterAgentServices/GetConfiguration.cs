@@ -27,7 +27,8 @@ public partial class ProPresenterAgentService
                 MachineId = x.Id,
                 Name = x.Name,
                 ProPresenterHost = x.ProPresenterHost,
-                ProPresenterPort = x.ProPresenterPort
+                ProPresenterPort = x.ProPresenterPort,
+                ScheduleTimerUuid = x.ScheduleTimerUuid
             })
             .FirstOrDefaultAsync(token);
 

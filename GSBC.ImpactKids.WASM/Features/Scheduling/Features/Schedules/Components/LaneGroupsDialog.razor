@@ -1,0 +1,18 @@
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-2" Style="opacity: 0.7">
+            Which groups follow this lane. A group can only be in one lane of a split.
+        </MudText>
+        @foreach (ScheduleGroup group in Groups)
+        {
+            <MudCheckBox T="bool"
+                         Value="@_selected.Contains(group.Id)"
+                         ValueChanged="@(on => Toggle(group.Id, on))"
+                         Label="@group.Name"/>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => MudDialog.Cancel())">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="@(() => MudDialog.Close(DialogResult.Ok(_selected.ToList())))">Save</MudButton>
+    </DialogActions>
+</MudDialog>

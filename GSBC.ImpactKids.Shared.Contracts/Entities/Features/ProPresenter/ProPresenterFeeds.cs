@@ -16,5 +16,11 @@ public static class ProPresenterFeeds
 
     public const string FirstTimersPath = "/feeds/first-timers.rss";
 
+    /// <summary>What is on now, on the stage. <c>?group=4-6</c> follows that group's own lane during a split.</summary>
+    public const string NowPath = "/feeds/now.rss";
+
+    /// <summary>What comes next in the schedule - just its name.</summary>
+    public const string NextPath = "/feeds/next.rss";
+
     public static string Url(string path) => $"http://127.0.0.1:{Port}{path}";
 }

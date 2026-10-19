@@ -51,7 +51,16 @@ public class GsbcDbContextFactory : IDesignTimeDbContextFactory<GsbcDbContext>
             PlannedChanges        = null!,
             ElvantoFamilyLinks    = null!,
 
-            ProPresenterMachines = null!
+            ProPresenterMachines = null!,
+
+            ScheduleItemTemplates   = null!,
+            Schedules               = null!,
+            ScheduleGroups          = null!,
+            ScheduleBlocks          = null!,
+            ScheduleLanes           = null!,
+            ScheduleItems           = null!,
+            ScheduleItemAdjustments = null!,
+            ScheduleRunSteps        = null!
         };
     }
 }

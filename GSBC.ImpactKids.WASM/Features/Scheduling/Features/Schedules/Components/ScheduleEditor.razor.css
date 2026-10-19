@@ -1,0 +1,286 @@
+/* Quiet by default: the item names are what the eye is looking for, so they are the only strong
+   text. Times, lengths and controls are muted. Rows are ruled apart by one hairline each; the
+   schedule sits on one raised card, and the lanes of a split are cards raised within it. */
+
+.schedule {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.schedule-muted {
+    opacity: 0.6;
+}
+
+.schedule-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 24px;
+}
+
+.schedule-summary {
+    font-weight: 500;
+}
+
+.schedule-underway {
+    margin-left: 6px;
+    font-weight: 400;
+    color: var(--mud-palette-warning);
+}
+
+.schedule-groups {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px;
+}
+
+/* Group names as typed - "Prep-3", not "PREP-3". */
+.schedule-groups ::deep .mud-button-root {
+    text-transform: none;
+}
+
+.schedule-sheet {
+    padding: 8px 16px 12px;
+}
+
+/* Somewhere to drop into even when a list is empty. */
+.schedule-items {
+    min-height: 36px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Rows - items and splits alike - share columns: handle, time, name, length, remove (or a split's
+   menu), then the night's buttons. */
+.schedule-item,
+.schedule-split-header {
+    display: grid;
+    grid-template-columns: auto 3em minmax(0, 1fr) auto auto auto;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 4px;
+}
+
+.schedule-item {
+    border-bottom: 1px solid var(--mud-palette-lines-default);
+}
+
+.schedule-item:hover {
+    background: var(--mud-palette-action-default-hover);
+}
+
+.schedule-item.now {
+    background: color-mix(in srgb, var(--mud-palette-success) 14%, transparent);
+}
+
+.schedule-item.clash .schedule-item-time {
+    color: var(--mud-palette-error);
+    opacity: 1;
+}
+
+/* A section is a row like any item, with its items indented under it and the rule beneath the lot. */
+.schedule-section {
+    border-bottom: 1px solid var(--mud-palette-lines-default);
+    padding-bottom: 4px;
+}
+
+.schedule-item.schedule-section-header {
+    border-bottom: none;
+}
+
+.schedule-section-header .schedule-item-name {
+    font-weight: 500;
+}
+
+/* Somewhere to drop into even when the section has nothing under it yet. */
+.schedule-children {
+    min-height: 8px;
+    display: flex;
+    flex-direction: column;
+    margin-left: calc(3em + 32px);
+}
+
+.schedule-child {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 4px;
+    font-size: 0.9em;
+    opacity: 0.85;
+}
+
+.schedule-child:hover {
+    background: var(--mud-palette-action-default-hover);
+}
+
+.schedule-child:hover .schedule-drag-handle {
+    opacity: 0.7;
+}
+
+.schedule-section-add {
+    margin-left: calc(3em + 28px);
+}
+
+.schedule-lane .schedule-section:last-child {
+    border-bottom: none;
+}
+
+/* A split is a row of the main list like any item: a rule under it, nothing around it. */
+.schedule-split {
+    border-bottom: 1px solid var(--mud-palette-lines-default);
+    padding-bottom: 12px;
+}
+
+.schedule-split-title {
+    font-weight: 500;
+}
+
+.schedule-lanes {
+    display: grid;
+    grid-template-columns: repeat(var(--lanes), minmax(0, 1fr));
+    gap: 12px;
+    padding-left: 28px;
+}
+
+@media (max-width: 1000px) {
+    .schedule-lanes {
+        grid-template-columns: minmax(0, 1fr);
+        padding-left: 0;
+    }
+}
+
+/* Each lane is a raised card. Item rows lay out by the lane's width, not the screen's: a lane in a
+   three-way split on a desktop is as narrow as a phone. */
+.schedule-lane {
+    container-type: inline-size;
+    min-width: 0;
+    /* Lanes of a split stretch to the tallest; the list takes the spare height so Add sits at the bottom of every lane. */
+    display: flex;
+    flex-direction: column;
+    background: var(--mud-palette-surface);
+    border-radius: var(--mud-default-borderradius);
+    padding: 6px 10px 8px;
+}
+
+.schedule-lane .schedule-items {
+    flex: 1;
+}
+
+.schedule-lane .schedule-item:last-child {
+    border-bottom: none;
+}
+
+.schedule-lane-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--mud-palette-lines-default);
+}
+
+.schedule-lane-name {
+    font-weight: 500;
+    color: var(--mud-palette-primary);
+}
+
+/* The ✕ and a split's ⋮ always take the last column, so they line up down the right-hand edge
+   whether or not the night's buttons are showing. */
+.schedule-item-remove {
+    display: flex;
+    opacity: 0.7;
+    grid-column: -2 / -1;
+}
+
+.schedule-split-header ::deep .mud-menu {
+    grid-column: -2 / -1;
+}
+
+.schedule-item:hover .schedule-item-remove {
+    opacity: 1;
+}
+
+@container (max-width: 520px) {
+    .schedule-item {
+        grid-template-columns: auto 3em minmax(0, 1fr) auto auto;
+    }
+
+    .schedule-item-actions {
+        grid-row: 2;
+        grid-column: 3 / -1;
+        justify-content: flex-end;
+    }
+}
+
+.schedule-drag-handle {
+    cursor: grab;
+    touch-action: none;
+    display: flex;
+    padding: 4px 0;
+    opacity: 0.3;
+}
+
+.schedule-item:hover .schedule-drag-handle,
+.schedule-split-header:hover .schedule-drag-handle {
+    opacity: 0.7;
+}
+
+.schedule-item-time {
+    font-variant-numeric: tabular-nums;
+    opacity: 0.6;
+}
+
+.schedule-item-name {
+    cursor: pointer;
+    overflow-wrap: anywhere;
+}
+
+.schedule-fill-in {
+    margin-left: 6px;
+    font-size: 0.8em;
+    color: var(--mud-palette-warning);
+}
+
+.schedule-clash-note {
+    display: block;
+    color: var(--mud-palette-error);
+    font-size: 0.8em;
+}
+
+.schedule-item-length {
+    cursor: pointer;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.7;
+}
+
+.schedule-adjustment {
+    margin-left: 4px;
+    font-size: 0.85em;
+    color: var(--mud-palette-warning);
+}
+
+.schedule-item-actions {
+    display: flex;
+}
+
+.schedule-item-actions ::deep .mud-button-root {
+    min-width: 36px;
+    padding: 0 4px;
+}
+
+.schedule-add {
+    opacity: 0.8;
+    padding-top: 2px;
+}
+
+.schedule-item.schedule-drag-ghost,
+.schedule-child.schedule-drag-ghost,
+.schedule-section.schedule-drag-ghost,
+.schedule-split.schedule-drag-ghost {
+    opacity: 0.4;
+}

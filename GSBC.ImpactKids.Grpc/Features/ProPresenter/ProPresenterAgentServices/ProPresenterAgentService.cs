@@ -1,5 +1,8 @@
 using Grpc.Core;
+using GSBC.ImpactKids.Grpc.Conversion;
 using GSBC.ImpactKids.Grpc.Data;
+using GSBC.ImpactKids.Grpc.Data.Models.Scheduling.Schedules;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.Schedules;
 using GSBC.ImpactKids.Grpc.Features.ProPresenter.MachineAuth;
 using GSBC.ImpactKids.Grpc.Services;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.ProPresenter;
@@ -13,11 +16,10 @@ namespace GSBC.ImpactKids.Grpc.Features.ProPresenter.ProPresenterAgentServices;
 /// </summary>
 public partial class ProPresenterAgentService(
     GsbcDbContext                      db,
-    IEventService<ProPresenterMachine> eventService
+    IEventService<ProPresenterMachine> eventService,
+    IConverter<DbSchedule, Schedule>   scheduleConverter
 ) : IProPresenterAgentService
 {
-    private static readonly TimeZoneInfo SydneyZone = TimeZoneInfo.FindSystemTimeZoneById("Australia/Sydney");
-
     /// <summary>
     /// The caller, from its token. Never null on a correctly mapped method - the policy has already
     /// required the claim - so a null here is a mapping mistake and is refused rather than guessed.

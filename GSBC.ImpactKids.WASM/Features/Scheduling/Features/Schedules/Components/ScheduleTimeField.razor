@@ -1,0 +1,47 @@
+@* A time of day as two taps: hour, then minute. Deliberately neither MudTimePicker's clock dial
+   (slow) nor the browser's time input (Safari on a Mac offers typing only, with no picker).
+   Both selects carry a label: a filled field keeps the label's space whether or not it has one, so
+   an unlabelled select sits taller and lower than every field around it. *@
+<div class="schedule-time-field @Class">
+    <div class="schedule-time-row">
+        <MudSelect T="int?"
+                   Value="@Value?.Hours"
+                   ValueChanged="@SetHour"
+                   ReadOnly="@ReadOnly"
+                   Label="@(Label ?? "Hour")"
+                   Variant="Variant.Filled"
+                   AnchorOrigin="Origin.BottomLeft"
+                   MaxHeight="320">
+            @for (int hour = 0; hour < 24; hour++)
+            {
+                int h = hour;
+                <MudSelectItem T="int?" Value="@h">@h.ToString("00")</MudSelectItem>
+            }
+        </MudSelect>
+        <span class="schedule-time-colon">:</span>
+        <MudSelect T="int?"
+                   Value="@Value?.Minutes"
+                   ValueChanged="@SetMinute"
+                   ReadOnly="@(ReadOnly || Value == null)"
+                   Label="Minute"
+                   Variant="Variant.Filled"
+                   AnchorOrigin="Origin.BottomLeft"
+                   MaxHeight="320">
+            @foreach (int minute in Minutes)
+            {
+                <MudSelectItem T="int?" Value="@minute">@minute.ToString("00")</MudSelectItem>
+            }
+        </MudSelect>
+        @if (Value != null && !ReadOnly)
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.Clear"
+                           Size="Size.Small"
+                           aria-label="No set time"
+                           OnClick="@(() => ValueChanged.InvokeAsync(null))"/>
+        }
+    </div>
+    @if (HelperText != null)
+    {
+        <MudText Typo="Typo.caption" Class="schedule-time-help">@HelperText</MudText>
+    }
+</div>

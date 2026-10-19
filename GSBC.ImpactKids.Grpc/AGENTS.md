@@ -244,6 +244,13 @@ DateTimeOffset dayStart   = new DateTimeOffset(localToday, TimeZoneInfo.Local.Ge
     .ToUniversalTime();          // same instant, offset 0 - without this it throws
 ```
 
+**For "today" or a wall-clock time at the church, use `ChurchTime`** (Contracts) - `Today`,
+`DayBounds(date)` (already at offset zero), `ToUtc`, `FromUtc`. It is `Australia/Brisbane`: the church
+is in AEST with no daylight saving. The server's own zone, the phone's and `TimeZoneInfo.Local` are
+all the wrong answer to "when is 18:30 tonight". The Elvanto sync's descriptors still convert with
+`Australia/Sydney`; moving them changes how dates already exchanged with Elvanto are read, so that is
+its own change.
+
 Everywhere else in this project reaches offset zero via
 `new DateTimeOffset(DateTime.SpecifyKind(value, DateTimeKind.Utc))`. Use that when the value is
 already UTC, and `ToUniversalTime()` when you deliberately started from a local wall-clock day.

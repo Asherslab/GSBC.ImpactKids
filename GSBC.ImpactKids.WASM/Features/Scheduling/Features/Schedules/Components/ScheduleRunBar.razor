@@ -1,0 +1,90 @@
+@inherits EntityUtilityComponent
+@inject IRefreshableStore<Schedule> SchedulesStore
+@inject IScheduleService            ScheduleService
+
+@* The night's controls: what is on now and its countdown, Next and Back - the stage's, and during a
+   split each other lane's own. The same view the agent puts on ProPresenter (ScheduleRun.View). *@
+<MudPaper Elevation="4" Class="pa-3 mb-3">
+    <div class="run">
+        @switch (_view.State)
+        {
+            case RunState.NotStarted:
+                <div class="run-now">
+                    <div class="run-label">Not started</div>
+                    @if (_view.NextLabel != null)
+                    {
+                        <div class="run-muted">First: @_view.NextLabel</div>
+                    }
+                </div>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@_busy" OnClick="@(() => Next(null))">Start</MudButton>
+                break;
+
+            case RunState.Finished:
+                <div class="run-now">
+                    <div class="run-label">Finished</div>
+                </div>
+                <MudButton Variant="Variant.Text" Disabled="@_busy" OnClick="@(() => Back(null))">Back</MudButton>
+                break;
+
+            default:
+                RunRow now = _view.Now!;
+                TimeSpan left = now.Target - DateTime.UtcNow;
+
+                <div class="run-now">
+                    <div class="run-label">
+                        @now.Label
+                        @if (now.Leaf.Id != now.Row.Id)
+                        {
+                            <span class="run-muted"> · @now.Leaf.DisplayName</span>
+                        }
+                    </div>
+                    <div class="run-muted">
+                        @(now.Waiting ? "Starts in" : left < TimeSpan.Zero ? "Overtime" : "Left")
+                        @* While waiting, "next" is the row itself - already the title. *@
+                        @if (_view.NextLabel != null && !now.Waiting)
+                        {
+                            <span> · Next: @_view.NextLabel</span>
+                        }
+                    </div>
+                </div>
+                <div class="run-clock @(left < TimeSpan.Zero && !now.Waiting ? "over" : "")">@Clock(left)</div>
+                <div class="run-buttons">
+                    <MudButton Variant="Variant.Text" Disabled="@_busy" OnClick="@(() => Back(null))">Back</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@_busy" OnClick="@(() => Next(null))">
+                        @(now.Waiting ? "Start now" : "Next")
+                    </MudButton>
+                </div>
+                break;
+        }
+    </div>
+
+    @if (_view.Split is { } split && _view.Now is { Waiting: false })
+    {
+        @foreach (ScheduleLane lane in split.Lanes.Where(l => l.Id != ScheduleRun.LeadLane(split)?.Id))
+        {
+            RunRow? laneNow = ScheduleRun.LaneNow(Schedule!, split, lane, LocalDate.Date, ToUtc, DateTime.UtcNow);
+
+            <div class="run run-lane">
+                <div class="run-now">
+                    <div class="run-lane-name">@LaneName(lane)</div>
+                    <div>
+                        @(laneNow?.Label ?? (lane.Items.Count == 0 ? "Nothing planned" : "Finished, waiting for the others"))
+                        @if (laneNow != null && laneNow.Leaf.Id != laneNow.Row.Id)
+                        {
+                            <span class="run-muted"> · @laneNow.Leaf.DisplayName</span>
+                        }
+                    </div>
+                </div>
+                @if (laneNow != null)
+                {
+                    TimeSpan laneLeft = laneNow.Target - DateTime.UtcNow;
+                    <div class="run-clock small @(laneLeft < TimeSpan.Zero ? "over" : "")">@Clock(laneLeft)</div>
+                }
+                <div class="run-buttons">
+                    <MudButton Size="Size.Small" Variant="Variant.Text" Disabled="@_busy" OnClick="@(() => Back(lane.Id))">Back</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" Disabled="@(_busy || laneNow == null)" OnClick="@(() => Next(lane.Id))">Next</MudButton>
+                </div>
+            </div>
+        }
+    }
+</MudPaper>

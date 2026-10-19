@@ -1,3 +1,4 @@
+using System.Text.Json;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.ProPresenter;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.ProPresenter;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
@@ -32,7 +33,7 @@ public partial class ProPresenterAgentService
         var before = await db.ProPresenterMachines
             .AsNoTracking()
             .Where(x => x.Id == machineId)
-            .Select(x => new { x.LastSeenAt, x.AgentVersion, x.ProPresenterReachable, x.ProPresenterVersion })
+            .Select(x => new { x.LastSeenAt, x.AgentVersion, x.ProPresenterReachable, x.ProPresenterVersion, x.TimersJson })
             .FirstOrDefaultAsync(token);
 
         if (before == null)
@@ -44,20 +45,31 @@ public partial class ProPresenterAgentService
         string  agentVersion        = Truncate(request.AgentVersion, 64)!;
         string? proPresenterVersion = Truncate(request.ProPresenterVersion, 64);
 
+        // ProPresenter unreachable reports no timers; keep the last list rather than empty the
+        // admin page's choices because ProPresenter was closed for a moment.
+        string? timersJson = request.ProPresenterReachable
+            ? JsonSerializer.Serialize(request.Timers
+                .Take(100)
+                .Select(t => new ProPresenterTimer { Uuid = Truncate(t.Uuid, 64)!, Name = Truncate(t.Name, 200)! })
+                .ToList())
+            : before.TimersJson;
+
         await db.ProPresenterMachines
             .Where(x => x.Id == machineId)
             .ExecuteUpdateAsync(s => s
                 .SetProperty(x => x.LastSeenAt, now)
                 .SetProperty(x => x.AgentVersion, agentVersion)
                 .SetProperty(x => x.ProPresenterReachable, request.ProPresenterReachable)
-                .SetProperty(x => x.ProPresenterVersion, proPresenterVersion), token);
+                .SetProperty(x => x.ProPresenterVersion, proPresenterVersion)
+                .SetProperty(x => x.TimersJson, timersJson), token);
 
         bool wasOffline = before.LastSeenAt == null || now - before.LastSeenAt.Value >= ProPresenterMachine.OnlineWindow;
 
         bool visibleChange = wasOffline
                              || before.AgentVersion != agentVersion
                              || before.ProPresenterReachable != request.ProPresenterReachable
-                             || before.ProPresenterVersion != proPresenterVersion;
+                             || before.ProPresenterVersion != proPresenterVersion
+                             || before.TimersJson != timersJson;
 
         if (visibleChange)
             await eventService.SendUpdatedEvent(token);
