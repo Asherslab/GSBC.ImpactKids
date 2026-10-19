@@ -40,8 +40,8 @@
         ValueChanged="@SetStartsAt"
         ReadOnly="@(State == ModificationState.Reading)"
         Class="mb-4"
-        Label="Starts at a set time (optional)"
-        HelperText="Leave empty to run on from the item before"/>
+        Label="Starts at"
+        HelperText="Optional. Leave empty to run on from the item before"/>
     <MudCheckBoxCreateOrUpdate
         @bind-Create="@CreateRequest.NeedsFillIn"
         Read="@UpdateRequest.NeedsFillIn.Value"

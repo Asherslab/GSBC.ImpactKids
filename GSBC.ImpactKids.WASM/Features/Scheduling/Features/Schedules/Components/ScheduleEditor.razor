@@ -50,6 +50,8 @@ else
             </span>
         </div>
 
+        <MudPaper Elevation="3">
+        <div class="schedule-sheet">
         @for (int b = 0; b < _schedule.Blocks.Count; b++)
         {
             int           blockIndex = b;
@@ -75,7 +77,9 @@ else
                     {
                         LaneTiming timing = laneTimings.First(t => t.LaneId == lane.Id);
 
-                        <div class="schedule-lane" @key="lane.Id">
+                        @* A lane of a split is raised as its own card (MudBlazor's elevation class), so the
+                           sides of a split read as separate from each other and from the rest of the night. *@
+                        <div class="schedule-lane @(block.IsSplit ? "split-lane mud-elevation-2" : "")" @key="lane.Id">
                             @if (block.IsSplit)
                             {
                                 <div class="schedule-lane-header">
@@ -165,5 +169,7 @@ else
                 </MudMenuItem>
             </MudMenu>
         </div>
+        </div>
+        </MudPaper>
     </div>
 }

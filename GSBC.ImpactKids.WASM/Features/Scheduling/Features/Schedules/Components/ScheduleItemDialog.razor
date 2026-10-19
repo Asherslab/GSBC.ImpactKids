@@ -29,8 +29,8 @@
                          Class="mb-4"/>
         <ScheduleTimeField Value="@_startsAt"
                            ValueChanged="@(v => _startsAt = v)"
-                           Label="Starts at a set time (optional)"
-                           HelperText="Leave empty to run on from the item before"/>
+                           Label="Starts at"
+                           HelperText="Optional. Leave empty to run on from the item before"/>
     </DialogContent>
     <DialogActions>
         @if (Item != null)

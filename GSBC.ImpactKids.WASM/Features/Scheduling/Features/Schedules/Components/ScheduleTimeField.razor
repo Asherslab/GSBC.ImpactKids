@@ -1,18 +1,15 @@
 @* A time of day as two taps: hour, then minute. Deliberately neither MudTimePicker's clock dial
-   (slow) nor the browser's time input (Safari on a Mac offers typing only, with no picker). *@
+   (slow) nor the browser's time input (Safari on a Mac offers typing only, with no picker).
+   Both selects carry a label: a filled field keeps the label's space whether or not it has one, so
+   an unlabelled select sits taller and lower than every field around it. *@
 <div class="schedule-time-field @Class">
-    @if (Label != null)
-    {
-        <MudText Typo="Typo.caption" Class="schedule-time-label">@Label</MudText>
-    }
     <div class="schedule-time-row">
         <MudSelect T="int?"
                    Value="@Value?.Hours"
                    ValueChanged="@SetHour"
                    ReadOnly="@ReadOnly"
-                   Placeholder="Hour"
+                   Label="@(Label ?? "Hour")"
                    Variant="Variant.Filled"
-                   Margin="Margin.Dense"
                    AnchorOrigin="Origin.BottomLeft"
                    MaxHeight="320">
             @for (int hour = 0; hour < 24; hour++)
@@ -26,9 +23,8 @@
                    Value="@Value?.Minutes"
                    ValueChanged="@SetMinute"
                    ReadOnly="@(ReadOnly || Value == null)"
-                   Placeholder="Min"
+                   Label="Minute"
                    Variant="Variant.Filled"
-                   Margin="Margin.Dense"
                    AnchorOrigin="Origin.BottomLeft"
                    MaxHeight="320">
             @foreach (int minute in Minutes)

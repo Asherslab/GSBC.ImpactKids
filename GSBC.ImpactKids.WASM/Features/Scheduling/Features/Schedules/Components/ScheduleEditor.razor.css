@@ -42,6 +42,14 @@
     text-transform: none;
 }
 
+/* The whole schedule sits on one raised card; blocks are stacked inside it. */
+.schedule-sheet {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 16px;
+}
+
 .schedule-block-header {
     display: flex;
     align-items: center;
@@ -49,6 +57,13 @@
     padding-bottom: 4px;
     border-bottom: 1px solid var(--mud-palette-lines-default);
     margin-bottom: 4px;
+}
+
+/* Each side of a split is its own raised card. */
+.schedule-lane.split-lane {
+    background: var(--mud-palette-surface);
+    border-radius: var(--mud-default-borderradius);
+    padding: 8px 12px;
 }
 
 .schedule-block-kind {
@@ -84,6 +99,8 @@
     align-items: center;
     gap: 6px;
     font-size: 0.875rem;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--mud-palette-lines-default);
 }
 
 .schedule-lane-name {
@@ -103,8 +120,8 @@
     grid-template-columns: auto 3em minmax(0, 1fr) auto auto;
     align-items: center;
     gap: 8px;
-    padding: 6px 4px;
-    border-radius: 6px;
+    padding: 8px 4px;
+    border-bottom: 1px solid var(--mud-palette-lines-default);
 }
 
 .schedule-item:hover {
@@ -189,6 +206,7 @@
 
 .schedule-add {
     opacity: 0.8;
+    padding-top: 2px;
 }
 
 .schedule-item.schedule-drag-ghost {

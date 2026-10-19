@@ -6,7 +6,7 @@
 
 <PageTitle>@(_template?.Name ?? "Schedule Template")</PageTitle>
 
-<MudPaper Elevation="6" Class="mt-4 pa-4">
+<div class="mt-4">
     <MudStack Row AlignItems="AlignItems.Center" Wrap="Wrap.Wrap" Class="mb-4">
         <MudIconButton Href="/Schedules/Templates" Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back to templates"/>
         <MudText Typo="Typo.h5">@(_template?.Name ?? "Schedule Template")</MudText>
@@ -32,4 +32,4 @@
         }
     </MudStack>
     <ScheduleEditor ScheduleId="Id"/>
-</MudPaper>
+</div>
