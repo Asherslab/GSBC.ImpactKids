@@ -6,7 +6,7 @@ namespace GSBC.ImpactKids.Grpc.Features.Scheduling.ScheduleServices;
 
 public partial class ScheduleService
 {
-    /// <summary>A new, empty template: one together block with nothing in it yet.</summary>
+    /// <summary>A new, empty template. Its first item creates the block it lives in.</summary>
     public async Task<BasicReadResponse<Guid?>> Create(CreateScheduleTemplateRequest request, CallContext context = default)
     {
         CancellationToken token = context.CancellationToken;
@@ -15,22 +15,11 @@ public partial class ScheduleService
             return BasicReadResponse<Guid?>.WithError(ScheduleNameNull);
 
         Guid scheduleId = Guid.NewGuid();
-        Guid blockId    = Guid.NewGuid();
 
         db.Schedules.Add(new DbSchedule
         {
             Id = scheduleId,
-            Name = request.Name.Trim(),
-            Blocks =
-            [
-                new DbScheduleBlock
-                {
-                    Id = blockId,
-                    ScheduleId = scheduleId,
-                    Position = 0,
-                    Lanes = [NewLane(blockId, 0)]
-                }
-            ]
+            Name = request.Name.Trim()
         });
 
         await db.SaveChangesAsync(token);

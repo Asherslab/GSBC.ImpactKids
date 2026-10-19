@@ -6,7 +6,10 @@ namespace GSBC.ImpactKids.Grpc.Features.Scheduling.ScheduleServices;
 
 public partial class ScheduleService
 {
-    /// <summary>A drag: to any lane of the same schedule, at a position in that lane's list.</summary>
+    /// <summary>
+    /// A drag: into a split's lane at a position among its items, or into the main list at a position
+    /// among its entries - where a split counts as one.
+    /// </summary>
     public async Task<BasicResponse> MoveItem(MoveScheduleItemRequest request, CallContext context = default)
     {
         Guid? scheduleId = await ScheduleOfItem(request.ItemId, context.CancellationToken);
@@ -16,15 +19,27 @@ public partial class ScheduleService
             List<DbScheduleLane> lanes = schedule.Blocks.SelectMany(b => b.Lanes).ToList();
 
             DbScheduleLane? from = lanes.FirstOrDefault(l => l.Items.Any(i => i.Id == request.ItemId));
-            DbScheduleLane? to   = lanes.FirstOrDefault(l => l.Id == request.LaneId);
 
             if (from == null)
                 return BasicResponse.WithError(ScheduleItemNotFound);
 
+            DbScheduleItem item = from.Items.Single(i => i.Id == request.ItemId);
+
+            if (request.LaneId == null)
+            {
+                from.Items.Remove(item);
+
+                List<Entry> entries = Entries(schedule);
+                entries.Insert(Math.Clamp(request.Position, 0, entries.Count), new Entry(item, null));
+                Rebuild(schedule, entries);
+                return null;
+            }
+
+            DbScheduleLane? to = schedule.Blocks.Where(IsSplit).SelectMany(b => b.Lanes)
+                .FirstOrDefault(l => l.Id == request.LaneId);
+
             if (to == null)
                 return BasicResponse.WithError(ScheduleNotFound);
-
-            DbScheduleItem item = from.Items.Single(i => i.Id == request.ItemId);
 
             from.Items.Remove(item);
             item.LaneId = to.Id;

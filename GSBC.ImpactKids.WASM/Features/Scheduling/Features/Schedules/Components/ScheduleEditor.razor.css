@@ -1,11 +1,11 @@
 /* Quiet by default: the item names are what the eye is looking for, so they are the only strong
-   text. Times, lengths, labels and controls are muted, and structure is shown with spacing and one
-   hairline rather than borders, bars and colour. */
+   text. Times, lengths and controls are muted. Rows are ruled apart by one hairline each; the
+   schedule sits on one raised card, and the lanes of a split are cards raised within it. */
 
 .schedule {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 12px;
 }
 
 .schedule-muted {
@@ -42,67 +42,80 @@
     text-transform: none;
 }
 
-/* The whole schedule sits on one raised card; blocks are stacked inside it. */
 .schedule-sheet {
+    padding: 8px 16px 12px;
+}
+
+/* Somewhere to drop into even when a list is empty. */
+.schedule-items {
+    min-height: 36px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    padding: 16px;
 }
 
-.schedule-block-header {
-    display: flex;
+/* Rows - items and splits alike - share columns: handle, time, name, length, then the night's buttons. */
+.schedule-item,
+.schedule-split-header {
+    display: grid;
+    grid-template-columns: auto 3em minmax(0, 1fr) auto auto;
     align-items: center;
     gap: 8px;
-    padding-bottom: 4px;
+    padding: 8px 4px;
+}
+
+.schedule-item {
     border-bottom: 1px solid var(--mud-palette-lines-default);
-    margin-bottom: 4px;
 }
 
-/* A split is a card; its heading needs no rule under it, the card's edge does that job. */
-.schedule-block.split {
-    background: var(--mud-palette-surface);
-    border-radius: var(--mud-default-borderradius);
-    padding: 8px 12px 12px;
+.schedule-item:hover {
+    background: var(--mud-palette-action-default-hover);
 }
 
-.schedule-block.split .schedule-block-header {
-    border-bottom: none;
+.schedule-item.now {
+    background: color-mix(in srgb, var(--mud-palette-success) 14%, transparent);
 }
 
-/* Each side of a split is its own raised card within it. */
-.schedule-lane.split-lane {
-    background: var(--mud-palette-surface);
-    border-radius: var(--mud-default-borderradius);
-    padding: 8px 12px;
+.schedule-item.clash .schedule-item-time {
+    color: var(--mud-palette-error);
+    opacity: 1;
 }
 
-.schedule-block-kind {
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    opacity: 0.7;
+/* A split is a row of the main list like any item: a rule under it, nothing around it. */
+.schedule-split {
+    border-bottom: 1px solid var(--mud-palette-lines-default);
+    padding-bottom: 12px;
 }
 
-/* Lanes side by side where there is room; one above the other on a phone. */
+.schedule-split-title {
+    font-weight: 500;
+}
+
 .schedule-lanes {
     display: grid;
     grid-template-columns: repeat(var(--lanes), minmax(0, 1fr));
-    gap: 8px 24px;
+    gap: 12px;
+    padding-left: 28px;
 }
 
 @media (max-width: 1000px) {
     .schedule-lanes {
         grid-template-columns: minmax(0, 1fr);
+        padding-left: 0;
     }
 }
 
-/* Item rows lay out by the lane's width, not the screen's: a lane in a three-way split on a desktop
-   is as narrow as a phone. */
+/* Each lane is a raised card. Item rows lay out by the lane's width, not the screen's: a lane in a
+   three-way split on a desktop is as narrow as a phone. */
 .schedule-lane {
     container-type: inline-size;
     min-width: 0;
+    background: var(--mud-palette-surface);
+    border-radius: var(--mud-default-borderradius);
+    padding: 6px 10px 8px;
+}
+
+.schedule-lane .schedule-item:last-child {
+    border-bottom: none;
 }
 
 .schedule-lane-header {
@@ -119,26 +132,6 @@
     color: var(--mud-palette-primary);
 }
 
-/* Somewhere to drop into even when the lane is empty. */
-.schedule-items {
-    min-height: 36px;
-    display: flex;
-    flex-direction: column;
-}
-
-.schedule-item {
-    display: grid;
-    grid-template-columns: auto 3em minmax(0, 1fr) auto auto;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 4px;
-    border-bottom: 1px solid var(--mud-palette-lines-default);
-}
-
-.schedule-item:hover {
-    background: var(--mud-palette-action-default-hover);
-}
-
 @container (max-width: 520px) {
     .schedule-item {
         grid-template-columns: auto 3em minmax(0, 1fr) auto;
@@ -150,15 +143,6 @@
     }
 }
 
-.schedule-item.now {
-    background: color-mix(in srgb, var(--mud-palette-success) 14%, transparent);
-}
-
-.schedule-item.clash .schedule-item-time {
-    color: var(--mud-palette-error);
-    opacity: 1;
-}
-
 .schedule-drag-handle {
     cursor: grab;
     touch-action: none;
@@ -167,7 +151,8 @@
     opacity: 0.3;
 }
 
-.schedule-item:hover .schedule-drag-handle {
+.schedule-item:hover .schedule-drag-handle,
+.schedule-split-header:hover .schedule-drag-handle {
     opacity: 0.7;
 }
 
@@ -220,6 +205,7 @@
     padding-top: 2px;
 }
 
-.schedule-item.schedule-drag-ghost {
+.schedule-item.schedule-drag-ghost,
+.schedule-split.schedule-drag-ghost {
     opacity: 0.4;
 }

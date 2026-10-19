@@ -18,7 +18,11 @@ public partial class ScheduleItemDialog
     public ScheduleItem? Item { get; set; }
 
     [Parameter]
-    public Guid LaneId { get; set; }
+    public Guid ScheduleId { get; set; }
+
+    /// <summary>The split lane to add into; null adds to the end of the main list.</summary>
+    [Parameter]
+    public Guid? LaneId { get; set; }
 
     /// <summary>Whether a length change now is an adjustment on the night rather than the plan.</summary>
     [Parameter]
@@ -55,6 +59,7 @@ public partial class ScheduleItemDialog
         BasicResponse response = Item == null
             ? await ScheduleService.AddItem(new AddScheduleItemRequest
             {
+                ScheduleId = ScheduleId,
                 LaneId = LaneId,
                 Name = _name,
                 Minutes = _minutes
@@ -89,12 +94,13 @@ public partial class ScheduleItemDialog
             MudDialog.Close(DialogResult.Ok(true));
     }
 
-    public static Task Open(IDialogService dialogService, ScheduleItem? item, Guid laneId, bool underway) =>
+    public static Task Open(IDialogService dialogService, ScheduleItem? item, Guid scheduleId, Guid? laneId, bool underway) =>
         dialogService.ShowAsync<ScheduleItemDialog>(
             item == null ? "Add a one-off item" : item.DisplayName,
             new DialogParameters<ScheduleItemDialog>
             {
                 { x => x.Item, item },
+                { x => x.ScheduleId, scheduleId },
                 { x => x.LaneId, laneId },
                 { x => x.Underway, underway }
             },

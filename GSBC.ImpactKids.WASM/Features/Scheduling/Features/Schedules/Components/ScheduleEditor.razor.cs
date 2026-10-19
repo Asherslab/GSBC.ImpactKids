@@ -33,6 +33,7 @@ public partial class ScheduleEditor
     private AsyncData<ImmutableList<Schedule>> _status = AsyncData<ImmutableList<Schedule>>.NotAsked();
 
     private Schedule?                            _schedule;
+    private ImmutableList<ScheduleEntry>         _entries       = [];
     private ImmutableDictionary<Guid, TimedItem> _timed         = ImmutableDictionary<Guid, TimedItem>.Empty;
     private ImmutableList<ScheduleItemTemplate>  _itemTemplates = [];
     private bool                                 _underway;
@@ -83,6 +84,7 @@ public partial class ScheduleEditor
         if (_schedule == null)
             return;
 
+        _entries = ScheduleLayout.Entries(_schedule);
         _timed = ScheduleTimeline.Compute(_schedule, LocalDate ?? DateTime.Today);
         _underway = LocalDate != null && ScheduleTimeline.IsUnderway(_schedule, LocalDate.Value, DateTime.Now);
     }
@@ -139,17 +141,30 @@ public partial class ScheduleEditor
 
     // Items \\
 
+    /// <summary>An item dropped into a split's lane, or into the main list when <paramref name="laneId"/> is "main".</summary>
     [JSInvokable]
-    public Task OnItemDropped(string itemId, string laneId, int position) =>
-        Send(
-            schedule => ScheduleEdits.MoveItem(schedule, Guid.Parse(itemId), Guid.Parse(laneId), position),
-            () => ScheduleService.MoveItem(new MoveScheduleItemRequest
-            {
-                ItemId = Guid.Parse(itemId),
-                LaneId = Guid.Parse(laneId),
-                Position = position
-            })
+    public Task OnItemDropped(string itemId, string laneId, int position)
+    {
+        Guid  item = Guid.Parse(itemId);
+        Guid? lane = Guid.TryParse(laneId, out Guid parsed) ? parsed : null;
+
+        return Send(
+            schedule => ScheduleEdits.MoveItem(schedule, item, lane, position),
+            () => ScheduleService.MoveItem(new MoveScheduleItemRequest { ItemId = item, LaneId = lane, Position = position })
         );
+    }
+
+    /// <summary>A split dropped at a new place in the main list.</summary>
+    [JSInvokable]
+    public Task OnSplitDropped(string blockId, int position)
+    {
+        Guid block = Guid.Parse(blockId);
+
+        return Send(
+            schedule => ScheduleEdits.MoveBlock(schedule, block, position),
+            () => ScheduleService.MoveBlock(new MoveScheduleBlockRequest { BlockId = block, Position = position })
+        );
+    }
 
     private Task Adjust(ScheduleItem item, int minutes) =>
         Send(
@@ -157,15 +172,17 @@ public partial class ScheduleEditor
             () => ScheduleService.AdjustItem(new AdjustScheduleItemRequest { ItemId = item.Id, Minutes = minutes })
         );
 
-    private Task AddFromTemplate(ScheduleLane lane, Guid templateId) =>
+    /// <summary>To the end of a split's lane, or of the main list when <paramref name="laneId"/> is null.</summary>
+    private Task AddFromTemplate(Guid? laneId, Guid templateId) =>
         Send(null, () => ScheduleService.AddItem(new AddScheduleItemRequest
         {
-            LaneId = lane.Id,
+            ScheduleId = ScheduleId,
+            LaneId = laneId,
             ItemTemplateId = templateId
         }));
 
-    private Task EditItem(ScheduleItem item, ScheduleLane lane) =>
-        ScheduleItemDialog.Open(DialogService, item, lane.Id, _underway);
+    private Task EditItem(ScheduleItem item) =>
+        ScheduleItemDialog.Open(DialogService, item, ScheduleId, null, _underway);
 
     // Groups \\
 
@@ -219,21 +236,15 @@ public partial class ScheduleEditor
         );
     }
 
-    // Blocks and lanes \\
+    // Splits and lanes \\
 
-    private Task AddBlock(int lanes) =>
+    /// <summary>A split on the end of the main list, a lane per group when there are two or more groups.</summary>
+    private Task AddSplit() =>
         Send(null, () => ScheduleService.AddBlock(new AddScheduleBlockRequest
         {
             ScheduleId = ScheduleId,
-            Position = _schedule?.Blocks.Count ?? 0,
-            Lanes = lanes
+            Lanes = Math.Clamp(_schedule?.Groups.Count ?? 0, 2, ScheduleRules.MaxLanes)
         }));
-
-    private Task MoveBlock(ScheduleBlock block, int position) =>
-        Send(
-            schedule => ScheduleEdits.MoveBlock(schedule, block.Id, position),
-            () => ScheduleService.MoveBlock(new MoveScheduleBlockRequest { BlockId = block.Id, Position = position })
-        );
 
     private Task AddLane(ScheduleBlock block) =>
         Send(null, () => ScheduleService.AddLane(new BasicReadRequest { Guid = block.Id }));
@@ -245,7 +256,7 @@ public partial class ScheduleEditor
         if (items > 0)
         {
             bool? confirmed = await DialogService.ShowMessageBoxAsync(
-                "Remove this block?",
+                "Remove this split?",
                 $"Its {items} item{(items == 1 ? "" : "s")} will be removed with it.",
                 yesText: "Remove", cancelText: "Cancel");
 

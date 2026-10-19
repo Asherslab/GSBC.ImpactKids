@@ -10,22 +10,29 @@ namespace GSBC.ImpactKids.WASM.Features.Scheduling.Features.Schedules;
 /// </summary>
 public static class ScheduleEdits
 {
-    public static Schedule MoveItem(Schedule schedule, Guid itemId, Guid laneId, int position)
+    /// <summary>Into a split's lane at a position, or into the main list (<paramref name="laneId"/> null) at an entry position.</summary>
+    public static Schedule MoveItem(Schedule schedule, Guid itemId, Guid? laneId, int position)
     {
         ScheduleItem? item = schedule.Items.FirstOrDefault(i => i.Id == itemId);
 
         if (item == null)
             return schedule;
 
-        return MapLanes(schedule, lane =>
+        Schedule without = MapLanes(schedule, lane => lane with { Items = lane.Items.RemoveAll(i => i.Id == itemId) });
+
+        if (laneId == null)
         {
-            ImmutableList<ScheduleItem> items = lane.Items.RemoveAll(i => i.Id == itemId);
+            ImmutableList<ScheduleEntry> entries = ScheduleLayout.Entries(without);
+            return ScheduleLayout.Build(without,
+                entries.Insert(Math.Clamp(position, 0, entries.Count), new ScheduleEntry(item, null)));
+        }
 
-            if (lane.Id == laneId)
-                items = items.Insert(Math.Clamp(position, 0, items.Count), item);
+        Schedule moved = MapLanes(without, lane => lane.Id != laneId
+            ? lane
+            : lane with { Items = lane.Items.Insert(Math.Clamp(position, 0, lane.Items.Count), item) });
 
-            return lane with { Items = items };
-        });
+        // Taking the item out may have emptied a together run; tidy the same way the server will.
+        return ScheduleLayout.Build(moved, ScheduleLayout.Entries(moved));
     }
 
     public static Schedule Adjust(Schedule schedule, Guid itemId, int minutes, bool underway) =>
@@ -58,16 +65,18 @@ public static class ScheduleEdits
                 }).ToImmutableList()
         };
 
+    /// <summary>A split to a new entry position in the main list.</summary>
     public static Schedule MoveBlock(Schedule schedule, Guid blockId, int position)
     {
-        ScheduleBlock? block = schedule.Blocks.FirstOrDefault(b => b.Id == blockId);
+        ImmutableList<ScheduleEntry> entries = ScheduleLayout.Entries(schedule);
+        ScheduleEntry?               split   = entries.FirstOrDefault(e => e.Split?.Id == blockId);
 
-        if (block == null)
+        if (split == null)
             return schedule;
 
-        ImmutableList<ScheduleBlock> blocks = schedule.Blocks.Remove(block);
+        entries = entries.Remove(split);
 
-        return schedule with { Blocks = blocks.Insert(Math.Clamp(position, 0, blocks.Count), block) };
+        return ScheduleLayout.Build(schedule, entries.Insert(Math.Clamp(position, 0, entries.Count), split));
     }
 
     private static Schedule MapLanes(Schedule schedule, Func<ScheduleLane, ScheduleLane> map) =>

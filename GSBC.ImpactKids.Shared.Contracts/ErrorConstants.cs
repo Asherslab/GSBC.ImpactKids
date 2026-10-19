@@ -89,7 +89,7 @@ public static class ErrorConstants
     public const string ScheduleDefaultTaken         = "Another Template Is Already The Default For That Service Type";
     public const string ScheduleGroupNameNull        = "Group Name Must Be Set";
     public const string ScheduleGroupNameTaken       = "This Schedule Already Has A Group With That Name";
-    public const string ScheduleBlockLanesInvalid    = "A Block Must Have Between 1 And 6 Lanes";
-    public const string ScheduleLastLane             = "A Block Needs At Least One Lane - Remove The Block Instead";
+    public const string ScheduleBlockLanesInvalid    = "A Split Must Have Between 2 And 6 Lanes";
+    public const string ScheduleLastLane             = "A Split Needs At Least Two Lanes - Remove The Split Instead";
     public const string ScheduleItemNotFound         = "Schedule Item Not Found";
 }

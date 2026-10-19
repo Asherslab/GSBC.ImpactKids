@@ -69,6 +69,7 @@ public partial class ScheduleService(
         if (refused != null)
             return refused;
 
+        Rebuild(schedule, Entries(schedule));
         Renumber(schedule);
 
         await db.SaveChangesAsync(token);
@@ -81,6 +82,82 @@ public partial class ScheduleService(
     // New rows are handed to db.Add as well as put in their list. A row with its Guid already set,
     // found only through a navigation, is taken by EF for an existing row and UPDATEd - which then
     // matches nothing and throws. Removed rows go through db.Remove for the same clarity.
+
+    /// <summary>One entry of the main list: an item everyone does, or a whole split. See <see cref="ScheduleLayout"/>.</summary>
+    private sealed record Entry(DbScheduleItem? Item, DbScheduleBlock? Split);
+
+    private static bool IsSplit(DbScheduleBlock block) => block.Lanes.Count > 1;
+
+    /// <summary>The main list as a leader sees it: together items one by one, each split as one entry.</summary>
+    private static List<Entry> Entries(DbSchedule schedule) =>
+        schedule.Blocks
+            .SelectMany(block => IsSplit(block)
+                ? [new Entry(null, block)]
+                : block.Lanes.SelectMany(l => l.Items).Select(item => new Entry(item, null)))
+            .ToList();
+
+    /// <summary>
+    /// Re-lays the blocks to match <paramref name="entries"/>: each run of together items in one
+    /// together block, broken only by splits. Run after every edit, it is also what merges two together
+    /// blocks left side by side and drops one left empty - the rule in <see cref="ScheduleLayout"/>.
+    /// Together blocks already stored are reused in order, so a plain reorder creates no rows.
+    /// </summary>
+    private void Rebuild(DbSchedule schedule, List<Entry> entries)
+    {
+        List<DbScheduleBlock> together = schedule.Blocks.Where(b => !IsSplit(b)).ToList();
+
+        // Every together item is about to be placed again from entries, so empty them all first.
+        foreach (DbScheduleLane lane in together.SelectMany(b => b.Lanes))
+            lane.Items.Clear();
+
+        Queue<DbScheduleBlock> spare  = new(together.Where(b => b.Lanes.Count == 1));
+        List<DbScheduleBlock>  blocks = [];
+        DbScheduleLane?        run    = null;
+
+        foreach (Entry entry in entries)
+        {
+            if (entry.Split != null)
+            {
+                run = null;
+                blocks.Add(entry.Split);
+                continue;
+            }
+
+            if (run == null)
+            {
+                DbScheduleBlock block = spare.Count > 0 ? spare.Dequeue() : NewTogetherBlock(schedule.Id);
+                blocks.Add(block);
+                run = block.Lanes[0];
+            }
+
+            entry.Item!.LaneId = run.Id;
+            run.Items.Add(entry.Item);
+        }
+
+        // Together blocks with nothing left to hold, and any stray lane-less block.
+        foreach (DbScheduleBlock unused in schedule.Blocks.Where(b => !blocks.Contains(b)).ToList())
+            db.ScheduleBlocks.Remove(unused);
+
+        schedule.Blocks.Clear();
+        schedule.Blocks.AddRange(blocks);
+    }
+
+    private DbScheduleBlock NewTogetherBlock(Guid scheduleId)
+    {
+        DbScheduleBlock block = new()
+        {
+            Id = Guid.NewGuid(),
+            ScheduleId = scheduleId,
+            Position = 0
+        };
+
+        DbScheduleLane lane = NewLane(block.Id, 0);
+        block.Lanes.Add(lane);
+
+        db.ScheduleBlocks.Add(block);
+        db.ScheduleLanes.Add(lane);
+        return block;
+    }
 
     /// <summary>Positions 0, 1, 2… in the order the lists are in now. Edits reorder the lists; this makes it stick.</summary>
     private static void Renumber(DbSchedule schedule)

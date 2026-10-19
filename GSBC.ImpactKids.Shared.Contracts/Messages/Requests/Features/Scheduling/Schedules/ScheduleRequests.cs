@@ -49,15 +49,20 @@ public class RenameScheduleGroupRequest
     public string Name    { get; set; } = "";
 }
 
-/// <summary>A block at <see cref="Position"/>: one lane for together, two or more for a split.</summary>
+/// <summary>
+/// A split of <see cref="Lanes"/> lanes, placed at <see cref="Position"/> in the main list (see
+/// <see cref="ScheduleLayout"/>); at the end when null. Together blocks are never added directly -
+/// they are just where the main list's items live.
+/// </summary>
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
 public class AddScheduleBlockRequest
 {
     public Guid ScheduleId { get; set; }
-    public int  Position   { get; set; }
-    public int  Lanes      { get; set; } = 1;
+    public int? Position   { get; set; }
+    public int  Lanes      { get; set; } = 2;
 }
 
+/// <summary>A split dragged to <see cref="Position"/> in the main list.</summary>
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
 public class MoveScheduleBlockRequest
 {
@@ -72,11 +77,16 @@ public class SetScheduleLaneGroupsRequest
     public List<Guid> GroupIds { get; set; } = [];
 }
 
-/// <summary>From an item template when <see cref="ItemTemplateId"/> is set; otherwise a one-off with this name and length.</summary>
+/// <summary>
+/// From an item template when <see cref="ItemTemplateId"/> is set; otherwise a one-off with this name
+/// and length. Into a split's lane when <see cref="LaneId"/> is set; otherwise into the main list of
+/// <see cref="ScheduleId"/>, where <see cref="Position"/> counts splits as entries.
+/// </summary>
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
 public class AddScheduleItemRequest
 {
-    public Guid    LaneId         { get; set; }
+    public Guid    ScheduleId     { get; set; }
+    public Guid?   LaneId         { get; set; }
     public int?    Position       { get; set; }
     public Guid?   ItemTemplateId { get; set; }
     public string? Name           { get; set; }
@@ -97,12 +107,13 @@ public class UpdateScheduleItemRequest
     public TimeSpan? StartsAt { get; set; }
 }
 
+/// <summary>A drag: into a split's lane, or into the main list when <see cref="LaneId"/> is null.</summary>
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
 public class MoveScheduleItemRequest
 {
-    public Guid ItemId   { get; set; }
-    public Guid LaneId   { get; set; }
-    public int  Position { get; set; }
+    public Guid  ItemId   { get; set; }
+    public Guid? LaneId   { get; set; }
+    public int   Position { get; set; }
 }
 
 /// <summary>+5, −1: added to the plan before the night, recorded as an adjustment during it.</summary>

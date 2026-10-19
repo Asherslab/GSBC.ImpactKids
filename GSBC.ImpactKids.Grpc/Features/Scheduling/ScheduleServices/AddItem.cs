@@ -37,19 +37,26 @@ public partial class ScheduleService
         if (!ScheduleRules.MinutesValid(minutes))
             return BasicResponse.WithError(ScheduleItemMinutesInvalid);
 
-        Guid? scheduleId = await ScheduleOfLane(request.LaneId, token);
+        Guid? scheduleId = request.LaneId is { } laneId
+            ? await ScheduleOfLane(laneId, token)
+            : request.ScheduleId;
 
         return await EditAsync(scheduleId, (schedule, edit) =>
         {
-            DbScheduleLane? lane = schedule.Blocks.SelectMany(b => b.Lanes).FirstOrDefault(l => l.Id == request.LaneId);
+            DbScheduleLane? lane = null;
 
-            if (lane == null)
-                return BasicResponse.WithError(ScheduleNotFound);
+            if (request.LaneId != null)
+            {
+                lane = schedule.Blocks.SelectMany(b => b.Lanes).FirstOrDefault(l => l.Id == request.LaneId);
+
+                if (lane == null)
+                    return BasicResponse.WithError(ScheduleNotFound);
+            }
 
             DbScheduleItem item = new()
             {
                 Id = Guid.NewGuid(),
-                LaneId = lane.Id,
+                LaneId = lane?.Id ?? Guid.Empty, // set by Rebuild when it goes into the main list
                 Position = 0,
                 Name = name,
                 NeedsFillIn = template?.NeedsFillIn ?? false,
@@ -59,8 +66,19 @@ public partial class ScheduleService
                 StartsAt = template?.StartsAt
             };
 
+            if (lane != null)
+            {
+                lane.Items.Insert(Math.Clamp(request.Position ?? lane.Items.Count, 0, lane.Items.Count), item);
+            }
+            else
+            {
+                List<Entry> entries = Entries(schedule);
+                entries.Insert(Math.Clamp(request.Position ?? entries.Count, 0, entries.Count), new Entry(item, null));
+                Rebuild(schedule, entries);
+            }
+
+            // Added once its lane is known: EF needs a real LaneId before it tracks the row.
             db.ScheduleItems.Add(item);
-            lane.Items.Insert(Math.Clamp(request.Position ?? lane.Items.Count, 0, lane.Items.Count), item);
 
             if (edit.Underway && minutes != 0)
                 LogAdjustment(item, minutes, edit);

@@ -8,13 +8,12 @@ namespace GSBC.ImpactKids.Grpc.Features.Scheduling.ScheduleServices;
 public partial class ScheduleService
 {
     /// <summary>
-    /// An empty together block (one lane) or split (several). A new split's lanes are given the
-    /// schedule's groups one each, in order, while there are groups to go round - the common case of
-    /// "split into our groups" needs no further setting up.
+    /// An empty split, placed in the main list. Its lanes are given the schedule's groups one each, in
+    /// order, while there are groups to go round - "split into our groups" needs no further setting up.
     /// </summary>
     public Task<BasicResponse> AddBlock(AddScheduleBlockRequest request, CallContext context = default)
     {
-        if (request.Lanes is < 1 or > ScheduleRules.MaxLanes)
+        if (request.Lanes is < 2 or > ScheduleRules.MaxLanes)
             return Task.FromResult(BasicResponse.WithError(ScheduleBlockLanesInvalid));
 
         return EditAsync(request.ScheduleId, (schedule, _) =>
@@ -30,7 +29,7 @@ public partial class ScheduleService
             {
                 DbScheduleLane lane = NewLane(block.Id, l);
 
-                if (request.Lanes > 1 && l < schedule.Groups.Count)
+                if (l < schedule.Groups.Count)
                     lane.GroupIds = [schedule.Groups[l].Id];
 
                 db.ScheduleLanes.Add(lane);
@@ -38,7 +37,10 @@ public partial class ScheduleService
             }
 
             db.ScheduleBlocks.Add(block);
-            schedule.Blocks.Insert(Math.Clamp(request.Position, 0, schedule.Blocks.Count), block);
+
+            List<Entry> entries = Entries(schedule);
+            entries.Insert(Math.Clamp(request.Position ?? entries.Count, 0, entries.Count), new Entry(null, block));
+            Rebuild(schedule, entries);
             return null;
         }, context.ServerCallContext, context.CancellationToken);
     }

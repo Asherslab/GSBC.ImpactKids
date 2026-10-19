@@ -7,24 +7,20 @@ namespace GSBC.ImpactKids.Grpc.Features.Scheduling.ScheduleServices;
 
 public partial class ScheduleService
 {
-    /// <summary>
-    /// Another lane on the end of a block - which turns a together block into a split. The new lane
-    /// takes the first group no other lane of the block covers yet, if there is one.
-    /// </summary>
+    /// <summary>Another lane on the end of a split. It takes the first group no other lane of the split covers yet, if there is one.</summary>
     public async Task<BasicResponse> AddLane(BasicReadRequest request, CallContext context = default)
     {
         Guid? scheduleId = await ScheduleOfBlock(request.Guid, context.CancellationToken);
 
         return await EditAsync(scheduleId, (schedule, _) =>
         {
-            DbScheduleBlock block = schedule.Blocks.Single(b => b.Id == request.Guid);
+            DbScheduleBlock? block = schedule.Blocks.FirstOrDefault(b => b.Id == request.Guid && IsSplit(b));
+
+            if (block == null)
+                return BasicResponse.WithError(ScheduleNotFound);
 
             if (block.Lanes.Count >= ScheduleRules.MaxLanes)
                 return BasicResponse.WithError(ScheduleBlockLanesInvalid);
-
-            // Going from together to a split: the lane that was everybody becomes the first group's.
-            if (block.Lanes.Count == 1 && block.Lanes[0].GroupIds.Count == 0 && schedule.Groups.Count > 0)
-                block.Lanes[0].GroupIds = [schedule.Groups[0].Id];
 
             HashSet<Guid> covered = block.Lanes.SelectMany(l => l.GroupIds).ToHashSet();
 

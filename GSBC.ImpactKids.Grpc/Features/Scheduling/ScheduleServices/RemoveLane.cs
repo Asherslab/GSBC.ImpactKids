@@ -6,7 +6,7 @@ namespace GSBC.ImpactKids.Grpc.Features.Scheduling.ScheduleServices;
 
 public partial class ScheduleService
 {
-    /// <summary>A lane and its items. Taking a split down to one lane makes it a together block again.</summary>
+    /// <summary>A lane and its items. A split keeps at least two; below that, remove the split.</summary>
     public async Task<BasicResponse> RemoveLane(BasicReadRequest request, CallContext context = default)
     {
         Guid? scheduleId = await ScheduleOfLane(request.Guid, context.CancellationToken);
@@ -15,7 +15,8 @@ public partial class ScheduleService
         {
             DbScheduleBlock block = schedule.Blocks.Single(b => b.Lanes.Any(l => l.Id == request.Guid));
 
-            if (block.Lanes.Count == 1)
+            // One lane would be a together block, and the next tidy-up would fold it into the main list.
+            if (block.Lanes.Count <= 2)
                 return BasicResponse.WithError(ScheduleLastLane);
 
             DbScheduleLane lane = block.Lanes.Single(l => l.Id == request.Guid);

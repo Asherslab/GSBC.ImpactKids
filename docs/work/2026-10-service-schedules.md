@@ -83,6 +83,14 @@ Schedule            a template (ServiceId null, has a Name, optionally a default
 two or more lanes is a split, and each lane names the groups it covers. Uniform on purpose — the feed
 and the timeline walk one structure, not two.
 
+**But a leader sees one list, not blocks.** The main list holds the together items and each split as a
+single entry, and a split is dragged among the items like one of them (asked for 2026-10-19). Stored,
+it is still blocks; `ScheduleLayout` maps between the two, and one rule keeps them in step after every
+edit — together blocks only ever sit between splits. Adjacent together blocks merge, empty ones go, and
+a split dropped between two items cuts their block in two around it. The server applies the rule to
+the database (`ScheduleService.Rebuild`), the phone to its instant copy of a drag. There is no
+"together block" anywhere in the UI, and a split always has at least two lanes.
+
 ### Time
 
 - `PlannedMinutes` is what the schedule was set up with.
