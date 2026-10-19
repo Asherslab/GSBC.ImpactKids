@@ -1,3 +1,4 @@
+using GSBC.ImpactKids.Shared.Contracts;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.Schedules;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.Schedules;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
@@ -27,12 +28,9 @@ public partial class ScheduleRunBar
     private bool    _busy;
     private Timer?  _tick;
 
-    // Sydney, as the server and the ProPresenter agent read fixed start times - not the browser's own
-    // zone, which is not necessarily Sydney, or a phone and the stage would disagree about 18:30.
-    private static readonly TimeZoneInfo SydneyZone = TimeZoneInfo.FindSystemTimeZoneById("Australia/Sydney");
-
-    private static DateTime ToUtc(DateTime sydney) =>
-        TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(sydney, DateTimeKind.Unspecified), SydneyZone);
+    // The church's clock, as the server and the ProPresenter agent read fixed start times - not the
+    // phone's own zone, or a phone set to Sydney in summer and the stage would disagree about 18:30.
+    private static DateTime ToUtc(DateTime churchTime) => ChurchTime.ToUtc(churchTime);
 
     protected override void OnInitialized()
     {

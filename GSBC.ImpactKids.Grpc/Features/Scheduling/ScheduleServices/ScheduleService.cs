@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using GSBC.ImpactKids.Shared.Contracts;
 using GSBC.ImpactKids.Grpc.Conversion;
 using GSBC.ImpactKids.Grpc.Data;
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling.Schedules;
@@ -27,8 +28,6 @@ public partial class ScheduleService(
     IConverter<DbSchedule, Schedule> converter
 ) : IScheduleService
 {
-    private static readonly TimeZoneInfo SydneyZone = TimeZoneInfo.FindSystemTimeZoneById("Australia/Sydney");
-
     private IQueryable<DbSchedule> WholeSchedules => db.WholeSchedules();
 
     /// <summary>
@@ -214,7 +213,7 @@ public partial class ScheduleService(
         }
     }
 
-    /// <summary>The service's date in Sydney, which is the day its clock times are on. Null for a template.</summary>
+    /// <summary>The service's date at the church, which is the day its clock times are on. Null for a template.</summary>
     private async Task<DateTime?> ServiceDateAsync(DbSchedule schedule, CancellationToken token)
     {
         if (schedule.ServiceId == null)
@@ -225,22 +224,12 @@ public partial class ScheduleService(
             .Select(x => (DateTimeOffset?)x.Date)
             .FirstOrDefaultAsync(token);
 
-        return serviceDate == null ? null : TimeZoneInfo.ConvertTime(serviceDate.Value, SydneyZone).Date;
+        return serviceDate == null ? null : ChurchTime.FromUtc(serviceDate.Value).Date;
     }
 
-    private bool IsUnderway(DbSchedule schedule, DateTime? serviceDate)
-    {
-        if (serviceDate == null)
-            return false;
-
-        DateTime localNow = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, SydneyZone).DateTime;
-
-        return ScheduleTimeline.IsUnderway(converter.Convert(schedule), serviceDate.Value, localNow);
-    }
-
-    /// <summary>A Sydney wall-clock time as UTC - how a fixed start time becomes an instant.</summary>
-    private static DateTime SydneyToUtc(DateTime local) =>
-        TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(local, DateTimeKind.Unspecified), SydneyZone);
+    private bool IsUnderway(DbSchedule schedule, DateTime? serviceDate) =>
+        serviceDate != null
+        && ScheduleTimeline.IsUnderway(converter.Convert(schedule), serviceDate.Value, ChurchTime.FromUtc(DateTimeOffset.UtcNow));
 
     private static Guid? UserIdOf(ServerCallContext? call) =>
         Guid.TryParse(call?.GetHttpContext().User.FindFirstValue("UserId"), out Guid id) ? id : null;

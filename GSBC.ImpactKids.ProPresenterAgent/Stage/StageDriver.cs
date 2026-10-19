@@ -1,4 +1,5 @@
 using GSBC.ImpactKids.ProPresenterAgent.ImpactKids;
+using GSBC.ImpactKids.Shared.Contracts;
 using GSBC.ImpactKids.ProPresenterAgent.ProPresenter;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.ProPresenter;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.Schedules;
@@ -30,15 +31,12 @@ public sealed class StageDriver(
     ILogger<StageDriver> logger
 )
 {
-    private static readonly TimeZoneInfo SydneyZone = TimeZoneInfo.FindSystemTimeZoneById("Australia/Sydney");
-
     private readonly SemaphoreSlim _gate = new(1, 1);
 
     private volatile ProPresenterTonight? _tonight;
     private          string?              _applied;
 
-    private static DateTime ToUtc(DateTime sydney) =>
-        TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(sydney, DateTimeKind.Unspecified), SydneyZone);
+    private static DateTime ToUtc(DateTime churchTime) => ChurchTime.ToUtc(churchTime);
 
     /// <summary>Re-reads tonight from Impact Kids and puts it on the stage. Keeps the last known night if it cannot.</summary>
     public async Task RefreshAsync(CancellationToken token)

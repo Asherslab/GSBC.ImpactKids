@@ -1,4 +1,5 @@
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling;
+using GSBC.ImpactKids.Shared.Contracts;
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling.Schedules;
 using GSBC.ImpactKids.Grpc.Features.Scheduling.ScheduleServices;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.ProPresenter;
@@ -11,7 +12,7 @@ namespace GSBC.ImpactKids.Grpc.Features.ProPresenter.ProPresenterAgentServices;
 public partial class ProPresenterAgentService
 {
     /// <summary>
-    /// Today's service - today in Sydney - that has a schedule, with what has run so far. The agent
+    /// Today's service - today at the church - that has a schedule, with what has run so far. The agent
     /// reads it on every schedule change event and works out the stage from it with the same
     /// <c>ScheduleRun</c> rules the phones use. Two services today with schedules is not expected; the
     /// earlier one wins.
@@ -26,10 +27,8 @@ public partial class ProPresenterAgentService
         if (CallingMachine(context) == null)
             return BasicReadResponse<ProPresenterTonight>.WithError(PermissionDenied);
 
-        // Today's bounds as Sydney sees them, at offset zero - Npgsql writes no other offset.
-        DateTime       today    = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, SydneyZone).Date;
-        DateTimeOffset dayStart = new DateTimeOffset(today, SydneyZone.GetUtcOffset(today)).ToUniversalTime();
-        DateTimeOffset dayEnd   = dayStart.AddDays(1);
+        DateTime today = ChurchTime.Today;
+        (DateTimeOffset dayStart, DateTimeOffset dayEnd) = ChurchTime.DayBounds(today);
 
         DbService? service = await db.Services
             .AsNoTracking()

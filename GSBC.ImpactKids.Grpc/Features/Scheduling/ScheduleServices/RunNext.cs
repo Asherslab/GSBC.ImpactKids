@@ -1,4 +1,5 @@
 using System.Text.Json;
+using GSBC.ImpactKids.Shared.Contracts;
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling.Schedules;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.Schedules;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.Schedules;
@@ -25,7 +26,7 @@ public partial class ScheduleService
 
             RunPlan? plan = request.LaneId is { } laneId
                 ? ScheduleRun.NextInLane(current, laneId, now)
-                : ScheduleRun.Next(current, serviceDate, SydneyToUtc, now);
+                : ScheduleRun.Next(current, serviceDate, ChurchTime.ToUtc, now);
 
             if (plan == null)
                 return BasicResponse.WithError(ScheduleRunNothingNext);

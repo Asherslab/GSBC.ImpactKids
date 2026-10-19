@@ -30,7 +30,7 @@ public interface IProPresenterAgentService
     );
 
     /// <summary>
-    /// Children signed in today whose first time at Impact Kids is today, both read as Sydney dates.
+    /// Children signed in today whose first time at Impact Kids is today, both read as church dates (<see cref="ChurchTime"/>).
     /// First names only - see <see cref="FirstTimer"/>.
     /// </summary>
     Task<BasicReadMultipleResponse<FirstTimer>> GetFirstTimersToday(

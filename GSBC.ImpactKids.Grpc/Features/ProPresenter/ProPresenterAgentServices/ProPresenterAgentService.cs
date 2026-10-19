@@ -20,8 +20,6 @@ public partial class ProPresenterAgentService(
     IConverter<DbSchedule, Schedule>   scheduleConverter
 ) : IProPresenterAgentService
 {
-    private static readonly TimeZoneInfo SydneyZone = TimeZoneInfo.FindSystemTimeZoneById("Australia/Sydney");
-
     /// <summary>
     /// The caller, from its token. Never null on a correctly mapped method - the policy has already
     /// required the claim - so a null here is a mapping mistake and is refused rather than guessed.
