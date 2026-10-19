@@ -28,6 +28,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GSBC.ImpactKids.YARP", "GSB
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GSBC.ImpactKids.Grpc.Tests", "GSBC.ImpactKids.Grpc.Tests\GSBC.ImpactKids.Grpc.Tests.csproj", "{E3DABE76-CDAA-4EA3-987A-31495BCB2693}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GSBC.ImpactKids.Workers.PhotoBackfill", "GSBC.ImpactKids.Workers.PhotoBackfill\GSBC.ImpactKids.Workers.PhotoBackfill.csproj", "{8A57CB34-8158-4C81-9643-437E2DF43446}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GSBC.ImpactKids.ProPresenterAgent", "GSBC.ImpactKids.ProPresenterAgent\GSBC.ImpactKids.ProPresenterAgent.csproj", "{7434D04C-6C01-4048-B861-C7EC75ECC7F3}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{37B78F6A-D5C4-43D1-A538-369C8D28871C}"
 	ProjectSection(SolutionItems) = preProject
 		docs\AGENTS.md = docs\AGENTS.md
@@ -37,11 +41,22 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{37B78F6A-D
 		docs\sync-full-run-handover.md = docs\sync-full-run-handover.md
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "archive", "archive", "{3303350B-E07E-44B8-B6CF-2F0127F43BB9}"
+	ProjectSection(SolutionItems) = preProject
+		docs\archive\2026-08-gender-and-person-photos-execution.md = docs\archive\2026-08-gender-and-person-photos-execution.md
+		docs\archive\2026-08-gender-and-person-photos.md = docs\archive\2026-08-gender-and-person-photos.md
+	EndProjectSection
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "modules", "modules", "{F4A8B397-B7CE-4595-B62A-73EC9CF5E767}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "auth", "auth", "{3D91E2B0-8339-49BD-ABD8-E054B7EDCBC5}"
 	ProjectSection(SolutionItems) = preProject
 		docs\modules\auth\sign-in.md = docs\modules\auth\sign-in.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "elvanto", "elvanto", "{31FB1294-7D0F-4115-A0C1-0194778E62F3}"
+	ProjectSection(SolutionItems) = preProject
+		docs\modules\elvanto\api-reference.md = docs\modules\elvanto\api-reference.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "games", "games", "{3E50958D-93FD-47C7-9C44-16DFE9E898F0}"
@@ -52,10 +67,15 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "infrastructure", "infrastructure", "{DAA7C81D-6F2C-4419-866A-C22A5587E533}"
 	ProjectSection(SolutionItems) = preProject
 		docs\modules\infrastructure\generated-passwords.md = docs\modules\infrastructure\generated-passwords.md
+		docs\modules\infrastructure\object-store.md = docs\modules\infrastructure\object-store.md
+		docs\modules\infrastructure\README.md = docs\modules\infrastructure\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "people", "people", "{E9D30500-AC27-4C06-B150-B58F0E4B62DF}"
 	ProjectSection(SolutionItems) = preProject
+		docs\modules\people\gender.md = docs\modules\people\gender.md
+		docs\modules\people\photos.md = docs\modules\people\photos.md
+		docs\modules\people\README.md = docs\modules\people\README.md
 		docs\modules\people\school-grades-and-programs.md = docs\modules\people\school-grades-and-programs.md
 	EndProjectSection
 EndProject
@@ -64,9 +84,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "work", "work", "{B9DC90D9-F
 		docs\work\2026-08-elvanto-family-mapping.md = docs\work\2026-08-elvanto-family-mapping.md
 		docs\work\2026-08-elvanto-sync-refactor.md = docs\work\2026-08-elvanto-sync-refactor.md
 		docs\work\2026-08-elvanto-sync-review.md = docs\work\2026-08-elvanto-sync-review.md
+		docs\work\2026-08-elvanto-write-testing.md = docs\work\2026-08-elvanto-write-testing.md
+		docs\work\2026-08-pickup-requests-and-activity-log.md = docs\work\2026-08-pickup-requests-and-activity-log.md
+		docs\work\2026-08-sign-out-improvements.md = docs\work\2026-08-sign-out-improvements.md
+		docs\work\2026-08-sync-plan-table-identifiers.md = docs\work\2026-08-sync-plan-table-identifiers.md
+		docs\work\2026-10-propresenter-agent.md = docs\work\2026-10-propresenter-agent.md
 	EndProjectSection
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GSBC.ImpactKids.Workers.PhotoBackfill", "GSBC.ImpactKids.Workers.PhotoBackfill\GSBC.ImpactKids.Workers.PhotoBackfill.csproj", "{8A57CB34-8158-4C81-9643-437E2DF43446}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -186,11 +209,31 @@ Global
 		{8A57CB34-8158-4C81-9643-437E2DF43446}.Release|x64.Build.0 = Release|Any CPU
 		{8A57CB34-8158-4C81-9643-437E2DF43446}.Release|x86.ActiveCfg = Release|Any CPU
 		{8A57CB34-8158-4C81-9643-437E2DF43446}.Release|x86.Build.0 = Release|Any CPU
+		{7434D04C-6C01-4048-B861-C7EC75ECC7F3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7434D04C-6C01-4048-B861-C7EC75ECC7F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7434D04C-6C01-4048-B861-C7EC75ECC7F3}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7434D04C-6C01-4048-B861-C7EC75ECC7F3}.Debug|x64.Build.0 = Debug|Any CPU
+		{7434D04C-6C01-4048-B861-C7EC75ECC7F3}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7434D04C-6C01-4048-B861-C7EC75ECC7F3}.Debug|x86.Build.0 = Debug|Any CPU
+		{7434D04C-6C01-4048-B861-C7EC75ECC7F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7434D04C-6C01-4048-B861-C7EC75ECC7F3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7434D04C-6C01-4048-B861-C7EC75ECC7F3}.Release|x64.ActiveCfg = Release|Any CPU
+		{7434D04C-6C01-4048-B861-C7EC75ECC7F3}.Release|x64.Build.0 = Release|Any CPU
+		{7434D04C-6C01-4048-B861-C7EC75ECC7F3}.Release|x86.ActiveCfg = Release|Any CPU
+		{7434D04C-6C01-4048-B861-C7EC75ECC7F3}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{3303350B-E07E-44B8-B6CF-2F0127F43BB9} = {37B78F6A-D5C4-43D1-A538-369C8D28871C}
+		{F4A8B397-B7CE-4595-B62A-73EC9CF5E767} = {37B78F6A-D5C4-43D1-A538-369C8D28871C}
+		{3D91E2B0-8339-49BD-ABD8-E054B7EDCBC5} = {F4A8B397-B7CE-4595-B62A-73EC9CF5E767}
+		{31FB1294-7D0F-4115-A0C1-0194778E62F3} = {F4A8B397-B7CE-4595-B62A-73EC9CF5E767}
+		{3E50958D-93FD-47C7-9C44-16DFE9E898F0} = {F4A8B397-B7CE-4595-B62A-73EC9CF5E767}
+		{DAA7C81D-6F2C-4419-866A-C22A5587E533} = {F4A8B397-B7CE-4595-B62A-73EC9CF5E767}
+		{E9D30500-AC27-4C06-B150-B58F0E4B62DF} = {F4A8B397-B7CE-4595-B62A-73EC9CF5E767}
+		{B9DC90D9-F0E9-4A62-9E1D-CB23A88E59DE} = {37B78F6A-D5C4-43D1-A538-369C8D28871C}
 		{EB7128E4-9EA6-483C-9F74-F4323151F38D} = {E096085B-4612-481C-83EE-6866001AFA67}
 		{3160BE2C-572E-439B-92CF-947A93A48C51} = {E096085B-4612-481C-83EE-6866001AFA67}
 		{77F7EFC2-D264-4C6C-9999-C3218294AE4E} = {59BBCB4A-81E8-401E-B37F-53BAD31F2505}
@@ -198,11 +241,5 @@ Global
 		{2BB003CC-741C-47B8-8CC1-0B2A534D177E} = {9D4908D2-C90D-4663-99A4-8C39B33AF6AE}
 		{1000D6A2-8421-4A06-80E3-F7EFCD47109A} = {4F72E343-1EE4-4914-B17F-01C8AB79EE5E}
 		{90A9BD23-7AAF-4F52-8044-254163C0EA75} = {228C2D05-28F8-4FE2-A667-6AB455244441}
-		{F4A8B397-B7CE-4595-B62A-73EC9CF5E767} = {37B78F6A-D5C4-43D1-A538-369C8D28871C}
-		{3D91E2B0-8339-49BD-ABD8-E054B7EDCBC5} = {F4A8B397-B7CE-4595-B62A-73EC9CF5E767}
-		{3E50958D-93FD-47C7-9C44-16DFE9E898F0} = {F4A8B397-B7CE-4595-B62A-73EC9CF5E767}
-		{DAA7C81D-6F2C-4419-866A-C22A5587E533} = {F4A8B397-B7CE-4595-B62A-73EC9CF5E767}
-		{E9D30500-AC27-4C06-B150-B58F0E4B62DF} = {F4A8B397-B7CE-4595-B62A-73EC9CF5E767}
-		{B9DC90D9-F0E9-4A62-9E1D-CB23A88E59DE} = {37B78F6A-D5C4-43D1-A538-369C8D28871C}
 	EndGlobalSection
 EndGlobal

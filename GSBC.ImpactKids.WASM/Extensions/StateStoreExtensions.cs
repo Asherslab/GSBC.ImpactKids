@@ -9,6 +9,7 @@ using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Games;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.Allergies;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.MedicalNotes;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.ProPresenter;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture;
@@ -73,6 +74,7 @@ public static class StateStoreExtensions
                 .AddEntityStore<GamePointRecord>()
                 .AddEntityStore<GameBoard>()
                 .AddEntityStore<User>()
+                .AddEntityStore<ProPresenterMachine>()
                 .AddEntityStore<SyncOperation>()
                 .AddEntityStore<SyncManualReviewEntry>()
                 .AddScoped<IBasicReadMultipleService<SyncManualReviewEntry>, SyncManualReviewReadAdapter>();

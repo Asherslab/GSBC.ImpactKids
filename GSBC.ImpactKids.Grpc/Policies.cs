@@ -1,15 +1,17 @@
 using GSBC.ImpactKids.Grpc.Features.Authentication.DisplayAuth;
+using GSBC.ImpactKids.Grpc.Features.ProPresenter.MachineAuth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 
 namespace GSBC.ImpactKids.Grpc;
 
 /// <summary>
-/// Who may call what. There are two kinds of caller and they are kept apart here rather
+/// Who may call what. There are three kinds of caller and they are kept apart here rather
 /// than by convention:
 /// <list type="bullet">
 /// <item><b>a leader</b> - a signed in person with an enabled user row;</item>
-/// <item><b>a display</b> - a screen on a wall, enrolled on the pickup display key.</item>
+/// <item><b>a display</b> - a screen on a wall, enrolled on the pickup display key;</item>
+/// <item><b>a ProPresenter machine</b> - the agent on a ProPresenter Mac, approved by a leader.</item>
 /// </list>
 /// <para>
 /// <b>Every policy names its schemes.</b> That is what makes the separation structural: a
@@ -45,8 +47,22 @@ public static class Policies
     /// </summary>
     public const string EnabledOrDisplay = "EnabledOrDisplay";
 
+    /// <summary>
+    /// A ProPresenter machine and nothing else - the third caller type. Used only by
+    /// <c>ProPresenterAgentService</c>, through <c>RequireMachine</c> at its mapping site. Not
+    /// combined with any other policy and never the fallback, so a machine token reaches nothing it
+    /// was not explicitly given, and no leader or display reaches what it was.
+    /// </summary>
+    public const string MachineOnly = "MachineOnly";
+
     public static AuthorizationOptions AddGsbcPolicies(this AuthorizationOptions options)
     {
+        options.AddPolicy(MachineOnly, policy => policy
+            .AddAuthenticationSchemes(MachineAuthDefaults.SchemeName)
+            .RequireAuthenticatedUser()
+            .RequireClaim(MachineAuthDefaults.MachineIdClaimType)
+        );
+
         options.AddPolicy(EnabledOnly, policy => policy
             .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
             .RequireAuthenticatedUser()

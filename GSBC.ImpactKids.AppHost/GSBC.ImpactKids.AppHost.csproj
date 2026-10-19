@@ -10,6 +10,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\GSBC.ImpactKids.Grpc\GSBC.ImpactKids.Grpc.csproj" />
+        <ProjectReference Include="..\GSBC.ImpactKids.ProPresenterAgent\GSBC.ImpactKids.ProPresenterAgent.csproj" />
         <ProjectReference Include="..\GSBC.ImpactKids.WASM\GSBC.ImpactKids.WASM.csproj" />
         <ProjectReference Include="..\GSBC.ImpactKids.Workers.DbMigrations\GSBC.ImpactKids.Workers.DbMigrations.csproj" />
         <ProjectReference Include="..\GSBC.ImpactKids.Workers.PhotoBackfill\GSBC.ImpactKids.Workers.PhotoBackfill.csproj" />

@@ -5,6 +5,8 @@ using GSBC.ImpactKids.Grpc.Data.Models.Games;
 using GSBC.ImpactKids.Grpc.Data.Models.Sync;
 using GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses;
 using GSBC.ImpactKids.Grpc.Data.Models.People;
+using GSBC.ImpactKids.Grpc.Data.Models.ProPresenter;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.ProPresenter;
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling;
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling.School;
 using GSBC.ImpactKids.Shared.Contracts.Entities;
@@ -286,5 +288,30 @@ public class SyncResultConverter : IConverter<SyncResult, SyncResponse>
             Reason = m.Reason,
             MatchConfidence = m.MatchConfidence
         }).ToList()
+    };
+}
+
+/// <summary>
+/// By hand rather than Mapperly: half the contract is derived - who approved it by name, whether the
+/// code was ever exchanged - and the row's credential columns must never be mapped anywhere.
+/// <see cref="DbProPresenterMachine.CreatedByUser"/> has to be included by the query for the name.
+/// </summary>
+public class ProPresenterMachineConverter(
+    IConverter<DateTimeOffset, DateTime> dateTimeConverter
+) : IConverter<DbProPresenterMachine, ProPresenterMachine>
+{
+    public ProPresenterMachine Convert(DbProPresenterMachine machine) => new()
+    {
+        Id                    = machine.Id,
+        Name                  = machine.Name,
+        CreatedAt             = dateTimeConverter.Convert(machine.CreatedAt),
+        CreatedBy             = machine.CreatedByUser?.Name,
+        Enrolled              = machine.SecretHash != null,
+        ProPresenterHost      = machine.ProPresenterHost,
+        ProPresenterPort      = machine.ProPresenterPort,
+        LastSeenAt            = machine.LastSeenAt.HasValue ? dateTimeConverter.Convert(machine.LastSeenAt.Value) : null,
+        AgentVersion          = machine.AgentVersion,
+        ProPresenterReachable = machine.ProPresenterReachable,
+        ProPresenterVersion   = machine.ProPresenterVersion
     };
 }

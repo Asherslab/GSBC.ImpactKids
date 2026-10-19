@@ -1,0 +1,60 @@
+@using GSBC.ImpactKids.Shared.Contracts.Services.Features.ProPresenter
+@inherits EntityUtilityComponent
+@page "/ProPresenter/Connect"
+@inject IProPresenterMachineService MachineService
+@inject NavigationManager           Navigation
+
+<PageTitle>Connect ProPresenter</PageTitle>
+
+<MudPaper Elevation="6" Class="mt-4 pa-6">
+    <MudText Typo="Typo.h5" Class="mb-2">Connect a ProPresenter machine</MudText>
+
+    @if (_linkError != null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">@_linkError</MudAlert>
+        <MudText Typo="Typo.body2">
+            This page is opened by the Impact Kids ProPresenter tool when it starts on a Mac that
+            has not been set up yet. Start the setup from that Mac rather than from a link someone
+            sent you.
+        </MudText>
+    }
+    else
+    {
+        @* The one cue a leader gets that this is about THEIR computer. The redirect can only ever go
+           to this machine's own loopback address, so approving a link that someone else started
+           sends the credential nowhere useful - but say so plainly anyway. *@
+        <MudAlert Severity="Severity.Warning" Class="mb-4">
+            This connects <b>the computer you are using right now</b>. Only approve if you are
+            sitting at the ProPresenter Mac and you just started the Impact Kids tool on it.
+        </MudAlert>
+
+        <MudText Typo="Typo.body2" Class="mb-4">
+            Once connected, the tool on this Mac takes its settings from Impact Kids and can read
+            the first names of children here for the first time today, to show them in ProPresenter.
+            You can disconnect it at any time from the ProPresenter admin page.
+        </MudText>
+
+        <MudTextField T="string"
+                      @bind-Value="_name"
+                      Label="Name for this machine"
+                      HelperText="How it appears on the admin page, e.g. Kids Room Mac"
+                      MaxLength="100"
+                      Disabled="@_busy"
+                      Class="mb-4"/>
+
+        <MudStack Row Spacing="2">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Link"
+                       Disabled="@(_busy || string.IsNullOrWhiteSpace(_name))"
+                       OnClick="@Approve">
+                Connect this Mac
+            </MudButton>
+            <MudButton Variant="Variant.Text"
+                       Disabled="@_busy"
+                       OnClick="@Deny">
+                Cancel
+            </MudButton>
+        </MudStack>
+    }
+</MudPaper>

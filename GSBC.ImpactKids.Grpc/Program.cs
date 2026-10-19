@@ -25,6 +25,9 @@ using GSBC.ImpactKids.Grpc.Features.People.MedicalNoteServices;
 using GSBC.ImpactKids.Grpc.Features.People.MedicalTypeServices;
 using GSBC.ImpactKids.Grpc.Features.People.PersonServices;
 using GSBC.ImpactKids.Grpc.Features.People.Photos;
+using GSBC.ImpactKids.Grpc.Features.ProPresenter.MachineAuth;
+using GSBC.ImpactKids.Grpc.Features.ProPresenter.ProPresenterAgentServices;
+using GSBC.ImpactKids.Grpc.Features.ProPresenter.ProPresenterMachineServices;
 using Amazon.Runtime;
 using Amazon.S3;
 using GSBC.ImpactKids.Grpc.Features.Sync.SyncServices;
@@ -41,6 +44,7 @@ using GSBC.ImpactKids.ServiceDefaults;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using ProtoBuf.Grpc.Server;
 using RabbitMQ.Client;
@@ -66,7 +70,25 @@ bool devAuthUsable = devAuthEnabled && (devAuthSigningKey?.Length ?? 0) >= 32;
 // and a hosted service so the same instance does the refreshing and the answering.
 builder.Services.AddSingleton<DisplaySigningKeyProvider>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<DisplaySigningKeyProvider>());
+// The same arrangement for ProPresenter machines, with one key per machine instead of one in all.
+builder.Services.AddSingleton<MachineSigningKeyProvider>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<MachineSigningKeyProvider>());
 builder.Services.AddHttpContextAccessor();
+
+// The machine token endpoint is anonymous and internet-reachable, so it is the one place that is
+// rate limited. A single window across all callers rather than per address: the proxy is the only
+// direct caller here, so every request would look like it came from one address anyway, and a
+// legitimate machine asks a few times an hour.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddFixedWindowLimiter(MachineTokenEndpoints.RateLimitPolicy, window =>
+    {
+        window.PermitLimit = 30;
+        window.Window = TimeSpan.FromMinutes(1);
+        window.QueueLimit = 0;
+    });
+});
 
 // The default scheme is pinned rather than inferred. With one scheme registered ASP.NET
 // makes it the default automatically; the display scheme below is a second one, which
@@ -100,7 +122,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     // signed with a key that lives on the enrolment key row in this service's own database,
     // so there is no shared secret to distribute and rotation invalidates every outstanding
     // token by replacing what verifies them.
-    .AddJwtBearer(DisplayAuthDefaults.SchemeName);
+    .AddJwtBearer(DisplayAuthDefaults.SchemeName)
+    // A ProPresenter machine. Its token is minted by this service's token endpoint and signed with a
+    // key on the machine's own row, so deleting the row is revocation.
+    .AddJwtBearer(MachineAuthDefaults.SchemeName);
 
 // Configured separately from the scheme above because the key resolver needs a service, and
 // the AddJwtBearer overload that takes a lambda has no way to reach one.
@@ -121,6 +146,23 @@ builder.Services.AddOptions<JwtBearerOptions>(DisplayAuthDefaults.SchemeName)
         // creates a DbUser row for any nameidentifier it does not recognise - so a mapped
         // subject would manufacture a user row for every wall in the building.
         displayOptions.MapInboundClaims = false;
+    });
+
+builder.Services.AddOptions<JwtBearerOptions>(MachineAuthDefaults.SchemeName)
+    .Configure<MachineSigningKeyProvider>((machineOptions, signingKeys) =>
+    {
+        machineOptions.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            ValidIssuer = MachineAuthDefaults.Issuer,
+            ValidAudience = MachineAuthDefaults.Audience,
+            ValidateIssuerSigningKey = true,
+            // By key id - the machine id - and only that machine's key. See Resolve.
+            IssuerSigningKeyResolver = (_, _, keyId, _) => signingKeys.Resolve(keyId)
+        };
+
+        // No subject on a machine token, and no mapping to invent one - the same guard as the
+        // display scheme, against CustomClaimsTransformation creating a user for every machine.
+        machineOptions.MapInboundClaims = false;
     });
 
 builder.Services.AddAuthorization(opts => opts.AddGsbcPolicies());
@@ -224,6 +266,7 @@ app.UseGrpcWeb(new GrpcWebOptions { DefaultEnabled = true });
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 // Configure the HTTP request pipeline.
 app.MapGrpcService<LoginService>();
@@ -256,6 +299,11 @@ app.MapGrpcService<GameDisplayService>().AllowDisplay("GetScoreboard", "WatchSco
 // back, like everything else here.
 app.MapGrpcService<PickupDisplayKeyService>();
 app.MapGrpcService<SyncService>();
+// Leader only, by falling back - the console that approves and revokes machines.
+app.MapGrpcService<ProPresenterMachineService>();
+// Machine only, every method. Routed under machine/ rather than gRPC/, which is what lets the agent
+// through the proxy with its own token - see IProPresenterAgentService.
+app.MapGrpcService<ProPresenterAgentService>().RequireMachine();
 // Anonymous, and explicitly so now that the fallback policy would otherwise close it. It is
 // a signpost for somebody who opened the address in a browser and says nothing at all about
 // this service's data.
@@ -269,6 +317,10 @@ app.AddEventEndpoints();
 // Cluster-internal only - the proxy asks these when a pickup wall enrols. Deliberately not
 // routed in GSBC.ImpactKids.YARP/appsettings.json; see the class remarks.
 app.AddPickupDisplayKeyEndpoints();
+
+// Anonymous, rate limited, and - unlike internal/ - routed by the proxy, because an agent asks it for
+// a credential before it has one. See MachineTokenEndpoints.
+app.AddMachineTokenEndpoints();
 
 // Leader only by falling through to the EnabledOnly fallback policy, which is what keeps a wall
 // display structurally unable to reach a child's face.

@@ -1,0 +1,12 @@
+.setup-steps {
+    margin: 0 0 1rem 1.25rem;
+    padding: 0;
+}
+
+.setup-steps li {
+    margin-bottom: 0.5rem;
+}
+
+.setup-steps code {
+    word-break: break-all;
+}

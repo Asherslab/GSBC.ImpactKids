@@ -69,4 +69,13 @@ public static class ErrorConstants
     public const string GamePointRecordIdRequired = "Game Point Record Must Have A Client Generated Id";
     public const string GamePointRecordPointsZero = "Game Point Record Must Award A Non Zero Number Of Points";
     public const string GamePointRecordTeamIndex  = "Game Point Record Must Name A Team On The Board";
+
+    public const string ProPresenterMachineNotFound = "ProPresenter Machine Not Found";
+    public const string ProPresenterMachineNameNull = "ProPresenter Machine Name Must Be Set";
+    public const string ProPresenterHostNull        = "ProPresenter Address Must Be Set";
+    public const string ProPresenterPortInvalid     = "ProPresenter Port Must Be Between 1 And 65535";
+    public const string ProPresenterRedirectInvalid =
+        "This link can only connect the computer it was opened on. Start the setup again from the ProPresenter machine";
+    public const string ProPresenterChallengeInvalid =
+        "This connect link is incomplete or damaged. Start the setup again from the ProPresenter machine";
 }
