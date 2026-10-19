@@ -15,8 +15,17 @@ public sealed class ScheduleFeeds(StageDriver stage, ProPresenterApi proPresente
 
     private LabelFeed Feed(string name) => _feeds.GetOrAdd(name, n => new LabelFeed(n, proPresenter, logger));
 
-    public IResult Now(string? group) =>
-        Feed(string.IsNullOrWhiteSpace(group) ? "Now" : $"Now ({group})").Serve(stage.NowLabel(group));
+    public IResult Now(string? group)
+    {
+        if (!string.IsNullOrWhiteSpace(group))
+            return Feed($"Now ({group})").Serve(stage.NowLabel(group));
+
+        // The stage's own label: the schedule's timer waits for this fetch, to start with the redraw.
+        string  label  = stage.NowLabel(null);
+        IResult result = Feed("Now").Serve(label);
+        stage.NowFeedServed(label);
+        return result;
+    }
 
     public IResult Next() => Feed("Next").Serve(stage.NextLabel());
 }

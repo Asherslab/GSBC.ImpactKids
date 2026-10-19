@@ -16,7 +16,8 @@ namespace GSBC.ImpactKids.ProPresenterAgent.Feeds;
 /// </summary>
 public sealed class LabelFeed(string name, ProPresenterApi proPresenter, ILogger logger)
 {
-    private static readonly TimeSpan RedrawDelay = TimeSpan.FromMilliseconds(500);
+    /// <summary>How long after a changed fetch the stage is redrawn - and the schedule's timer started, to land with it.</summary>
+    public static readonly TimeSpan RedrawDelay = TimeSpan.FromMilliseconds(500);
 
     private string? _lastServed;
 

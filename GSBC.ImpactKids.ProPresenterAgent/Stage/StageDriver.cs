@@ -78,8 +78,55 @@ public sealed class StageDriver(
     /// <summary>The label for the next feed: the next row in the schedule, by name. Before the night starts, the first.</summary>
     public string NextLabel() => View(DateTime.UtcNow)?.NextLabel ?? "";
 
-    /// <summary>Sets the chosen ProPresenter timer to match what is on now, if that has changed.</summary>
-    public async Task ApplyAsync(CancellationToken token)
+    // Holding the timer for the label - see ApplyAsync.
+
+    /// <summary>A stage now feed counts as read while ProPresenter fetched it within this long - two of its 10-second polls and a bit.</summary>
+    private static readonly TimeSpan FeedReadWindow = TimeSpan.FromSeconds(25);
+
+    /// <summary>The longest a new row's timer waits for its label to be fetched, if ProPresenter misses a poll.</summary>
+    private static readonly TimeSpan LabelWaitLimit = TimeSpan.FromSeconds(12);
+
+    private DateTime _lastNowFetch = DateTime.MinValue;
+    private string?  _labelOnStage;
+    private string?  _waitingFor;
+
+    /// <summary>
+    /// ProPresenter has just fetched the stage's now feed and been given <paramref name="label"/>; its
+    /// redraw lands <see cref="Feeds.LabelFeed.RedrawDelay"/> later. A timer held back for this label
+    /// starts at that same moment.
+    /// </summary>
+    public void NowFeedServed(string label)
+    {
+        _lastNowFetch = DateTime.UtcNow;
+        _labelOnStage = label;
+
+        if (_waitingFor == label)
+        {
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(Feeds.LabelFeed.RedrawDelay);
+                await ApplyAsync(CancellationToken.None);
+            });
+        }
+    }
+
+    /// <summary>
+    /// Sets the chosen ProPresenter timer to match what is on now, if that has changed.
+    /// <para>
+    /// <b>A new row's timer waits for its label.</b> ProPresenter only reads the label feed every 10
+    /// seconds, and nothing makes it read sooner - a stage redraw and a layout switch were both tried
+    /// on 2026-10-20 and changed nothing. A timer started at once would count down under the previous
+    /// row's name for up to 10 seconds. So when the label changes the timer is held until ProPresenter
+    /// has fetched the new label (<see cref="NowFeedServed"/>), and starts with the redraw. The seconds
+    /// are worked out then, so the wait is already taken off.
+    /// </para>
+    /// <para>
+    /// Not held when the label is unchanged (a +5, or the next song within a section) - the screen is
+    /// already right. Not held when nothing reads the now feed, and never for longer than
+    /// <see cref="LabelWaitLimit"/>, so a missed poll cannot leave the timer on the old row.
+    /// </para>
+    /// </summary>
+    public async Task ApplyAsync(CancellationToken token, bool waitLimitReached = false)
     {
         if (state.Configuration?.ScheduleTimerUuid is not { } timerUuid)
             return;
@@ -97,6 +144,30 @@ public sealed class StageDriver(
 
             if (key == _applied)
                 return;
+
+            string label = view?.Now?.Label ?? "";
+
+            bool feedIsRead    = now - _lastNowFetch < FeedReadWindow;
+            bool labelOnScreen = label == _labelOnStage;
+
+            if (feedIsRead && !labelOnScreen && !waitLimitReached)
+            {
+                if (_waitingFor != label)
+                {
+                    _waitingFor = label;
+                    logger.LogInformation("Stage: holding the timer for \"{Label}\" until ProPresenter shows it", label);
+
+                    _ = Task.Run(async () =>
+                    {
+                        await Task.Delay(LabelWaitLimit);
+                        await ApplyAsync(CancellationToken.None, waitLimitReached: true);
+                    });
+                }
+
+                return;
+            }
+
+            _waitingFor = null;
 
             List<ProPresenterApi.TimerId>? timers = await proPresenter.GetTimersAsync(token);
             ProPresenterApi.TimerId?       timer  = timers?.FirstOrDefault(t => t.Uuid == timerUuid);
