@@ -59,7 +59,18 @@
     margin-bottom: 4px;
 }
 
-/* Each side of a split is its own raised card. */
+/* A split is a card; its heading needs no rule under it, the card's edge does that job. */
+.schedule-block.split {
+    background: var(--mud-palette-surface);
+    border-radius: var(--mud-default-borderradius);
+    padding: 8px 12px 12px;
+}
+
+.schedule-block.split .schedule-block-header {
+    border-bottom: none;
+}
+
+/* Each side of a split is its own raised card within it. */
 .schedule-lane.split-lane {
     background: var(--mud-palette-surface);
     border-radius: var(--mud-default-borderradius);

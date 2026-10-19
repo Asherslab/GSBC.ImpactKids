@@ -58,7 +58,9 @@ else
             ScheduleBlock block      = _schedule.Blocks[b];
             ImmutableList<LaneTiming> laneTimings = ScheduleTimeline.Lanes(block);
 
-            <section class="schedule-block" @key="block.Id">
+            @* A split is a raised card of its own, holding its lanes as cards - the part of the night
+               where groups go separate ways should not look like a continuation of the list. *@
+            <section class="schedule-block @(block.IsSplit ? "split mud-elevation-4" : "")" @key="block.Id">
                 <header class="schedule-block-header">
                     <span class="schedule-block-kind">@(block.IsSplit ? "Split" : "Everyone")</span>
                     <span class="schedule-muted">@ScheduleFormat.Minutes(laneTimings.Count == 0 ? 0 : laneTimings.Max(l => l.Minutes))</span>
