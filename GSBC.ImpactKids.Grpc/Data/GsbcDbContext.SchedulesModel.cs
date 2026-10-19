@@ -75,6 +75,13 @@ public partial class GsbcDbContext
             .HasForeignKey(x => x.LaneId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // Items under a section go with it.
+        modelBuilder.Entity<DbScheduleItem>()
+            .HasOne(x => x.ParentItem)
+            .WithMany(x => x.Children)
+            .HasForeignKey(x => x.ParentItemId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         modelBuilder.Entity<DbScheduleItem>()
             .HasOne(x => x.ItemTemplate)
             .WithMany()

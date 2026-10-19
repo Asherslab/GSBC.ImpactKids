@@ -81,6 +81,54 @@
     opacity: 1;
 }
 
+/* A section is a row like any item, with its items indented under it and the rule beneath the lot. */
+.schedule-section {
+    border-bottom: 1px solid var(--mud-palette-lines-default);
+    padding-bottom: 4px;
+}
+
+.schedule-item.schedule-section-header {
+    border-bottom: none;
+}
+
+.schedule-section-header .schedule-item-name {
+    font-weight: 500;
+}
+
+/* Somewhere to drop into even when the section has nothing under it yet. */
+.schedule-children {
+    min-height: 8px;
+    display: flex;
+    flex-direction: column;
+    margin-left: calc(3em + 32px);
+}
+
+.schedule-child {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 4px;
+    font-size: 0.9em;
+    opacity: 0.85;
+}
+
+.schedule-child:hover {
+    background: var(--mud-palette-action-default-hover);
+}
+
+.schedule-child:hover .schedule-drag-handle {
+    opacity: 0.7;
+}
+
+.schedule-section-add {
+    margin-left: calc(3em + 28px);
+}
+
+.schedule-lane .schedule-section:last-child {
+    border-bottom: none;
+}
+
 /* A split is a row of the main list like any item: a rule under it, nothing around it. */
 .schedule-split {
     border-bottom: 1px solid var(--mud-palette-lines-default);
@@ -231,6 +279,8 @@
 }
 
 .schedule-item.schedule-drag-ghost,
+.schedule-child.schedule-drag-ghost,
+.schedule-section.schedule-drag-ghost,
 .schedule-split.schedule-drag-ghost {
     opacity: 0.4;
 }

@@ -119,6 +119,38 @@ public class ScheduleTimelineTests
     }
 
     [Fact]
+    public void A_zero_minute_item_ending_a_split_lane_fills_to_the_end_of_the_split()
+    {
+        ScheduleItem start  = Item("Start Night", 10, new TimeSpan(18, 30, 0));
+        ScheduleItem lesson = Item("Lesson", 25);
+        ScheduleItem games  = Item("Games", 0);
+
+        Schedule schedule = Schedule(Block(Lane(start)), Block(Lane(lesson), Lane(games)));
+
+        ImmutableDictionary<Guid, TimedItem> timed = ScheduleTimeline.Compute(schedule, Friday);
+
+        Assert.True(timed[games.Id].Fills);
+        Assert.Equal(At(18, 40), timed[games.Id].Start);
+        Assert.Equal(At(19, 5), timed[games.Id].End);
+        Assert.Equal(0, ScheduleTimeline.Lanes(schedule.Blocks[1])[1].SpareMinutes);
+    }
+
+    [Fact]
+    public void A_zero_minute_item_before_a_start_time_fills_up_to_it()
+    {
+        ScheduleItem start   = Item("Start Night", 10, new TimeSpan(18, 30, 0));
+        ScheduleItem free    = Item("Free play", 0);
+        ScheduleItem signOut = Item("Sign Out", 10, new TimeSpan(20, 30, 0));
+
+        ImmutableDictionary<Guid, TimedItem> timed =
+            ScheduleTimeline.Compute(Schedule(Block(Lane(start, free, signOut))), Friday);
+
+        Assert.True(timed[free.Id].Fills);
+        Assert.Equal(At(20, 30), timed[free.Id].End);
+        Assert.False(timed[signOut.Id].Clash);
+    }
+
+    [Fact]
     public void The_night_is_underway_once_the_first_item_has_finished()
     {
         Schedule schedule = Schedule(Block(Lane(Item("Start Night", 5, new TimeSpan(18, 30, 0)), Item("Songs", 10))));

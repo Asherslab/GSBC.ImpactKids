@@ -10,15 +10,27 @@ namespace GSBC.ImpactKids.WASM.Features.Scheduling.Features.Schedules;
 /// </summary>
 public static class ScheduleEdits
 {
-    /// <summary>Into a split's lane at a position, or into the main list (<paramref name="laneId"/> null) at an entry position.</summary>
-    public static Schedule MoveItem(Schedule schedule, Guid itemId, Guid? laneId, int position)
+    /// <summary>
+    /// Under a section, into a split's lane at a position, or into the main list (both null) at an
+    /// entry position.
+    /// </summary>
+    public static Schedule MoveItem(Schedule schedule, Guid itemId, Guid? laneId, Guid? sectionId, int position)
     {
-        ScheduleItem? item = schedule.Items.FirstOrDefault(i => i.Id == itemId);
+        ScheduleItem? item = schedule.AllItems.FirstOrDefault(i => i.Id == itemId);
 
         if (item == null)
             return schedule;
 
-        Schedule without = MapLanes(schedule, lane => lane with { Items = lane.Items.RemoveAll(i => i.Id == itemId) });
+        Schedule without = Without(schedule, itemId);
+
+        if (sectionId != null)
+            return MapLanes(without, lane => lane with
+            {
+                Items = lane.Items.Select(i => i.Id != sectionId
+                    ? i
+                    : i with { Children = i.Children.Insert(Math.Clamp(position, 0, i.Children.Count), item) }
+                ).ToImmutableList()
+            });
 
         if (laneId == null)
         {
@@ -67,9 +79,21 @@ public static class ScheduleEdits
 
     public static Schedule RemoveItem(Schedule schedule, Guid itemId)
     {
-        Schedule without = MapLanes(schedule, lane => lane with { Items = lane.Items.RemoveAll(i => i.Id == itemId) });
+        Schedule without = Without(schedule, itemId);
         return ScheduleLayout.Build(without, ScheduleLayout.Entries(without));
     }
+
+    /// <summary>The schedule with one item taken out, wherever it was - a lane or a section.</summary>
+    private static Schedule Without(Schedule schedule, Guid itemId) =>
+        MapLanes(schedule, lane => lane with
+        {
+            Items = lane.Items
+                .Where(i => i.Id != itemId)
+                .Select(i => i.Children.Any(c => c.Id == itemId)
+                    ? i with { Children = i.Children.RemoveAll(c => c.Id == itemId) }
+                    : i)
+                .ToImmutableList()
+        });
 
     /// <summary>A split to a new entry position in the main list.</summary>
     public static Schedule MoveBlock(Schedule schedule, Guid blockId, int position)

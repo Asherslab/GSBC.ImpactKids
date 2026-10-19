@@ -17,4 +17,7 @@ public record ScheduleItemTemplate : IIdentifiable
 
     /// <summary>A placeholder whose name is filled in per service - "Song 1" becomes "Song 1 — Way Maker".</summary>
     public required bool NeedsFillIn { get; init; }
+
+    /// <summary>A heading, like "Songs" or "Games", that items go under. Added to a schedule, it starts empty.</summary>
+    public bool IsSection { get; init; }
 }

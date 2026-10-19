@@ -7,4 +7,5 @@ public class CreateScheduleItemTemplateRequest
     public int       Minutes     { get; set; } = 10;
     public TimeSpan? StartsAt    { get; set; }
     public bool      NeedsFillIn { get; set; }
+    public bool      IsSection   { get; set; }
 }

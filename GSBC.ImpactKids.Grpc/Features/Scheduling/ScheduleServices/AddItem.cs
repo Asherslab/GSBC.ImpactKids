@@ -28,8 +28,12 @@ public partial class ScheduleService
                 return BasicResponse.WithError(ScheduleItemTemplateNotFound);
         }
 
-        string name    = (template?.Name ?? request.Name ?? "").Trim();
-        int    minutes = template?.Minutes ?? request.Minutes;
+        string name      = (template?.Name ?? request.Name ?? "").Trim();
+        bool   isSection = template?.IsSection ?? request.IsSection;
+        bool   under     = request.SectionId != null;
+
+        // Under a section an item has no length that counts - the section holds the time.
+        int minutes = under ? 0 : template?.Minutes ?? request.Minutes;
 
         if (name.Length == 0)
             return BasicResponse.WithError(ScheduleItemNameNull);
@@ -37,12 +41,41 @@ public partial class ScheduleService
         if (!ScheduleRules.MinutesValid(minutes))
             return BasicResponse.WithError(ScheduleItemMinutesInvalid);
 
-        Guid? scheduleId = request.LaneId is { } laneId
-            ? await ScheduleOfLane(laneId, token)
-            : request.ScheduleId;
+        if (under && isSection)
+            return BasicResponse.WithError(ScheduleSectionInSection);
+
+        Guid? scheduleId = request.SectionId is { } sectionId
+            ? await ScheduleOfItem(sectionId, token)
+            : request.LaneId is { } laneId
+                ? await ScheduleOfLane(laneId, token)
+                : request.ScheduleId;
 
         return await EditAsync(scheduleId, (schedule, edit) =>
         {
+            if (under)
+            {
+                DbScheduleItem? section = FindItem(schedule, request.SectionId!.Value);
+
+                if (section is not { IsSection: true })
+                    return BasicResponse.WithError(ScheduleItemNotFound);
+
+                DbScheduleItem child = new()
+                {
+                    Id = Guid.NewGuid(),
+                    ParentItemId = section.Id,
+                    Position = 0,
+                    Name = name,
+                    NeedsFillIn = template?.NeedsFillIn ?? false,
+                    ItemTemplateId = template?.Id,
+                    PlannedMinutes = 0,
+                    AdjustmentMinutes = 0
+                };
+
+                section.Children.Insert(Math.Clamp(request.Position ?? section.Children.Count, 0, section.Children.Count), child);
+                db.ScheduleItems.Add(child);
+                return null;
+            }
+
             DbScheduleLane? lane = null;
 
             if (request.LaneId != null)
@@ -56,9 +89,10 @@ public partial class ScheduleService
             DbScheduleItem item = new()
             {
                 Id = Guid.NewGuid(),
-                LaneId = lane?.Id ?? Guid.Empty, // set by Rebuild when it goes into the main list
+                LaneId = lane?.Id, // set by Rebuild when it goes into the main list
                 Position = 0,
                 Name = name,
+                IsSection = isSection,
                 NeedsFillIn = template?.NeedsFillIn ?? false,
                 ItemTemplateId = template?.Id,
                 PlannedMinutes = edit.Underway ? 0 : minutes,
@@ -77,7 +111,6 @@ public partial class ScheduleService
                 Rebuild(schedule, entries);
             }
 
-            // Added once its lane is known: EF needs a real LaneId before it tracks the row.
             db.ScheduleItems.Add(item);
 
             if (edit.Underway && minutes != 0)

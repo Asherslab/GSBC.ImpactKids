@@ -2,12 +2,30 @@ using Riok.Mapperly.Abstractions;
 
 namespace GSBC.ImpactKids.Grpc.Data.Models.Scheduling.Schedules;
 
+/// <summary>
+/// One row of a schedule. Either it belongs to a lane (<see cref="LaneId"/>), or it sits under a
+/// section (<see cref="ParentItemId"/>) - never both. A section ("Songs", "Games") holds the time for
+/// the stage timer; the items under it ("Way Maker", "Dodgeball") are what was actually done, and get
+/// their own recorded times later.
+/// </summary>
 public class DbScheduleItem
 {
     public required Guid   Id       { get; set; }
-    public required Guid   LaneId   { get; set; }
+    public          Guid?  LaneId   { get; set; }
     public required int    Position { get; set; }
     public required string Name     { get; set; }
+
+    /// <summary>A heading with items under it. Its length is the section's; the items under it have none that counts.</summary>
+    public bool IsSection { get; set; }
+
+    /// <summary>The section this item sits under. One level only: a section is never under another.</summary>
+    public Guid? ParentItemId { get; set; }
+
+    [MapperIgnore]
+    public DbScheduleItem? ParentItem { get; set; }
+
+    [MapperIgnore]
+    public List<DbScheduleItem> Children { get; set; } = [];
 
     /// <summary>What a placeholder was filled in with - the "Way Maker" in "Song 1 — Way Maker".</summary>
     public string? FillIn { get; set; }

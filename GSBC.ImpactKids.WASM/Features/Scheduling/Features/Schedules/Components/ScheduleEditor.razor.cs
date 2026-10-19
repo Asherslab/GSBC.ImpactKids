@@ -141,16 +141,26 @@ public partial class ScheduleEditor
 
     // Items \\
 
-    /// <summary>An item dropped into a split's lane, or into the main list when <paramref name="laneId"/> is "main".</summary>
+    /// <summary>
+    /// An item dropped under a section (<paramref name="sectionId"/>), into a split's lane, or into the
+    /// main list when the lane is "main".
+    /// </summary>
     [JSInvokable]
-    public Task OnItemDropped(string itemId, string laneId, int position)
+    public Task OnItemDropped(string itemId, string? laneId, string? sectionId, int position)
     {
-        Guid  item = Guid.Parse(itemId);
-        Guid? lane = Guid.TryParse(laneId, out Guid parsed) ? parsed : null;
+        Guid  item    = Guid.Parse(itemId);
+        Guid? lane    = Guid.TryParse(laneId, out Guid parsedLane) ? parsedLane : null;
+        Guid? section = Guid.TryParse(sectionId, out Guid parsedSection) ? parsedSection : null;
 
         return Send(
-            schedule => ScheduleEdits.MoveItem(schedule, item, lane, position),
-            () => ScheduleService.MoveItem(new MoveScheduleItemRequest { ItemId = item, LaneId = lane, Position = position })
+            schedule => ScheduleEdits.MoveItem(schedule, item, lane, section, position),
+            () => ScheduleService.MoveItem(new MoveScheduleItemRequest
+            {
+                ItemId = item,
+                LaneId = lane,
+                SectionId = section,
+                Position = position
+            })
         );
     }
 
@@ -172,14 +182,22 @@ public partial class ScheduleEditor
             () => ScheduleService.AdjustItem(new AdjustScheduleItemRequest { ItemId = item.Id, Minutes = minutes })
         );
 
-    /// <summary>To the end of a split's lane, or of the main list when <paramref name="laneId"/> is null.</summary>
-    private Task AddFromTemplate(Guid? laneId, Guid templateId) =>
+    /// <summary>To the end of a section, of a split's lane, or of the main list when both are null.</summary>
+    private Task AddFromTemplate(Guid? laneId, Guid? sectionId, Guid templateId) =>
         Send(null, () => ScheduleService.AddItem(new AddScheduleItemRequest
         {
             ScheduleId = ScheduleId,
             LaneId = laneId,
+            SectionId = sectionId,
             ItemTemplateId = templateId
         }));
+
+    private Task EditChild(ScheduleItem child, ScheduleItem section) =>
+        ScheduleItemDialog.Open(DialogService, child, ScheduleId, null, _underway, section.Id, isChild: true);
+
+    /// <summary>What a 0-minute item reads as when it fills: to the end of its split, or up to the next set time.</summary>
+    private static string FillLabel(TimedItem timed) =>
+        timed.End is { } end ? $"until {ScheduleFormat.Clock(end)}" : "fills";
 
     /// <summary>The ✕ on a row. Asks first: a stray tap mid-programme would otherwise lose a fill-in and the night's changes with it.</summary>
     private async Task RemoveItem(ScheduleItem item)

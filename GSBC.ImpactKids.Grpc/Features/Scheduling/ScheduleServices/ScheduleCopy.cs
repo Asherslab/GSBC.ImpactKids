@@ -28,6 +28,7 @@ public static class ScheduleCopy
             .Include(x => x.Blocks)
             .ThenInclude(x => x.Lanes)
             .ThenInclude(x => x.Items)
+            .ThenInclude(x => x.Children)
             .AsSplitQuery()
             .FirstOrDefaultAsync(x => x.Id == templateId && x.ServiceId == null, token);
 
@@ -71,21 +72,7 @@ public static class ScheduleCopy
                                     BlockId = blockId,
                                     Position = l.Position,
                                     GroupIds = l.GroupIds.Where(groupIds.ContainsKey).Select(id => groupIds[id]).ToList(),
-                                    Items = l.Items
-                                        .Select(i => new DbScheduleItem
-                                        {
-                                            Id = Guid.NewGuid(),
-                                            LaneId = laneId,
-                                            Position = i.Position,
-                                            Name = i.Name,
-                                            FillIn = i.FillIn,
-                                            NeedsFillIn = i.NeedsFillIn,
-                                            ItemTemplateId = i.ItemTemplateId,
-                                            PlannedMinutes = i.Minutes(),
-                                            AdjustmentMinutes = 0,
-                                            StartsAt = i.StartsAt
-                                        })
-                                        .ToList()
+                                    Items = l.Items.Select(i => Copy(i, laneId, null)).ToList()
                                 };
                             })
                             .ToList()
@@ -97,6 +84,29 @@ public static class ScheduleCopy
         db.Schedules.Add(copy);
 
         return scheduleId;
+    }
+
+    /// <summary>An item, with the items under it if it is a section. A section's children belong to it, not to a lane.</summary>
+    private static DbScheduleItem Copy(DbScheduleItem item, Guid? laneId, Guid? parentId)
+    {
+        Guid id = Guid.NewGuid();
+
+        return new DbScheduleItem
+        {
+            Id = id,
+            LaneId = laneId,
+            ParentItemId = parentId,
+            Position = item.Position,
+            Name = item.Name,
+            FillIn = item.FillIn,
+            NeedsFillIn = item.NeedsFillIn,
+            IsSection = item.IsSection,
+            ItemTemplateId = item.ItemTemplateId,
+            PlannedMinutes = item.Minutes(),
+            AdjustmentMinutes = 0,
+            StartsAt = item.StartsAt,
+            Children = item.Children.Select(c => Copy(c, null, id)).ToList()
+        };
     }
 
     private static int Minutes(this DbScheduleItem item) => Math.Max(0, item.PlannedMinutes + item.AdjustmentMinutes);

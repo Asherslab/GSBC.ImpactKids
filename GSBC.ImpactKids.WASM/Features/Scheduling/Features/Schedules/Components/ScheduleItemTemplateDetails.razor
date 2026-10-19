@@ -48,4 +48,10 @@
         @bind-Update="@UpdateRequest.NeedsFillIn.Value"
         State="State"
         Label="Placeholder, filled in on each service (e.g. Song 1)"/>
+    <MudCheckBoxCreateOrUpdate
+        @bind-Create="@CreateRequest.IsSection"
+        Read="@UpdateRequest.IsSection.Value"
+        @bind-Update="@UpdateRequest.IsSection.Value"
+        State="State"
+        Label="Section, with items under it (e.g. Songs, Games)"/>
 </MudPaper>

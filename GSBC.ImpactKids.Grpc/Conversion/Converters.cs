@@ -301,7 +301,8 @@ public class SyncResultConverter : IConverter<SyncResult, SyncResponse>
 
 /// <summary>
 /// By hand: a schedule is a tree, and every list in it is ordered by <c>Position</c>, which Mapperly
-/// would neither sort nor carry. The query must include the whole graph - groups, blocks, lanes, items.
+/// would neither sort nor carry. The query must include the whole graph - groups, blocks, lanes, items,
+/// and the items under sections.
 /// </summary>
 public class ScheduleConverter : IConverter<DbSchedule, Schedule>
 {
@@ -328,22 +329,26 @@ public class ScheduleConverter : IConverter<DbSchedule, Schedule>
                         GroupIds = l.GroupIds.ToImmutableList(),
                         Items = l.Items
                             .OrderBy(i => i.Position)
-                            .Select(i => new ScheduleItem
-                            {
-                                Id = i.Id,
-                                Name = i.Name,
-                                FillIn = i.FillIn,
-                                NeedsFillIn = i.NeedsFillIn,
-                                ItemTemplateId = i.ItemTemplateId,
-                                PlannedMinutes = i.PlannedMinutes,
-                                AdjustmentMinutes = i.AdjustmentMinutes,
-                                StartsAt = i.StartsAt
-                            })
+                            .Select(Item)
                             .ToImmutableList()
                     })
                     .ToImmutableList()
             })
             .ToImmutableList()
+    };
+
+    private static ScheduleItem Item(DbScheduleItem item) => new()
+    {
+        Id = item.Id,
+        Name = item.Name,
+        FillIn = item.FillIn,
+        NeedsFillIn = item.NeedsFillIn,
+        ItemTemplateId = item.ItemTemplateId,
+        PlannedMinutes = item.PlannedMinutes,
+        AdjustmentMinutes = item.AdjustmentMinutes,
+        StartsAt = item.StartsAt,
+        IsSection = item.IsSection,
+        Children = item.Children.OrderBy(c => c.Position).Select(Item).ToImmutableList()
     };
 }
 

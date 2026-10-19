@@ -838,10 +838,13 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<bool>("IsSection")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid?>("ItemTemplateId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("LaneId")
+                    b.Property<Guid?>("LaneId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Name")
@@ -851,6 +854,9 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
 
                     b.Property<bool>("NeedsFillIn")
                         .HasColumnType("boolean");
+
+                    b.Property<Guid?>("ParentItemId")
+                        .HasColumnType("uuid");
 
                     b.Property<int>("PlannedMinutes")
                         .HasColumnType("integer");
@@ -866,6 +872,8 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.HasIndex("ItemTemplateId");
 
                     b.HasIndex("LaneId");
+
+                    b.HasIndex("ParentItemId");
 
                     b.ToTable("ScheduleItems");
                 });
@@ -902,6 +910,9 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<bool>("IsSection")
+                        .HasColumnType("boolean");
 
                     b.Property<int>("Minutes")
                         .HasColumnType("integer");
@@ -1639,12 +1650,18 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.Schedules.DbScheduleLane", "Lane")
                         .WithMany("Items")
                         .HasForeignKey("LaneId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.Schedules.DbScheduleItem", "ParentItem")
+                        .WithMany("Children")
+                        .HasForeignKey("ParentItemId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("ItemTemplate");
 
                     b.Navigation("Lane");
+
+                    b.Navigation("ParentItem");
                 });
 
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.Schedules.DbScheduleItemAdjustment", b =>
@@ -1759,6 +1776,8 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.Schedules.DbScheduleItem", b =>
                 {
                     b.Navigation("Adjustments");
+
+                    b.Navigation("Children");
                 });
 
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.Schedules.DbScheduleLane", b =>

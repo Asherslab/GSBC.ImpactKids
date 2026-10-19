@@ -87,6 +87,12 @@ public class AddScheduleItemRequest
 {
     public Guid    ScheduleId     { get; set; }
     public Guid?   LaneId         { get; set; }
+
+    /// <summary>Under this section, at <see cref="Position"/> among its items. Takes precedence over <see cref="LaneId"/>.</summary>
+    public Guid?   SectionId      { get; set; }
+
+    /// <summary>A one-off section - "Games" - rather than a plain item. A template's own setting wins.</summary>
+    public bool    IsSection      { get; set; }
     public int?    Position       { get; set; }
     public Guid?   ItemTemplateId { get; set; }
     public string? Name           { get; set; }
@@ -107,13 +113,17 @@ public class UpdateScheduleItemRequest
     public TimeSpan? StartsAt { get; set; }
 }
 
-/// <summary>A drag: into a split's lane, or into the main list when <see cref="LaneId"/> is null.</summary>
+/// <summary>
+/// A drag: under a section when <see cref="SectionId"/> is set, else into a split's lane, else into
+/// the main list.
+/// </summary>
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
 public class MoveScheduleItemRequest
 {
-    public Guid  ItemId   { get; set; }
-    public Guid? LaneId   { get; set; }
-    public int   Position { get; set; }
+    public Guid  ItemId    { get; set; }
+    public Guid? LaneId    { get; set; }
+    public Guid? SectionId { get; set; }
+    public int   Position  { get; set; }
 }
 
 /// <summary>+5, −1: added to the plan before the night, recorded as an adjustment during it.</summary>

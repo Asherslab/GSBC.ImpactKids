@@ -7,4 +7,5 @@ public class DbScheduleItemTemplate
     public required int       Minutes     { get; set; }
     public          TimeSpan? StartsAt    { get; set; }
     public required bool      NeedsFillIn { get; set; }
+    public          bool      IsSection   { get; set; }
 }

@@ -19,18 +19,29 @@
                           AutoFocus="@(Item?.NeedsFillIn == true && string.IsNullOrEmpty(Item.FillIn))"
                           Class="mb-4"/>
         }
-        <MudNumericField T="int"
-                         @bind-Value="_minutes"
-                         Label="Length (minutes)"
-                         Min="0"
-                         Max="@ScheduleRules.MaxMinutes"
-                         Variant="Variant.Filled"
-                         HelperText="@LengthHelp"
-                         Class="mb-4"/>
-        <ScheduleTimeField Value="@_startsAt"
-                           ValueChanged="@(v => _startsAt = v)"
-                           Label="Starts at"
-                           HelperText="Optional. Leave empty to run on from the item before"/>
+        @* Under a section an item has no time of its own; the section holds it. *@
+        @if (!UnderSection)
+        {
+            <MudNumericField T="int"
+                             @bind-Value="_minutes"
+                             Label="Length (minutes)"
+                             Min="0"
+                             Max="@ScheduleRules.MaxMinutes"
+                             Variant="Variant.Filled"
+                             HelperText="@LengthHelp"
+                             Class="mb-4"/>
+            <ScheduleTimeField Value="@_startsAt"
+                               ValueChanged="@(v => _startsAt = v)"
+                               Label="Starts at"
+                               HelperText="Optional. Leave empty to run on from the item before"/>
+            @if (Item == null)
+            {
+                <MudCheckBox T="bool"
+                             @bind-Value="_isSection"
+                             Label="Section, with items under it (e.g. Games)"
+                             Class="mt-2"/>
+            }
+        }
     </DialogContent>
     <DialogActions>
         @if (Item != null)

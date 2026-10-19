@@ -29,7 +29,8 @@ public partial class ScheduleItemTemplateService
             Name = request.Name.Trim(),
             Minutes = request.Minutes,
             StartsAt = request.StartsAt,
-            NeedsFillIn = request.NeedsFillIn
+            NeedsFillIn = request.NeedsFillIn,
+            IsSection = request.IsSection
         };
 
         await db.ScheduleItemTemplates.AddAsync(template, token);

@@ -54,6 +54,10 @@
                 {
                     <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Class="ml-2">fill in</MudChip>
                 }
+                @if (context.IsSection)
+                {
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Class="ml-2">section</MudChip>
+                }
             </MudTd>
             <MudTd DataLabel="Length">@ScheduleFormat.Minutes(context.Minutes)</MudTd>
             <MudTd DataLabel="Starts at">@(context.StartsAt is { } at ? ScheduleFormat.Clock(at) : "")</MudTd>

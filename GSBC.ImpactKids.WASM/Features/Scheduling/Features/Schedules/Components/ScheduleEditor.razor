@@ -83,14 +83,61 @@ else
 
 @code {
 
-    // One row of the list, the same in the main list and in a split's lane.
+    // One entry of a list, the same in the main list and in a split's lane. A section is its heading
+    // row, the items under it, and an Add of its own - dragged as one.
     private RenderFragment ItemRow(ScheduleItem item) => __builder =>
     {
         TimedItem? timed = _timed.GetValueOrDefault(item.Id);
+        string     state = $"{(timed?.Clash == true ? "clash" : "")} {(IsNow(timed) ? "now" : "")}";
 
-        <div class="schedule-item @(timed?.Clash == true ? "clash" : "") @(IsNow(timed) ? "now" : "")"
-             data-item-id="@item.Id"
-             @key="item.Id">
+        if (item.IsSection)
+        {
+            <div class="schedule-section" data-item-id="@item.Id" data-section="true" @key="item.Id">
+                <div class="schedule-item schedule-section-header @state">
+                    @RowCells(item, timed)
+                </div>
+                <div class="schedule-children" data-section-id="@item.Id">
+                    @foreach (ScheduleItem child in item.Children)
+                    {
+                        <div class="schedule-child" data-item-id="@child.Id" @key="child.Id">
+                            <span class="schedule-drag-handle" aria-label="Drag to move">
+                                <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small"/>
+                            </span>
+                            <span class="schedule-item-name" @onclick="@(() => EditChild(child, item))">
+                                @child.DisplayName
+                                @if (child.NeedsFillIn && string.IsNullOrWhiteSpace(child.FillIn))
+                                {
+                                    <span class="schedule-fill-in">to fill in</span>
+                                }
+                            </span>
+                            <span class="schedule-item-remove">
+                                <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                               Size="Size.Small"
+                                               Color="Color.Error"
+                                               aria-label="@($"Remove {child.DisplayName}")"
+                                               OnClick="@(() => RemoveItem(child))"/>
+                            </span>
+                        </div>
+                    }
+                </div>
+                <div class="schedule-add schedule-section-add">
+                    <MudMenu Label="@($"Add to {item.Name}")" StartIcon="@Icons.Material.Filled.Add" Size="Size.Small" Variant="Variant.Text" Dense="true">
+                        @AddItemMenuItems(null, item.Id)
+                    </MudMenu>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="schedule-item @state" data-item-id="@item.Id" @key="item.Id">
+                @RowCells(item, timed)
+            </div>
+        }
+    };
+
+    // The cells of an item's row - or of a section's heading row.
+    private RenderFragment RowCells(ScheduleItem item, TimedItem? timed) => __builder =>
+    {
             <span class="schedule-drag-handle" aria-label="Drag to move">
                 <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small"/>
             </span>
@@ -109,7 +156,7 @@ else
                 }
             </span>
             <span class="schedule-item-length" @onclick="@(() => EditItem(item))">
-                @ScheduleFormat.Minutes(item.Minutes)
+                @(timed?.Fills == true ? FillLabel(timed) : ScheduleFormat.Minutes(item.Minutes))
                 @if (item.AdjustmentMinutes != 0)
                 {
                     <span class="schedule-adjustment">@($"{item.AdjustmentMinutes:+0;-0}")</span>
@@ -133,7 +180,6 @@ else
                                aria-label="@($"Remove {item.DisplayName}")"
                                OnClick="@(() => RemoveItem(item))"/>
             </span>
-        </div>
     };
 
     // A split as one entry of the main list: ruled above and below like an item, its lanes raised as cards.
@@ -201,15 +247,21 @@ else
         </div>
     };
 
-    private RenderFragment AddItemMenuItems(Guid? laneId) => __builder =>
+    // The library to add from. Under a section, sections are left out (one level only) and lengths are
+    // not shown, since items there have none that counts.
+    private RenderFragment AddItemMenuItems(Guid? laneId, Guid? sectionId = null) => __builder =>
     {
-        @foreach (ScheduleItemTemplate template in _itemTemplates)
+        @foreach (ScheduleItemTemplate template in _itemTemplates.Where(t => sectionId == null || !t.IsSection))
         {
-            <MudMenuItem OnClick="@(() => AddFromTemplate(laneId, template.Id))">
-                @template.Name <span class="schedule-muted">· @ScheduleFormat.Minutes(template.Minutes)</span>
+            <MudMenuItem OnClick="@(() => AddFromTemplate(laneId, sectionId, template.Id))">
+                @template.Name
+                @if (sectionId == null)
+                {
+                    <span class="schedule-muted"> · @(template.IsSection ? "section" : ScheduleFormat.Minutes(template.Minutes))</span>
+                }
             </MudMenuItem>
         }
-        <MudMenuItem OnClick="@(() => ScheduleItemDialog.Open(DialogService, null, ScheduleId, laneId, _underway))">One-off item…</MudMenuItem>
+        <MudMenuItem OnClick="@(() => ScheduleItemDialog.Open(DialogService, null, ScheduleId, laneId, _underway, sectionId))">One-off item…</MudMenuItem>
     };
 
 }

@@ -6,21 +6,20 @@ namespace GSBC.ImpactKids.Grpc.Features.Scheduling.ScheduleServices;
 
 public partial class ScheduleService
 {
+    /// <summary>An item - and, for a section, the items under it.</summary>
     public async Task<BasicResponse> RemoveItem(BasicReadRequest request, CallContext context = default)
     {
         Guid? scheduleId = await ScheduleOfItem(request.Guid, context.CancellationToken);
 
         return await EditAsync(scheduleId, (schedule, _) =>
         {
-            DbScheduleLane? lane = schedule.Blocks.SelectMany(b => b.Lanes)
-                .FirstOrDefault(l => l.Items.Any(i => i.Id == request.Guid));
-
-            if (lane == null)
+            if (Locate(schedule, request.Guid) is not var (list, item))
                 return BasicResponse.WithError(ScheduleItemNotFound);
 
-            DbScheduleItem item = lane.Items.Single(i => i.Id == request.Guid);
+            foreach (DbScheduleItem child in item.Children.ToList())
+                db.ScheduleItems.Remove(child);
 
-            lane.Items.Remove(item);
+            list.Remove(item);
             db.ScheduleItems.Remove(item);
             return null;
         }, context.ServerCallContext, context.CancellationToken);

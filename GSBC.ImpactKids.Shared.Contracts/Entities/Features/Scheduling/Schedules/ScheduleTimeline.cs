@@ -2,14 +2,18 @@ using System.Collections.Immutable;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.Schedules;
 
-/// <summary>Where one item falls on the night's clock. Start and end are null until something before it is pinned to a time.</summary>
+/// <summary>
+/// Where one item falls on the night's clock. Start and end are null until something before it is
+/// pinned to a time. <see cref="Fills"/> marks a 0-minute item stretched to the next fixed point.
+/// </summary>
 public sealed record TimedItem(
     ScheduleItem Item,
     Guid         BlockId,
     Guid         LaneId,
     DateTime?    Start,
     DateTime?    End,
-    bool         Clash
+    bool         Clash,
+    bool         Fills = false
 );
 
 /// <summary>Where a lane in a split finishes against the longest lane: how much it has to spare.</summary>
@@ -23,7 +27,11 @@ public sealed record LaneTiming(Guid LaneId, int Minutes, int SpareMinutes);
 /// <item>Otherwise it starts when the item before it in its lane ends.</item>
 /// <item>Every lane of a block starts when the block before ends; a block ends when its longest lane does.</item>
 /// <item>Items before the first time anything is pinned to have no clock time, only a length.</item>
+/// <item><b>A 0-minute item fills.</b> Games is planned at 0 because it lasts as long as the lesson
+/// in the other lane. So a 0-minute item that ends a lane of a split runs to the end of the split, and
+/// one followed by an item with a start time runs up to that time.</item>
 /// </list>
+/// Items under a section are not on the clock; the section holds the time.
 /// All times are local wall-clock times on <c>localDate</c>.
 /// </summary>
 public static class ScheduleTimeline
@@ -42,7 +50,8 @@ public static class ScheduleTimeline
 
             foreach (ScheduleLane lane in block.Lanes)
             {
-                DateTime? laneCursor = cursor;
+                DateTime?     laneCursor = cursor;
+                ScheduleItem? previous   = null;
 
                 foreach (ScheduleItem item in lane.Items)
                 {
@@ -54,16 +63,33 @@ public static class ScheduleTimeline
                         DateTime pinned = day + startsAt;
                         clash = laneCursor > pinned;
                         start = pinned;
+
+                        // A 0-minute item just before a start time fills the gap up to it.
+                        if (previous is { Minutes: 0 } && timed[previous.Id] is { End: { } previousEnd } before && previousEnd < pinned)
+                            timed[previous.Id] = before with { End = pinned, Fills = true };
                     }
 
                     DateTime? end = start?.AddMinutes(item.Minutes);
 
                     timed[item.Id] = new TimedItem(item, block.Id, lane.Id, start, end, clash);
                     laneCursor = end;
+                    previous = item;
                 }
 
                 if (laneCursor != null && (blockEnd == null || laneCursor > blockEnd))
                     blockEnd = laneCursor;
+            }
+
+            // A 0-minute item ending a lane of a split runs on until the split ends.
+            if (block.IsSplit && blockEnd != null)
+            {
+                foreach (ScheduleLane lane in block.Lanes)
+                {
+                    if (lane.Items.LastOrDefault() is { Minutes: 0 } last
+                        && timed[last.Id] is { End: { } lastEnd } lastTimed
+                        && lastEnd < blockEnd)
+                        timed[last.Id] = lastTimed with { End = blockEnd, Fills = true };
+                }
             }
 
             // A block whose lanes have no items does not move the clock.
@@ -74,13 +100,22 @@ public static class ScheduleTimeline
         return timed.ToImmutable();
     }
 
-    /// <summary>Minutes per lane of a split, and how far short of the longest lane each finishes.</summary>
+    /// <summary>
+    /// Minutes per lane of a split, and how far short of the longest lane each finishes. A lane ending
+    /// in a 0-minute item has nothing to spare: that item fills it.
+    /// </summary>
     public static ImmutableList<LaneTiming> Lanes(ScheduleBlock block)
     {
-        List<(Guid Id, int Minutes)> lengths = block.Lanes.Select(l => (l.Id, l.Items.Sum(i => i.Minutes))).ToList();
-        int longest = lengths.Count == 0 ? 0 : lengths.Max(l => l.Minutes);
+        int longest = block.Lanes.Count == 0 ? 0 : block.Lanes.Max(l => l.Items.Sum(i => i.Minutes));
 
-        return lengths.Select(l => new LaneTiming(l.Id, l.Minutes, longest - l.Minutes)).ToImmutableList();
+        return block.Lanes
+            .Select(l =>
+            {
+                int  minutes = l.Items.Sum(i => i.Minutes);
+                bool fills   = l.Items.LastOrDefault() is { Minutes: 0 };
+                return new LaneTiming(l.Id, fills ? longest : minutes, fills ? 0 : longest - minutes);
+            })
+            .ToImmutableList();
     }
 
     /// <summary>The total length of the night: blocks end to end, each as long as its longest lane.</summary>

@@ -22,8 +22,13 @@ public record Schedule : IIdentifiable
     [ProtoIgnore]
     public bool IsTemplate => ServiceId == null;
 
+    /// <summary>Every row a lane holds directly - sections included, the items under them not.</summary>
     [ProtoIgnore]
     public IEnumerable<ScheduleItem> Items => Blocks.SelectMany(b => b.Lanes).SelectMany(l => l.Items);
+
+    /// <summary>Every row, the items under sections included.</summary>
+    [ProtoIgnore]
+    public IEnumerable<ScheduleItem> AllItems => Items.SelectMany(i => i.Children.Prepend(i));
 }
 
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
@@ -67,6 +72,15 @@ public record ScheduleItem
     public required int       PlannedMinutes    { get; init; }
     public required int       AdjustmentMinutes { get; init; }
     public          TimeSpan? StartsAt          { get; init; }
+
+    /// <summary>
+    /// A heading ("Songs", "Games") with items under it. The section holds the time - it is what the
+    /// timeline and the stage timer use - and <see cref="Children"/> are what was actually done.
+    /// </summary>
+    public bool IsSection { get; init; }
+
+    /// <summary>The items under a section, in order. Always empty on an item that is not one.</summary>
+    public ImmutableList<ScheduleItem> Children { get; init; } = [];
 
     /// <summary>The length it runs for: the plan plus whatever was added or taken away on the night.</summary>
     [ProtoIgnore]

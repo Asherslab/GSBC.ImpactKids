@@ -92,4 +92,5 @@ public static class ErrorConstants
     public const string ScheduleBlockLanesInvalid    = "A Split Must Have Between 2 And 6 Lanes";
     public const string ScheduleLastLane             = "A Split Needs At Least Two Lanes - Remove The Split Instead";
     public const string ScheduleItemNotFound         = "Schedule Item Not Found";
+    public const string ScheduleSectionInSection     = "A Section Cannot Go Inside Another Section";
 }

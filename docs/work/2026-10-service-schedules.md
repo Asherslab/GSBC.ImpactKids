@@ -91,6 +91,37 @@ a split dropped between two items cuts their block in two around it. The server 
 the database (`ScheduleService.Rebuild`), the phone to its instant copy of a drag. There is no
 "together block" anywhere in the UI, and a split always has at least two lanes.
 
+### Sections
+
+Songs and Games are **sections**: a heading row with items under it (asked for 2026-10-19). The
+section holds the time — it is what the timeline, the stage timer and the label feed use — and the
+items under it ("Way Maker", "Dodgeball") are what was actually done, with no planned length of their
+own. Games is usually planned as a section of 0 minutes with nothing under it, and games are added on
+the night; each one's actual time is recorded as the leader steps through with Next, for planning
+later. Songs today is a section holding the "Song 1/2/3" placeholders; both will draw from libraries
+later. One level only: a section never sits under another. Stored as items with a `ParentItemId`
+(and no lane).
+
+### A 0-minute item fills
+
+Games at 0 minutes means "as long as the other lane's lesson". So a 0-minute item that ends a lane of
+a split runs to the end of the split, and one followed by a fixed start time runs up to it. The editor
+shows it as "until 19:25", and +5 on the lesson moves it too.
+
+### Segment timing — decided, not yet built (2026-10-19)
+
+- **One ProPresenter timer all night**, showing the current section or item's countdown; the label is
+  its name (a section's, never a song's).
+- **During a split** the timer follows the lane that sets the split's length (not the one at Games),
+  with a per-lane override in the lane's ⋮ for when that guess is wrong. `?group=` feeds still give
+  each group its own label.
+- **In a gap before a fixed time** (20:15 → Sign Out at 20:30) it shows the next item counting down
+  to its start — not a fixed "free time" label.
+- **Nothing moves on by itself**, fixed times included. At 0 the timer goes into overtime and stays
+  there until a leader taps Next; overtime is common. Back undoes a mistaken Next. Next steps through
+  the items under a section, recording each one's actual time, then on to the next row.
+- **A second label feed shows what is next** in the schedule — purely the next row's name.
+
 ### Time
 
 - `PlannedMinutes` is what the schedule was set up with.

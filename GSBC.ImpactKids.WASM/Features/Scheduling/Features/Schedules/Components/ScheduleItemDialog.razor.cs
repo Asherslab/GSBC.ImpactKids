@@ -24,6 +24,16 @@ public partial class ScheduleItemDialog
     [Parameter]
     public Guid? LaneId { get; set; }
 
+    /// <summary>The section to add under. Its items have only a name and a fill-in.</summary>
+    [Parameter]
+    public Guid? SectionId { get; set; }
+
+    /// <summary>Whether <see cref="Item"/> sits under a section.</summary>
+    [Parameter]
+    public bool IsChild { get; set; }
+
+    private bool UnderSection => SectionId != null || IsChild;
+
     /// <summary>Whether a length change now is an adjustment on the night rather than the plan.</summary>
     [Parameter]
     public bool Underway { get; set; }
@@ -32,6 +42,7 @@ public partial class ScheduleItemDialog
     private string?   _fillIn;
     private int       _minutes = 5;
     private TimeSpan? _startsAt;
+    private bool      _isSection;
     private bool      _busy;
 
     protected override void OnInitialized()
@@ -61,6 +72,8 @@ public partial class ScheduleItemDialog
             {
                 ScheduleId = ScheduleId,
                 LaneId = LaneId,
+                SectionId = SectionId,
+                IsSection = _isSection,
                 Name = _name,
                 Minutes = _minutes
             })
@@ -94,7 +107,15 @@ public partial class ScheduleItemDialog
             MudDialog.Close(DialogResult.Ok(true));
     }
 
-    public static Task Open(IDialogService dialogService, ScheduleItem? item, Guid scheduleId, Guid? laneId, bool underway) =>
+    public static Task Open(
+        IDialogService dialogService,
+        ScheduleItem?  item,
+        Guid           scheduleId,
+        Guid?          laneId,
+        bool           underway,
+        Guid?          sectionId = null,
+        bool           isChild   = false
+    ) =>
         dialogService.ShowAsync<ScheduleItemDialog>(
             item == null ? "Add a one-off item" : item.DisplayName,
             new DialogParameters<ScheduleItemDialog>
@@ -102,6 +123,8 @@ public partial class ScheduleItemDialog
                 { x => x.Item, item },
                 { x => x.ScheduleId, scheduleId },
                 { x => x.LaneId, laneId },
+                { x => x.SectionId, sectionId },
+                { x => x.IsChild, isChild },
                 { x => x.Underway, underway }
             },
             new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.ExtraSmall });

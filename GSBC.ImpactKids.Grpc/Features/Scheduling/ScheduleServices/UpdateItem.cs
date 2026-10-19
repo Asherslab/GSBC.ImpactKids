@@ -42,8 +42,26 @@ public partial class ScheduleService
         }, context.ServerCallContext, context.CancellationToken);
     }
 
-    private static DbScheduleItem? FindItem(DbSchedule schedule, Guid itemId) =>
-        schedule.Blocks.SelectMany(b => b.Lanes).SelectMany(l => l.Items).FirstOrDefault(i => i.Id == itemId);
+    private static DbScheduleItem? FindItem(DbSchedule schedule, Guid itemId) => Locate(schedule, itemId)?.Item;
+
+    /// <summary>An item and the list that holds it - its lane's, or its section's.</summary>
+    private static (List<DbScheduleItem> List, DbScheduleItem Item)? Locate(DbSchedule schedule, Guid itemId)
+    {
+        foreach (DbScheduleLane lane in schedule.Blocks.SelectMany(b => b.Lanes))
+        {
+            foreach (DbScheduleItem top in lane.Items)
+            {
+                if (top.Id == itemId)
+                    return (lane.Items, top);
+
+                DbScheduleItem? child = top.Children.FirstOrDefault(c => c.Id == itemId);
+                if (child != null)
+                    return (top.Children, child);
+            }
+        }
+
+        return null;
+    }
 
     /// <summary>The one place a length changes: into the plan before the night, into the adjustments during it.</summary>
     private void ChangeLength(DbScheduleItem item, int delta, EditContext edit)

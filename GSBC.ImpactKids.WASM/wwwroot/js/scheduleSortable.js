@@ -5,8 +5,10 @@
 // iPhone Safari does not reliably deliver from a touch, and these lists are dragged mid-programme on
 // phones. SortableJS has a touch path of its own and drags between lists.
 //
-// The lists nest. The main list (data-lane-id="main") holds items and whole splits; each split holds
-// its lanes' lists. Items move freely between all of them; a split moves only within the main list.
+// The lists nest. The main list (data-lane-id="main") holds items, sections and whole splits; each
+// split holds its lanes' lists; each section holds its items' list (data-section-id). Items move
+// freely between all of them. A split moves only within the main list, and a section never goes
+// under another section.
 //
 // Blazor owns the DOM, so a drop is reported and then undone here: the element goes back where it
 // came from, and the component re-renders the new order itself. Leaving SortableJS's move in place
@@ -23,14 +25,17 @@ export function attach(root, dotnet) {
 
     const name = root.dataset.scheduleId || 'schedule';
 
-    for (const list of root.querySelectorAll('[data-lane-id]')) {
+    for (const list of root.querySelectorAll('[data-lane-id], [data-section-id]')) {
         if (list._sortable) continue;
 
         list._sortable = Sortable.create(list, {
             group: {
                 name,
-                // A split cannot go inside another split's lane.
-                put: (to, _from, dragged) => !dragged.dataset.blockId || to.el.dataset.laneId === 'main'
+                put: (to, _from, dragged) => {
+                    if (dragged.dataset.blockId) return to.el.dataset.laneId === 'main';
+                    if (dragged.dataset.section === 'true') return !to.el.dataset.sectionId;
+                    return true;
+                }
             },
             handle: '.schedule-drag-handle',
             draggable: '[data-item-id], [data-block-id]',
@@ -47,7 +52,8 @@ export function attach(root, dotnet) {
             onEnd: (evt) => {
                 const moved = evt.from !== evt.to || evt.oldDraggableIndex !== evt.newDraggableIndex;
                 const position = evt.newDraggableIndex;
-                const laneId = evt.to.dataset.laneId;
+                const laneId = evt.to.dataset.laneId ?? null;
+                const sectionId = evt.to.dataset.sectionId ?? null;
                 const { itemId, blockId } = evt.item.dataset;
 
                 // Undo SortableJS's DOM move; Blazor renders the result.
@@ -65,7 +71,7 @@ export function attach(root, dotnet) {
                 if (blockId)
                     dotnet.invokeMethodAsync('OnSplitDropped', blockId, position);
                 else
-                    dotnet.invokeMethodAsync('OnItemDropped', itemId, laneId, position);
+                    dotnet.invokeMethodAsync('OnItemDropped', itemId, laneId, sectionId, position);
             }
         });
     }

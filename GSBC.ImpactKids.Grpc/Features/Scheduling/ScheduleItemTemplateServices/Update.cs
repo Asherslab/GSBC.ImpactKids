@@ -42,6 +42,9 @@ public partial class ScheduleItemTemplateService
         if (request.NeedsFillIn.IsUpdated)
             template.NeedsFillIn = request.NeedsFillIn.Value;
 
+        if (request.IsSection.IsUpdated)
+            template.IsSection = request.IsSection.Value;
+
         await db.SaveChangesAsync(token);
         await eventService.SendUpdatedEvent(token);
 

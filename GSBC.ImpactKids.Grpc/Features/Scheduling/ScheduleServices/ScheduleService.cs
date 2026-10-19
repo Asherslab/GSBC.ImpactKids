@@ -34,6 +34,7 @@ public partial class ScheduleService(
         .Include(x => x.Blocks)
         .ThenInclude(x => x.Lanes)
         .ThenInclude(x => x.Items)
+        .ThenInclude(x => x.Children)
         .AsSplitQuery();
 
     /// <summary>What an edit may want besides the tree: whether the night has started, and who is editing.</summary>
@@ -176,7 +177,12 @@ public partial class ScheduleService(
                 lane.Position = l;
 
                 for (int i = 0; i < lane.Items.Count; i++)
+                {
                     lane.Items[i].Position = i;
+
+                    for (int c = 0; c < lane.Items[i].Children.Count; c++)
+                        lane.Items[i].Children[c].Position = c;
+                }
             }
         }
     }
@@ -192,7 +198,12 @@ public partial class ScheduleService(
             block.Lanes.Sort((a, b) => a.Position.CompareTo(b.Position));
 
             foreach (DbScheduleLane lane in block.Lanes)
+            {
                 lane.Items.Sort((a, b) => a.Position.CompareTo(b.Position));
+
+                foreach (DbScheduleItem item in lane.Items)
+                    item.Children.Sort((a, b) => a.Position.CompareTo(b.Position));
+            }
         }
     }
 
@@ -225,7 +236,12 @@ public partial class ScheduleService(
         db.ScheduleLanes.Where(x => x.Id == laneId).Select(x => (Guid?)x.Block!.ScheduleId).FirstOrDefaultAsync(token);
 
     private Task<Guid?> ScheduleOfItem(Guid itemId, CancellationToken token) =>
-        db.ScheduleItems.Where(x => x.Id == itemId).Select(x => (Guid?)x.Lane!.Block!.ScheduleId).FirstOrDefaultAsync(token);
+        db.ScheduleItems
+            .Where(x => x.Id == itemId)
+            .Select(x => x.LaneId != null
+                ? (Guid?)x.Lane!.Block!.ScheduleId
+                : (Guid?)x.ParentItem!.Lane!.Block!.ScheduleId)
+            .FirstOrDefaultAsync(token);
 
     private Task<Guid?> ScheduleOfGroup(Guid groupId, CancellationToken token) =>
         db.ScheduleGroups.Where(x => x.Id == groupId).Select(x => (Guid?)x.ScheduleId).FirstOrDefaultAsync(token);
