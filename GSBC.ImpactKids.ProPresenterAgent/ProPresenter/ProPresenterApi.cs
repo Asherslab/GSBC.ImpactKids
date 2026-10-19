@@ -63,7 +63,15 @@ public sealed class ProPresenterApi(HttpClient http, AgentState state, ILogger<P
 
                 using HttpResponseMessage response = await http.GetAsync(
                     new Uri(baseUri, $"v1/stage/screen/{screen.Uuid}/layout/{layout.Uuid}"), token);
+
+                // Logged every time: a refused re-apply (4xx) does not throw, and "the label did not
+                // change on stage" is otherwise impossible to tell apart from "no redraw was sent".
+                logger.LogInformation("Redrew stage screen {Screen} (layout {Layout}): {Status}",
+                    screen.Name ?? screen.Uuid, layout.Name ?? layout.Uuid, (int)response.StatusCode);
             }
+
+            if (screens.Count == 0)
+                logger.LogWarning("ProPresenter has no stage screens to redraw");
         }
         catch (Exception exception) when (exception is not OperationCanceledException || !token.IsCancellationRequested)
         {
@@ -152,7 +160,11 @@ public sealed class ProPresenterApi(HttpClient http, AgentState state, ILogger<P
     private sealed record VersionResponse([property: JsonPropertyName("host_description")] string? HostDescription);
 
     // /v1/stage/screens answers a flat id; /v1/stage/screen/{id}/layout the same shape for the layout.
-    private sealed record StageScreen([property: JsonPropertyName("uuid")] string Uuid);
+    private sealed record StageScreen(
+        [property: JsonPropertyName("uuid")] string  Uuid,
+        [property: JsonPropertyName("name")] string? Name);
 
-    private sealed record StageLayoutId([property: JsonPropertyName("uuid")] string? Uuid);
+    private sealed record StageLayoutId(
+        [property: JsonPropertyName("uuid")] string? Uuid,
+        [property: JsonPropertyName("name")] string? Name);
 }
