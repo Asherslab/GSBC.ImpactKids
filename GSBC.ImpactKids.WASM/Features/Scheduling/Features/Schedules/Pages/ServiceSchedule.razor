@@ -32,7 +32,11 @@
 
     @if (!_schedulesLoaded)
     {
-        <MudProgressLinear Indeterminate Color="Color.Primary"/>
+        <div class="relative" style="min-height: 120px">
+            <MudOverlay Visible DarkBackground Absolute>
+                <MudProgressCircular Indeterminate/>
+            </MudOverlay>
+        </div>
     }
     else if (_schedule == null)
     {

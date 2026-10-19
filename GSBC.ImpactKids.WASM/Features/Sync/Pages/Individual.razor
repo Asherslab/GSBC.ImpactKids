@@ -94,7 +94,11 @@
 
     @if (_auditLogs.IsLoading)
     {
-        <MudProgressLinear Indeterminate Class="mb-4"/>
+        <div class="relative mb-4" style="min-height: 64px">
+            <MudOverlay Visible DarkBackground Absolute>
+                <MudProgressCircular Indeterminate/>
+            </MudOverlay>
+        </div>
     }
     else if (_auditLogs.HasError)
     {

@@ -16,7 +16,13 @@
     }
     else
     {
-        <MudProgressLinear Indeterminate Color="Color.Primary"/>
+        @* First load only. Every edit refreshes the store, and an overlay on each +5 would flash the
+           whole schedule dark mid-programme; the instant local copy covers those. *@
+        <div class="relative" style="min-height: 120px">
+            <MudOverlay Visible DarkBackground Absolute>
+                <MudProgressCircular Indeterminate/>
+            </MudOverlay>
+        </div>
     }
 }
 else
