@@ -1,0 +1,74 @@
+.card-schedule {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.875rem;
+}
+
+.card-summary {
+    opacity: 0.8;
+    padding-bottom: 6px;
+}
+
+.card-fill-in {
+    color: var(--mud-palette-warning);
+}
+
+.card-muted {
+    opacity: 0.6;
+}
+
+/* Time, name, length - one hairline under each, as in the schedule itself. */
+.card-row {
+    display: grid;
+    grid-template-columns: 2.8em minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--mud-palette-lines-default);
+}
+
+.card-time {
+    font-variant-numeric: tabular-nums;
+    opacity: 0.6;
+}
+
+.card-name {
+    overflow-wrap: anywhere;
+}
+
+.card-length {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.6;
+}
+
+/* A two-lane split side by side, each lane under its groups' name. */
+.card-split {
+    display: grid;
+    grid-template-columns: repeat(var(--lanes), minmax(0, 1fr));
+    gap: 12px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--mud-palette-lines-default);
+}
+
+.card-lane {
+    min-width: 0;
+}
+
+.card-lane-name {
+    font-weight: 500;
+    color: var(--mud-palette-primary);
+    padding-bottom: 2px;
+}
+
+.card-lane .card-row {
+    grid-template-columns: 2.8em minmax(0, 1fr);
+}
+
+/* In a narrow lane, the length goes; the time and name are what is read at a glance. */
+.card-lane .card-length {
+    display: none;
+}
+
+.card-lane .card-row:last-child {
+    border-bottom: none;
+}

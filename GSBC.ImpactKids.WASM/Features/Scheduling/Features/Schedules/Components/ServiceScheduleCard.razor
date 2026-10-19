@@ -24,17 +24,72 @@
         }
         else
         {
-            <MudText>
-                @_items item@(_items == 1 ? "" : "s") · @ScheduleFormat.Minutes(ScheduleTimeline.TotalMinutes(_schedule))
-                @if (_start is { } start && _end is { } end)
+            <div class="card-schedule">
+                <div class="card-summary">
+                    @ScheduleFormat.Minutes(ScheduleTimeline.TotalMinutes(_schedule))
+                    @if (_start is { } start && _end is { } end)
+                    {
+                        <span> · @ScheduleFormat.Clock(start)–@ScheduleFormat.Clock(end)</span>
+                    }
+                    @if (_unfilled > 0)
+                    {
+                        <span class="card-fill-in"> · @_unfilled to fill in</span>
+                    }
+                </div>
+
+                @foreach (ScheduleEntry entry in _entries)
                 {
-                    <span> · @ScheduleFormat.Clock(start)–@ScheduleFormat.Clock(end)</span>
+                    if (entry.Item != null)
+                    {
+                        @Row(entry.Item)
+                    }
+                    else if (entry.Split is { } split)
+                    {
+                        if (split.Lanes.Count > MaxLanesShown)
+                        {
+                            @* Too many lanes to read side by side in a card: one line for the whole split. *@
+                            <div class="card-row">
+                                <span class="card-time">@Clock(SplitStart(split))</span>
+                                <span class="card-name">Split <span class="card-muted">· @split.Lanes.Count groups</span></span>
+                                <span class="card-length">@SplitLength(split)</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="card-split" style="--lanes: @split.Lanes.Count">
+                                @foreach (ScheduleLane lane in split.Lanes)
+                                {
+                                    <div class="card-lane">
+                                        <div class="card-lane-name">@LaneName(lane)</div>
+                                        @foreach (ScheduleItem item in lane.Items)
+                                        {
+                                            @Row(item)
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    }
                 }
-            </MudText>
-            @if (_unfilled > 0)
-            {
-                <MudText Typo="Typo.body2" Color="Color.Warning">@_unfilled to fill in</MudText>
-            }
+            </div>
         }
     </MudCardContent>
 </MudCard>
+
+@code {
+
+    // A line: start time, name, length. A section is its heading only; what is under it is detail.
+    private RenderFragment Row(ScheduleItem item) => __builder =>
+    {
+        TimedItem? timed = _timed.GetValueOrDefault(item.Id);
+
+        <div class="card-row">
+            <span class="card-time">@Clock(timed?.Start)</span>
+            <span class="card-name">@item.DisplayName</span>
+            <span class="card-length">
+                @(timed is { Fills: true, End: { } end } ? $"until {ScheduleFormat.Clock(end)}" : ScheduleFormat.Minutes(item.Minutes))
+            </span>
+        </div>
+    };
+
+}
