@@ -151,6 +151,18 @@ public class ScheduleTimelineTests
     }
 
     [Fact]
+    public void The_total_is_first_start_to_last_finish_when_the_night_has_clock_times()
+    {
+        // 10 + 0 + 10 minutes of items, but Free play fills 18:40 to 20:30: the night is 18:30 to 20:40.
+        Schedule schedule = Schedule(Block(Lane(
+            Item("Start Night", 10, new TimeSpan(18, 30, 0)),
+            Item("Free play", 0),
+            Item("Sign Out", 10, new TimeSpan(20, 30, 0)))));
+
+        Assert.Equal(130, ScheduleTimeline.TotalMinutes(schedule));
+    }
+
+    [Fact]
     public void The_night_is_underway_once_the_first_item_has_finished()
     {
         Schedule schedule = Schedule(Block(Lane(Item("Start Night", 5, new TimeSpan(18, 30, 0)), Item("Songs", 10))));

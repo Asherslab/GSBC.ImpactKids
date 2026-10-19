@@ -118,9 +118,24 @@ public static class ScheduleTimeline
             .ToImmutableList();
     }
 
-    /// <summary>The total length of the night: blocks end to end, each as long as its longest lane.</summary>
-    public static int TotalMinutes(Schedule schedule) =>
-        schedule.Blocks.Sum(b => b.Lanes.Count == 0 ? 0 : b.Lanes.Max(l => l.Items.Sum(i => i.Minutes)));
+    /// <summary>
+    /// The length of the night. With clock times, it is first start to last finish - which counts what
+    /// a sum of lengths cannot: a 0-minute item filling up to a fixed time, and any gap before one.
+    /// With none, it is the blocks end to end, each as long as its longest lane.
+    /// </summary>
+    public static int TotalMinutes(Schedule schedule)
+    {
+        // Any day will do: only the span between the times is wanted.
+        ImmutableDictionary<Guid, TimedItem> timed = Compute(schedule, new DateTime(2000, 1, 1));
+
+        DateTime? start = timed.Values.Where(t => t.Start != null).Select(t => t.Start).Min();
+        DateTime? end   = timed.Values.Where(t => t.End != null).Select(t => t.End).Max();
+
+        if (start != null && end != null)
+            return (int)(end.Value - start.Value).TotalMinutes;
+
+        return schedule.Blocks.Sum(b => b.Lanes.Count == 0 ? 0 : b.Lanes.Max(l => l.Items.Sum(i => i.Minutes)));
+    }
 
     /// <summary>
     /// Whether the night has started, which is when a change of length stops being planning and
