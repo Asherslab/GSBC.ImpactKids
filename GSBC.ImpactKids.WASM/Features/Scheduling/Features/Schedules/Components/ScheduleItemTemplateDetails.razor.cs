@@ -11,7 +11,7 @@ public partial class ScheduleItemTemplateDetails
         await EntityStore.RefreshAll();
     }
 
-    // There is no CreateOrUpdate wrapper for a time picker, and one field does not justify one.
+    // There is no CreateOrUpdate wrapper for a time field, and one field does not justify one.
     private TimeSpan? StartsAt => State == ModificationState.Creating
         ? CreateRequest.StartsAt
         : UpdateRequest.StartsAt.Value;

@@ -35,17 +35,13 @@
         Min="0"
         Max="@ScheduleRules.MaxMinutes"
         Variant="Variant.Filled"/>
-    <MudTimePicker
-        Time="@StartsAt"
-        TimeChanged="@SetStartsAt"
+    <ScheduleTimeField
+        Value="@StartsAt"
+        ValueChanged="@SetStartsAt"
         ReadOnly="@(State == ModificationState.Reading)"
-        Clearable="true"
-        AmPm="false"
-        Editable="true"
         Class="mb-4"
         Label="Starts at a set time (optional)"
-        HelperText="Leave empty to run on from the item before"
-        Variant="Variant.Filled"/>
+        HelperText="Leave empty to run on from the item before"/>
     <MudCheckBoxCreateOrUpdate
         @bind-Create="@CreateRequest.NeedsFillIn"
         Read="@UpdateRequest.NeedsFillIn.Value"

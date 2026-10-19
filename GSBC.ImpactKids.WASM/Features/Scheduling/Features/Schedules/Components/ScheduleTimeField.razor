@@ -1,0 +1,12 @@
+@* A plain time of day field. Deliberately not MudTimePicker: its clock-dial dialog is slow to use,
+   where the browser's own time input gives a phone its native wheel and a desktop a typed 18:30. *@
+<MudTextField T="string"
+              Value="@Text"
+              ValueChanged="@OnChanged"
+              InputType="InputType.Time"
+              ReadOnly="@ReadOnly"
+              Label="@Label"
+              HelperText="@HelperText"
+              Variant="Variant.Filled"
+              Clearable="@(!ReadOnly)"
+              Class="@Class"/>
