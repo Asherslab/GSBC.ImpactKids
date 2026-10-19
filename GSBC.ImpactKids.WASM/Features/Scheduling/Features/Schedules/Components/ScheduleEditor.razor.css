@@ -61,10 +61,17 @@
     gap: 8px;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1000px) {
     .schedule-lanes {
         grid-template-columns: minmax(0, 1fr);
     }
+}
+
+/* Item rows lay out by the lane's width, not the screen's: a lane in a three-way split on a desktop
+   is as narrow as a phone. */
+.schedule-lane {
+    container-type: inline-size;
+    min-width: 0;
 }
 
 .schedule-block.split .schedule-lane {
@@ -113,8 +120,8 @@
     background: var(--mud-palette-background-gray);
 }
 
-/* On a phone the buttons take their own line, full width, so they are easy to hit. */
-@media (max-width: 600px) {
+/* In a narrow lane - a phone, or one side of a split - the buttons take their own line, so they are easy to hit. */
+@container (max-width: 520px) {
     .schedule-item {
         grid-template-columns: auto 3.2em minmax(0, 1fr) auto;
     }

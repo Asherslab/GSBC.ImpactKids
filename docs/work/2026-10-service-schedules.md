@@ -18,6 +18,17 @@ service, built from templates, and changed live by leaders on phones during the 
 ground the ProPresenter segment timers stand on ([2026-10-propresenter-agent.md](2026-10-propresenter-agent.md)):
 those need to know what is on now and what is next, per group.
 
+**Where it stands (2026-10-19).** Steps 1–4 below are built and were driven in the app: item templates,
+schedule templates with groups and splits, a new service taking its type's default, applying a
+template, clock times, +5 / −1 and the item dialog, with on-the-night changes landing as logged
+adjustments (checked in the database). **Not yet seen working:**
+
+- dragging, which the browser used for testing cannot do — it needs a phone and a desktop;
+- typing a start time into the time field (`ScheduleTimeField`), for the same reason. The 18:30 in
+  the local test data was set in the database.
+
+Step 5, the per-group label feed and segment timing, has not started.
+
 ## What was asked for (2026-10-19)
 
 - A schedule is a list of items under a **service**. Most services share one, so there are
@@ -93,6 +104,13 @@ Every mutation locks the schedule's row (`SELECT … FOR UPDATE`) for its transa
 graph, changes it, renumbers positions and saves. Two leaders dragging at the same moment are applied
 one after the other, never interleaved into a scrambled order. Each mutation ends with an event, so
 every phone showing the schedule refreshes.
+
+### What the phone may get wrong, and does not matter
+
+A drag, a +5 and a group toggle are applied to the phone's own copy first (`ScheduleEdits`) and then
+sent; the server's answer replaces the copy a moment later. Adding, removing and the dialogs wait for
+the server instead. The phone guesses plan-versus-adjustment the same way the server decides it, so
+the number does not jump when the answer lands.
 
 ### Drag and drop
 

@@ -55,6 +55,9 @@ Present tense, kept current, no dates.
   — `in-progress`. Machines and the agent are built and verified; segment timers are next. What
   ProPresenter 22 was proven to do for labelled text (RSS labels need a forced redraw), and why the
   agent's credential is a file rather than a Keychain item.
+- [Service schedules — templates, split groups, and changes on the night](work/2026-10-service-schedules.md)
+  — `in-progress`. The running order under each service: groups, splits, clock times, and why a
+  change of length during the night is recorded as an adjustment rather than rewriting the plan.
 
 ### Open
 
