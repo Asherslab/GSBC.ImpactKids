@@ -58,6 +58,7 @@ public static class StateStoreExtensions
                 .AddEntityStore<Service>()
                 .AddEntityStore<ServiceType>()
                 .AddEntityStore<ScheduleItemTemplate>()
+                .AddEntityStore<Schedule>()
                 .AddEntityStore<SchoolTerm>()
                 .AddEntityStore<DollarStoreEntry>()
                 .AddEntityStore<MemorisationEntry>()

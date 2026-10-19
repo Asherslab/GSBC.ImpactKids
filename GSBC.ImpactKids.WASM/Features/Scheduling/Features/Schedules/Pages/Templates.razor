@@ -1,0 +1,63 @@
+@inherits EntityUtilityComponent
+@page "/Schedules/Templates"
+@inject IRefreshableStore<Schedule>    SchedulesStore
+@inject IRefreshableStore<ServiceType> ServiceTypesStore
+@inject IScheduleService               ScheduleService
+
+<PageTitle>Schedule Templates</PageTitle>
+
+<MudPaper Elevation="6" Class="mt-4 relative">
+    <MudOverlay Visible="@(_schedules.IsLoading)" DarkBackground Absolute>
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+    <MudStack Row AlignItems="AlignItems.Center" Class="px-6 pt-4">
+        <MudText Typo="Typo.h6">Schedule Templates</MudText>
+        <MudSpacer/>
+        <MudButton Href="/Schedules/Items" Variant="Variant.Text">Item list</MudButton>
+    </MudStack>
+    <MudText Typo="Typo.body2" Class="px-6 pb-2" Color="Color.Secondary">
+        A template can be the default for one service type: a new service of that type starts with a copy
+        of it. Applying a template copies it, so editing a template changes no service's schedule.
+    </MudText>
+    @if (_schedules.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mx-6 mb-4">@_schedules.Error</MudAlert>
+    }
+    <MudTable Items="@TemplateList"Hover="true" Breakpoint="Breakpoint.None">
+        <HeaderContent>
+            <MudTh>
+                <MudTooltip Text="Add a template">
+                    <MudIconButton OnClick="@Create"
+                                   Icon="@Icons.Material.Filled.PostAdd"
+                                   aria-label="Add a template"/>
+                </MudTooltip>
+            </MudTh>
+            <MudTh>Name</MudTh>
+            <MudTh>Default for</MudTh>
+            <MudTh>Length</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>
+                <MudButtonGroup Variant="Variant.Outlined">
+                    <MudIconButton Href="@($"/Schedules/Templates/{context.Id}")"
+                                   Icon="@Icons.Material.Filled.Edit"
+                                   aria-label="@($"Edit {context.Name}")"/>
+                    <MudIconButton OnClick="@(() => Delete(context))"
+                                   Icon="@Icons.Material.Filled.Delete"
+                                   aria-label="@($"Delete {context.Name}")"/>
+                </MudButtonGroup>
+            </MudTd>
+            <MudTd DataLabel="Name">
+                <MudLink Href="@($"/Schedules/Templates/{context.Id}")">@context.Name</MudLink>
+            </MudTd>
+            <MudTd DataLabel="Default for">@ServiceTypeLabel(context.DefaultForServiceTypeId)</MudTd>
+            <MudTd DataLabel="Length">@ScheduleFormat.Minutes(ScheduleTimeline.TotalMinutes(context))</MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            @if (_schedules.HasData)
+            {
+                <MudText>No templates yet.</MudText>
+            }
+        </NoRecordsContent>
+    </MudTable>
+</MudPaper>

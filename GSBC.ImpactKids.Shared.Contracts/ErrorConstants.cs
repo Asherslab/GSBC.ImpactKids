@@ -83,4 +83,13 @@ public static class ErrorConstants
     public const string ScheduleItemNameNull         = "Schedule Item Name Must Be Set";
     public const string ScheduleItemMinutesInvalid   = "Schedule Item Length Must Be Between 0 And 600 Minutes";
     public const string ScheduleItemStartsAtInvalid  = "Schedule Item Start Time Must Be A Time Of Day";
+    public const string ScheduleNotFound             = "Schedule Not Found";
+    public const string ScheduleNameNull             = "Schedule Template Name Must Be Set";
+    public const string ScheduleNotATemplate         = "That Schedule Is Not A Template";
+    public const string ScheduleDefaultTaken         = "Another Template Is Already The Default For That Service Type";
+    public const string ScheduleGroupNameNull        = "Group Name Must Be Set";
+    public const string ScheduleGroupNameTaken       = "This Schedule Already Has A Group With That Name";
+    public const string ScheduleBlockLanesInvalid    = "A Block Must Have Between 1 And 6 Lanes";
+    public const string ScheduleLastLane             = "A Block Needs At Least One Lane - Remove The Block Instead";
+    public const string ScheduleItemNotFound         = "Schedule Item Not Found";
 }

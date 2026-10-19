@@ -1,0 +1,51 @@
+@inherits EntityUtilityComponent
+@page "/Services/{Id:guid}/Schedule"
+@inject IRefreshableStore<Schedule> SchedulesStore
+@inject IRefreshableStore<Service>  ServicesStore
+@inject IScheduleService            ScheduleService
+
+<PageTitle>Schedule · @(_service?.GetDisplayName() ?? "Service")</PageTitle>
+
+<MudPaper Elevation="6" Class="mt-4 pa-4">
+    <MudStack Row AlignItems="AlignItems.Center" Wrap="Wrap.Wrap" Class="mb-4">
+        <MudIconButton Href="@($"/Services/{Id}")" Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back to the service"/>
+        <MudText Typo="Typo.h5">Schedule · @(_service?.GetDisplayName() ?? "")</MudText>
+        <MudSpacer/>
+        @if (_schedulesLoaded)
+        {
+            <div style="min-width: 220px">
+                <MudSelect T="Guid?"
+                           Value="@((Guid?)null)"
+                           ValueChanged="@ApplyTemplate"
+                           Label="@(_schedule == null ? "Start from a template" : "Replace with a template")"
+                           Dense="true"
+                           Margin="Margin.Dense"
+                           Variant="Variant.Outlined">
+                    @foreach (Schedule template in _templates)
+                    {
+                        <MudSelectItem T="Guid?" Value="@template.Id">@template.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            </div>
+        }
+    </MudStack>
+
+    @if (!_schedulesLoaded)
+    {
+        <MudProgressLinear Indeterminate Color="Color.Primary"/>
+    }
+    else if (_schedule == null)
+    {
+        <MudAlert Severity="Severity.Info">
+            This service has no schedule yet. Pick a template above to start from.
+            @if (_templates.Count == 0)
+            {
+                <span> There are no templates yet; <MudLink Href="/Schedules/Templates">make one first</MudLink>.</span>
+            }
+        </MudAlert>
+    }
+    else
+    {
+        <ScheduleEditor ScheduleId="_schedule.Id" LocalDate="_service?.LocalDate"/>
+    }
+</MudPaper>

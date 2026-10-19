@@ -1,0 +1,40 @@
+@inherits EntityUtilityComponent
+@inject IRefreshableStore<Schedule> SchedulesStore
+
+<MudCard Elevation="6">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudStack Row AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.h6">Schedule</MudText>
+                <MudSpacer/>
+                <MudButton Color="Color.Success" Href="@($"/Services/{ServiceId}/Schedule")">
+                    @(_schedule == null ? "Set up" : "Open")
+                </MudButton>
+            </MudStack>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        @if (!_loaded)
+        {
+            <MudProgressLinear Indeterminate Color="Color.Primary"/>
+        }
+        else if (_schedule == null)
+        {
+            <MudText Color="Color.Secondary">No schedule yet.</MudText>
+        }
+        else
+        {
+            <MudText>
+                @_items item@(_items == 1 ? "" : "s") · @ScheduleFormat.Minutes(ScheduleTimeline.TotalMinutes(_schedule))
+                @if (_start is { } start && _end is { } end)
+                {
+                    <span> · @ScheduleFormat.Clock(start)–@ScheduleFormat.Clock(end)</span>
+                }
+            </MudText>
+            @if (_unfilled > 0)
+            {
+                <MudText Typo="Typo.body2" Color="Color.Warning">@_unfilled to fill in</MudText>
+            }
+        }
+    </MudCardContent>
+</MudCard>

@@ -1,5 +1,7 @@
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling;
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling.School;
+using GSBC.ImpactKids.Grpc.Features.Scheduling.ScheduleServices;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.Schedules;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.Services;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using Microsoft.EntityFrameworkCore;
@@ -47,8 +49,23 @@ public partial class ServicesService
         };
 
         await db.Services.AddAsync(service, token);
+
+        // A new service starts with its service type's default schedule, if the type has one.
+        Guid? defaultTemplateId = request.ServiceTypeId == null
+            ? null
+            : await db.Schedules
+                .Where(x => x.DefaultForServiceTypeId == request.ServiceTypeId && x.ServiceId == null)
+                .Select(x => (Guid?)x.Id)
+                .FirstOrDefaultAsync(token);
+
+        if (defaultTemplateId != null)
+            await ScheduleCopy.StageForService(db, defaultTemplateId.Value, service.Id, token);
+
         await db.SaveChangesAsync(token);
         await eventService.SendUpdatedEvent(token);
+
+        if (defaultTemplateId != null)
+            await eventService.SendUpdatedEvent<Schedule>(token);
 
         return new BasicReadResponse<Guid?>
         {

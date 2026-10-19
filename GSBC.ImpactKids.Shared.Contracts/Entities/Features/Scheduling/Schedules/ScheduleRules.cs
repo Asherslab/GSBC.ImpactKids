@@ -4,6 +4,7 @@ namespace GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.Schedule
 public static class ScheduleRules
 {
     public const int MaxMinutes = 600;
+    public const int MaxLanes   = 6;
 
     public static bool MinutesValid(int minutes) => minutes is >= 0 and <= MaxMinutes;
 

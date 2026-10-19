@@ -1,0 +1,191 @@
+.schedule {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.schedule-summary,
+.schedule-groups,
+.schedule-add-block {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;
+}
+
+.schedule-label {
+    font-weight: 500;
+    margin-right: 4px;
+}
+
+.schedule-hint {
+    opacity: 0.6;
+    font-size: 0.85em;
+}
+
+.schedule-block {
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: 8px;
+    padding: 8px;
+}
+
+.schedule-block.split {
+    border-style: dashed;
+    border-color: var(--mud-palette-primary);
+}
+
+.schedule-block-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 4px 6px;
+}
+
+.schedule-block-title {
+    font-weight: 500;
+}
+
+.schedule-block-length {
+    opacity: 0.7;
+}
+
+.schedule-block-actions {
+    margin-left: auto;
+    display: flex;
+}
+
+/* Lanes side by side where there is room; one above the other on a phone. */
+.schedule-lanes {
+    display: grid;
+    grid-template-columns: repeat(var(--lanes), minmax(0, 1fr));
+    gap: 8px;
+}
+
+@media (max-width: 760px) {
+    .schedule-lanes {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.schedule-block.split .schedule-lane {
+    border-left: 3px solid var(--mud-palette-primary);
+    padding-left: 6px;
+}
+
+.schedule-lane-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    padding-bottom: 4px;
+}
+
+.schedule-lane-length {
+    margin-left: auto;
+    opacity: 0.7;
+    font-size: 0.85em;
+}
+
+.schedule-spare {
+    color: var(--mud-palette-success);
+}
+
+/* Somewhere to drop into even when the lane is empty. */
+.schedule-items {
+    min-height: 44px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border-radius: 6px;
+}
+
+.schedule-items:empty {
+    border: 1px dashed var(--mud-palette-lines-default);
+}
+
+.schedule-item {
+    display: grid;
+    grid-template-columns: auto 3.2em minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px;
+    border-radius: 6px;
+    background: var(--mud-palette-background-gray);
+}
+
+/* On a phone the buttons take their own line, full width, so they are easy to hit. */
+@media (max-width: 600px) {
+    .schedule-item {
+        grid-template-columns: auto 3.2em minmax(0, 1fr) auto;
+    }
+
+    .schedule-item-actions {
+        grid-column: 1 / -1;
+        justify-content: flex-end;
+    }
+}
+
+.schedule-item.now {
+    outline: 2px solid var(--mud-palette-success);
+}
+
+.schedule-item.clash .schedule-item-time {
+    color: var(--mud-palette-error);
+}
+
+.schedule-drag-handle {
+    cursor: grab;
+    touch-action: none;
+    display: flex;
+    padding: 6px 2px;
+    opacity: 0.7;
+}
+
+.schedule-item-time {
+    font-variant-numeric: tabular-nums;
+    opacity: 0.8;
+}
+
+.schedule-item-name {
+    cursor: pointer;
+    overflow-wrap: anywhere;
+}
+
+.schedule-clash-note {
+    display: block;
+    color: var(--mud-palette-error);
+    font-size: 0.8em;
+}
+
+.schedule-item-length {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.schedule-adjustment {
+    margin-left: 4px;
+    font-size: 0.8em;
+    color: var(--mud-palette-warning);
+}
+
+.schedule-item-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.schedule-item-actions ::deep .mud-button-root {
+    min-width: 40px;
+    padding: 2px 6px;
+}
+
+.schedule-add {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-top: 6px;
+}
+
+/* SortableJS adds this class to the item being dragged; the element itself is ours, so it is scoped. */
+.schedule-item.schedule-drag-ghost {
+    opacity: 0.4;
+}

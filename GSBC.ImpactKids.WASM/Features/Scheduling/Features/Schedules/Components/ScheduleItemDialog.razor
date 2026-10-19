@@ -1,0 +1,48 @@
+@inject IScheduleService ScheduleService
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField T="string"
+                      @bind-Value="_name"
+                      Label="Name"
+                      Variant="Variant.Filled"
+                      Immediate="true"
+                      Class="mb-4"/>
+        @if (Item?.NeedsFillIn == true || !string.IsNullOrEmpty(_fillIn))
+        {
+            <MudTextField T="string"
+                          @bind-Value="_fillIn"
+                          Label="@($"Fill in for {(_name ?? "this item")}")"
+                          Placeholder="e.g. the song's name"
+                          Variant="Variant.Filled"
+                          Immediate="true"
+                          AutoFocus="@(Item?.NeedsFillIn == true && string.IsNullOrEmpty(Item.FillIn))"
+                          Class="mb-4"/>
+        }
+        <MudNumericField T="int"
+                         @bind-Value="_minutes"
+                         Label="Length (minutes)"
+                         Min="0"
+                         Max="@ScheduleRules.MaxMinutes"
+                         Variant="Variant.Filled"
+                         HelperText="@LengthHelp"
+                         Class="mb-4"/>
+        <ScheduleTimeField Value="@_startsAt"
+                           ValueChanged="@(v => _startsAt = v)"
+                           Label="Starts at a set time (optional)"
+                           HelperText="Leave empty to run on from the item before"/>
+    </DialogContent>
+    <DialogActions>
+        @if (Item != null)
+        {
+            <MudButton Color="Color.Error" Disabled="@_busy" OnClick="@Remove">Remove</MudButton>
+            <MudSpacer/>
+        }
+        <MudButton Disabled="@_busy" OnClick="@(() => MudDialog.Cancel())">Cancel</MudButton>
+        <MudButton Color="Color.Primary"
+                   Disabled="@(_busy || string.IsNullOrWhiteSpace(_name))"
+                   OnClick="@Save">
+            @(Item == null ? "Add" : "Save")
+        </MudButton>
+    </DialogActions>
+</MudDialog>

@@ -300,6 +300,54 @@ public class SyncResultConverter : IConverter<SyncResult, SyncResponse>
 }
 
 /// <summary>
+/// By hand: a schedule is a tree, and every list in it is ordered by <c>Position</c>, which Mapperly
+/// would neither sort nor carry. The query must include the whole graph - groups, blocks, lanes, items.
+/// </summary>
+public class ScheduleConverter : IConverter<DbSchedule, Schedule>
+{
+    public Schedule Convert(DbSchedule schedule) => new()
+    {
+        Id = schedule.Id,
+        Name = schedule.Name,
+        ServiceId = schedule.ServiceId,
+        DefaultForServiceTypeId = schedule.DefaultForServiceTypeId,
+        Groups = schedule.Groups
+            .OrderBy(g => g.Position)
+            .Select(g => new ScheduleGroup { Id = g.Id, Name = g.Name })
+            .ToImmutableList(),
+        Blocks = schedule.Blocks
+            .OrderBy(b => b.Position)
+            .Select(b => new ScheduleBlock
+            {
+                Id = b.Id,
+                Lanes = b.Lanes
+                    .OrderBy(l => l.Position)
+                    .Select(l => new ScheduleLane
+                    {
+                        Id = l.Id,
+                        GroupIds = l.GroupIds.ToImmutableList(),
+                        Items = l.Items
+                            .OrderBy(i => i.Position)
+                            .Select(i => new ScheduleItem
+                            {
+                                Id = i.Id,
+                                Name = i.Name,
+                                FillIn = i.FillIn,
+                                NeedsFillIn = i.NeedsFillIn,
+                                ItemTemplateId = i.ItemTemplateId,
+                                PlannedMinutes = i.PlannedMinutes,
+                                AdjustmentMinutes = i.AdjustmentMinutes,
+                                StartsAt = i.StartsAt
+                            })
+                            .ToImmutableList()
+                    })
+                    .ToImmutableList()
+            })
+            .ToImmutableList()
+    };
+}
+
+/// <summary>
 /// By hand rather than Mapperly: half the contract is derived - who approved it by name, whether the
 /// code was ever exchanged - and the row's credential columns must never be mapped anywhere.
 /// <see cref="DbProPresenterMachine.CreatedByUser"/> has to be included by the query for the name.

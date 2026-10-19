@@ -1,0 +1,72 @@
+<MudDialog>
+    <DialogContent>
+        <MudTextField T="string"
+                      @bind-Value="Text"
+                      Label="@Label"
+                      Placeholder="@Placeholder"
+                      Variant="Variant.Filled"
+                      AutoFocus="true"
+                      Immediate="true"
+                      OnKeyUp="@OnKeyUp"/>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => MudDialog.Cancel())">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Disabled="@string.IsNullOrWhiteSpace(Text)" OnClick="@Submit">@SubmitText</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter]
+    public string? Text { get; set; }
+
+    [Parameter]
+    public string Label { get; set; } = "Name";
+
+    [Parameter]
+    public string? Placeholder { get; set; }
+
+    [Parameter]
+    public string SubmitText { get; set; } = "Save";
+
+    private void Submit()
+    {
+        if (!string.IsNullOrWhiteSpace(Text))
+            MudDialog.Close(DialogResult.Ok(Text.Trim()));
+    }
+
+    private void OnKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            Submit();
+    }
+
+    /// <summary>Asks for one line of text. Null when cancelled.</summary>
+    public static async Task<string?> Ask(
+        IDialogService dialogService,
+        string         title,
+        string         label,
+        string?        text        = null,
+        string?        placeholder = null,
+        string         submitText  = "Save"
+    )
+    {
+        DialogParameters<TextPromptDialog> parameters = new()
+        {
+            { x => x.Text, text },
+            { x => x.Label, label },
+            { x => x.Placeholder, placeholder },
+            { x => x.SubmitText, submitText }
+        };
+
+        IDialogReference dialog = await dialogService.ShowAsync<TextPromptDialog>(
+            title, parameters, new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.ExtraSmall });
+
+        DialogResult? result = await dialog.Result;
+
+        return result is { Canceled: false, Data: string value } ? value : null;
+    }
+}
