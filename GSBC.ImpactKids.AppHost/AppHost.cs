@@ -130,6 +130,21 @@ wasm = wasm.WithReference(yarp);
 
 grpcService.WithReference(wasm);
 
+// The ProPresenter agent, pointed at this proxy, for trying the enrolment and the feeds on a laptop.
+// Run mode only - it runs on a Mac in the room, never in the cluster, so it must not reach the Helm
+// chart - and an explicit start, because an unenrolled agent opens a browser to be approved, which
+// nobody wants on every stack start. Its credential lives in its own directory so it never touches an
+// agent installed on the same Mac.
+if (builder.ExecutionContext.IsRunMode)
+{
+    builder.AddProject<Projects.GSBC_ImpactKids_ProPresenterAgent>("propresenter-agent")
+        .WithEnvironment("Agent__ImpactKidsUrl", yarp.GetEndpoint("https"))
+        .WithEnvironment("Agent__DataDirectory",
+            Path.Combine(Path.GetTempPath(), "impactkids-propresenter-agent-dev"))
+        .WaitFor(yarp)
+        .WithExplicitStart();
+}
+
 // Local sign in without Auth0, for driving the app on a laptop. Run mode only, so it can
 // never be baked into a published manifest or helm chart, and Development only. The key is
 // fresh every run and only ever lives in these two processes' environment - nothing to

@@ -49,7 +49,9 @@ public class GsbcDbContextFactory : IDesignTimeDbContextFactory<GsbcDbContext>
             SyncAuditLogs         = null!,
             PendingReviews        = null!,
             PlannedChanges        = null!,
-            ElvantoFamilyLinks    = null!
+            ElvantoFamilyLinks    = null!,
+
+            ProPresenterMachines = null!
         };
     }
 }

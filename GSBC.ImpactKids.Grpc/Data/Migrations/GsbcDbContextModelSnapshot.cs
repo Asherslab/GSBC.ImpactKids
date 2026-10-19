@@ -640,6 +640,75 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.ToTable("SchoolGrades");
                 });
 
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.ProPresenter.DbProPresenterMachine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AgentVersion")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("EnrolledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EnrolmentChallenge")
+                        .HasColumnType("text");
+
+                    b.Property<string>("EnrolmentCodeHash")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("EnrolmentExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EnrolmentRedirectUri")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("LastSeenAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ProPresenterHost")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int>("ProPresenterPort")
+                        .HasColumnType("integer");
+
+                    b.Property<bool?>("ProPresenterReachable")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ProPresenterVersion")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SecretHash")
+                        .HasColumnType("text");
+
+                    b.Property<string>("TokenSigningKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("EnrolmentCodeHash")
+                        .IsUnique();
+
+                    b.ToTable("ProPresenterMachines");
+                });
+
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.DbService", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1303,6 +1372,16 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                         .HasForeignKey("SchoolGradeId");
 
                     b.Navigation("SchoolGrade");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.ProPresenter.DbProPresenterMachine", b =>
+                {
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.DbUser", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("CreatedByUser");
                 });
 
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.DbService", b =>

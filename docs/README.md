@@ -51,6 +51,11 @@ Present tense, kept current, no dates.
   — `proposed`, not started. Why a school grade row shows two different GUIDs for the same grade, and
   the three ways to fix the reading problem without changing what gets sent.
 
+- [ProPresenter agent — a connected machine, enrolled from the browser, driving segment timers](work/2026-10-propresenter-agent.md)
+  — `in-progress`. Machines and the agent are built and verified; segment timers are next. What
+  ProPresenter 22 was proven to do for labelled text (RSS labels need a forced redraw), and why the
+  agent's credential is a file rather than a Keychain item.
+
 ### Open
 
 Nothing. Add an entry when you open an `open-questions/` doc.

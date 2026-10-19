@@ -1,0 +1,136 @@
+@using GSBC.ImpactKids.Shared.Contracts.Entities.Features.ProPresenter
+@using GSBC.ImpactKids.Shared.Contracts.Services.Features.ProPresenter
+@inherits EntityUtilityComponent
+@page "/ProPresenter/Machines"
+@inject IRefreshableStore<ProPresenterMachine> MachinesStore
+@inject IProPresenterMachineService             MachineService
+
+<PageTitle>ProPresenter</PageTitle>
+
+<MudPaper Elevation="6" Class="mt-4 pa-6">
+    <MudText Typo="Typo.h5" Class="mb-2">ProPresenter machines</MudText>
+
+    <MudText Typo="Typo.body2" Class="mb-4">
+        A small tool on the ProPresenter Mac connects it to Impact Kids. It starts by itself when
+        the Mac logs in, takes its settings from this page, and serves feeds that ProPresenter can
+        show - such as the names of children here for the first time today.
+    </MudText>
+
+    <MudExpansionPanels Class="mb-4">
+        <MudExpansionPanel Text="Set up a new Mac" Expanded="@(_machines.HasData && _machines.Data!.IsEmpty)">
+            <ol class="setup-steps">
+                <li>
+                    On the ProPresenter Mac, download
+                    <MudLink Href="@AgentDownloadUrl">the Impact Kids ProPresenter tool</MudLink>
+                    and open the zip.
+                </li>
+                <li>
+                    In Terminal, run <code>./install.sh</code> from the unzipped folder. It works on
+                    both Intel and Apple Silicon Macs.
+                </li>
+                <li>
+                    A browser opens on this site. Sign in if asked, name the Mac and press
+                    <b>Connect this Mac</b>.
+                </li>
+                <li>Set its ProPresenter address and port below to match ProPresenter's Network preferences.</li>
+                <li>
+                    In ProPresenter, add a text box linked to the RSS feed
+                    <code>@ProPresenterFeeds.Url(ProPresenterFeeds.FirstTimersPath)</code>
+                    with <b>Title</b> only.
+                </li>
+            </ol>
+            <MudText Typo="Typo.body2">
+                To update the tool, download it again and rerun <code>./install.sh</code>.
+            </MudText>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+
+    @if (_machines.IsLoading && !_machines.HasData)
+    {
+        <MudProgressLinear Indeterminate/>
+    }
+    else if (_machines.HasData && _machines.Data!.IsEmpty)
+    {
+        <MudText Typo="Typo.body2">No machines are connected yet.</MudText>
+    }
+    else if (_machines.HasData)
+    {
+        <MudTable Items="_machines.Data" Hover Breakpoint="Breakpoint.Sm" Dense>
+            <HeaderContent>
+                <MudTh>Name</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>ProPresenter</MudTh>
+                <MudTh>Tool</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Name">
+                    @context.Name
+                    <MudText Typo="Typo.caption" Class="d-block">
+                        Connected @context.LocalCreatedAt.ToString("d MMM yyyy")@(context.CreatedBy == null ? "" : $" by {context.CreatedBy}")
+                    </MudText>
+                </MudTd>
+                <MudTd DataLabel="Status">
+                    @{ (string label, Color color) = Status(context); }
+                    <MudChip T="string" Size="Size.Small" Color="@color">@label</MudChip>
+                    @if (context.LocalLastSeenAt != null)
+                    {
+                        <MudText Typo="Typo.caption" Class="d-block">
+                            Last seen @context.LocalLastSeenAt.Value.ToString("d MMM, h:mm:ss tt")
+                        </MudText>
+                    }
+                </MudTd>
+                <MudTd DataLabel="ProPresenter">
+                    @context.ProPresenterHost:@context.ProPresenterPort
+                    <MudText Typo="Typo.caption" Class="d-block">
+                        @(context.ProPresenterReachable switch
+                        {
+                            true  => context.ProPresenterVersion ?? "Answering",
+                            false => "Not answering - is ProPresenter open, with its network enabled?",
+                            null  => "Not checked yet"
+                        })
+                    </MudText>
+                </MudTd>
+                <MudTd DataLabel="Tool">@(context.AgentVersion ?? "-")</MudTd>
+                <MudTd>
+                    <MudTooltip Text="Edit settings">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                       Size="Size.Small"
+                                       aria-label="@($"Edit {context.Name}")"
+                                       OnClick="@(() => StartEdit(context))"/>
+                    </MudTooltip>
+                    <MudTooltip Text="Disconnect">
+                        <MudIconButton Icon="@Icons.Material.Filled.LinkOff"
+                                       Size="Size.Small"
+                                       Color="Color.Error"
+                                       aria-label="@($"Disconnect {context.Name}")"
+                                       OnClick="@(() => Revoke(context))"/>
+                    </MudTooltip>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+    else if (_machines.HasError)
+    {
+        <MudAlert Severity="Severity.Error">@_machines.Error</MudAlert>
+    }
+</MudPaper>
+
+@if (_editing != null)
+{
+    <MudPaper Elevation="6" Class="mt-4 pa-6">
+        <MudText Typo="Typo.h6" Class="mb-2">Edit @_editingName</MudText>
+        <MudText Typo="Typo.body2" Class="mb-4">
+            The Mac picks changes up within half a minute. The address is where the tool finds
+            ProPresenter - usually 127.0.0.1, ProPresenter on the same Mac - and the port is the one
+            in ProPresenter's Network preferences.
+        </MudText>
+        <MudTextField T="string" @bind-Value="_editing.Name" Label="Name" MaxLength="100" Class="mb-2"/>
+        <MudTextField T="string" @bind-Value="_editing.ProPresenterHost" Label="ProPresenter address" MaxLength="255" Class="mb-2"/>
+        <MudNumericField T="int" @bind-Value="_editing.ProPresenterPort" Label="ProPresenter port" Min="1" Max="65535" Class="mb-4"/>
+        <MudStack Row Spacing="2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@_busy" OnClick="@SaveEdit">Save</MudButton>
+            <MudButton Variant="Variant.Text" Disabled="@_busy" OnClick="@(() => _editing = null)">Cancel</MudButton>
+        </MudStack>
+    </MudPaper>
+}

@@ -109,13 +109,19 @@ is exactly the fail-open case the arrangement exists to prevent — and note tha
 metadata **accumulates**: a class attribute plus a method attribute means both must pass, so you
 cannot open a single method on an otherwise-restricted class either way.
 
-There are two callers, and `Policies.cs` is the one place that says who may call what:
+There are three callers, and `Policies.cs` is the one place that says who may call what:
 
 | Policy | Admits | Where it is used |
 |---|---|---|
 | `EnabledOnly` | a signed-in, enabled leader | the fallback — everywhere, by saying nothing |
 | `DisplayOnly` | an enrolled wall display | nothing at present |
 | `EnabledOrDisplay` | either | the few reads a wall makes — grep this name to find every one |
+| `MachineOnly` | an enrolled ProPresenter machine | `ProPresenterAgentService` only, via `RequireMachine()` at its mapping site |
+
+A ProPresenter machine is a **third** caller, and is not read-only like a display — it writes its own
+status row. Every agent operation takes the machine id from the token, never from the request. Its
+token endpoint, `machine/token`, is the one anonymous endpoint the proxy routes from the internet; see
+[docs/modules/auth/sign-in.md](../docs/modules/auth/sign-in.md#a-propresenter-machine--the-third-caller).
 
 Every policy **names its authentication schemes**, so a display token does not merely fail
 `EnabledOnly`, it is never authenticated against it.

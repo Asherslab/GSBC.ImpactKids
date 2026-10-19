@@ -3,11 +3,13 @@ title: Sign in — the cookie, the bearer token, and the local bypass
 kind: reference
 status: current
 module: auth
-verified: 2026-08-27
+verified: 2026-10-19
 code:
   - GSBC.ImpactKids.YARP
   - GSBC.ImpactKids.Grpc/Services/CustomClaimsTransformation.cs
   - GSBC.ImpactKids.Grpc/Features/Attendance/PickupDisplayKeyServices
+  - GSBC.ImpactKids.Grpc/Features/ProPresenter/MachineAuth
+  - GSBC.ImpactKids.Shared.Contracts/Entities/Features/ProPresenter/ProPresenterEnrolment.cs
   - GSBC.ImpactKids.WASM/Authentication/BffAuthenticationStateProvider.cs
 ---
 
@@ -34,12 +36,17 @@ its own scheme. It is not a weaker leader and must never be modelled as one — 
 write anything at all. It has its own sections below; do not extend the leader session to cover a
 screen.
 
+There is a **third caller type**: a ProPresenter machine — the agent on the ProPresenter Mac. It has no
+cookie at all, brings its own bearer token, and reaches exactly one service. See
+[A ProPresenter machine](#a-propresenter-machine--the-third-caller) below.
+
 The proxy routes (`appsettings.json`) decide which applies:
 
 | Route | Policy | Notes |
 |---|---|---|
 | `/gRPC/GSBC.ImpactKids.{service}/**` | `LeaderOrDisplay` | either caller; a token for whichever one it is, is attached |
 | `/api/**` | `LeaderOrDisplay` | same. Carries `/api/stream`, which a display refreshes off |
+| `/machine/**` | **none** | a ProPresenter machine's own token passes through untouched; the gRPC service is the gate |
 | `{**catch-all}` | none | the WASM app itself |
 
 **There are no `public/` routes any more, and no anonymous gRPC service.** There used to be two, on
@@ -220,6 +227,40 @@ A missing or stale cookie renders as readable words telling whoever walks past t
 re-opening from its setup link, never as "Connecting…".
 
 `/bff/display-logout` drops the cookie on one screen without touching the key.
+
+## A ProPresenter machine — the third caller
+
+A native agent on the ProPresenter Mac (`GSBC.ImpactKids.ProPresenterAgent`), approved once by a
+leader in the browser and then running unattended. It is neither a weaker leader nor a display that
+can write: it has its own scheme, its own policy and its own service, and touches nothing else.
+
+**The `/machine/**` route has no `AuthorizationPolicy`, and must not get one.** A policy would demand a
+cookie the agent cannot have, and would run `AddBearerTokenToHeadersTransform`, which overwrites
+`Authorization`. The route forwards the path unchanged; the gRPC service maps nothing under `machine/`
+except `IProPresenterAgentService` and the token endpoint. **Never add a `PathRemovePrefix` to it** —
+`/machine/internal/...` would become `/internal/...`.
+
+| | |
+|---|---|
+| Enrolment | OAuth 2.0 for native apps (RFC 8252) with PKCE (RFC 7636): the agent listens on `127.0.0.1`, opens `/ProPresenter/Connect`, a leader approves, the browser carries a single-use code back |
+| The rule that matters | the code may only be redirected to `http://127.0.0.1` or `http://[::1]` — `ProPresenterEnrolment.IsLoopbackRedirect`, checked by the page **and** by `Approve`. PKCE does nothing against somebody who starts the flow themselves; only this does |
+| Token endpoint | `POST /machine/token`, anonymous and internet-reachable — the one anonymous endpoint the proxy routes. Rate limited (30/min, all callers). A failed code check burns the code; a claim is atomic |
+| Credentials | a machine secret (hash on the `ProPresenterMachines` row) traded for 15-minute JWTs signed with a key on the same row, key id = machine id |
+| Scheme / policy | `ProPresenterMachine` / `MachineOnly`, mapped with `RequireMachine()` on `ProPresenterAgentService` only. No `sub`, `MapInboundClaims = false` — the same guard as the display token |
+| Revocation | deleting the row, on `/ProPresenter/Machines`. Immediate in the serving process (`MachineSigningKeyProvider.RefreshAsync`), ≤ 15 s on other replicas |
+
+Verified end to end on 2026-10-19 on the full stack (`GSBC.ImpactKids.AppHost: https`):
+
+| Check | Result |
+|---|---|
+| Approve on the connect page, agent exchanges | machine row enrolled, code and challenge cleared, only the secret's hash stored |
+| Wrong verifier, then the right one | both `invalid_grant` — the first attempt burned the code |
+| Redirect mismatch; replay of a spent code | `invalid_grant` |
+| Connect page with `evil.example`, `localhost`, `https://127.0.0.1`, `127.0.0.1@evil.example`, `127.0.0.1.evil.example`, `method=plain` | refused before any button is shown |
+| Machine token on the agent service, via the proxy and direct | 200, `grpc-status: 0`, its own configuration only |
+| Machine token on `Machines.Approve`, `Users`, `People.BasicReadMultiple` **direct to the gRPC service** | 401 — no other scheme accepts its issuer |
+| `/machine/internal/...`, `/machine/../internal/...`, `%2e%2e` | never reach `internal/` (401 unmapped, or normalised to the WASM shell) |
+| Disconnect on the admin page | live token refused on its next call, secret answers `invalid_client`; the running agent re-enrolled within 50 s |
 
 ## Being enabled is a database fact, not an Auth0 one
 

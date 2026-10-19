@@ -173,6 +173,45 @@ jobs:
     with:
       version: ${{needs.version.outputs.version}}
   
+  # The ProPresenter agent runs on a Mac in the room, not in the cluster, so it ships as a zip on the
+  # release rather than an image. It rides in the release the chart job just created, which
+  # chart-releaser marks Latest - that is what lets the admin page link to
+  # releases/latest/download/... and always get the agent built from the same commit as the app.
+  # Never publish a separate agent release: it would take Latest away from the app's.
+  build-propresenter-agent:
+    runs-on: macos-latest
+    needs:
+      - version
+      - chart
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # Both architectures from one Mac runner; publishing on macOS ad-hoc signs the binaries, and
+      # install.sh signs them again on the target Mac anyway.
+      - name: Publish for Intel and Apple Silicon
+        run: |
+          for rid in osx-x64 osx-arm64; do
+            dotnet publish GSBC.ImpactKids.ProPresenterAgent/GSBC.ImpactKids.ProPresenterAgent.csproj \
+              -c Release -r "$rid" -p:Version=${{ needs.version.outputs.version }} -o "out/agent/$rid"
+          done
+          cp GSBC.ImpactKids.ProPresenterAgent/install/*.sh out/agent/
+          chmod +x out/agent/*.sh out/agent/*/impactkids-propresenter-agent
+          (cd out/agent && zip -qr ../impactkids-propresenter-agent-macos.zip .)
+
+      - name: Attach to the app release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "impact-kids-app-${{ needs.version.outputs.version }}" \
+            out/impactkids-propresenter-agent-macos.zip --clobber
+
   argo-update:
     secrets: inherit
     needs:
