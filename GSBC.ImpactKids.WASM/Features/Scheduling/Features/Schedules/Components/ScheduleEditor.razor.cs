@@ -36,7 +36,6 @@ public partial class ScheduleEditor
     private ImmutableDictionary<Guid, TimedItem> _timed         = ImmutableDictionary<Guid, TimedItem>.Empty;
     private ImmutableList<ScheduleItemTemplate>  _itemTemplates = [];
     private bool                                 _underway;
-    private int                                  _addRound;
 
     private ElementReference                           _root;
     private IJSObjectReference?                        _module;
@@ -88,7 +87,21 @@ public partial class ScheduleEditor
         _underway = LocalDate != null && ScheduleTimeline.IsUnderway(_schedule, LocalDate.Value, DateTime.Now);
     }
 
-    private DateTime? EndsAt => _timed.Values.Where(t => t.End != null).Select(t => t.End).Max();
+    private DateTime? StartsAt => _timed.Values.Where(t => t.Start != null).Select(t => t.Start).Min();
+    private DateTime? EndsAt   => _timed.Values.Where(t => t.End != null).Select(t => t.End).Max();
+
+    /// <summary>
+    /// −1 / +1 / +5 belong to the night itself, so they show only on a service's schedule on its day.
+    /// Planning changes a length by tapping the item; keeping three buttons on every row all week is
+    /// most of what made the page hard to read.
+    /// </summary>
+    private bool ShowAdjust => LocalDate?.Date == DateTime.Today;
+
+    private string LaneName(ScheduleLane lane)
+    {
+        List<string> names = _schedule!.Groups.Where(g => lane.GroupIds.Contains(g.Id)).Select(g => g.Name).ToList();
+        return names.Count == 0 ? "No group" : string.Join(", ", names);
+    }
 
     private bool IsNow(TimedItem? timed) =>
         LocalDate?.Date == DateTime.Today && timed is { Start: { } start, End: { } end }
@@ -144,19 +157,12 @@ public partial class ScheduleEditor
             () => ScheduleService.AdjustItem(new AdjustScheduleItemRequest { ItemId = item.Id, Minutes = minutes })
         );
 
-    private async Task AddFromTemplate(ScheduleLane lane, Guid? templateId)
-    {
-        if (templateId == null)
-            return;
-
-        _addRound++;
-
-        await Send(null, () => ScheduleService.AddItem(new AddScheduleItemRequest
+    private Task AddFromTemplate(ScheduleLane lane, Guid templateId) =>
+        Send(null, () => ScheduleService.AddItem(new AddScheduleItemRequest
         {
             LaneId = lane.Id,
             ItemTemplateId = templateId
         }));
-    }
 
     private Task EditItem(ScheduleItem item, ScheduleLane lane) =>
         ScheduleItemDialog.Open(DialogService, item, lane.Id, _underway);
@@ -191,13 +197,23 @@ public partial class ScheduleEditor
             await Send(null, () => ScheduleService.RemoveGroup(new BasicReadRequest { Guid = group.Id }));
     }
 
-    private Task ToggleLaneGroup(ScheduleLane lane, ScheduleGroup group)
+    private async Task ChooseLaneGroups(ScheduleLane lane)
     {
-        List<Guid> groupIds = lane.GroupIds.Contains(group.Id)
-            ? lane.GroupIds.Where(id => id != group.Id).ToList()
-            : [..lane.GroupIds, group.Id];
+        if (_schedule == null)
+            return;
 
-        return Send(
+        if (_schedule.Groups.Count == 0)
+        {
+            Snackbar.Add("Add groups first, with the + beside Groups", MudBlazor.Severity.Info);
+            return;
+        }
+
+        List<Guid>? groupIds = await LaneGroupsDialog.Ask(DialogService, _schedule.Groups, lane);
+
+        if (groupIds == null)
+            return;
+
+        await Send(
             schedule => ScheduleEdits.SetLaneGroups(schedule, lane.Id, groupIds),
             () => ScheduleService.SetLaneGroups(new SetScheduleLaneGroupsRequest { LaneId = lane.Id, GroupIds = groupIds })
         );
@@ -240,7 +256,7 @@ public partial class ScheduleEditor
         await Send(null, () => ScheduleService.RemoveBlock(new BasicReadRequest { Guid = block.Id }));
     }
 
-    private async Task RemoveLane(ScheduleBlock block, ScheduleLane lane)
+    private async Task RemoveLane(ScheduleLane lane)
     {
         if (lane.Items.Count > 0)
         {

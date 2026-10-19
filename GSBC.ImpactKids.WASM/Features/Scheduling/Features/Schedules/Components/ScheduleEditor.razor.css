@@ -1,64 +1,69 @@
+/* Quiet by default: the item names are what the eye is looking for, so they are the only strong
+   text. Times, lengths, labels and controls are muted, and structure is shown with spacing and one
+   hairline rather than borders, bars and colour. */
+
 .schedule {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 20px;
 }
 
-.schedule-summary,
-.schedule-groups,
-.schedule-add-block {
+.schedule-muted {
+    opacity: 0.6;
+}
+
+.schedule-top {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 6px 8px;
+    justify-content: space-between;
+    gap: 8px 24px;
 }
 
-.schedule-label {
+.schedule-summary {
     font-weight: 500;
-    margin-right: 4px;
 }
 
-.schedule-hint {
-    opacity: 0.6;
-    font-size: 0.85em;
+.schedule-underway {
+    margin-left: 6px;
+    font-weight: 400;
+    color: var(--mud-palette-warning);
 }
 
-.schedule-block {
-    border: 1px solid var(--mud-palette-lines-default);
-    border-radius: 8px;
-    padding: 8px;
+.schedule-groups {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px;
 }
 
-.schedule-block.split {
-    border-style: dashed;
-    border-color: var(--mud-palette-primary);
+/* Group names as typed - "Prep-3", not "PREP-3". */
+.schedule-groups ::deep .mud-button-root {
+    text-transform: none;
 }
 
 .schedule-block-header {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 0 4px 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--mud-palette-lines-default);
+    margin-bottom: 4px;
 }
 
-.schedule-block-title {
-    font-weight: 500;
-}
-
-.schedule-block-length {
+.schedule-block-kind {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     opacity: 0.7;
-}
-
-.schedule-block-actions {
-    margin-left: auto;
-    display: flex;
 }
 
 /* Lanes side by side where there is room; one above the other on a phone. */
 .schedule-lanes {
     display: grid;
     grid-template-columns: repeat(var(--lanes), minmax(0, 1fr));
-    gap: 8px;
+    gap: 8px 24px;
 }
 
 @media (max-width: 1000px) {
@@ -74,88 +79,84 @@
     min-width: 0;
 }
 
-.schedule-block.split .schedule-lane {
-    border-left: 3px solid var(--mud-palette-primary);
-    padding-left: 6px;
-}
-
 .schedule-lane-header {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    gap: 4px;
-    padding-bottom: 4px;
+    gap: 6px;
+    font-size: 0.875rem;
 }
 
-.schedule-lane-length {
-    margin-left: auto;
-    opacity: 0.7;
-    font-size: 0.85em;
-}
-
-.schedule-spare {
-    color: var(--mud-palette-success);
+.schedule-lane-name {
+    font-weight: 500;
+    color: var(--mud-palette-primary);
 }
 
 /* Somewhere to drop into even when the lane is empty. */
 .schedule-items {
-    min-height: 44px;
+    min-height: 36px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    border-radius: 6px;
-}
-
-.schedule-items:empty {
-    border: 1px dashed var(--mud-palette-lines-default);
 }
 
 .schedule-item {
     display: grid;
-    grid-template-columns: auto 3.2em minmax(0, 1fr) auto auto;
+    grid-template-columns: auto 3em minmax(0, 1fr) auto auto;
     align-items: center;
-    gap: 6px;
-    padding: 4px 6px;
+    gap: 8px;
+    padding: 6px 4px;
     border-radius: 6px;
-    background: var(--mud-palette-background-gray);
 }
 
-/* In a narrow lane - a phone, or one side of a split - the buttons take their own line, so they are easy to hit. */
+.schedule-item:hover {
+    background: var(--mud-palette-action-default-hover);
+}
+
 @container (max-width: 520px) {
     .schedule-item {
-        grid-template-columns: auto 3.2em minmax(0, 1fr) auto;
+        grid-template-columns: auto 3em minmax(0, 1fr) auto;
     }
 
     .schedule-item-actions {
-        grid-column: 1 / -1;
+        grid-column: 3 / -1;
         justify-content: flex-end;
     }
 }
 
 .schedule-item.now {
-    outline: 2px solid var(--mud-palette-success);
+    background: color-mix(in srgb, var(--mud-palette-success) 14%, transparent);
 }
 
 .schedule-item.clash .schedule-item-time {
     color: var(--mud-palette-error);
+    opacity: 1;
 }
 
 .schedule-drag-handle {
     cursor: grab;
     touch-action: none;
     display: flex;
-    padding: 6px 2px;
+    padding: 4px 0;
+    opacity: 0.3;
+}
+
+.schedule-item:hover .schedule-drag-handle {
     opacity: 0.7;
 }
 
 .schedule-item-time {
     font-variant-numeric: tabular-nums;
-    opacity: 0.8;
+    opacity: 0.6;
 }
 
 .schedule-item-name {
     cursor: pointer;
     overflow-wrap: anywhere;
+}
+
+.schedule-fill-in {
+    margin-left: 6px;
+    font-size: 0.8em;
+    color: var(--mud-palette-warning);
 }
 
 .schedule-clash-note {
@@ -165,34 +166,31 @@
 }
 
 .schedule-item-length {
+    cursor: pointer;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
+    opacity: 0.7;
 }
 
 .schedule-adjustment {
     margin-left: 4px;
-    font-size: 0.8em;
+    font-size: 0.85em;
     color: var(--mud-palette-warning);
 }
 
 .schedule-item-actions {
     display: flex;
-    gap: 4px;
 }
 
 .schedule-item-actions ::deep .mud-button-root {
-    min-width: 40px;
-    padding: 2px 6px;
+    min-width: 36px;
+    padding: 0 4px;
 }
 
 .schedule-add {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding-top: 6px;
+    opacity: 0.8;
 }
 
-/* SortableJS adds this class to the item being dragged; the element itself is ours, so it is scoped. */
 .schedule-item.schedule-drag-ghost {
     opacity: 0.4;
 }

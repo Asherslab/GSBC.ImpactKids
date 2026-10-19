@@ -21,11 +21,17 @@ those need to know what is on now and what is next, per group.
 **Where it stands (2026-10-19).** Steps 1–4 below are built and were driven in the app: item templates,
 schedule templates with groups and splits, a new service taking its type's default, applying a
 template, clock times, +5 / −1 and the item dialog, with on-the-night changes landing as logged
-adjustments (checked in the database). **Not yet seen working:**
+adjustments (checked in the database). **Not yet seen working:** dragging, which the browser used
+for testing cannot do — it needs a phone and a desktop.
 
-- dragging, which the browser used for testing cannot do — it needs a phone and a desktop;
-- typing a start time into the time field (`ScheduleTimeField`), for the same reason. The 18:30 in
-  the local test data was set in the database.
+**Start times are two selects, hour then minute.** The browser's own `<input type="time">` was tried
+first: Safari on a Mac offers it as typing only, with no picker, and a time typed into it was saved as
+null. MudTimePicker's clock dial was ruled out before that, as too slow to use.
+
+**The editor is deliberately quiet.** The first version put −1 / +1 / +5, group toggles, an add-item
+box and four block icons on screen at once, and was hard to read. Now the adjust buttons show only on
+a service's schedule on its own day, block and lane actions sit in ⋮ menus, a lane is labelled by its
+groups, and adding is one small menu per lane.
 
 Step 5, the per-group label feed and segment timing, has not started.
 

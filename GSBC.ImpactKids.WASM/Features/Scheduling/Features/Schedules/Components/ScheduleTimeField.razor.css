@@ -1,0 +1,22 @@
+.schedule-time-field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.schedule-time-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) 36px;
+    align-items: center;
+    gap: 6px;
+}
+
+.schedule-time-colon {
+    font-size: 1.4em;
+    opacity: 0.6;
+}
+
+.schedule-time-field ::deep .schedule-time-label,
+.schedule-time-field ::deep .schedule-time-help {
+    opacity: 0.7;
+}

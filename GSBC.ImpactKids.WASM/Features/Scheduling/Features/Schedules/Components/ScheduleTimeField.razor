@@ -1,12 +1,51 @@
-@* A plain time of day field. Deliberately not MudTimePicker: its clock-dial dialog is slow to use,
-   where the browser's own time input gives a phone its native wheel and a desktop a typed 18:30. *@
-<MudTextField T="string"
-              Value="@Text"
-              ValueChanged="@OnChanged"
-              InputType="InputType.Time"
-              ReadOnly="@ReadOnly"
-              Label="@Label"
-              HelperText="@HelperText"
-              Variant="Variant.Filled"
-              Clearable="@(!ReadOnly)"
-              Class="@Class"/>
+@* A time of day as two taps: hour, then minute. Deliberately neither MudTimePicker's clock dial
+   (slow) nor the browser's time input (Safari on a Mac offers typing only, with no picker). *@
+<div class="schedule-time-field @Class">
+    @if (Label != null)
+    {
+        <MudText Typo="Typo.caption" Class="schedule-time-label">@Label</MudText>
+    }
+    <div class="schedule-time-row">
+        <MudSelect T="int?"
+                   Value="@Value?.Hours"
+                   ValueChanged="@SetHour"
+                   ReadOnly="@ReadOnly"
+                   Placeholder="Hour"
+                   Variant="Variant.Filled"
+                   Margin="Margin.Dense"
+                   AnchorOrigin="Origin.BottomLeft"
+                   MaxHeight="320">
+            @for (int hour = 0; hour < 24; hour++)
+            {
+                int h = hour;
+                <MudSelectItem T="int?" Value="@h">@h.ToString("00")</MudSelectItem>
+            }
+        </MudSelect>
+        <span class="schedule-time-colon">:</span>
+        <MudSelect T="int?"
+                   Value="@Value?.Minutes"
+                   ValueChanged="@SetMinute"
+                   ReadOnly="@(ReadOnly || Value == null)"
+                   Placeholder="Min"
+                   Variant="Variant.Filled"
+                   Margin="Margin.Dense"
+                   AnchorOrigin="Origin.BottomLeft"
+                   MaxHeight="320">
+            @foreach (int minute in Minutes)
+            {
+                <MudSelectItem T="int?" Value="@minute">@minute.ToString("00")</MudSelectItem>
+            }
+        </MudSelect>
+        @if (Value != null && !ReadOnly)
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.Clear"
+                           Size="Size.Small"
+                           aria-label="No set time"
+                           OnClick="@(() => ValueChanged.InvokeAsync(null))"/>
+        }
+    </div>
+    @if (HelperText != null)
+    {
+        <MudText Typo="Typo.caption" Class="schedule-time-help">@HelperText</MudText>
+    }
+</div>

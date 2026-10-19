@@ -1,4 +1,3 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
 
 namespace GSBC.ImpactKids.WASM.Features.Scheduling.Features.Schedules.Components;
@@ -23,15 +22,19 @@ public partial class ScheduleTimeField
     [Parameter]
     public string? Class { get; set; }
 
-    // <input type="time"> speaks "HH:mm" whatever the phone's locale shows.
-    private string? Text => Value is { } value ? $"{value.Hours:00}:{value.Minutes:00}" : null;
+    /// <summary>Every five minutes - plus the time already set, if it is not on one.</summary>
+    private IEnumerable<int> Minutes =>
+        Enumerable.Range(0, 12).Select(i => i * 5)
+            .Append(Value?.Minutes ?? 0)
+            .Distinct()
+            .Order();
 
-    private Task OnChanged(string? text)
-    {
-        TimeSpan? value = TimeSpan.TryParseExact(text, @"hh\:mm", CultureInfo.InvariantCulture, out TimeSpan parsed)
-            ? parsed
-            : null;
+    // Picking an hour first gives :00, so one tap is enough for an on-the-hour time.
+    private Task SetHour(int? hour) =>
+        ValueChanged.InvokeAsync(hour == null ? null : new TimeSpan(hour.Value, Value?.Minutes ?? 0, 0));
 
-        return ValueChanged.InvokeAsync(value);
-    }
+    private Task SetMinute(int? minute) =>
+        Value == null || minute == null
+            ? Task.CompletedTask
+            : ValueChanged.InvokeAsync(new TimeSpan(Value.Value.Hours, minute.Value, 0));
 }
