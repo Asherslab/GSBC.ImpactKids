@@ -181,6 +181,19 @@ public partial class ScheduleEditor
             ItemTemplateId = templateId
         }));
 
+    /// <summary>The ✕ on a row. Asks first: a stray tap mid-programme would otherwise lose a fill-in and the night's changes with it.</summary>
+    private async Task RemoveItem(ScheduleItem item)
+    {
+        bool? confirmed = await DialogService.ShowMessageBoxAsync(
+            $"Remove {item.DisplayName}?", "", yesText: "Remove", cancelText: "Cancel");
+
+        if (confirmed == true)
+            await Send(
+                schedule => ScheduleEdits.RemoveItem(schedule, item.Id),
+                () => ScheduleService.RemoveItem(new BasicReadRequest { Guid = item.Id })
+            );
+    }
+
     private Task EditItem(ScheduleItem item) =>
         ScheduleItemDialog.Open(DialogService, item, ScheduleId, null, _underway);
 

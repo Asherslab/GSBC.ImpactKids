@@ -53,11 +53,12 @@
     flex-direction: column;
 }
 
-/* Rows - items and splits alike - share columns: handle, time, name, length, then the night's buttons. */
+/* Rows - items and splits alike - share columns: handle, time, name, length, remove (or a split's
+   menu), then the night's buttons. */
 .schedule-item,
 .schedule-split-header {
     display: grid;
-    grid-template-columns: auto 3em minmax(0, 1fr) auto auto;
+    grid-template-columns: auto 3em minmax(0, 1fr) auto auto auto;
     align-items: center;
     gap: 8px;
     padding: 8px 4px;
@@ -139,12 +140,29 @@
     color: var(--mud-palette-primary);
 }
 
+/* The ✕ and a split's ⋮ always take the last column, so they line up down the right-hand edge
+   whether or not the night's buttons are showing. */
+.schedule-item-remove {
+    display: flex;
+    opacity: 0.7;
+    grid-column: -2 / -1;
+}
+
+.schedule-split-header ::deep .mud-menu {
+    grid-column: -2 / -1;
+}
+
+.schedule-item:hover .schedule-item-remove {
+    opacity: 1;
+}
+
 @container (max-width: 520px) {
     .schedule-item {
-        grid-template-columns: auto 3em minmax(0, 1fr) auto;
+        grid-template-columns: auto 3em minmax(0, 1fr) auto auto;
     }
 
     .schedule-item-actions {
+        grid-row: 2;
         grid-column: 3 / -1;
         justify-content: flex-end;
     }

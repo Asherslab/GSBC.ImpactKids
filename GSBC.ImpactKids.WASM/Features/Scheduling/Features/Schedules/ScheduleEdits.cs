@@ -65,6 +65,12 @@ public static class ScheduleEdits
                 }).ToImmutableList()
         };
 
+    public static Schedule RemoveItem(Schedule schedule, Guid itemId)
+    {
+        Schedule without = MapLanes(schedule, lane => lane with { Items = lane.Items.RemoveAll(i => i.Id == itemId) });
+        return ScheduleLayout.Build(without, ScheduleLayout.Entries(without));
+    }
+
     /// <summary>A split to a new entry position in the main list.</summary>
     public static Schedule MoveBlock(Schedule schedule, Guid blockId, int position)
     {

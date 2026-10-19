@@ -126,6 +126,13 @@ else
                                OnClick="@(() => Adjust(item, 5))">+5</MudButton>
                 </span>
             }
+            <span class="schedule-item-remove">
+                <MudIconButton Icon="@Icons.Material.Filled.Close"
+                               Size="Size.Small"
+                               Color="Color.Error"
+                               aria-label="@($"Remove {item.DisplayName}")"
+                               OnClick="@(() => RemoveItem(item))"/>
+            </span>
         </div>
     };
 
@@ -133,15 +140,26 @@ else
     private RenderFragment SplitRow(ScheduleBlock block) => __builder =>
     {
         ImmutableList<LaneTiming> laneTimings = ScheduleTimeline.Lanes(block);
-        TimedItem? first = block.Lanes.SelectMany(l => l.Items).Select(i => _timed.GetValueOrDefault(i.Id)).FirstOrDefault(t => t?.Start != null);
+        List<TimedItem> timedItems = block.Lanes.SelectMany(l => l.Items)
+            .Select(i => _timed.GetValueOrDefault(i.Id))
+            .OfType<TimedItem>()
+            .ToList();
+        DateTime? splitStart = timedItems.Where(t => t.Start != null).Select(t => t.Start).Min();
+        DateTime? splitEnd   = timedItems.Where(t => t.End != null).Select(t => t.End).Max();
 
         <div class="schedule-split" data-block-id="@block.Id" @key="block.Id">
             <div class="schedule-split-header">
                 <span class="schedule-drag-handle" aria-label="Drag to move">
                     <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small"/>
                 </span>
-                <span class="schedule-item-time">@(first?.Start is { } start ? ScheduleFormat.Clock(start) : "")</span>
-                <span class="schedule-split-title">Split</span>
+                <span class="schedule-item-time">@(splitStart is { } start ? ScheduleFormat.Clock(start) : "")</span>
+                <span>
+                    <span class="schedule-split-title">Split</span>
+                    @if (splitStart is { } from && splitEnd is { } to)
+                    {
+                        <span class="schedule-muted"> · @ScheduleFormat.Clock(from)–@ScheduleFormat.Clock(to)</span>
+                    }
+                </span>
                 <span class="schedule-item-length">@ScheduleFormat.Minutes(laneTimings.Count == 0 ? 0 : laneTimings.Max(l => l.Minutes))</span>
                 <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="true" AriaLabel="Split options">
                     <MudMenuItem Disabled="@(block.Lanes.Count >= ScheduleRules.MaxLanes)" OnClick="@(() => AddLane(block))">Add a lane</MudMenuItem>
