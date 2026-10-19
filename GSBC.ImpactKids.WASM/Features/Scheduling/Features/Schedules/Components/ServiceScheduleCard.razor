@@ -82,14 +82,21 @@
 
 @code {
 
-    // A line: start time, name, length. A section is its heading only; what is under it is detail.
+    // A line: start time, name, length. A section's name is bold - it holds the time - and the items
+    // under it follow, indented, with no time of their own.
     private RenderFragment Row(ScheduleItem item) => __builder =>
     {
         TimedItem? timed = _timed.GetValueOrDefault(item.Id);
 
-        <div class="card-row">
+        <div class="card-row @(item.IsSection ? "card-section" : "")">
             <span class="card-time">@Clock(timed?.Start)</span>
-            <span class="card-name">@item.DisplayName</span>
+            <span class="card-name">
+                @item.DisplayName
+                @foreach (ScheduleItem child in item.Children)
+                {
+                    <span class="card-child">@child.DisplayName</span>
+                }
+            </span>
             <span class="card-length">
                 @(timed is { Fills: true, End: { } end } ? $"until {ScheduleFormat.Clock(end)}" : ScheduleFormat.Minutes(item.Minutes))
             </span>

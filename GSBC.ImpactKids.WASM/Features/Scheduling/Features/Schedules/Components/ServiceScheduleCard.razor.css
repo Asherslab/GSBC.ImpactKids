@@ -35,6 +35,18 @@
     overflow-wrap: anywhere;
 }
 
+.card-section .card-name {
+    font-weight: 600;
+}
+
+/* The songs or games under a section: one per line, indented, lighter than the heading. */
+.card-child {
+    display: block;
+    font-weight: 400;
+    padding-left: 12px;
+    opacity: 0.8;
+}
+
 .card-length {
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
