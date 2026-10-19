@@ -3,7 +3,7 @@ title: Sign in — the cookie, the bearer token, and the local bypass
 kind: reference
 status: current
 module: auth
-verified: 2026-10-19
+verified: 2026-10-20
 code:
   - GSBC.ImpactKids.YARP
   - GSBC.ImpactKids.Grpc/Services/CustomClaimsTransformation.cs
@@ -237,8 +237,14 @@ can write: it has its own scheme, its own policy and its own service, and touche
 **The `/machine/**` route has no `AuthorizationPolicy`, and must not get one.** A policy would demand a
 cookie the agent cannot have, and would run `AddBearerTokenToHeadersTransform`, which overwrites
 `Authorization`. The route forwards the path unchanged; the gRPC service maps nothing under `machine/`
-except `IProPresenterAgentService` and the token endpoint. **Never add a `PathRemovePrefix` to it** —
-`/machine/internal/...` would become `/internal/...`.
+except `IProPresenterAgentService`, the token endpoint, and `machine/stream`. **Never add a
+`PathRemovePrefix` to it** — `/machine/internal/...` would become `/internal/...`.
+
+**`machine/stream` is the browser's change-event stream (`api/stream`) at the machine's path**, with
+`MachineOnly` — the same handler and channel, not a second implementation. It exists because the
+proxy's `api/` route demands a browser session and turns a bearer-only caller away before the gRPC
+service sees it. Its events name an entity type and carry no data; the agent uses a schedule event to
+re-read tonight, so a press of Next reaches the stage in under a second.
 
 | | |
 |---|---|
@@ -246,7 +252,7 @@ except `IProPresenterAgentService` and the token endpoint. **Never add a `PathRe
 | The rule that matters | the code may only be redirected to `http://127.0.0.1` or `http://[::1]` — `ProPresenterEnrolment.IsLoopbackRedirect`, checked by the page **and** by `Approve`. PKCE does nothing against somebody who starts the flow themselves; only this does |
 | Token endpoint | `POST /machine/token`, anonymous and internet-reachable — the one anonymous endpoint the proxy routes. Rate limited (30/min, all callers). A failed code check burns the code; a claim is atomic |
 | Credentials | a machine secret (hash on the `ProPresenterMachines` row) traded for 15-minute JWTs signed with a key on the same row, key id = machine id |
-| Scheme / policy | `ProPresenterMachine` / `MachineOnly`, mapped with `RequireMachine()` on `ProPresenterAgentService` only. No `sub`, `MapInboundClaims = false` — the same guard as the display token |
+| Scheme / policy | `ProPresenterMachine` / `MachineOnly`, mapped with `RequireMachine()` on `ProPresenterAgentService`, and on `machine/stream`. No `sub`, `MapInboundClaims = false` — the same guard as the display token |
 | Revocation | deleting the row, on `/ProPresenter/Machines`. Immediate in the serving process (`MachineSigningKeyProvider.RefreshAsync`), ≤ 15 s on other replicas |
 
 Verified end to end on 2026-10-19 on the full stack (`GSBC.ImpactKids.AppHost: https`):
@@ -261,6 +267,7 @@ Verified end to end on 2026-10-19 on the full stack (`GSBC.ImpactKids.AppHost: h
 | Machine token on `Machines.Approve`, `Users`, `People.BasicReadMultiple` **direct to the gRPC service** | 401 — no other scheme accepts its issuer |
 | `/machine/internal/...`, `/machine/../internal/...`, `%2e%2e` | never reach `internal/` (401 unmapped, or normalised to the WASM shell) |
 | Disconnect on the admin page | live token refused on its next call, secret answers `invalid_client`; the running agent re-enrolled within 50 s |
+| `/machine/stream` with no token, and with a malformed one (2026-10-20) | 401, via the proxy; with the agent's token it streams, and a Next reached ProPresenter in 0.48 s |
 
 ## Being enabled is a database fact, not an Auth0 one
 

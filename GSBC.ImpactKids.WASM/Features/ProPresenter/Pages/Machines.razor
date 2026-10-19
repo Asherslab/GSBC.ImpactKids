@@ -12,8 +12,9 @@
 
     <MudText Typo="Typo.body2" Class="mb-4">
         A small tool on the ProPresenter Mac connects it to Impact Kids. It starts by itself when
-        the Mac logs in, takes its settings from this page, and serves feeds that ProPresenter can
-        show - such as the names of children here for the first time today.
+        the Mac logs in, takes its settings from this page, runs a ProPresenter timer from tonight's
+        schedule, and serves feeds that ProPresenter can show - what is on now and next, and the names
+        of children here for the first time today.
     </MudText>
 
     <MudExpansionPanels Class="mb-4">
@@ -34,11 +35,26 @@
                 </li>
                 <li>Set its ProPresenter address and port below to match ProPresenter's Network preferences.</li>
                 <li>
-                    In ProPresenter, add a text box linked to the RSS feed
-                    <code>@ProPresenterFeeds.Url(ProPresenterFeeds.FirstTimersPath)</code>
-                    with <b>Title</b> only.
+                    Choose the <b>timer that follows the schedule</b> below - one of ProPresenter's own
+                    timers. Put that timer on the stage layout; on the night it counts down whatever is on.
+                </li>
+                <li>
+                    On the stage layout, add text boxes linked to these RSS feeds, each with <b>Title</b> only:
+                    <ul>
+                        <li>what is on now: <code>@ProPresenterFeeds.Url(ProPresenterFeeds.NowPath)</code></li>
+                        <li>what is next: <code>@ProPresenterFeeds.Url(ProPresenterFeeds.NextPath)</code></li>
+                        <li>
+                            one group's own label during a split - add its name:
+                            <code>@(ProPresenterFeeds.Url(ProPresenterFeeds.NowPath))?group=4-6</code>
+                        </li>
+                        <li>first-timers' names: <code>@ProPresenterFeeds.Url(ProPresenterFeeds.FirstTimersPath)</code></li>
+                    </ul>
                 </li>
             </ol>
+            <MudText Typo="Typo.body2" Class="mb-2">
+                ProPresenter reads a feed every 10 seconds, so after Next the labels can take that long to
+                change. The timer waits for them, so the two change together.
+            </MudText>
             <MudText Typo="Typo.body2">
                 To update the tool, download it again and rerun <code>./install.sh</code>.
             </MudText>
