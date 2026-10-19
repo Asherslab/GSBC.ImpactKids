@@ -12,6 +12,9 @@ namespace GSBC.ImpactKids.ProPresenterAgent.Feeds;
 /// <item><b>The redraw is ours to cause.</b> ProPresenter re-fetches every 10 seconds but does not
 /// repaint. So when a fetch hands it different text from the last fetch, the stage is told to redraw
 /// half a second later - after ProPresenter has parsed what it just got, not on a guess.</item>
+/// <item><b>Never an empty title.</b> Given <c>&lt;title&gt;&lt;/title&gt;</c>, ProPresenter keeps showing
+/// the last text it had rather than clearing the box. Blank text goes out as a single non-breaking
+/// space, which draws nothing but is not empty.</item>
 /// </list>
 /// </summary>
 public sealed class LabelFeed(string name, ProPresenterApi proPresenter, ILogger logger)
@@ -19,10 +22,15 @@ public sealed class LabelFeed(string name, ProPresenterApi proPresenter, ILogger
     /// <summary>How long after a changed fetch the stage is redrawn - and the schedule's timer started, to land with it.</summary>
     public static readonly TimeSpan RedrawDelay = TimeSpan.FromMilliseconds(500);
 
+    private const string Blank = "\u00A0";
+
     private string? _lastServed;
 
     public IResult Serve(string text)
     {
+        if (string.IsNullOrWhiteSpace(text))
+            text = Blank;
+
         if (!string.Equals(_lastServed, text, StringComparison.Ordinal))
         {
             logger.LogInformation("{Feed} now reads \"{Text}\"", name, text);
