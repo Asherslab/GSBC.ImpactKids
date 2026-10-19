@@ -85,55 +85,81 @@ public sealed class StageDriver(
     /// <summary>The label for the next feed: the next row in the schedule, by name. Before the night starts, the first.</summary>
     public string NextLabel() => View(DateTime.UtcNow)?.NextLabel ?? "";
 
-    // Holding the timer for the label - see ApplyAsync.
+    // Holding the timer for the labels - see ApplyAsync.
 
-    /// <summary>A stage now feed counts as read while ProPresenter fetched it within this long - two of its 10-second polls and a bit.</summary>
+    /// <summary>A feed counts as read while ProPresenter fetched it within this long - two of its 10-second polls and a bit.</summary>
     private static readonly TimeSpan FeedReadWindow = TimeSpan.FromSeconds(25);
 
-    /// <summary>The longest a new row's timer waits for its label to be fetched, if ProPresenter misses a poll.</summary>
-    private static readonly TimeSpan LabelWaitLimit = TimeSpan.FromSeconds(12);
+    /// <summary>The longest a timer waits for its labels to be fetched, if ProPresenter misses a poll. Its polls drift past 10 s.</summary>
+    private static readonly TimeSpan LabelWaitLimit = TimeSpan.FromSeconds(15);
 
-    private DateTime _lastNowFetch = DateTime.MinValue;
-    private string?  _labelOnStage;
-    private string?  _waitingFor;
+    /// <summary>What ProPresenter last fetched from one of the stage's feeds, and when.</summary>
+    private sealed class FeedOnStage
+    {
+        public DateTime LastFetch = DateTime.MinValue;
+        public string?  Label;
+
+        public bool IsRead(DateTime now) => now - LastFetch < FeedReadWindow;
+
+        /// <summary>True while ProPresenter reads this feed and has not yet been given <paramref name="label"/>.</summary>
+        public bool Behind(DateTime now, string label) => IsRead(now) && Label != label;
+    }
+
+    private readonly FeedOnStage _nowFeed  = new();
+    private readonly FeedOnStage _nextFeed = new();
+
+    private bool    _holding;
+    private string? _holdKey;
 
     /// <summary>
-    /// ProPresenter has just fetched the stage's now feed and been given <paramref name="label"/>; its
-    /// redraw lands <see cref="Feeds.LabelFeed.RedrawDelay"/> later. A timer held back for this label
-    /// starts at that same moment.
+    /// Bumped by every new hold. A hold's fallback only ends that hold: an earlier fallback, still
+    /// sleeping when a later press started a new hold, must not start the new row's timer early.
     /// </summary>
-    public void NowFeedServed(string label)
-    {
-        _lastNowFetch = DateTime.UtcNow;
-        _labelOnStage = label;
+    private int _holdGeneration;
 
-        if (_waitingFor == label)
+    /// <summary>ProPresenter has just fetched the stage's now feed and been given <paramref name="label"/>.</summary>
+    public void NowFeedServed(string label) => FeedServed(_nowFeed, label);
+
+    /// <summary>ProPresenter has just fetched the stage's next feed and been given <paramref name="label"/>.</summary>
+    public void NextFeedServed(string label) => FeedServed(_nextFeed, label);
+
+    /// <summary>
+    /// A fetch lands its redraw <see cref="Feeds.LabelFeed.RedrawDelay"/> later. A held timer checks
+    /// again then, and starts with that redraw if every label it was waiting for is now on the stage.
+    /// </summary>
+    private void FeedServed(FeedOnStage feed, string label)
+    {
+        feed.LastFetch = DateTime.UtcNow;
+        feed.Label = label;
+
+        if (!_holding)
+            return;
+
+        _ = Task.Run(async () =>
         {
-            _ = Task.Run(async () =>
-            {
-                await Task.Delay(Feeds.LabelFeed.RedrawDelay);
-                await ApplyAsync(CancellationToken.None);
-            });
-        }
+            await Task.Delay(Feeds.LabelFeed.RedrawDelay);
+            await ApplyAsync(CancellationToken.None);
+        });
     }
 
     /// <summary>
     /// Sets the chosen ProPresenter timer to match what is on now, if that has changed.
     /// <para>
-    /// <b>A new row's timer waits for its label.</b> ProPresenter only reads the label feed every 10
+    /// <b>A new row's timer waits for its labels.</b> ProPresenter only reads the label feeds every 10
     /// seconds, and nothing makes it read sooner - a stage redraw and a layout switch were both tried
     /// on 2026-10-20 and changed nothing. A timer started at once would count down under the previous
-    /// row's name for up to 10 seconds. So when the label changes the timer is held until ProPresenter
-    /// has fetched the new label (<see cref="NowFeedServed"/>), and starts with the redraw. The seconds
-    /// are worked out then, so the wait is already taken off.
+    /// row's labels for up to 10 seconds. So while any feed ProPresenter reads - now <b>and</b> next -
+    /// has not yet been given its new text, the timer is held, and starts with the redraw of the
+    /// fetch that brings the last of them. Both matter: Start Night going from waiting to running
+    /// keeps its now label but its next label changes.
     /// </para>
     /// <para>
-    /// Not held when the label is unchanged (a +5, or the next song within a section) - the screen is
-    /// already right. Not held when nothing reads the now feed, and never for longer than
-    /// <see cref="LabelWaitLimit"/>, so a missed poll cannot leave the timer on the old row.
+    /// Not held when every label is already right (a +5, or the next song within a section). A feed
+    /// nothing reads is not waited for, and no hold lasts longer than <see cref="LabelWaitLimit"/>, so
+    /// a missed poll cannot leave the timer on the old row.
     /// </para>
     /// </summary>
-    public async Task ApplyAsync(CancellationToken token, bool waitLimitReached = false)
+    public async Task ApplyAsync(CancellationToken token, int? fallbackFor = null)
     {
         if (state.Configuration?.ScheduleTimerUuid is not { } timerUuid)
             return;
@@ -153,28 +179,36 @@ public sealed class StageDriver(
                 return;
 
             string label = view?.Now?.Label ?? "";
+            string next  = view?.NextLabel ?? "";
 
-            bool feedIsRead    = now - _lastNowFetch < FeedReadWindow;
-            bool labelOnScreen = label == _labelOnStage;
+            bool labelsBehind = _nowFeed.Behind(now, label) || _nextFeed.Behind(now, next);
+            bool fallbackDue  = _holding && fallbackFor == _holdGeneration;
 
-            if (feedIsRead && !labelOnScreen && !waitLimitReached)
+            if (labelsBehind && !fallbackDue)
             {
-                if (_waitingFor != label)
+                // A new hold for a new state; a repeat check of the same state keeps the hold it has.
+                if (!_holding || _holdKey != key)
                 {
-                    _waitingFor = label;
-                    logger.LogInformation("Stage: holding the timer for \"{Label}\" until ProPresenter shows it", label);
+                    _holding = true;
+                    _holdKey = key;
+                    int generation = ++_holdGeneration;
+
+                    logger.LogInformation("Stage: holding the timer for \"{Label}\" / next \"{Next}\" until ProPresenter shows them", label, next);
 
                     _ = Task.Run(async () =>
                     {
                         await Task.Delay(LabelWaitLimit);
-                        await ApplyAsync(CancellationToken.None, waitLimitReached: true);
+                        await ApplyAsync(CancellationToken.None, fallbackFor: generation);
                     });
                 }
 
                 return;
             }
 
-            _waitingFor = null;
+            if (fallbackDue && labelsBehind)
+                logger.LogInformation("Stage: ProPresenter did not fetch the labels in time; starting the timer anyway");
+
+            _holding = false;
 
             List<ProPresenterApi.TimerId>? timers = await proPresenter.GetTimersAsync(token);
             ProPresenterApi.TimerId?       timer  = timers?.FirstOrDefault(t => t.Uuid == timerUuid);

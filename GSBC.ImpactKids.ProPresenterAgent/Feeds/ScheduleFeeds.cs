@@ -27,5 +27,11 @@ public sealed class ScheduleFeeds(StageDriver stage, ProPresenterApi proPresente
         return result;
     }
 
-    public IResult Next() => Feed("Next").Serve(stage.NextLabel());
+    public IResult Next()
+    {
+        string  label  = stage.NextLabel();
+        IResult result = Feed("Next").Serve(label);
+        stage.NextFeedServed(label);
+        return result;
+    }
 }
