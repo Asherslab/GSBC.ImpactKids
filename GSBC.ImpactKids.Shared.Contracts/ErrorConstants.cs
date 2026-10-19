@@ -78,4 +78,9 @@ public static class ErrorConstants
         "This link can only connect the computer it was opened on. Start the setup again from the ProPresenter machine";
     public const string ProPresenterChallengeInvalid =
         "This connect link is incomplete or damaged. Start the setup again from the ProPresenter machine";
+
+    public const string ScheduleItemTemplateNotFound = "Schedule Item Template Not Found";
+    public const string ScheduleItemNameNull         = "Schedule Item Name Must Be Set";
+    public const string ScheduleItemMinutesInvalid   = "Schedule Item Length Must Be Between 0 And 600 Minutes";
+    public const string ScheduleItemStartsAtInvalid  = "Schedule Item Start Time Must Be A Time Of Day";
 }

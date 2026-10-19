@@ -12,6 +12,7 @@ using GSBC.ImpactKids.Shared.Contracts.Entities.Features.People.MedicalNotes;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.ProPresenter;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.Schedules;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
 using GSBC.ImpactKids.WASM.Features.Attendance;
@@ -56,6 +57,7 @@ public static class StateStoreExtensions
             return services
                 .AddEntityStore<Service>()
                 .AddEntityStore<ServiceType>()
+                .AddEntityStore<ScheduleItemTemplate>()
                 .AddEntityStore<SchoolTerm>()
                 .AddEntityStore<DollarStoreEntry>()
                 .AddEntityStore<MemorisationEntry>()

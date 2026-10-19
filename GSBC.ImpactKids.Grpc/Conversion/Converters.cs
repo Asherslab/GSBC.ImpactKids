@@ -9,6 +9,8 @@ using GSBC.ImpactKids.Grpc.Data.Models.ProPresenter;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.ProPresenter;
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling;
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling.School;
+using GSBC.ImpactKids.Grpc.Data.Models.Scheduling.Schedules;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.Schedules;
 using GSBC.ImpactKids.Shared.Contracts.Entities;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Attendance;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Games;
@@ -114,6 +116,12 @@ public partial class ServiceConverter(
 public partial class ServiceTypeConverter : IConverter<DbServiceType, ServiceType>
 {
     public partial ServiceType Convert(DbServiceType input);
+}
+
+[Mapper]
+public partial class ScheduleItemTemplateConverter : IConverter<DbScheduleItemTemplate, ScheduleItemTemplate>
+{
+    public partial ScheduleItemTemplate Convert(DbScheduleItemTemplate input);
 }
 
 [Mapper]

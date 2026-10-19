@@ -19,6 +19,7 @@ public partial class GsbcDbContext(
 
         BuildPeopleModel(modelBuilder);
         BuildScheduleModel(modelBuilder);
+        BuildSchedulesModel(modelBuilder);
         BuildScriptureModel(modelBuilder);
         BuildAttendanceModel(modelBuilder);
         BuildGamesModel(modelBuilder);

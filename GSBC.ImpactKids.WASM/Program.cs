@@ -97,6 +97,7 @@ builder.Services.AddAuthenticatedGrpcClient<IElvantoService>();
 builder.Services.AddAuthenticatedGrpcClient<ISchoolTermsService>();
 builder.Services.AddAuthenticatedGrpcClient<IServicesService>();
 builder.Services.AddAuthenticatedGrpcClient<IServiceTypeService>();
+builder.Services.AddAuthenticatedGrpcClient<IScheduleItemTemplateService>();
 builder.Services.AddAuthenticatedGrpcClient<IDollarStoreEntryService>();
 builder.Services.AddAuthenticatedGrpcClient<IBibleService>();
 builder.Services.AddAuthenticatedGrpcClient<IMemoryVersesService>();
