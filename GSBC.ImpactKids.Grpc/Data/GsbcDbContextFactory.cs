@@ -53,6 +53,8 @@ public class GsbcDbContextFactory : IDesignTimeDbContextFactory<GsbcDbContext>
 
             ProPresenterMachines = null!,
 
+            Songs = null!,
+
             ScheduleItemTemplates   = null!,
             Schedules               = null!,
             ScheduleGroups          = null!,

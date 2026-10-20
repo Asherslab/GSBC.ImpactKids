@@ -674,6 +674,9 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.Property<DateTimeOffset?>("LastSeenAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("LibrariesJson")
+                        .HasColumnType("text");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -697,6 +700,9 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("SecretHash")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SongLibraryUuidsJson")
                         .HasColumnType("text");
 
                     b.Property<string>("TimersJson")
@@ -1022,6 +1028,57 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Terms");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Songs.DbSong", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContentHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ContentJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("FirstSyncedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Library")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("ProPresenterUuid")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset?>("RemovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("SyncedByMachineId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProPresenterUuid")
+                        .IsUnique();
+
+                    b.HasIndex("SyncedByMachineId");
+
+                    b.ToTable("Songs");
                 });
 
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Sync.DbElvantoFamilyLink", b =>
@@ -1749,6 +1806,16 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Schedule");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Songs.DbSong", b =>
+                {
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.ProPresenter.DbProPresenterMachine", "SyncedByMachine")
+                        .WithMany()
+                        .HasForeignKey("SyncedByMachineId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("SyncedByMachine");
                 });
 
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Sync.DbSyncAuditLog", b =>

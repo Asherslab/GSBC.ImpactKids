@@ -1,0 +1,26 @@
+.lyrics {
+    margin-top: 8px;
+}
+
+/* Each part carries its group colour from ProPresenter down its edge, as the slides do there. */
+.lyrics-group {
+    border-left: 4px solid var(--group-color, var(--mud-palette-lines-default));
+    padding: 2px 0 2px 12px;
+    margin-bottom: 20px;
+}
+
+.lyrics-group-name {
+    margin: 0 0 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    opacity: 0.7;
+}
+
+.lyrics-slide {
+    margin: 0 0 10px;
+    font-size: 1.1rem;
+    line-height: 1.5;
+    white-space: pre-line;
+}

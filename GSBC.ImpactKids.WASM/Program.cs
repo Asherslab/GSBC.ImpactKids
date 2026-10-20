@@ -7,6 +7,7 @@ using GSBC.ImpactKids.Shared.Contracts.Services.Features.Elvanto;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.Games;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.People;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.ProPresenter;
+using GSBC.ImpactKids.Shared.Contracts.Services.Features.Songs;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.Scheduling;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.Scheduling.School;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.Scripture;
@@ -113,6 +114,7 @@ builder.Services.AddAuthenticatedGrpcClient<IPickupDisplayKeyService>();
 // The admin end of the ProPresenter machines. The machines themselves never use this app - their
 // agent talks to IProPresenterAgentService on its own route.
 builder.Services.AddAuthenticatedGrpcClient<IProPresenterMachineService>();
+builder.Services.AddAuthenticatedGrpcClient<ISongService>();
 builder.Services.AddAuthenticatedGrpcClient<IAttendanceItemTypeService>();
 builder.Services.AddAuthenticatedGrpcClient<IAttendanceItemRecordService>();
 builder.Services.AddAuthenticatedGrpcClient<IGamePointRecordService>();

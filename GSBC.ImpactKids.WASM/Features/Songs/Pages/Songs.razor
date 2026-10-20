@@ -1,0 +1,84 @@
+@inherits EntityUtilityComponent
+@page "/Songs"
+@inject IRefreshableStore<Song> SongsStore
+
+<PageTitle>Songs</PageTitle>
+
+<MudPaper Elevation="6" Class="mt-4 relative" Style="min-height: 120px">
+    <MudOverlay Visible="@(_songs.IsLoading)" DarkBackground Absolute>
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+    <div class="px-6 pt-4 pb-2">
+        <MudText Typo="Typo.h6">Songs</MudText>
+        <MudText Typo="Typo.body2" Style="opacity: 0.7">
+            The songs in ProPresenter, copied across whenever they change there. Search by name or by any
+            words in the song.
+        </MudText>
+        <MudTextField T="string"
+                      Value="_search"
+                      ValueChanged="OnSearch"
+                      Label="Search songs"
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      Immediate
+                      DebounceInterval="200"
+                      Clearable
+                      Class="mt-2"/>
+        @if (_libraries.Count > 1)
+        {
+            <MudChipSet T="string"
+                        SelectionMode="SelectionMode.MultiSelection"
+                        SelectedValues="_chosenLibraries"
+                        SelectedValuesChanged="OnLibrariesChanged"
+                        CheckMark
+                        Variant="Variant.Outlined"
+                        Class="mt-2">
+                @foreach (string library in _libraries)
+                {
+                    <MudChip T="string" Value="library" Text="@library"/>
+                }
+            </MudChipSet>
+        }
+    </div>
+    @if (_songs.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mx-6 mb-4">@(_songs.Error ?? "An Unexpected error occured")</MudAlert>
+    }
+    <MudTable Items="@_shown" Hover Breakpoint="Breakpoint.None" Dense>
+        <HeaderContent>
+            <MudTh>Name</MudTh>
+            @if (_libraries.Count > 1)
+            {
+                <MudTh>Library</MudTh>
+            }
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Name">
+                <a class="song-link" href="@($"/Songs/{context.Id}")">
+                    <span class="song-name">@context.Name</span>
+                    @if (_previews.GetValueOrDefault(context.Id) is { } preview)
+                    {
+                        <span class="song-preview">@preview</span>
+                    }
+                </a>
+            </MudTd>
+            @if (_libraries.Count > 1)
+            {
+                <MudTd DataLabel="Library">@context.Library</MudTd>
+            }
+        </RowTemplate>
+        <NoRecordsContent>
+            @if (_songs.HasData && _songs.Data!.IsEmpty)
+            {
+                <MudText>
+                    No songs yet. They are copied from ProPresenter by the Mac connected on the
+                    <MudLink Href="/ProPresenter/Machines">ProPresenter page</MudLink>, from the libraries chosen there.
+                </MudText>
+            }
+            else if (_songs.HasData)
+            {
+                <MudText>No song matches "@_search".</MudText>
+            }
+        </NoRecordsContent>
+    </MudTable>
+</MudPaper>

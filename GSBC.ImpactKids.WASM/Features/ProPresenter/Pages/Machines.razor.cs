@@ -17,6 +17,11 @@ namespace GSBC.ImpactKids.WASM.Features.ProPresenter.Pages;
 /// every phone would have the whole team re-reading this table all night. So the page re-renders on
 /// its own timer, and a machine that stops reporting turns offline here without any event at all.
 /// </para>
+/// <para>
+/// <b>And it re-reads on its own timer too</b>, or a machine reporting steadily would turn offline
+/// here 90 seconds after the page loaded: with no event, the "last seen" it judges by never moves on.
+/// Only while this page is open, so it costs one read per open admin page, not per phone.
+/// </para>
 /// </summary>
 public partial class Machines
 {
@@ -30,13 +35,21 @@ public partial class Machines
 
     private static readonly TimeSpan StatusRedrawInterval = TimeSpan.FromSeconds(15);
 
+    /// <summary>
+    /// Matches the agent's report interval, so "last seen" is at most a minute old - inside
+    /// <see cref="ProPresenterMachine.OnlineWindow"/> - while the machine is reporting.
+    /// </summary>
+    private static readonly TimeSpan StatusReloadInterval = TimeSpan.FromSeconds(30);
+
     private AsyncData<ImmutableList<ProPresenterMachine>> _machines = AsyncData<ImmutableList<ProPresenterMachine>>.NotAsked();
 
     private UpdateProPresenterMachineRequest? _editing;
     private string?                           _editingName;
     private ImmutableList<ProPresenterTimer>  _editingTimers = [];
+    private ImmutableList<ProPresenterLibrary> _editingLibraries = [];
     private bool                              _busy;
     private Timer?                            _redraw;
+    private Timer?                            _reload;
 
     protected override async Task OnInitializedAsync()
     {
@@ -46,6 +59,8 @@ public partial class Machines
         RetrieveMachines();
 
         _redraw = new Timer(_ => InvokeAsync(StateHasChanged), null, StatusRedrawInterval, StatusRedrawInterval);
+        // RefreshEvent, not RefreshAll: RefreshAll would answer from its 30 minute cache.
+        _reload = new Timer(_ => InvokeAsync(MachinesStore.RefreshEvent), null, StatusReloadInterval, StatusReloadInterval);
 
         await MachinesStore.RefreshAll();
     }
@@ -75,7 +90,15 @@ public partial class Machines
         _editingTimers = machine.ScheduleTimerUuid is { } chosen && machine.Timers.All(t => t.Uuid != chosen)
             ? machine.Timers.Add(new ProPresenterTimer { Uuid = chosen, Name = "(no longer in ProPresenter)" })
             : machine.Timers;
+
+        // The same for libraries.
+        _editingLibraries = machine.Libraries.AddRange(machine.SongLibraryUuids
+            .Where(uuid => machine.Libraries.All(l => l.Uuid != uuid))
+            .Select(uuid => new ProPresenterLibrary { Uuid = uuid, Name = "(no longer in ProPresenter)" }));
     }
+
+    private string? LibraryName(string? uuid) =>
+        _editingLibraries.FirstOrDefault(l => l.Uuid == uuid)?.Name ?? uuid;
 
     private async Task SaveEdit()
     {
@@ -130,6 +153,7 @@ public partial class Machines
     public override void Dispose()
     {
         _redraw?.Dispose();
+        _reload?.Dispose();
         base.Dispose();
     }
 }

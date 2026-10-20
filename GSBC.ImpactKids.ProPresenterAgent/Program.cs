@@ -5,6 +5,7 @@ using GSBC.ImpactKids.ProPresenterAgent.Enrolment;
 using GSBC.ImpactKids.ProPresenterAgent.Feeds;
 using GSBC.ImpactKids.ProPresenterAgent.ImpactKids;
 using GSBC.ImpactKids.ProPresenterAgent.ProPresenter;
+using GSBC.ImpactKids.ProPresenterAgent.Songs;
 using GSBC.ImpactKids.ProPresenterAgent.Stage;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.ProPresenter;
 using Microsoft.Extensions.Options;
@@ -41,6 +42,7 @@ builder.Services.AddSingleton<ImpactKidsClient>();
 builder.Services.AddSingleton<FirstTimersFeed>();
 builder.Services.AddSingleton<StageDriver>();
 builder.Services.AddSingleton<ScheduleFeeds>();
+builder.Services.AddSingleton<SongSync>();
 
 // The event stream stays open all night; Impact Kids' heartbeats keep it moving.
 builder.Services.AddHttpClient(EventStreamListener.HttpClientName, http => http.Timeout = Timeout.InfiniteTimeSpan);

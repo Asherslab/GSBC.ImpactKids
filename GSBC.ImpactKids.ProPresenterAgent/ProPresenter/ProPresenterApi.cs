@@ -97,6 +97,63 @@ public sealed class ProPresenterApi(HttpClient http, AgentState state, ILogger<P
         }
     }
 
+    /// <summary>ProPresenter's libraries, for the admin page to offer and the song sync to read. Null when ProPresenter does not answer.</summary>
+    public async Task<List<LibraryId>?> GetLibrariesAsync(CancellationToken token)
+    {
+        if (BaseUri is not { } baseUri)
+            return null;
+
+        try
+        {
+            return await http.GetFromJsonAsync<List<LibraryId>>(new Uri(baseUri, "v1/libraries"), token) ?? [];
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException || !token.IsCancellationRequested)
+        {
+            logger.LogDebug(exception, "Could not list ProPresenter's libraries");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// The presentations in one library. Their names here can carry the arrangement -
+    /// "Father Abraham - [ Default ]" - so take a song's name from <see cref="GetPresentationAsync"/>.
+    /// Null when ProPresenter does not answer.
+    /// </summary>
+    public async Task<List<LibraryItem>?> GetLibraryItemsAsync(string libraryUuid, CancellationToken token)
+    {
+        if (BaseUri is not { } baseUri)
+            return null;
+
+        try
+        {
+            LibraryItems? library = await http.GetFromJsonAsync<LibraryItems>(new Uri(baseUri, $"v1/library/{libraryUuid}"), token);
+            return library?.Items ?? [];
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException || !token.IsCancellationRequested)
+        {
+            logger.LogWarning("Could not read ProPresenter library {Library}: {Message}", libraryUuid, exception.Message);
+            return null;
+        }
+    }
+
+    /// <summary>One presentation, with every group's slide text and its arrangements. Null when ProPresenter does not answer.</summary>
+    public async Task<Presentation?> GetPresentationAsync(string uuid, CancellationToken token)
+    {
+        if (BaseUri is not { } baseUri)
+            return null;
+
+        try
+        {
+            PresentationResponse? response = await http.GetFromJsonAsync<PresentationResponse>(new Uri(baseUri, $"v1/presentation/{uuid}"), token);
+            return response?.Presentation;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException || !token.IsCancellationRequested)
+        {
+            logger.LogWarning("Could not read ProPresenter presentation {Uuid}: {Message}", uuid, exception.Message);
+            return null;
+        }
+    }
+
     /// <summary>
     /// Sets a timer counting down from <paramref name="seconds"/> and starts it, allowed to run on past
     /// zero into overtime - which on the night is normal, and is how the stage shows it.
@@ -197,6 +254,48 @@ public sealed class ProPresenterApi(HttpClient http, AgentState state, ILogger<P
         [property: JsonPropertyName("countdown")]      Countdown? Countdown);
 
     private sealed record VersionResponse([property: JsonPropertyName("host_description")] string? HostDescription);
+
+    // /v1/libraries answers a flat list of these; /v1/library/{id} wraps its items in "items".
+    public sealed record LibraryId(
+        [property: JsonPropertyName("uuid")] string Uuid,
+        [property: JsonPropertyName("name")] string Name);
+
+    public sealed record LibraryItem(
+        [property: JsonPropertyName("uuid")] string Uuid,
+        [property: JsonPropertyName("name")] string Name);
+
+    private sealed record LibraryItems([property: JsonPropertyName("items")] List<LibraryItem>? Items);
+
+    private sealed record PresentationResponse([property: JsonPropertyName("presentation")] Presentation? Presentation);
+
+    /// <summary>
+    /// <c>/v1/presentation/{uuid}</c>, the parts the song library uses. Proven on ProPresenter 22 on
+    /// 2026-10-20 against all 26 songs: the arrangement list always starts with "Master", whose uuid is
+    /// the presentation's own and which ProPresenter makes up - it is not stored with the song.
+    /// </summary>
+    public sealed record Presentation(
+        [property: JsonPropertyName("id")]                  LibraryItem               Id,
+        [property: JsonPropertyName("groups")]              List<PresentationGroup>?  Groups,
+        [property: JsonPropertyName("arrangements")]        List<Arrangement>?        Arrangements,
+        [property: JsonPropertyName("current_arrangement")] string?                   CurrentArrangement);
+
+    public sealed record PresentationGroup(
+        [property: JsonPropertyName("uuid")]   string                    Uuid,
+        [property: JsonPropertyName("name")]   string?                   Name,
+        [property: JsonPropertyName("color")]  GroupColor?               Color,
+        [property: JsonPropertyName("slides")] List<PresentationSlide>?  Slides);
+
+    /// <summary>Each channel 0 to 1.</summary>
+    public sealed record GroupColor(
+        [property: JsonPropertyName("red")]   double Red,
+        [property: JsonPropertyName("green")] double Green,
+        [property: JsonPropertyName("blue")]  double Blue);
+
+    public sealed record PresentationSlide([property: JsonPropertyName("text")] string? Text);
+
+    public sealed record Arrangement(
+        [property: JsonPropertyName("id")]     LibraryItem   Id,
+        [property: JsonPropertyName("groups")] List<string>? Groups);
 
     // /v1/stage/screens answers a flat id; /v1/stage/screen/{id}/layout the same shape for the layout.
     private sealed record StageScreen(

@@ -7,6 +7,8 @@ using GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses;
 using GSBC.ImpactKids.Grpc.Data.Models.People;
 using GSBC.ImpactKids.Grpc.Data.Models.ProPresenter;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.ProPresenter;
+using GSBC.ImpactKids.Grpc.Data.Models.Songs;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Songs;
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling;
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling.School;
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling.Schedules;
@@ -381,6 +383,41 @@ public class ProPresenterMachineConverter(
         Timers                = machine.TimersJson == null
             ? []
             : System.Text.Json.JsonSerializer.Deserialize<List<ProPresenterTimer>>(machine.TimersJson)?.ToImmutableList() ?? [],
-        ScheduleTimerUuid     = machine.ScheduleTimerUuid
+        ScheduleTimerUuid     = machine.ScheduleTimerUuid,
+        Libraries             = Libraries(machine.LibrariesJson),
+        SongLibraryUuids      = SongLibraries(machine.SongLibraryUuidsJson, machine.LibrariesJson)
     };
+
+    public static ImmutableList<ProPresenterLibrary> Libraries(string? librariesJson) =>
+        librariesJson == null
+            ? []
+            : System.Text.Json.JsonSerializer.Deserialize<List<ProPresenterLibrary>>(librariesJson)?.ToImmutableList() ?? [];
+
+    /// <summary>The libraries the machine copies songs from - the admin page and the agent's configuration both read this.</summary>
+    public static ImmutableList<string> SongLibraries(string? songLibraryUuidsJson, string? librariesJson) =>
+        ProPresenterLibrary.SongLibraries(
+            songLibraryUuidsJson == null ? null : System.Text.Json.JsonSerializer.Deserialize<List<string>>(songLibraryUuidsJson),
+            Libraries(librariesJson));
+}
+
+/// <summary>By hand rather than Mapperly: the groups and arrangements live in one JSON column.</summary>
+public class SongConverter(
+    IConverter<DateTimeOffset, DateTime> dateTimeConverter
+) : IConverter<DbSong, Song>
+{
+    public Song Convert(DbSong song)
+    {
+        SongContent content = SongContent.FromJson(song.ContentJson);
+
+        return new Song
+        {
+            Id                     = song.Id,
+            Name                   = song.Name,
+            Library                = song.Library,
+            Groups                 = content.Groups,
+            Arrangements           = content.Arrangements,
+            DefaultArrangementUuid = content.DefaultArrangementUuid,
+            UpdatedAt              = dateTimeConverter.Convert(song.UpdatedAt)
+        };
+    }
 }

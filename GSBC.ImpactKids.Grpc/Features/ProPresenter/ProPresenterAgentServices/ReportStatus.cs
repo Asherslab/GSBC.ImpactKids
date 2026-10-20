@@ -33,7 +33,7 @@ public partial class ProPresenterAgentService
         var before = await db.ProPresenterMachines
             .AsNoTracking()
             .Where(x => x.Id == machineId)
-            .Select(x => new { x.LastSeenAt, x.AgentVersion, x.ProPresenterReachable, x.ProPresenterVersion, x.TimersJson })
+            .Select(x => new { x.LastSeenAt, x.AgentVersion, x.ProPresenterReachable, x.ProPresenterVersion, x.TimersJson, x.LibrariesJson })
             .FirstOrDefaultAsync(token);
 
         if (before == null)
@@ -54,6 +54,14 @@ public partial class ProPresenterAgentService
                 .ToList())
             : before.TimersJson;
 
+        // The same for libraries - and more so, because the libraries decide which songs are copied.
+        string? librariesJson = request.ProPresenterReachable
+            ? JsonSerializer.Serialize(request.Libraries
+                .Take(100)
+                .Select(l => new ProPresenterLibrary { Uuid = Truncate(l.Uuid, 64)!, Name = Truncate(l.Name, 200)! })
+                .ToList())
+            : before.LibrariesJson;
+
         await db.ProPresenterMachines
             .Where(x => x.Id == machineId)
             .ExecuteUpdateAsync(s => s
@@ -61,7 +69,8 @@ public partial class ProPresenterAgentService
                 .SetProperty(x => x.AgentVersion, agentVersion)
                 .SetProperty(x => x.ProPresenterReachable, request.ProPresenterReachable)
                 .SetProperty(x => x.ProPresenterVersion, proPresenterVersion)
-                .SetProperty(x => x.TimersJson, timersJson), token);
+                .SetProperty(x => x.TimersJson, timersJson)
+                .SetProperty(x => x.LibrariesJson, librariesJson), token);
 
         bool wasOffline = before.LastSeenAt == null || now - before.LastSeenAt.Value >= ProPresenterMachine.OnlineWindow;
 
@@ -69,7 +78,8 @@ public partial class ProPresenterAgentService
                              || before.AgentVersion != agentVersion
                              || before.ProPresenterReachable != request.ProPresenterReachable
                              || before.ProPresenterVersion != proPresenterVersion
-                             || before.TimersJson != timersJson;
+                             || before.TimersJson != timersJson
+                             || before.LibrariesJson != librariesJson;
 
         if (visibleChange)
             await eventService.SendUpdatedEvent(token);

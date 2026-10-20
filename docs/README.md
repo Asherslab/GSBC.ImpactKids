@@ -59,6 +59,10 @@ Present tense, kept current, no dates.
   — `in-progress`. The running order under each service: groups, splits, sections, clock times; why a
   change of length during the night is recorded as an adjustment; and running the night with Next,
   including why the ProPresenter timer waits for its labels.
+- [Song library — songs copied out of ProPresenter for song leaders](work/2026-10-songs-library.md)
+  — `in-progress`. The agent copies chosen libraries' songs to `/Songs`. What ProPresenter 22 keeps on
+  disk (Loro CRDT documents in SQLite) and why the agent reads the API instead, and the rule that only
+  a complete song list is ever sent, because a missing song is taken as deleted.
 
 ### Open
 

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using GSBC.ImpactKids.Grpc.Data.Models.ProPresenter;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.ProPresenter;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
@@ -41,6 +42,15 @@ public partial class ProPresenterMachineService
         machine.ProPresenterHost = host;
         machine.ProPresenterPort = request.ProPresenterPort;
         machine.ScheduleTimerUuid = string.IsNullOrWhiteSpace(request.ScheduleTimerUuid) ? null : request.ScheduleTimerUuid.Trim();
+
+        // Never null once saved: from here on an empty list means "copy no songs", where null meant
+        // "nobody has chosen, copy the Songs library".
+        machine.SongLibraryUuidsJson = JsonSerializer.Serialize(request.SongLibraryUuids
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x.Trim())
+            .Distinct()
+            .Take(100)
+            .ToList());
 
         await db.SaveChangesAsync(token);
         await eventService.SendUpdatedEvent(token);

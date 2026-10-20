@@ -28,6 +28,7 @@ using GSBC.ImpactKids.Grpc.Features.People.Photos;
 using GSBC.ImpactKids.Grpc.Features.ProPresenter.MachineAuth;
 using GSBC.ImpactKids.Grpc.Features.ProPresenter.ProPresenterAgentServices;
 using GSBC.ImpactKids.Grpc.Features.ProPresenter.ProPresenterMachineServices;
+using GSBC.ImpactKids.Grpc.Features.Songs.SongServices;
 using Amazon.Runtime;
 using Amazon.S3;
 using GSBC.ImpactKids.Grpc.Features.Sync.SyncServices;
@@ -308,6 +309,8 @@ app.MapGrpcService<ProPresenterMachineService>();
 // Machine only, every method. Routed under machine/ rather than gRPC/, which is what lets the agent
 // through the proxy with its own token - see IProPresenterAgentService.
 app.MapGrpcService<ProPresenterAgentService>().RequireMachine();
+// Leader only, by falling back. Read only - the agent above is what writes songs.
+app.MapGrpcService<SongService>();
 // Anonymous, and explicitly so now that the fallback policy would otherwise close it. It is
 // a signpost for somebody who opened the address in a browser and says nothing at all about
 // this service's data.
