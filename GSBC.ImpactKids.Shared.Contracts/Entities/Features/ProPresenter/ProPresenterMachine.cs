@@ -50,6 +50,12 @@ public record ProPresenterMachine
     /// <summary>The one ProPresenter timer that follows tonight's schedule. Null until a leader picks one.</summary>
     public string? ScheduleTimerUuid { get; init; }
 
+    /// <summary>ProPresenter's libraries, as the agent last reported them - what the admin page offers to copy songs from.</summary>
+    public ImmutableList<ProPresenterLibrary> Libraries { get; init; } = [];
+
+    /// <summary>The libraries this machine copies songs from, already resolved by <see cref="ProPresenterLibrary.SongLibraries"/>.</summary>
+    public ImmutableList<string> SongLibraryUuids { get; init; } = [];
+
     [ProtoIgnore]
     public DateTime LocalCreatedAt => CreatedAt.ToLocalTime();
 

@@ -1,0 +1,64 @@
+@inherits EntityUtilityComponent
+@page "/Songs/{Id:guid}"
+@inject IRefreshableStore<Song> SongsStore
+
+<PageTitle>@(_song?.Name ?? "Song")</PageTitle>
+
+<MudPaper Elevation="6" Class="mt-4 pa-6 relative" Style="min-height: 120px">
+    <MudOverlay Visible="@(_songs.IsLoading)" DarkBackground Absolute>
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+    @if (_songs.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">@(_songs.Error ?? "An Unexpected error occured")</MudAlert>
+    }
+    <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+        <MudTooltip Text="All songs">
+            <MudIconButton Href="/Songs" Icon="@Icons.Material.Filled.ArrowBack" aria-label="Back to all songs"/>
+        </MudTooltip>
+        <MudText Typo="Typo.h5">@(_song?.Name ?? "Song")</MudText>
+    </MudStack>
+
+    @if (_song != null)
+    {
+        <MudText Typo="Typo.body2" Class="mb-2" Style="opacity: 0.7">
+            From the @_song.Library library in ProPresenter
+        </MudText>
+
+        @if (!_song.Arrangements.IsEmpty)
+        {
+            <MudChipSet T="string"
+                        SelectionMode="SelectionMode.SingleSelection"
+                        SelectedValue="_arrangement"
+                        SelectedValueChanged="@(value => _arrangement = value ?? EveryGroupOnce)"
+                        CheckMark
+                        Variant="Variant.Outlined"
+                        Class="mb-2">
+                @foreach (SongArrangement arrangement in _song.Arrangements)
+                {
+                    <MudChip T="string" Value="arrangement.Uuid" Text="@arrangement.Name"/>
+                }
+                <MudChip T="string" Value="EveryGroupOnce" Text="Every part once"/>
+            </MudChipSet>
+        }
+
+        <div class="lyrics">
+            @foreach (SongGroup group in _song.Sung(_arrangement))
+            {
+                <section class="lyrics-group" style="@(group.Color == null ? null : $"--group-color: {group.Color}")">
+                    <h3 class="lyrics-group-name">@group.Name</h3>
+                    @foreach (string slide in group.Slides)
+                    {
+                        <p class="lyrics-slide">@slide</p>
+                    }
+                </section>
+            }
+        </div>
+    }
+    else if (_songs.HasData)
+    {
+        <MudText Class="mt-2">
+            This song is no longer in ProPresenter. <MudLink Href="/Songs">See all songs</MudLink>.
+        </MudText>
+    }
+</MudPaper>

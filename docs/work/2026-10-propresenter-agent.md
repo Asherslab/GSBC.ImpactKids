@@ -35,7 +35,11 @@ schedule, rather than the "slots" this plan first sketched — see
 [2026-10-service-schedules.md](2026-10-service-schedules.md#segment-timing-decided-2026-10-19-built-2026-10-20)
 for the rules, the event-stream path, and what ProPresenter's 10-second feed poll forced on the
 timer. Not yet proven: the release job itself (it runs on the first push to `master`) and
-`install.sh` on a real Mac.
+`install.sh` on a real Mac. **The agent also copies songs** out of chosen ProPresenter libraries
+(2026-10-20) — see [2026-10-songs-library.md](2026-10-songs-library.md). **The machines page re-reads
+the list every 30 seconds while open** (2026-10-20): the heartbeat raises no change event, so before
+that an open page showed a steadily reporting Mac as offline 90 seconds after it loaded. Verified both
+ways - online for minutes while the agent reported, offline 90 seconds after it stopped.
 
 **The enrolment flow is a credential issuer, and the one rule that keeps it safe is that a code may
 only ever be redirected to a loopback address.** PKCE protects a code from being intercepted; it does

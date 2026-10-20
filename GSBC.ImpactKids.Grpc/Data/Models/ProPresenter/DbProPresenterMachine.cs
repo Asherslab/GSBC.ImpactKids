@@ -62,6 +62,16 @@ public class DbProPresenterMachine
     /// <summary>The timers set up in ProPresenter, as the agent last reported them - a JSON list of uuid and name.</summary>
     public string? TimersJson { get; set; }
 
+    /// <summary>ProPresenter's libraries, as the agent last reported them - a JSON list of uuid and name.</summary>
+    public string? LibrariesJson { get; set; }
+
     // Leader-owned: which ProPresenter timer follows tonight's schedule.
     public string? ScheduleTimerUuid { get; set; }
+
+    /// <summary>
+    /// Leader-owned: the libraries to copy songs from, a JSON list of uuids. <b>Null is not empty</b> -
+    /// null means nobody has chosen, which copies the "Songs" library; <c>[]</c> copies nothing. See
+    /// <c>ProPresenterLibrary.SongLibraries</c>.
+    /// </summary>
+    public string? SongLibraryUuidsJson { get; set; }
 }

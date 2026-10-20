@@ -64,9 +64,28 @@ ToolSearch  query: "select:mcp__rider__execute_run_configuration,mcp__rider__get
   **It only connects if the AppHost was already running when the Claude Code session started.**
   This is the usual reason the tools are missing, and it is not a config fault — an `http` MCP server
   is dialled once at session startup, so a stack you start *during* the session cannot be attached to
-  and no amount of fixing `.mcp.json` helps. Start the app first, then start the session. If you are
-  already mid-session without it, say so and work from `psql` and the browser instead — do not
+  and no amount of fixing `.mcp.json` helps. Start the app first, then start the session. Do not
   conclude the config is stale.
+
+  **Mid-session without it, call the endpoint over HTTP yourself** — it is a plain streamable-HTTP MCP
+  server, so `initialize`, then `notifications/initialized`, then `tools/call`, carrying the
+  `mcp-session-id` header the first reply set. This is how to start an explicit-start resource such as
+  `propresenter-agent` (verified 2026-10-20):
+
+  ```bash
+  K=$(dotnet user-secrets list --project GSBC.ImpactKids.AppHost | sed -n 's/^AppHost:McpApiKey = //p')
+  H=(-H "x-mcp-api-key: $K" -H 'Accept: application/json, text/event-stream' -H 'Content-Type: application/json')
+  SID=$(curl -s -D - -o /dev/null -X POST http://localhost:16036/mcp "${H[@]}" \
+    -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"cli","version":"1"}}}' \
+    | sed -n 's/^mcp-session-id: //Ip' | tr -d '\r')
+  curl -s -X POST http://localhost:16036/mcp "${H[@]}" -H "mcp-session-id: $SID" -d '{"jsonrpc":"2.0","method":"notifications/initialized"}'
+  curl -s -X POST http://localhost:16036/mcp "${H[@]}" -H "mcp-session-id: $SID" \
+    -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"execute_resource_command","arguments":{"resourceName":"propresenter-agent","commandName":"resource-start"}}}'
+  ```
+
+  `resource-stop` and `resource-restart` work the same way. The dashboard's own Start buttons are web
+  components in shadow DOM that the nodeterm node cannot reach, and the `aspire` CLI (13.6) does not
+  find an AppHost Rider started (`aspire ps`: "No running AppHost found"), so this is the route.
 
   Confirm reachability before blaming anything, and note the scheme — the endpoint is plain
   **`http`**, so probing `https://localhost:16036` returns `000` (connection refused) and looks
@@ -547,6 +566,13 @@ beat before concluding anything about the data. (Confirming it from the network 
 dialogs behind them were hard to reach. Retry those on the nodeterm node before concluding they
 are unreachable — its CDP input opens things Chrome's did not — and if it still will not open,
 ask the user rather than claiming a dialog works because it compiled.
+
+**A MudSelect opens from its visible box, not its `<input>`.** The `@ref` the map gives for a
+select is a hidden input, and clicking it does nothing. Click the `.mud-input` div by CSS instead —
+`.mud-select ~ .mud-select .mud-input` reaches the second select in a form — then drive the list
+from the keyboard: arrows or `End` to move, `Enter` to tick an option, `Escape` to close. Clicking an
+option directly misses when it sits below the popover's scroll. Verified on the machines page's
+multi-select on 2026-10-20; the selected names then show in the box, so a screenshot confirms it.
 
 **Verify the effect, never the acknowledgement.** Both tools report success for a dispatch, not
 for Blazor receiving it. In Chrome this is fatal on a MudButton: `computer left_click` with a

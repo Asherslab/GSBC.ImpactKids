@@ -43,4 +43,13 @@ public interface IProPresenterAgentService
         ProPresenterAgentRequest request,
         CallContext              context = default
     );
+
+    /// <summary>
+    /// Every song in the machine's chosen libraries, for the song library. Songs this machine sent
+    /// before and has not sent now are marked removed - see <see cref="SyncProPresenterSongsRequest"/>.
+    /// </summary>
+    Task<BasicResponse> SyncSongs(
+        SyncProPresenterSongsRequest request,
+        CallContext                  context = default
+    );
 }

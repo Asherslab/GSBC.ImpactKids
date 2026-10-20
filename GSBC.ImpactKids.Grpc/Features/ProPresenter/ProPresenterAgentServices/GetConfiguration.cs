@@ -1,3 +1,4 @@
+using GSBC.ImpactKids.Grpc.Conversion;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.ProPresenter;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.ProPresenter;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
@@ -19,28 +20,40 @@ public partial class ProPresenterAgentService
         if (machineId == null)
             return BasicReadResponse<ProPresenterAgentConfiguration>.WithError(PermissionDenied);
 
-        ProPresenterAgentConfiguration? configuration = await db.ProPresenterMachines
+        var machine = await db.ProPresenterMachines
             .AsNoTracking()
             .Where(x => x.Id == machineId)
-            .Select(x => new ProPresenterAgentConfiguration
+            .Select(x => new
             {
-                MachineId = x.Id,
-                Name = x.Name,
-                ProPresenterHost = x.ProPresenterHost,
-                ProPresenterPort = x.ProPresenterPort,
-                ScheduleTimerUuid = x.ScheduleTimerUuid
+                x.Id,
+                x.Name,
+                x.ProPresenterHost,
+                x.ProPresenterPort,
+                x.ScheduleTimerUuid,
+                x.SongLibraryUuidsJson,
+                x.LibrariesJson
             })
             .FirstOrDefaultAsync(token);
 
         // Deleted between the token being minted and now. The token stops verifying within one key
         // refresh anyway; this just answers the call in the meantime.
-        if (configuration == null)
+        if (machine == null)
             return BasicReadResponse<ProPresenterAgentConfiguration>.WithError(ProPresenterMachineNotFound);
 
         return new BasicReadResponse<ProPresenterAgentConfiguration>
         {
             Success = true,
-            Entity = configuration
+            Entity = new ProPresenterAgentConfiguration
+            {
+                MachineId = machine.Id,
+                Name = machine.Name,
+                ProPresenterHost = machine.ProPresenterHost,
+                ProPresenterPort = machine.ProPresenterPort,
+                ScheduleTimerUuid = machine.ScheduleTimerUuid,
+                SongLibraryUuids = ProPresenterMachineConverter
+                    .SongLibraries(machine.SongLibraryUuidsJson, machine.LibrariesJson)
+                    .ToList()
+            }
         };
     }
 }

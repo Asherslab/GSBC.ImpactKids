@@ -6,6 +6,7 @@ using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.Schedules;
 using GSBC.ImpactKids.Grpc.Features.ProPresenter.MachineAuth;
 using GSBC.ImpactKids.Grpc.Services;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.ProPresenter;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Songs;
 using GSBC.ImpactKids.Shared.Contracts.Services.Features.ProPresenter;
 
 namespace GSBC.ImpactKids.Grpc.Features.ProPresenter.ProPresenterAgentServices;
@@ -17,6 +18,7 @@ namespace GSBC.ImpactKids.Grpc.Features.ProPresenter.ProPresenterAgentServices;
 public partial class ProPresenterAgentService(
     GsbcDbContext                      db,
     IEventService<ProPresenterMachine> eventService,
+    IEventService<Song>                songEventService,
     IConverter<DbSchedule, Schedule>   scheduleConverter
 ) : IProPresenterAgentService
 {

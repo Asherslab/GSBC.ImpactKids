@@ -14,7 +14,8 @@
         A small tool on the ProPresenter Mac connects it to Impact Kids. It starts by itself when
         the Mac logs in, takes its settings from this page, runs a ProPresenter timer from tonight's
         schedule, and serves feeds that ProPresenter can show - what is on now and next, and the names
-        of children here for the first time today.
+        of children here for the first time today. It also copies the songs in the libraries chosen
+        below to the <MudLink Href="/Songs">Songs</MudLink> page.
     </MudText>
 
     <MudExpansionPanels Class="mb-4">
@@ -110,6 +111,12 @@
                         Schedule timer: @(context.Timers.FirstOrDefault(t => t.Uuid == context.ScheduleTimerUuid)?.Name
                                           ?? (context.ScheduleTimerUuid == null ? "none chosen" : "no longer in ProPresenter"))
                     </MudText>
+                    <MudText Typo="Typo.caption" Class="d-block">
+                        Songs from: @(context.SongLibraryUuids.IsEmpty
+                                      ? "none"
+                                      : string.Join(", ", context.SongLibraryUuids.Select(uuid =>
+                                          context.Libraries.FirstOrDefault(l => l.Uuid == uuid)?.Name ?? "a library no longer in ProPresenter")))
+                    </MudText>
                 </MudTd>
                 <MudTd DataLabel="Tool">@(context.AgentVersion ?? "-")</MudTd>
                 <MudTd>
@@ -159,6 +166,20 @@
             @foreach (ProPresenterTimer timer in _editingTimers)
             {
                 <MudSelectItem T="string" Value="@timer.Uuid">@timer.Name</MudSelectItem>
+            }
+        </MudSelect>
+        @* The libraries come from ProPresenter too. Their songs appear on the Songs page. *@
+        <MudSelect T="string"
+                   MultiSelection="true"
+                   SelectedValues="_editing.SongLibraryUuids"
+                   SelectedValuesChanged="@(values => _editing.SongLibraryUuids = values.ToList())"
+                   ToStringFunc="@LibraryName"
+                   Label="Libraries to copy songs from"
+                   HelperText="@(_editingLibraries.Count == 0 ? "No libraries reported yet - is ProPresenter open on the Mac?" : "Their songs appear on the Songs page, for song leaders to read")"
+                   Class="mb-4">
+            @foreach (ProPresenterLibrary library in _editingLibraries)
+            {
+                <MudSelectItem T="string" Value="@library.Uuid">@library.Name</MudSelectItem>
             }
         </MudSelect>
         <MudStack Row Spacing="2">

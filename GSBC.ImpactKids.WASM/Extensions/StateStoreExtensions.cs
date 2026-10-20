@@ -14,6 +14,7 @@ using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.School;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.Schedules;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Songs;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scripture.Memorisation;
 using GSBC.ImpactKids.WASM.Features.Attendance;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Sync;
@@ -78,6 +79,7 @@ public static class StateStoreExtensions
                 .AddEntityStore<GameBoard>()
                 .AddEntityStore<User>()
                 .AddEntityStore<ProPresenterMachine>()
+                .AddEntityStore<Song>()
                 .AddEntityStore<SyncOperation>()
                 .AddEntityStore<SyncManualReviewEntry>()
                 .AddScoped<IBasicReadMultipleService<SyncManualReviewEntry>, SyncManualReviewReadAdapter>();
