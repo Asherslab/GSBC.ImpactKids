@@ -47,7 +47,13 @@
         Read="@UpdateRequest.NeedsFillIn.Value"
         @bind-Update="@UpdateRequest.NeedsFillIn.Value"
         State="State"
-        Label="Placeholder, filled in on each service (e.g. Song 1)"/>
+        Label="Placeholder, filled in on each service (e.g. Game 1)"/>
+    <MudCheckBoxCreateOrUpdate
+        @bind-Create="@CreateRequest.IsSong"
+        Read="@UpdateRequest.IsSong.Value"
+        @bind-Update="@UpdateRequest.IsSong.Value"
+        State="State"
+        Label="A song, chosen from the song library on each service (e.g. Song 1)"/>
     <MudCheckBoxCreateOrUpdate
         @bind-Create="@CreateRequest.IsSection"
         Read="@UpdateRequest.IsSection.Value"

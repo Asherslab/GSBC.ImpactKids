@@ -63,6 +63,9 @@ Present tense, kept current, no dates.
   — `in-progress`. The agent copies chosen libraries' songs to `/Songs`. What ProPresenter 22 keeps on
   disk (Loro CRDT documents in SQLite) and why the agent reads the API instead, and the rule that only
   a complete song list is ever sent, because a missing song is taken as deleted.
+- [Sheet music — songs' music kept as data, read from a scan or a photo](work/2026-10-sheet-music.md)
+  — `proposed`, after songs in schedules. MusicXML and ChordPro kept beside the song, read from a PDF
+  or phone photo by two OMR engines side by side; whether an editor is needed is still open.
 
 ### Open
 

@@ -141,11 +141,13 @@ Never:
 
 - **commit on `master`** unless the user explicitly asks for it *and* you have told them plainly that
   the current branch is `master`. Both halves — the request and the acknowledgement — every time.
-- **create branches.** The user makes them. When work needs one, say so and wait; do not branch and
-  carry on.
 - **push anything, anywhere.** No `git push`, no `--force`, no branch or tag pushes. Pushing is the
   user's call.
 
-Reading is always fine: `git log`, `git diff`, `git merge-base`, `git status`.
+Reading is always fine: `git log`, `git diff`, `git merge-base`, `git status`, and `git fetch`.
 
-On a branch the user has made — `feature/*` and the like — commit per slice without asking.
+**Make branches yourself** when work needs one — new work, or the current branch has already been
+merged. `git fetch`, then branch off the up-to-date `master` (`git fetch origin master:master` when it is
+not checked out), named `feature/<slug>` or `fix/<slug>`. Say which branch you made; do not stop to ask.
+
+On a `feature/*` or `fix/*` branch, commit per slice without asking.

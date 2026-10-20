@@ -8,4 +8,5 @@ public class CreateScheduleItemTemplateRequest
     public TimeSpan? StartsAt    { get; set; }
     public bool      NeedsFillIn { get; set; }
     public bool      IsSection   { get; set; }
+    public bool      IsSong      { get; set; }
 }

@@ -17,6 +17,15 @@ public partial class SongLyrics
     [Parameter]
     public Guid Id { get; set; }
 
+    /// <summary>The arrangement to open on, from a schedule's song. Ignored if the song has no such arrangement.</summary>
+    [SupplyParameterFromQuery]
+    public string? Arrangement { get; set; }
+
+    public static string Link(Guid songId, string? arrangementUuid) =>
+        arrangementUuid == null
+            ? $"/Songs/{songId}"
+            : $"/Songs/{songId}?arrangement={Uri.EscapeDataString(arrangementUuid)}";
+
     private AsyncData<ImmutableList<Song>> _songs = AsyncData<ImmutableList<Song>>.NotAsked();
 
     private Song?  _song;
@@ -52,11 +61,12 @@ public partial class SongLyrics
 
     /// <summary>
     /// An arrangement is the order a song is actually sung in, where every part once is not - so a song
-    /// opens on one whenever it has one: ProPresenter's own choice, else the one called "Default", else
+    /// opens on one whenever it has one: the one a schedule chose, ProPresenter's own choice, else the one called "Default", else
     /// the first. Every part once only for a song with no arrangements at all.
     /// </summary>
-    private static string OpeningArrangement(Song song) =>
-        song.Arrangements.FirstOrDefault(x => x.Uuid == song.DefaultArrangementUuid)?.Uuid
+    private string OpeningArrangement(Song song) =>
+        song.Arrangements.FirstOrDefault(x => x.Uuid == Arrangement)?.Uuid
+        ?? song.Arrangements.FirstOrDefault(x => x.Uuid == song.DefaultArrangementUuid)?.Uuid
         ?? song.Arrangements.FirstOrDefault(x => x.Name == "Default")?.Uuid
         ?? song.Arrangements.FirstOrDefault()?.Uuid
         ?? EveryGroupOnce;

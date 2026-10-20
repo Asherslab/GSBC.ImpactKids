@@ -23,14 +23,18 @@ public partial class ScheduleItemTemplateService
         if (!ScheduleRules.StartsAtValid(request.StartsAt))
             return BasicReadResponse<Guid?>.WithError(ScheduleItemStartsAtInvalid);
 
+        if (request.IsSong && request.IsSection)
+            return BasicReadResponse<Guid?>.WithError(ScheduleSongIsSection);
+
         DbScheduleItemTemplate template = new()
         {
             Id = Guid.Empty,
             Name = request.Name.Trim(),
             Minutes = request.Minutes,
             StartsAt = request.StartsAt,
-            NeedsFillIn = request.NeedsFillIn,
-            IsSection = request.IsSection
+            NeedsFillIn = request.NeedsFillIn || request.IsSong,
+            IsSection = request.IsSection,
+            IsSong = request.IsSong
         };
 
         await db.ScheduleItemTemplates.AddAsync(template, token);

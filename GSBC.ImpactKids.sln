@@ -90,6 +90,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "work", "work", "{B9DC90D9-F
 		docs\work\2026-08-sync-plan-table-identifiers.md = docs\work\2026-08-sync-plan-table-identifiers.md
 		docs\work\2026-10-propresenter-agent.md = docs\work\2026-10-propresenter-agent.md
 		docs\work\2026-10-service-schedules.md = docs\work\2026-10-service-schedules.md
+		docs\work\2026-10-sheet-music.md = docs\work\2026-10-sheet-music.md
 		docs\work\2026-10-songs-library.md = docs\work\2026-10-songs-library.md
 	EndProjectSection
 EndProject

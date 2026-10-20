@@ -855,11 +855,18 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.Property<int>("AdjustmentMinutes")
                         .HasColumnType("integer");
 
+                    b.Property<string>("ArrangementUuid")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<string>("FillIn")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
                     b.Property<bool>("IsSection")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsSong")
                         .HasColumnType("boolean");
 
                     b.Property<Guid?>("ItemTemplateId")
@@ -885,6 +892,9 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.Property<int>("Position")
                         .HasColumnType("integer");
 
+                    b.Property<Guid?>("SongId")
+                        .HasColumnType("uuid");
+
                     b.Property<TimeSpan?>("StartsAt")
                         .HasColumnType("interval");
 
@@ -895,6 +905,8 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.HasIndex("LaneId");
 
                     b.HasIndex("ParentItemId");
+
+                    b.HasIndex("SongId");
 
                     b.ToTable("ScheduleItems");
                 });
@@ -933,6 +945,9 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<bool>("IsSection")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsSong")
                         .HasColumnType("boolean");
 
                     b.Property<int>("Minutes")
@@ -1761,11 +1776,18 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                         .HasForeignKey("ParentItemId")
                         .OnDelete(DeleteBehavior.Cascade);
 
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.Songs.DbSong", "Song")
+                        .WithMany()
+                        .HasForeignKey("SongId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("ItemTemplate");
 
                     b.Navigation("Lane");
 
                     b.Navigation("ParentItem");
+
+                    b.Navigation("Song");
                 });
 
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.Scheduling.Schedules.DbScheduleItemAdjustment", b =>

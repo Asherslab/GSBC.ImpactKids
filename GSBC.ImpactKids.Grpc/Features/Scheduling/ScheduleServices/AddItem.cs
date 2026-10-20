@@ -66,6 +66,7 @@ public partial class ScheduleService
                     Position = 0,
                     Name = name,
                     NeedsFillIn = template?.NeedsFillIn ?? false,
+                    IsSong = template?.IsSong ?? false,
                     ItemTemplateId = template?.Id,
                     PlannedMinutes = 0,
                     AdjustmentMinutes = 0
@@ -94,6 +95,7 @@ public partial class ScheduleService
                 Name = name,
                 IsSection = isSection,
                 NeedsFillIn = template?.NeedsFillIn ?? false,
+                IsSong = template?.IsSong ?? false,
                 ItemTemplateId = template?.Id,
                 PlannedMinutes = edit.Underway ? 0 : minutes,
                 AdjustmentMinutes = edit.Underway ? minutes : 0,

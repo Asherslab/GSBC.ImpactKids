@@ -22,7 +22,7 @@
     @if (_song != null)
     {
         <MudText Typo="Typo.body2" Class="mb-2" Style="opacity: 0.7">
-            From the @_song.Library library in ProPresenter
+            From the @_song.Library library in ProPresenter · last sung @Songs.Sung(_song)
         </MudText>
 
         @if (!_song.Arrangements.IsEmpty)

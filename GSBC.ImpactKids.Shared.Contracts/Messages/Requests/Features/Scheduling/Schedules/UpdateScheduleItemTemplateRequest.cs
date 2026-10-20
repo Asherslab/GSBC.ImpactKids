@@ -14,6 +14,7 @@ public class UpdateScheduleItemTemplateRequest
     public DeltaUpdate<TimeSpan?> StartsAt    { get; set; } = new();
     public DeltaUpdate<bool>      NeedsFillIn { get; set; } = new();
     public DeltaUpdate<bool>      IsSection   { get; set; } = new();
+    public DeltaUpdate<bool>      IsSong      { get; set; } = new();
 
     public static UpdateScheduleItemTemplateRequest FromEntity(ScheduleItemTemplate entity)
     {
@@ -27,6 +28,7 @@ public class UpdateScheduleItemTemplateRequest
         request.StartsAt.SetInitialValue(entity.StartsAt);
         request.NeedsFillIn.SetInitialValue(entity.NeedsFillIn);
         request.IsSection.SetInitialValue(entity.IsSection);
+        request.IsSong.SetInitialValue(entity.IsSong);
         return request;
     }
 }

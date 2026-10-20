@@ -109,6 +109,11 @@ public class UpdateScheduleItemRequest
     public Guid      ItemId   { get; set; }
     public string    Name     { get; set; } = "";
     public string?   FillIn   { get; set; }
+
+    /// <summary>A song item's song from the library. When set, the song's own name becomes the fill-in.</summary>
+    public Guid?     SongId          { get; set; }
+    public string?   ArrangementUuid { get; set; }
+
     public int       Minutes  { get; set; }
     public TimeSpan? StartsAt { get; set; }
 }

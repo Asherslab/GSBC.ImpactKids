@@ -35,6 +35,16 @@ public record Song : IIdentifiable
     /// </summary>
     public required DateTime UpdatedAt { get; init; }
 
+    /// <summary>
+    /// The date of the last service, up to today, whose schedule has this song - in UTC, as the
+    /// service's date is. Null if it has never been put in one. Only songs chosen from the library
+    /// count; one typed by name before it was in ProPresenter does not.
+    /// </summary>
+    public DateTime? LastSungAt { get; init; }
+
+    /// <summary>How many services, up to today, had it in their schedule. Twice in one night counts once.</summary>
+    public int TimesSung { get; init; }
+
     /// <summary>The groups as sung in <paramref name="arrangementUuid"/>, repeats included; every group once for null or an unknown arrangement.</summary>
     public IEnumerable<SongGroup> Sung(string? arrangementUuid)
     {

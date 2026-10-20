@@ -1,4 +1,6 @@
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling.Schedules;
+using GSBC.ImpactKids.Grpc.Data.Models.Songs;
+using Microsoft.EntityFrameworkCore;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.Schedules;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.Schedules;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
@@ -8,7 +10,7 @@ namespace GSBC.ImpactKids.Grpc.Features.Scheduling.ScheduleServices;
 public partial class ScheduleService
 {
     /// <summary>
-    /// Name, fill-in, start time and length. The length is the length wanted: before the night it
+    /// Name, fill-in (or a song item's song and arrangement), start time and length. The length is the length wanted: before the night it
     /// replaces the plan, during it the difference goes down as an adjustment - the same rule as +5.
     /// </summary>
     public async Task<BasicResponse> UpdateItem(UpdateScheduleItemRequest request, CallContext context = default)
@@ -24,6 +26,21 @@ public partial class ScheduleService
         if (!ScheduleRules.StartsAtValid(request.StartsAt))
             return BasicResponse.WithError(ScheduleItemStartsAtInvalid);
 
+        DbSong? song = null;
+
+        if (request.SongId != null)
+        {
+            song = await db.Songs.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == request.SongId, context.CancellationToken);
+
+            if (song == null)
+                return BasicResponse.WithError(SongNotFound);
+
+            if (request.ArrangementUuid != null
+             && SongContent.FromJson(song.ContentJson).Arrangements.All(x => x.Uuid != request.ArrangementUuid))
+                return BasicResponse.WithError(SongArrangementNotFound);
+        }
+
         Guid? scheduleId = await ScheduleOfItem(request.ItemId, context.CancellationToken);
 
         return await EditAsync(scheduleId, (schedule, edit) =>
@@ -33,8 +50,14 @@ public partial class ScheduleService
             if (item == null)
                 return BasicResponse.WithError(ScheduleItemNotFound);
 
+            if (song != null && !item.IsSong)
+                return BasicResponse.WithError(ScheduleItemNotASong);
+
             item.Name = name;
-            item.FillIn = string.IsNullOrWhiteSpace(request.FillIn) ? null : request.FillIn.Trim();
+            // A song from the library is named as the library names it; one not in it yet is typed.
+            item.FillIn = song?.Name ?? (string.IsNullOrWhiteSpace(request.FillIn) ? null : request.FillIn.Trim());
+            item.SongId = song?.Id;
+            item.ArrangementUuid = song != null ? request.ArrangementUuid : null;
             item.StartsAt = request.StartsAt;
 
             ChangeLength(item, request.Minutes - (item.PlannedMinutes + item.AdjustmentMinutes), edit);

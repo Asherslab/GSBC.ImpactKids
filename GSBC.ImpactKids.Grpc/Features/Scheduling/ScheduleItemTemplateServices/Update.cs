@@ -45,6 +45,18 @@ public partial class ScheduleItemTemplateService
         if (request.IsSection.IsUpdated)
             template.IsSection = request.IsSection.Value;
 
+        if (request.IsSong.IsUpdated)
+            template.IsSong = request.IsSong.Value;
+
+        // A song is filled in on each service by definition, so it cannot stop being a placeholder.
+        if (template.IsSong)
+        {
+            if (template.IsSection)
+                return BasicResponse.WithError(ScheduleSongIsSection);
+
+            template.NeedsFillIn = true;
+        }
+
         await db.SaveChangesAsync(token);
         await eventService.SendUpdatedEvent(token);
 
