@@ -43,11 +43,10 @@ export function attach(root, dotnet) {
             // Nested lists: settle on the inner list only once the pointer is well inside it.
             fallbackOnBody: true,
             swapThreshold: 0.65,
-            // A touch must be held briefly before it drags, so a phone can still scroll the page by
-            // swiping over the list. Mouse drags start at once.
-            delay: 150,
-            delayOnTouchOnly: true,
-            touchStartThreshold: 4,
+            // No hold before a touch drags. Only the handle starts one, and the handle never scrolls
+            // the page (touch-action: none), so swiping elsewhere on a row still scrolls. A hold
+            // would cancel the drag of anyone who presses the handle and moves straight off, which
+            // is how a grip is used - the drag simply never started on phones.
             ghostClass: 'schedule-drag-ghost',
             onEnd: (evt) => {
                 const moved = evt.from !== evt.to || evt.oldDraggableIndex !== evt.newDraggableIndex;
