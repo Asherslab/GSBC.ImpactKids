@@ -93,6 +93,10 @@ public static class ErrorConstants
     public const string ScheduleLastLane             = "A Split Needs At Least Two Lanes - Remove The Split Instead";
     public const string ScheduleItemNotFound         = "Schedule Item Not Found";
     public const string ScheduleSectionInSection     = "A Section Cannot Go Inside Another Section";
+    public const string ScheduleSongIsSection        = "A Song Cannot Be A Section - Make A Section And Put Songs Under It";
+    public const string ScheduleItemNotASong         = "That Schedule Item Is Not A Song";
+    public const string SongNotFound                 = "Song Not Found";
+    public const string SongArrangementNotFound      = "That Song Has No Arrangement By That Name";
     public const string ScheduleRunNotAService       = "Only A Service's Schedule Can Be Run, Not A Template";
     public const string ScheduleRunNothingNext       = "There Is Nothing To Move On To";
     public const string ScheduleRunNothingBack       = "There Is Nothing To Go Back To";

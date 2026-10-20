@@ -80,6 +80,16 @@ public record ScheduleItem
     public required string    Name              { get; init; }
     public          string?   FillIn            { get; init; }
     public required bool      NeedsFillIn       { get; init; }
+
+    /// <summary>A placeholder filled in with a song. <see cref="FillIn"/> is then the song's name.</summary>
+    public bool IsSong { get; init; }
+
+    /// <summary>The song from the library it was filled in with; null for one typed by name, not in the library yet.</summary>
+    public Guid? SongId { get; init; }
+
+    /// <summary>The arrangement of the song to sing. Null for the song's own default.</summary>
+    public string? ArrangementUuid { get; init; }
+
     public          Guid?     ItemTemplateId    { get; init; }
     public required int       PlannedMinutes    { get; init; }
     public required int       AdjustmentMinutes { get; init; }

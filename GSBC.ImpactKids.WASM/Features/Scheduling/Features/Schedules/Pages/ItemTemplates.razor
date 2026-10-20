@@ -50,7 +50,11 @@
             </MudTd>
             <MudTd DataLabel="Name">
                 @context.Name
-                @if (context.NeedsFillIn)
+                @if (context.IsSong)
+                {
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Class="ml-2">song</MudChip>
+                }
+                else if (context.NeedsFillIn)
                 {
                     <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Class="ml-2">fill in</MudChip>
                 }

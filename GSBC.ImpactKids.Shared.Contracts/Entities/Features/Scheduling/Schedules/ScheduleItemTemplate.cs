@@ -20,4 +20,7 @@ public record ScheduleItemTemplate : IIdentifiable
 
     /// <summary>A heading, like "Songs" or "Games", that items go under. Added to a schedule, it starts empty.</summary>
     public bool IsSection { get; init; }
+
+    /// <summary>A placeholder filled in with a song, chosen from the song library. Always <see cref="NeedsFillIn"/>.</summary>
+    public bool IsSong { get; init; }
 }

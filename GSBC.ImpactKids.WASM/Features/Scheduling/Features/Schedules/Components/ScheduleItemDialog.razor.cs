@@ -1,4 +1,6 @@
+using System.Collections.Immutable;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Scheduling.Schedules;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Songs;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Base;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Scheduling.Schedules;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
@@ -45,15 +47,62 @@ public partial class ScheduleItemDialog
     private bool      _isSection;
     private bool      _busy;
 
-    protected override void OnInitialized()
+    private Guid?   _songId;
+    private string? _arrangementUuid;
+
+    protected override async Task OnInitializedAsync()
     {
         if (Item == null)
             return;
 
         _name = Item.Name;
         _fillIn = Item.FillIn;
+        _songId = Item.SongId;
+        _arrangementUuid = Item.ArrangementUuid;
         _minutes = Item.Minutes;
         _startsAt = Item.StartsAt;
+
+        if (Item.IsSong)
+            await SongsStore.RefreshAll();
+    }
+
+    private ImmutableList<Song> Library =>
+        SongsStore.GetState().Entities is { HasData: true } songs ? songs.Data! : [];
+
+    /// <summary>The library song it is filled in with. Null for a new song typed by name, or one since removed from ProPresenter.</summary>
+    private Song? LinkedSong => Library.FirstOrDefault(x => x.Id == _songId);
+
+    private string? SongHelp =>
+        string.IsNullOrWhiteSpace(_fillIn) ? null
+        : _songId == null ? "Not in the song library yet - kept by name"
+        : LinkedSong == null ? "No longer in ProPresenter"
+        : null;
+
+    private Task<IEnumerable<string>> SearchSongs(string? search, CancellationToken token)
+    {
+        IEnumerable<Song> songs = Library.OrderBy(x => x.Name);
+
+        if (!string.IsNullOrWhiteSpace(search))
+            songs = songs.Where(x => x.Name.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase));
+
+        return Task.FromResult(songs.Select(x => x.Name).Distinct());
+    }
+
+    /// <summary>
+    /// A name the library has links to that song; anything else is a song not in the library yet. The
+    /// item's own song keeps its link while its name is unchanged, even if it has left the library.
+    /// </summary>
+    private void SetSong(string? name)
+    {
+        _fillIn = name;
+
+        Guid? songId = Library.FirstOrDefault(x => string.Equals(x.Name, name?.Trim(), StringComparison.OrdinalIgnoreCase))?.Id
+                       ?? (name == Item?.FillIn ? Item?.SongId : null);
+
+        if (songId != _songId)
+            _arrangementUuid = songId == Item?.SongId ? Item?.ArrangementUuid : null;
+
+        _songId = songId;
     }
 
     private string? LengthHelp =>
@@ -82,6 +131,8 @@ public partial class ScheduleItemDialog
                 ItemId = Item.Id,
                 Name = _name ?? "",
                 FillIn = _fillIn,
+                SongId = _songId,
+                ArrangementUuid = _songId == null ? null : _arrangementUuid,
                 Minutes = _minutes,
                 StartsAt = _startsAt
             });

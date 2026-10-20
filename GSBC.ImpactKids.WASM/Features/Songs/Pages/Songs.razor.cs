@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using EasyAppDev.Blazor.Store.AsyncActions;
+using GSBC.ImpactKids.Shared.Contracts;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Songs;
 
 namespace GSBC.ImpactKids.WASM.Features.Songs.Pages;
@@ -61,6 +62,12 @@ public partial class Songs
         _chosenLibraries = libraries ?? [];
         Filter();
     }
+
+    /// <summary>"21/10/2026 · 3 times" - the last service it was in a schedule for, and how many services in all.</summary>
+    public static string Sung(Song song) =>
+        song.LastSungAt is { } last
+            ? $"{ChurchTime.FromUtc(new DateTimeOffset(DateTime.SpecifyKind(last, DateTimeKind.Utc))):dd/MM/yyyy} · {(song.TimesSung == 1 ? "once" : $"{song.TimesSung} times")}"
+            : "Not yet";
 
     /// <summary>Every word searched for must be in the name or somewhere in the words; the preview is the first line holding one.</summary>
     private void Filter()

@@ -1,4 +1,7 @@
-@inject IScheduleService ScheduleService
+@using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Songs
+@using GSBC.ImpactKids.WASM.Features.Songs.Pages
+@inject IScheduleService        ScheduleService
+@inject IRefreshableStore<Song> SongsStore
 
 <MudDialog>
     <DialogContent>
@@ -8,7 +11,47 @@
                       Variant="Variant.Filled"
                       Immediate="true"
                       Class="mb-4"/>
-        @if (Item?.NeedsFillIn == true || !string.IsNullOrEmpty(_fillIn))
+        @if (Item?.IsSong == true)
+        {
+            <MudAutocomplete T="string"
+                             Value="@_fillIn"
+                             ValueChanged="@SetSong"
+                             SearchFunc="@SearchSongs"
+                             CoerceValue="true"
+                             Clearable="true"
+                             Label="Song"
+                             Placeholder="Search the song library, or type a new song's name"
+                             HelperText="@SongHelp"
+                             Variant="Variant.Filled"
+                             AutoFocus="@string.IsNullOrEmpty(Item.FillIn)"
+                             Class="mb-4"/>
+            @if (LinkedSong is { } song)
+            {
+                @if (!song.Arrangements.IsEmpty)
+                {
+                    <MudText Typo="Typo.caption" Style="opacity: 0.7">Arrangement — leave unpicked for the song's usual one</MudText>
+                    <MudChipSet T="string"
+                                SelectionMode="SelectionMode.ToggleSelection"
+                                @bind-SelectedValue="_arrangementUuid"
+                                CheckMark
+                                Variant="Variant.Outlined"
+                                Class="mb-2">
+                        @foreach (SongArrangement arrangement in song.Arrangements)
+                        {
+                            <MudChip T="string" Value="arrangement.Uuid" Text="@arrangement.Name"/>
+                        }
+                    </MudChipSet>
+                }
+                <MudButton Href="@SongLyrics.Link(song.Id, _arrangementUuid)"
+                           StartIcon="@Icons.Material.Filled.LibraryMusic"
+                           Variant="Variant.Text"
+                           Size="Size.Small"
+                           Class="mb-4">
+                    Words
+                </MudButton>
+            }
+        }
+        else if (Item?.NeedsFillIn == true || !string.IsNullOrEmpty(_fillIn))
         {
             <MudTextField T="string"
                           @bind-Value="_fillIn"

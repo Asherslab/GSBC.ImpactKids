@@ -51,6 +51,7 @@
             {
                 <MudTh>Library</MudTh>
             }
+            <MudTh>Last sung</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="Name">
@@ -66,6 +67,7 @@
             {
                 <MudTd DataLabel="Library">@context.Library</MudTd>
             }
+            <MudTd DataLabel="Last sung" Style="white-space: nowrap; opacity: 0.7">@Sung(context)</MudTd>
         </RowTemplate>
         <NoRecordsContent>
             @if (_songs.HasData && _songs.Data!.IsEmpty)

@@ -1,3 +1,4 @@
+using GSBC.ImpactKids.Grpc.Data.Models.Songs;
 using Riok.Mapperly.Abstractions;
 
 namespace GSBC.ImpactKids.Grpc.Data.Models.Scheduling.Schedules;
@@ -31,6 +32,22 @@ public class DbScheduleItem
     public string? FillIn { get; set; }
 
     public required bool NeedsFillIn { get; set; }
+
+    /// <summary>A placeholder filled in with a song, copied from its template. The fill-in is the song's name.</summary>
+    public bool IsSong { get; set; }
+
+    /// <summary>
+    /// The song from the library it was filled in with. Null for a song not in the library yet, typed by
+    /// name into <see cref="FillIn"/>. Songs are only ever soft-removed, so the link outlives a song
+    /// deleted in ProPresenter.
+    /// </summary>
+    public Guid? SongId { get; set; }
+
+    [MapperIgnore]
+    public DbSong? Song { get; set; }
+
+    /// <summary>The arrangement of <see cref="SongId"/> to sing - ProPresenter's uuid. Null for the song's own default.</summary>
+    public string? ArrangementUuid { get; set; }
 
     /// <summary>The template it was added from, kept for comparing like with like across services.</summary>
     public Guid? ItemTemplateId { get; set; }

@@ -15,6 +15,7 @@ code:
   - GSBC.ImpactKids.Shared.Contracts/Entities/Features/ProPresenter/ProPresenterLibrary.cs
   - GSBC.ImpactKids.WASM/Features/Songs
   - GSBC.ImpactKids.WASM/Features/ProPresenter/Pages/Machines.razor
+  - GSBC.ImpactKids.WASM/Features/Scheduling/Features/Schedules/Components/ScheduleItemDialog.razor
 ---
 
 # Song library — songs copied out of ProPresenter for song leaders
@@ -131,6 +132,39 @@ agent was stopped for the test and restarted after, because both bind the feeds 
   Before Breakfast* (no arrangements) on every part once, with no chips.
 - Ticking *Segments* on the machines page synced its one presentation and showed library chips; unticking
   it set `RemovedAt` on that row. No song row was rewritten by the repeated unchanged syncs.
+
+## Songs in schedules
+
+Built 2026-10-20. An item template can be marked as a song (`DbScheduleItemTemplate.IsSong`, "A song,
+chosen from the song library on each service" on `/Schedules/Items`). A song is always a placeholder — the
+server sets `NeedsFillIn` with it and refuses it on a section — so the shape is a *Songs* section with
+*Song 1*, *Song 2* … under it. The existing *Song 1/2/3* rows on 2026-10-20 schedules are plain one-offs and
+do not get the picker; templates have to be rebuilt from a song item to get it.
+
+On a song item the fill-in is a song field: it suggests library songs by name and still takes any typed
+name, because a brand-new song is often sung before anyone has entered it in ProPresenter.
+
+| Typed / chosen | Stored |
+|---|---|
+| A library song's name (any case) | `SongId`, and `FillIn` set to the library's spelling by the server |
+| Anything else | `FillIn` only — "Not in the song library yet" |
+
+`ArrangementUuid` is optional; null means the song's usual one, and the lyrics page opens on it via
+`?arrangement=`. The server checks the arrangement belongs to the song. Copying a schedule copies the link.
+
+**Typing the name of a song added to ProPresenter later does not link it backwards.** An item saved by
+name stays unlinked until someone opens it and picks the song.
+
+**Last sung / how often** (`Song.LastSungAt`, `TimesSung`) are worked out on every read of the library
+(`SongService.SungAsync`), from linked items in *service* schedules — templates do not count — on
+services up to the end of today in church time. A song twice in one night counts once. The song store
+refreshes on song events, not schedule ones, so a page open while a schedule is edited shows the old
+count until it next loads.
+
+Seen working on 2026-10-20 (desktop width only): a *Song 1* template made with the flag; Father Abraham
+picked by search with its *Default* arrangement, stored with both ids; *Brand New Song* typed and stored by
+name; *Words* opening the lyrics on the chosen arrangement; Father Abraham on 19/10 counting as
+"19/10/2026 · once" and the 21/10 one not counting.
 
 ## Not built
 

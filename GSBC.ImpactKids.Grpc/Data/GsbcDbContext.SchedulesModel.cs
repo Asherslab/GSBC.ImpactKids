@@ -89,6 +89,17 @@ public partial class GsbcDbContext
             .HasForeignKey(x => x.ItemTemplateId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        // Songs are soft-removed, so this only fires if a row is deleted by hand; the item keeps its fill-in.
+        modelBuilder.Entity<DbScheduleItem>()
+            .HasOne(x => x.Song)
+            .WithMany()
+            .HasForeignKey(x => x.SongId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<DbScheduleItem>()
+            .Property(x => x.ArrangementUuid)
+            .HasMaxLength(64);
+
         modelBuilder.Entity<DbScheduleItem>()
             .Property(x => x.Name)
             .HasMaxLength(100);
