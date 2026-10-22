@@ -4,10 +4,13 @@ kind: plan
 status: in-progress
 module: propresenter
 opened: 2026-10-20
-verified: 2026-10-20
+verified: 2026-10-23
 code:
   - GSBC.ImpactKids.ProPresenterAgent/Songs/SongSync.cs
   - GSBC.ImpactKids.ProPresenterAgent/ProPresenter/ProPresenterApi.cs
+  - GSBC.ImpactKids.ProPresenterAgent/ProPresenter/ProPresenterWorkspaces.cs
+  - GSBC.ImpactKids.Grpc/Data/Models/ProPresenter/DbProPresenterMachine.cs
+  - GSBC.ImpactKids.Shared.Contracts/Entities/Features/ProPresenter/ProPresenterWorkspace.cs
   - GSBC.ImpactKids.Grpc/Features/ProPresenter/ProPresenterAgentServices/SyncSongs.cs
   - GSBC.ImpactKids.Grpc/Features/Songs
   - GSBC.ImpactKids.Grpc/Data/Models/Songs
@@ -42,16 +45,51 @@ Two cases deliberately *are* sent, and do remove songs:
 
 | Case | Why it is the truth |
 |---|---|
-| A chosen library is no longer in ProPresenter's library list | Deleted or renamed there; its songs are gone too |
+| A chosen library is no longer in the chosen workspace's library list | Deleted or renamed there; its songs are gone too |
 | A leader unticks a library | Its songs should leave the song library |
 
 Removal is soft (`DbSong.RemovedAt`), and scoped to the machine that sent the song
 (`SyncedByMachineId`), so a second Mac copying other libraries never deletes the first one's. Ticking
 a library again brings back the same rows and ids.
 
-**The API sees only ProPresenter's active workspace.** Switching ProPresenter to a workspace without
-these songs will remove them here within five minutes, and switching back restores them. Today both
-workspaces on the Mac hold the same songs (below), so this has not bitten.
+## Songs come from one chosen workspace
+
+**The API sees only ProPresenter's active workspace**, and nothing in it says which workspace that is.
+Until 2026-10-23 the sync went by libraries alone, and this bit: ProPresenter on the Impact Kids Mac was
+switched to the church's workspace, which has no Songs library, so the chosen library looked deleted and
+every song was marked removed. A workspace *with* a Songs library would have been no better, because
+**ProPresenter derives a library's uuid from its name** - `Songs` is `5D949B89-EA0B-502D-…`, a
+version-5 uuid - so it would have been copied as if it were the same library.
+
+So a machine now has a leader-chosen workspace (`DbProPresenterMachine.SongWorkspaceUuid`, "Workspace to
+copy songs from" on the machines page), and songs are copied only while it is open:
+
+- **The agent reads the open workspace from disk** (`ProPresenterWorkspaces`): `meta.active_local_uuid`
+  and the `workspaces` table in ProPresenter's `registry-v1.sqlite3` (below), opened read-only every
+  tick. The API has no route for it (`/v1/workspace`, `/v1/workspaces` and the like are 404 on
+  ProPresenter 22). It reports the list and the open one with its status, for the page.
+- **It reads songs only when the chosen workspace is open**, checked before and after the read, so a
+  switch halfway is not sent. Otherwise it logs why, once, and sends nothing - nothing is removed.
+- **The server refuses a song list that does not name the chosen workspace**
+  (`ProPresenterSongWorkspaceMismatch`). That includes every agent from before workspaces, which names
+  none: an un-updated Mac stops syncing rather than empties the library.
+- **Null copies nothing**, and the page says "Choose a workspace to copy songs from". Existing machines
+  start that way: nothing on the server can tell which of a Mac's workspaces is the right one, and
+  guessing the open one is exactly the mistake. The page never fills the choice in for the leader
+  either, so saving a rename while ProPresenter happens to be on another workspace cannot pick it.
+- **Only for ProPresenter on the same Mac.** For any other address the registry describes the wrong
+  computer, so the open workspace is unknown and no songs are copied.
+
+The workspace uuid is ProPresenter's *local* one, per Mac. A cloud workspace downloaded again gets a new
+one and has to be chosen again; it stops syncing rather than syncing the wrong thing.
+
+Seen on 2026-10-23 with the dev agent against the real ProPresenter on the Impact Kids Mac (installed
+agent stopped for the test and restarted after): three workspaces reported - *GSBC - Old*, *Impact Kids*,
+*Impact Kids - Local* - with *Impact Kids* open. With none chosen the agent logged that and sent nothing.
+With *Impact Kids - Local* chosen the page said "Not copying songs: ProPresenter has Impact Kids open",
+and all 28 rows stayed live, though the same-named library was right there. With *Impact Kids* chosen it
+sent the 26 songs within 30 seconds. ProPresenter was not switched for the test; the chosen-but-not-open
+case is the same check. The server's refusal of an old agent was not exercised.
 
 ## What ProPresenter 22 keeps on disk, and why the agent does not read it
 
@@ -74,7 +112,8 @@ Found on 2026-10-20 on the Impact Kids Mac (ProPresenter 22, workspace schema 22
 The network API (`/v1/libraries`, `/v1/library/{id}`, `/v1/presentation/{id}`) returns the same songs as
 plain text, documented, and is already what the agent talks to. Reading the files would reach the
 inactive workspace too, but means decoding an undocumented format that is still migrating, with a
-native Loro library .NET does not have. Not worth it while both workspaces hold the same songs.
+native Loro library .NET does not have. The registry, by contrast, is plain SQLite, and the agent reads
+it for which workspace is open (above).
 
 ## What the API gives, and the quirks the agent handles
 
@@ -98,12 +137,9 @@ arrangements, and is otherwise the last chip.
 
 `DbProPresenterMachine.SongLibraryUuidsJson` is **null until a leader saves the machine**, and null means
 "the library called Songs" (`ProPresenterLibrary.SongLibraries`, in Contracts so the admin page and the
-agent agree). Once saved it is never null again, and `[]` copies nothing. So a newly connected Mac
-starts copying its Songs library without anyone choosing it.
-
-A newly connected Mac's first tick has reported no libraries yet, so the default resolves to nothing
-and that first sync sends an empty list — harmless, since the machine has no songs to remove — and the
-next tick, 30 seconds later, copies the Songs library.
+agent agree). Once saved it is never null again, and `[]` copies nothing. The library is ticked for
+the leader without anyone choosing it, but since 2026-10-23 **nothing is copied until a workspace is
+chosen too** (above) - and choosing one is a save, which writes the library choice out as well.
 
 ## Load
 

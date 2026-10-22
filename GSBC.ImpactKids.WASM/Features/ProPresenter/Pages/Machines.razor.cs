@@ -47,6 +47,8 @@ public partial class Machines
     private string?                           _editingName;
     private ImmutableList<ProPresenterTimer>  _editingTimers = [];
     private ImmutableList<ProPresenterLibrary> _editingLibraries = [];
+    private ImmutableList<ProPresenterWorkspace> _editingWorkspaces = [];
+    private string?                           _editingActiveWorkspace;
     private bool                              _busy;
     private Timer?                            _redraw;
     private Timer?                            _reload;
@@ -95,10 +97,36 @@ public partial class Machines
         _editingLibraries = machine.Libraries.AddRange(machine.SongLibraryUuids
             .Where(uuid => machine.Libraries.All(l => l.Uuid != uuid))
             .Select(uuid => new ProPresenterLibrary { Uuid = uuid, Name = "(no longer in ProPresenter)" }));
+
+        // And for the workspace. Never filled in with the open one: saving a rename while ProPresenter
+        // happened to be on the church's workspace would quietly start copying that.
+        _editingWorkspaces = machine.SongWorkspaceUuid is { } workspace && machine.Workspaces.All(w => w.Uuid != workspace)
+            ? machine.Workspaces.Add(new ProPresenterWorkspace { Uuid = workspace, Name = "(no longer in ProPresenter)" })
+            : machine.Workspaces;
+        _editingActiveWorkspace = machine.ActiveWorkspaceUuid;
     }
 
     private string? LibraryName(string? uuid) =>
         _editingLibraries.FirstOrDefault(l => l.Uuid == uuid)?.Name ?? uuid;
+
+    private string? WorkspaceName(string? uuid) =>
+        _editingWorkspaces.FirstOrDefault(w => w.Uuid == uuid)?.Name ?? uuid;
+
+    private string WorkspaceHelperText =>
+        _editingWorkspaces.Count == 0
+            ? "No workspaces reported yet - is the tool up to date, and ProPresenter on the same Mac?"
+            : "Songs are copied only while this workspace is open in ProPresenter"
+              + (_editingActiveWorkspace == null ? "" : $" - {WorkspaceName(_editingActiveWorkspace)} is open now");
+
+    /// <summary>Why the Mac is not copying songs right now, when a leader would expect it to.</summary>
+    private static string? SongWorkspaceWarning(ProPresenterMachine machine) =>
+        machine.SongWorkspaceUuid == null
+            ? machine.SongLibraryUuids.IsEmpty ? null : "Choose a workspace to copy songs from"
+            : machine.ActiveWorkspaceUuid == null
+                ? null
+                : machine.ActiveWorkspaceUuid != machine.SongWorkspaceUuid
+                    ? $"Not copying songs: ProPresenter has {machine.WorkspaceName(machine.ActiveWorkspaceUuid)} open"
+                    : null;
 
     private async Task SaveEdit()
     {

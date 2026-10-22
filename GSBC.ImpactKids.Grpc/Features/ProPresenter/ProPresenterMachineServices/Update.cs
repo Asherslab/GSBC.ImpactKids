@@ -52,6 +52,8 @@ public partial class ProPresenterMachineService
             .Take(100)
             .ToList());
 
+        machine.SongWorkspaceUuid = string.IsNullOrWhiteSpace(request.SongWorkspaceUuid) ? null : request.SongWorkspaceUuid.Trim();
+
         await db.SaveChangesAsync(token);
         await eventService.SendUpdatedEvent(token);
 

@@ -2,7 +2,7 @@ using GSBC.ImpactKids.Shared.Contracts.Entities.Features.ProPresenter;
 
 namespace GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.ProPresenter;
 
-/// <summary>The settings a leader may change. All are written every time; there are only five.</summary>
+/// <summary>The settings a leader may change. All are written every time; there are only seven.</summary>
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
 public class UpdateProPresenterMachineRequest : IUpdateRequest<ProPresenterMachine, UpdateProPresenterMachineRequest>
 {
@@ -17,6 +17,9 @@ public class UpdateProPresenterMachineRequest : IUpdateRequest<ProPresenterMachi
     /// <summary>The ProPresenter libraries to copy songs from, from the machine's reported libraries. Empty copies none.</summary>
     public List<string> SongLibraryUuids { get; set; } = [];
 
+    /// <summary>The ProPresenter workspace to copy songs from, from the machine's reported workspaces. Null copies none.</summary>
+    public string? SongWorkspaceUuid { get; set; }
+
     public static UpdateProPresenterMachineRequest FromEntity(ProPresenterMachine entity) => new()
     {
         Id = entity.Id,
@@ -24,6 +27,7 @@ public class UpdateProPresenterMachineRequest : IUpdateRequest<ProPresenterMachi
         ProPresenterHost = entity.ProPresenterHost,
         ProPresenterPort = entity.ProPresenterPort,
         ScheduleTimerUuid = entity.ScheduleTimerUuid,
-        SongLibraryUuids = entity.SongLibraryUuids.ToList()
+        SongLibraryUuids = entity.SongLibraryUuids.ToList(),
+        SongWorkspaceUuid = entity.SongWorkspaceUuid
     };
 }

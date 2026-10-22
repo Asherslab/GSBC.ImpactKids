@@ -42,6 +42,7 @@ builder.Services.AddSingleton<ImpactKidsClient>();
 builder.Services.AddSingleton<FirstTimersFeed>();
 builder.Services.AddSingleton<StageDriver>();
 builder.Services.AddSingleton<ScheduleFeeds>();
+builder.Services.AddSingleton<ProPresenterWorkspaces>();
 builder.Services.AddSingleton<SongSync>();
 
 // The event stream stays open all night; Impact Kids' heartbeats keep it moving.

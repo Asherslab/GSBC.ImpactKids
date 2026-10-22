@@ -74,6 +74,8 @@ public static class ErrorConstants
     public const string ProPresenterMachineNameNull = "ProPresenter Machine Name Must Be Set";
     public const string ProPresenterHostNull        = "ProPresenter Address Must Be Set";
     public const string ProPresenterPortInvalid     = "ProPresenter Port Must Be Between 1 And 65535";
+    public const string ProPresenterSongWorkspaceMismatch =
+        "Songs Are Only Taken From The ProPresenter Workspace Chosen For This Machine";
     public const string ProPresenterRedirectInvalid =
         "This link can only connect the computer it was opened on. Start the setup again from the ProPresenter machine";
     public const string ProPresenterChallengeInvalid =

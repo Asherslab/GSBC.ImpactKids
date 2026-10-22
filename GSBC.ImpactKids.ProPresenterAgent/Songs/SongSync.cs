@@ -14,6 +14,12 @@ namespace GSBC.ImpactKids.ProPresenterAgent.Songs;
 /// Reads ProPresenter's network API - not its workspace files, which are CRDT documents in a format
 /// ProPresenter 22 does not document and is still changing. The API sees only the active workspace.
 /// <para>
+/// <b>So it reads only while the machine's chosen workspace is open</b>, checked before and after the
+/// read so a switch halfway through is not sent. Another workspace's libraries are not this one's
+/// with songs missing - and its "Songs" library even has the same uuid. See
+/// <see cref="ProPresenterWorkspaces"/>.
+/// </para>
+/// <para>
 /// <b>It sends only a complete list.</b> The server takes a song this machine sent before and has not
 /// sent now as deleted in ProPresenter, so a read cut short - ProPresenter closed halfway, one
 /// presentation timing out - must send nothing at all rather than the songs it did get.
@@ -25,32 +31,48 @@ namespace GSBC.ImpactKids.ProPresenterAgent.Songs;
 /// </para>
 /// </summary>
 public sealed class SongSync(
-    ProPresenterApi   proPresenter,
-    ImpactKidsClient  impactKids,
-    AgentState        state,
-    ILogger<SongSync> logger
+    ProPresenterApi        proPresenter,
+    ProPresenterWorkspaces workspaces,
+    ImpactKidsClient       impactKids,
+    AgentState             state,
+    ILogger<SongSync>      logger
 )
 {
-    /// <summary>How often ProPresenter is read. A change of chosen libraries is picked up at once instead.</summary>
+    /// <summary>How often ProPresenter is read. A change of chosen libraries or workspace is picked up at once instead.</summary>
     private static readonly TimeSpan Interval = TimeSpan.FromMinutes(5);
 
     private static readonly TimeSpan ResendAfter = TimeSpan.FromHours(1);
 
     private DateTimeOffset _lastRead = DateTimeOffset.MinValue;
-    private string?        _lastLibraries;
+    private string?        _lastChoice;
     private string?        _sentHash;
     private DateTimeOffset _sentAt = DateTimeOffset.MinValue;
+    private string?        _skipped;
 
     /// <param name="libraries">ProPresenter's libraries as this tick read them; null when ProPresenter did not answer.</param>
-    public async Task SyncIfDueAsync(List<ProPresenterApi.LibraryId>? libraries, CancellationToken token)
+    /// <param name="activeWorkspace">The workspace open in ProPresenter as this tick read it; null when it could not be told.</param>
+    public async Task SyncIfDueAsync(List<ProPresenterApi.LibraryId>? libraries, string? activeWorkspace, CancellationToken token)
     {
         if (state.Configuration is not { } configuration || libraries == null)
             return;
 
-        DateTimeOffset now    = DateTimeOffset.UtcNow;
-        string         chosen = string.Join(",", configuration.SongLibraryUuids);
+        if (Skip(configuration.SongWorkspaceUuid, activeWorkspace) is { } reason)
+        {
+            // Once per reason, not every 30 seconds for a night spent in the church's workspace.
+            if (reason != _skipped)
+                logger.LogInformation("Not copying songs: {Reason}", reason);
 
-        if (chosen == _lastLibraries && now - _lastRead < Interval)
+            _skipped = reason;
+            return;
+        }
+
+        _skipped = null;
+
+        DateTimeOffset now    = DateTimeOffset.UtcNow;
+        string         choice = $"{configuration.SongWorkspaceUuid}:{string.Join(",", configuration.SongLibraryUuids)}";
+
+        // The choice includes the workspace, so coming back to it is read at once.
+        if (choice == _lastChoice && now - _lastRead < Interval)
             return;
 
         // Not marked as read: an incomplete read is tried again on the next tick, not in five minutes.
@@ -59,15 +81,27 @@ public sealed class SongSync(
         if (songs == null)
             return;
 
+        // Switched while reading: some of these songs may be the other workspace's. Not sent, and
+        // not marked as read, so the next tick decides afresh.
+        if (workspaces.Read()?.ActiveUuid != configuration.SongWorkspaceUuid)
+        {
+            logger.LogInformation("ProPresenter changed workspace while its songs were read; not sending them");
+            return;
+        }
+
         _lastRead = now;
-        _lastLibraries = chosen;
+        _lastChoice = choice;
 
         string hash = Hash(songs);
 
         if (hash == _sentHash && now - _sentAt < ResendAfter)
             return;
 
-        BasicResponse response = await impactKids.Agent.SyncSongs(new SyncProPresenterSongsRequest { Songs = songs }, token);
+        BasicResponse response = await impactKids.Agent.SyncSongs(new SyncProPresenterSongsRequest
+        {
+            WorkspaceUuid = configuration.SongWorkspaceUuid,
+            Songs = songs
+        }, token);
 
         if (!response.Success)
         {
@@ -81,6 +115,13 @@ public sealed class SongSync(
         logger.LogInformation("Sent {Count} songs from {Libraries}", songs.Count,
             string.Join(", ", libraries.Where(l => configuration.SongLibraryUuids.Contains(l.Uuid)).Select(l => l.Name)));
     }
+
+    /// <summary>Why songs are not read this tick, or null when the chosen workspace is the one open.</summary>
+    private static string? Skip(string? chosen, string? active) =>
+        chosen == null ? "no ProPresenter workspace has been chosen for songs on the admin page"
+        : active == null ? "cannot tell which workspace ProPresenter has open"
+        : active != chosen ? "ProPresenter has a different workspace open from the one chosen for songs"
+        : null;
 
     /// <summary>Every song in the chosen libraries, or null if any part could not be read.</summary>
     private async Task<List<ProPresenterSong>?> ReadAsync(

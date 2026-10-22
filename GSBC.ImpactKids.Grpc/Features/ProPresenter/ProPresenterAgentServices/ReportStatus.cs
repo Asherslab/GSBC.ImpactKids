@@ -33,7 +33,11 @@ public partial class ProPresenterAgentService
         var before = await db.ProPresenterMachines
             .AsNoTracking()
             .Where(x => x.Id == machineId)
-            .Select(x => new { x.LastSeenAt, x.AgentVersion, x.ProPresenterReachable, x.ProPresenterVersion, x.TimersJson, x.LibrariesJson })
+            .Select(x => new
+            {
+                x.LastSeenAt, x.AgentVersion, x.ProPresenterReachable, x.ProPresenterVersion, x.TimersJson, x.LibrariesJson,
+                x.WorkspacesJson, x.ActiveWorkspaceUuid
+            })
             .FirstOrDefaultAsync(token);
 
         if (before == null)
@@ -62,6 +66,18 @@ public partial class ProPresenterAgentService
                 .ToList())
             : before.LibrariesJson;
 
+        // Read from the Mac's disk, not ProPresenter's API, so an empty list is an unreadable registry -
+        // or an agent from before workspaces - and the last list stands. The open one is reported as
+        // it is: null is "cannot tell", which the page says rather than show a stale workspace.
+        string? workspacesJson = request.Workspaces.Count > 0
+            ? JsonSerializer.Serialize(request.Workspaces
+                .Take(100)
+                .Select(w => new ProPresenterWorkspace { Uuid = Truncate(w.Uuid, 64)!, Name = Truncate(w.Name, 200)! })
+                .ToList())
+            : before.WorkspacesJson;
+
+        string? activeWorkspaceUuid = Truncate(request.ActiveWorkspaceUuid, 64);
+
         await db.ProPresenterMachines
             .Where(x => x.Id == machineId)
             .ExecuteUpdateAsync(s => s
@@ -70,7 +86,9 @@ public partial class ProPresenterAgentService
                 .SetProperty(x => x.ProPresenterReachable, request.ProPresenterReachable)
                 .SetProperty(x => x.ProPresenterVersion, proPresenterVersion)
                 .SetProperty(x => x.TimersJson, timersJson)
-                .SetProperty(x => x.LibrariesJson, librariesJson), token);
+                .SetProperty(x => x.LibrariesJson, librariesJson)
+                .SetProperty(x => x.WorkspacesJson, workspacesJson)
+                .SetProperty(x => x.ActiveWorkspaceUuid, activeWorkspaceUuid), token);
 
         bool wasOffline = before.LastSeenAt == null || now - before.LastSeenAt.Value >= ProPresenterMachine.OnlineWindow;
 
@@ -79,7 +97,9 @@ public partial class ProPresenterAgentService
                              || before.ProPresenterReachable != request.ProPresenterReachable
                              || before.ProPresenterVersion != proPresenterVersion
                              || before.TimersJson != timersJson
-                             || before.LibrariesJson != librariesJson;
+                             || before.LibrariesJson != librariesJson
+                             || before.WorkspacesJson != workspacesJson
+                             || before.ActiveWorkspaceUuid != activeWorkspaceUuid;
 
         if (visibleChange)
             await eventService.SendUpdatedEvent(token);

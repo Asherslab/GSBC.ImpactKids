@@ -21,7 +21,7 @@ public partial class ProPresenterAgentService
     private const int MaxArrangementSize = 200;
 
     /// <summary>
-    /// The machine's whole song list: new songs added, changed ones rewritten, and this machine's songs
+    /// The machine's whole song list, from its chosen workspace only: new songs added, changed ones rewritten, and this machine's songs
     /// that are missing marked removed. A song sent again unchanged is not touched, so
     /// <see cref="DbSong.UpdatedAt"/> means the words changed, not that the agent looked.
     /// <para>
@@ -41,8 +41,20 @@ public partial class ProPresenterAgentService
         if (machineId == null)
             return BasicResponse.WithError(PermissionDenied);
 
-        if (!await db.ProPresenterMachines.AnyAsync(x => x.Id == machineId, token))
+        var machine = await db.ProPresenterMachines
+            .AsNoTracking()
+            .Where(x => x.Id == machineId)
+            .Select(x => new { x.SongWorkspaceUuid })
+            .FirstOrDefaultAsync(token);
+
+        if (machine == null)
             return BasicResponse.WithError(ProPresenterMachineNotFound);
+
+        // A list from any other workspace would mark every song this machine sent removed - which is
+        // what happened when ProPresenter was switched to the church's workspace. Refused, not
+        // reconciled, and that includes an agent from before workspaces, which names none.
+        if (machine.SongWorkspaceUuid == null || request.WorkspaceUuid != machine.SongWorkspaceUuid)
+            return BasicResponse.WithError(ProPresenterSongWorkspaceMismatch);
 
         // Bounded, and one per uuid - a song in two chosen libraries arrives twice.
         List<ProPresenterSong> incoming = request.Songs

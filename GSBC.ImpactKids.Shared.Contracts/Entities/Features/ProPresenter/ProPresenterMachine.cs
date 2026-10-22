@@ -56,6 +56,19 @@ public record ProPresenterMachine
     /// <summary>The libraries this machine copies songs from, already resolved by <see cref="ProPresenterLibrary.SongLibraries"/>.</summary>
     public ImmutableList<string> SongLibraryUuids { get; init; } = [];
 
+    /// <summary>ProPresenter's workspaces on the Mac, as the agent last reported them.</summary>
+    public ImmutableList<ProPresenterWorkspace> Workspaces { get; init; } = [];
+
+    /// <summary>The workspace ProPresenter last had open. Null when the agent could not tell.</summary>
+    public string? ActiveWorkspaceUuid { get; init; }
+
+    /// <summary>The workspace songs are copied from, only while it is open. Null until a leader picks one, and copies none.</summary>
+    public string? SongWorkspaceUuid { get; init; }
+
+    /// <summary>A workspace's name, or a stand-in when the Mac no longer reports it.</summary>
+    public string WorkspaceName(string uuid) =>
+        Workspaces.FirstOrDefault(w => w.Uuid == uuid)?.Name ?? "a workspace no longer in ProPresenter";
+
     [ProtoIgnore]
     public DateTime LocalCreatedAt => CreatedAt.ToLocalTime();
 

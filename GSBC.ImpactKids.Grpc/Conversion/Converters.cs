@@ -388,7 +388,12 @@ public class ProPresenterMachineConverter(
             : System.Text.Json.JsonSerializer.Deserialize<List<ProPresenterTimer>>(machine.TimersJson)?.ToImmutableList() ?? [],
         ScheduleTimerUuid     = machine.ScheduleTimerUuid,
         Libraries             = Libraries(machine.LibrariesJson),
-        SongLibraryUuids      = SongLibraries(machine.SongLibraryUuidsJson, machine.LibrariesJson)
+        SongLibraryUuids      = SongLibraries(machine.SongLibraryUuidsJson, machine.LibrariesJson),
+        Workspaces            = machine.WorkspacesJson == null
+            ? []
+            : System.Text.Json.JsonSerializer.Deserialize<List<ProPresenterWorkspace>>(machine.WorkspacesJson)?.ToImmutableList() ?? [],
+        ActiveWorkspaceUuid   = machine.ActiveWorkspaceUuid,
+        SongWorkspaceUuid     = machine.SongWorkspaceUuid
     };
 
     public static ImmutableList<ProPresenterLibrary> Libraries(string? librariesJson) =>

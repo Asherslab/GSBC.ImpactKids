@@ -31,7 +31,8 @@ public partial class ProPresenterAgentService
                 x.ProPresenterPort,
                 x.ScheduleTimerUuid,
                 x.SongLibraryUuidsJson,
-                x.LibrariesJson
+                x.LibrariesJson,
+                x.SongWorkspaceUuid
             })
             .FirstOrDefaultAsync(token);
 
@@ -52,7 +53,8 @@ public partial class ProPresenterAgentService
                 ScheduleTimerUuid = machine.ScheduleTimerUuid,
                 SongLibraryUuids = ProPresenterMachineConverter
                     .SongLibraries(machine.SongLibraryUuidsJson, machine.LibrariesJson)
-                    .ToList()
+                    .ToList(),
+                SongWorkspaceUuid = machine.SongWorkspaceUuid
             }
         };
     }

@@ -19,6 +19,12 @@ public record ProPresenterAgentConfiguration
     /// <summary>The ProPresenter libraries to copy songs from, already resolved by <see cref="ProPresenterLibrary.SongLibraries"/>. Empty copies none.</summary>
     public List<string> SongLibraryUuids { get; init; } = [];
 
+    /// <summary>
+    /// The ProPresenter workspace songs are copied from. Songs are read only while it is the one open;
+    /// null - nobody has chosen - copies none.
+    /// </summary>
+    public string? SongWorkspaceUuid { get; init; }
+
     // By value, list included. The agent logs a configuration that differs from the last one it had,
     // and record equality compares a list by reference - so every pull would look like a change.
     public virtual bool Equals(ProPresenterAgentConfiguration? other) =>
@@ -28,8 +34,9 @@ public record ProPresenterAgentConfiguration
         && ProPresenterHost == other.ProPresenterHost
         && ProPresenterPort == other.ProPresenterPort
         && ScheduleTimerUuid == other.ScheduleTimerUuid
-        && SongLibraryUuids.SequenceEqual(other.SongLibraryUuids);
+        && SongLibraryUuids.SequenceEqual(other.SongLibraryUuids)
+        && SongWorkspaceUuid == other.SongWorkspaceUuid;
 
     public override int GetHashCode() =>
-        HashCode.Combine(MachineId, Name, ProPresenterHost, ProPresenterPort, ScheduleTimerUuid, SongLibraryUuids.Count);
+        HashCode.Combine(MachineId, Name, ProPresenterHost, ProPresenterPort, ScheduleTimerUuid, SongLibraryUuids.Count, SongWorkspaceUuid);
 }

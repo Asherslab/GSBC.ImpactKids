@@ -65,6 +65,12 @@ public class DbProPresenterMachine
     /// <summary>ProPresenter's libraries, as the agent last reported them - a JSON list of uuid and name.</summary>
     public string? LibrariesJson { get; set; }
 
+    /// <summary>ProPresenter's workspaces on the Mac, as the agent last reported them - a JSON list of uuid and name.</summary>
+    public string? WorkspacesJson { get; set; }
+
+    /// <summary>The workspace ProPresenter had open at the agent's last report; null when the agent could not tell.</summary>
+    public string? ActiveWorkspaceUuid { get; set; }
+
     // Leader-owned: which ProPresenter timer follows tonight's schedule.
     public string? ScheduleTimerUuid { get; set; }
 
@@ -74,4 +80,11 @@ public class DbProPresenterMachine
     /// <c>ProPresenterLibrary.SongLibraries</c>.
     /// </summary>
     public string? SongLibraryUuidsJson { get; set; }
+
+    /// <summary>
+    /// Leader-owned: the ProPresenter workspace songs are copied from. The agent reads songs only while
+    /// it is the one open, and the server refuses a song list from any other. Null - nobody has
+    /// chosen - copies none: switching ProPresenter to another workspace once emptied the song library.
+    /// </summary>
+    public string? SongWorkspaceUuid { get; set; }
 }

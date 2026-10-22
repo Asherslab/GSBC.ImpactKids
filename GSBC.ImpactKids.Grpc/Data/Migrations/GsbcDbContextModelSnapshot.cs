@@ -647,6 +647,9 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("ActiveWorkspaceUuid")
+                        .HasColumnType("text");
+
                     b.Property<string>("AgentVersion")
                         .HasColumnType("text");
 
@@ -705,11 +708,17 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.Property<string>("SongLibraryUuidsJson")
                         .HasColumnType("text");
 
+                    b.Property<string>("SongWorkspaceUuid")
+                        .HasColumnType("text");
+
                     b.Property<string>("TimersJson")
                         .HasColumnType("text");
 
                     b.Property<string>("TokenSigningKey")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("WorkspacesJson")
                         .HasColumnType("text");
 
                     b.HasKey("Id");

@@ -24,6 +24,12 @@ public class ReportProPresenterAgentStatusRequest
 
     /// <summary>ProPresenter's libraries right now. Empty when it could not be asked.</summary>
     public List<ProPresenterLibrary> Libraries { get; set; } = [];
+
+    /// <summary>ProPresenter's workspaces on the Mac. Empty when they could not be read.</summary>
+    public List<ProPresenterWorkspace> Workspaces { get; set; } = [];
+
+    /// <summary>The workspace ProPresenter has open, whose libraries the API is showing. Null when it could not be read.</summary>
+    public string? ActiveWorkspaceUuid { get; set; }
 }
 
 /// <summary>
@@ -35,6 +41,13 @@ public class ReportProPresenterAgentStatusRequest
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
 public class SyncProPresenterSongsRequest
 {
+    /// <summary>
+    /// The workspace the songs were read from, open in ProPresenter before and after the read. The
+    /// server refuses the list unless it is the machine's chosen workspace - so an agent from before
+    /// workspaces, which sends none, cannot empty the library either.
+    /// </summary>
+    public string? WorkspaceUuid { get; set; }
+
     public List<ProPresenterSong> Songs { get; set; } = [];
 }
 
