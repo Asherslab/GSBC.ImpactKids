@@ -115,9 +115,12 @@ public partial class ElvantoService(
             string              rawBody  = await message.Content.ReadAsStringAsync(token);
             TResponse?          response = System.Text.Json.JsonSerializer.Deserialize<TResponse>(rawBody, _jsonOptions);
 
-            if (response is PeopleResponse)
-                logger.LogWarning("Elvanto {Uri} returned null after deserialization. Raw body: {Body}",
-                    TRequest.RequestUri, rawBody);
+            // Only when nothing usable came back - an Elvanto failure body is a few bytes. This was
+            // `response is PeopleResponse`, which is true on every success, so each sync wrote the
+            // whole roll (contact details and medical notes included) into the pod log.
+            if (response is null or PeopleResponse { People: null } or PeopleResponse { People.Person: null })
+                logger.LogWarning("Elvanto {Uri} returned no people (HTTP {Status}). Raw body: {Body}",
+                    TRequest.RequestUri, (int)message.StatusCode, rawBody);
 
             return response;
         }
