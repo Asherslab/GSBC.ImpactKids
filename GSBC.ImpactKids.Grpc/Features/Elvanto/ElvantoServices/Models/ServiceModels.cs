@@ -103,6 +103,7 @@ public class ElvantoPerson
     public string? FamilyRelationship { get; set; }
 
     [JsonPropertyName("family_id")]
+    [JsonConverter(typeof(StringOrNumberConverter))]
     public string? FamilyId { get; set; }
     
     [JsonPropertyName("birthday")]
