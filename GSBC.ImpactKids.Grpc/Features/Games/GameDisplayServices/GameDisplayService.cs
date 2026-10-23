@@ -5,6 +5,7 @@ using GSBC.ImpactKids.Grpc.Data.Models.Games;
 using GSBC.ImpactKids.Grpc.Data.Models.Scheduling;
 using GSBC.ImpactKids.Grpc.Extensions;
 using GSBC.ImpactKids.Grpc.Services;
+using GSBC.ImpactKids.Shared.Contracts;
 using GSBC.ImpactKids.Shared.Contracts.Entities.Features.Games;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.Games;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Features.Games;
@@ -335,8 +336,12 @@ public class GameDisplayService(
 
         // No id given, so the display is on a fixed URL - fall back to today, then
         // to the most recent service, matching how the scoring tool picks one.
-        DateTimeOffset todayStart = new(DateTime.UtcNow.Date, TimeSpan.Zero);
-        DateTimeOffset todayEnd   = todayStart.AddDays(1);
+        //
+        // Today at the church, not today in UTC: a service is stored as church midnight,
+        // which is the previous UTC day, so a UTC window never contained it. And the
+        // fallback stops at today - services are planned weeks ahead now, and the newest
+        // one overall is an empty board showing every team on zero.
+        (DateTimeOffset todayStart, DateTimeOffset todayEnd) = ChurchTime.DayBounds(ChurchTime.Today);
 
         DbService? today = await db.Services
             .AsNoTracking()
@@ -346,6 +351,7 @@ public class GameDisplayService(
 
         return today ?? await db.Services
             .AsNoTracking()
+            .Where(x => x.Date < todayEnd)
             .OrderByDescending(x => x.Date)
             .FirstOrDefaultAsync(token);
     }
