@@ -149,6 +149,33 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                     b.ToTable("PickupDisplayKeys");
                 });
 
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.DataDisplay.DbMetabaseEmbed", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("MetabaseId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Label")
+                        .IsUnique();
+
+                    b.ToTable("MetabaseEmbeds");
+                });
+
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.DbBibleVerse", b =>
                 {
                     b.Property<Guid>("Id")

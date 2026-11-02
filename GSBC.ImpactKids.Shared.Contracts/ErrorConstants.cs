@@ -102,4 +102,10 @@ public static class ErrorConstants
     public const string ScheduleRunNotAService       = "Only A Service's Schedule Can Be Run, Not A Template";
     public const string ScheduleRunNothingNext       = "There Is Nothing To Move On To";
     public const string ScheduleRunNothingBack       = "There Is Nothing To Go Back To";
+
+    public const string MetabaseEmbedNotFound   = "Analytics Page Not Found";
+    public const string MetabaseEmbedLabelNull  = "Analytics Page Label Must Be Set";
+    public const string MetabaseEmbedLabelTaken = "Another Analytics Page Already Has That Label";
+    public const string MetabaseEmbedIdInvalid  = "Metabase Id Must Be A Positive Number";
+    public const string MetabaseSecretNotSet    = "Metabase Is Not Configured On The Server";
 }

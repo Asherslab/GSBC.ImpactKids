@@ -124,12 +124,6 @@ builder.Services.AddAuthenticatedGrpcClient<ISyncService>();
 // Offline first, so it outlives any page and keeps its outbox for the whole session.
 builder.Services.AddSingleton<IGamePointsService, GamePointsService>();
 
-MetabaseConfig? metabaseConfig = builder.Configuration.GetSection("metabase").Get<MetabaseConfig>();
-if (metabaseConfig != null)
-{
-    builder.Services.AddSingleton(metabaseConfig);
-}
-
 ElvantoReportsConfig? reportsConfig = builder.Configuration.GetSection("elvanto").Get<ElvantoReportsConfig>();
 if (reportsConfig != null)
 {

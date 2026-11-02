@@ -1,6 +1,8 @@
 using System.Collections.Immutable;
 using GSBC.ImpactKids.Grpc.Data.Models;
 using GSBC.ImpactKids.Grpc.Data.Models.Attendance;
+using GSBC.ImpactKids.Grpc.Data.Models.DataDisplay;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.DataDisplay;
 using GSBC.ImpactKids.Grpc.Data.Models.Games;
 using GSBC.ImpactKids.Grpc.Data.Models.Sync;
 using GSBC.ImpactKids.Grpc.Data.Models.MemoryVerses;
@@ -118,6 +120,13 @@ public partial class ServiceConverter(
 public partial class ServiceTypeConverter : IConverter<DbServiceType, ServiceType>
 {
     public partial ServiceType Convert(DbServiceType input);
+}
+
+[Mapper]
+public partial class MetabaseEmbedConverter : IConverter<DbMetabaseEmbed, MetabaseEmbed>
+{
+    [MapperIgnoreTarget(nameof(MetabaseEmbed.ResourceType))]
+    public partial MetabaseEmbed Convert(DbMetabaseEmbed input);
 }
 
 [Mapper]

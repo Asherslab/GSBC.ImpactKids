@@ -73,9 +73,8 @@ The largest partial file in this project is 273 lines (`ElvantoServices/GetPeopl
 median is well under a hundred. A file crossing roughly 250 lines is the signal to ask whether it
 is holding two operations.
 
-`LoginService` (39 lines), `MetabaseService` (43) and `GameDisplayService` (344) are single-file
-and not partial, which is fine — with one job and no second operation, a folder of files is
-ceremony. Split when the second operation arrives, not before.
+`LoginService` (39 lines) and `GameDisplayService` (344) are single-file and not partial, which is
+fine — with one job and no second operation, a folder of files is ceremony. Split when the second operation arrives, not before.
 
 ## When partials are the wrong answer
 

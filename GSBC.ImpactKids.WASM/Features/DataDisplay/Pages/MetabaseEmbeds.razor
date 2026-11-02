@@ -1,0 +1,57 @@
+@inherits EntityUtilityComponent
+@* Not under /Analytics/, where it would hide an embed labelled the same *@
+@page "/AnalyticsPages"
+@attribute [Authorize]
+@inject IRefreshableStore<MetabaseEmbed> MetabaseEmbedsStore
+@inject IMetabaseService                 MetabaseService
+
+<PageTitle>Analytics Pages</PageTitle>
+
+<MudPaper Elevation="6" Class="mt-4 relative" Style="min-height: 120px">
+    <MudOverlay Visible="@(_embeds.IsLoading)"
+                DarkBackground
+                Absolute>
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+    @if (_embeds.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">@(_embeds.Error ?? "An Unexpected error occured")</MudAlert>
+    }
+    <MudTable
+        Items="_embeds.Data"
+        Hover="true" Breakpoint="Breakpoint.None">
+        <HeaderContent>
+            <MudTh>
+                <MudIconButton OnClick="@CreateEmbed"
+                               Icon="@Icons.Material.Filled.PostAdd"
+                               aria-label="Add analytics page"/>
+            </MudTh>
+            <MudTh>Label</MudTh>
+            <MudTh>Type</MudTh>
+            <MudTh>Metabase Id</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>
+                <MudButtonGroup Variant="Variant.Outlined">
+                    <MudIconButton OnClick="@(() => UpdateEmbed(context))"
+                                   Icon="@Icons.Material.Filled.Edit"
+                                   aria-label="Edit"/>
+                    <MudIconButton OnClick="@(() => DeleteEmbed(context))"
+                                   Icon="@Icons.Material.Filled.Delete"
+                                   aria-label="Delete"/>
+                </MudButtonGroup>
+            </MudTd>
+            <MudTd DataLabel="Label">
+                <MudLink Href="@AnalyticsHref(context)">@context.Label</MudLink>
+            </MudTd>
+            <MudTd DataLabel="Type">@context.Type</MudTd>
+            <MudTd DataLabel="Metabase Id">@context.MetabaseId</MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            @if (_embeds.HasData)
+            {
+                <MudText Style="opacity: 0.7">No analytics pages yet. Add one with the button above.</MudText>
+            }
+        </NoRecordsContent>
+    </MudTable>
+</MudPaper>

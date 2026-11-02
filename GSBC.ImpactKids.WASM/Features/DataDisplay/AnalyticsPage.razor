@@ -1,31 +1,30 @@
+@inherits EntityUtilityComponent
 @page "/Analytics/{DashboardLabel}"
-@using GSBC.ImpactKids.Shared.Contracts.Messages.Requests
-@using GSBC.ImpactKids.Shared.Contracts.Messages.Responses
-@using GSBC.ImpactKids.Shared.Contracts.Services.Features.DataDisplay
-@using GSBC.ImpactKids.WASM.Services
 @attribute [Authorize]
-@inject MetabaseConfig   MetabaseConfig
-@inject IMetabaseService MetabaseService
+@inject IRefreshableStore<MetabaseEmbed> MetabaseEmbedsStore
+@inject IMetabaseService                 MetabaseService
 
-@if (_label != null)
-{
-    <PageTitle>@_label</PageTitle>
-}
-else
-{
-    <PageTitle>Kids Dashboard</PageTitle>
-}
+<PageTitle>@(DashboardLabel ?? "Kids Dashboard")</PageTitle>
 
 <MudStack Row Class="mt-4 align-center justify-space-between">
-    <MudText Typo="Typo.h6">@(_label ?? "Kids Dashboard")</MudText>
+    <MudText Typo="Typo.h6">@(DashboardLabel ?? "Kids Dashboard")</MudText>
     <MudIconButton
         Icon="@Icons.Material.Filled.Refresh"
         Color="Color.Primary"
-        Disabled="@_refreshing"
-        OnClick="@RefreshClicked"/>
+        Disabled="@(_refreshing || _embed == null)"
+        OnClick="@RefreshClicked"
+        aria-label="Refresh"/>
 </MudStack>
 
-<MudPaper Elevation="6" Class="mt-4" Style="height: 90vh">
+@if (_error != null)
+{
+    <MudAlert Severity="Severity.Error" Class="mt-4">@_error</MudAlert>
+}
+
+<MudPaper Elevation="6" Class="mt-4 relative" Style="height: 90vh">
+    <MudOverlay Visible="@(_token == null && _error == null)" DarkBackground Absolute>
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
     @if (_token != null)
     {
         <iframe
@@ -37,68 +36,3 @@ else
         </iframe>
     }
 </MudPaper>
-
-@code {
-
-    [Parameter]
-    public required string DashboardLabel { get; set; }
-
-    [SupplyParameterFromQuery]
-    public int? Refresh { get; set; }
-
-    private Guid              _iframeKey = Guid.NewGuid();
-    private string?           _label;
-    private string?           _reportUrl;
-    private string?           _token;
-    private DashboardMapping? _mapping;
-    private bool               _refreshing;
-
-    protected override async Task OnParametersSetAsync()
-    {
-        await base.OnParametersSetAsync();
-        _mapping = MetabaseConfig.DashboardMappings.FirstOrDefault(x => x.Label == DashboardLabel);
-        _label = DashboardLabel;
-        await LoadDashboardAsync();
-    }
-
-    private async Task RefreshClicked()
-    {
-        _refreshing = true;
-        StateHasChanged();
-
-        await LoadDashboardAsync();
-
-        _refreshing = false;
-        StateHasChanged();
-    }
-
-    private async Task LoadDashboardAsync()
-    {
-        _iframeKey = Guid.NewGuid();
-        StateHasChanged();
-
-        await RefreshDashboard();
-        _reportUrl = DashboardUrl();
-    }
-
-    private async Task RefreshDashboard()
-    {
-        MetabaseJwtResponse? resp = await MetabaseService.GetMetabaseJwt(new MetabaseJwtRequest
-        {
-            DashboardId = _mapping!.Id,
-            Type = _mapping.Type
-        });
-
-        _token = resp?.Jwt;
-
-        StateHasChanged();
-    }
-
-    private string DashboardUrl()
-    {
-        string refreshString = Refresh == null ? "" : $"&refresh={Refresh}";
-        return $"https://kids-metabase.baptist.com.au/embed/{_mapping?.Type}/" + _token +
-               $"#theme=night&bordered=true&titled=false{refreshString}";
-    }
-
-}
