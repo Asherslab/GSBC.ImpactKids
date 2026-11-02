@@ -1,7 +1,7 @@
 @inherits EntityUtilityComponent
 @inject IRefreshableStore<MetabaseEmbed> MetabaseEmbedsStore
 
-@if (_embeds.HasData && _embeds.Data!.Any())
+@if (!_menu.IsEmpty)
 {
-    @ChildContent(_embeds.Data!)
+    @ChildContent(_menu)
 }

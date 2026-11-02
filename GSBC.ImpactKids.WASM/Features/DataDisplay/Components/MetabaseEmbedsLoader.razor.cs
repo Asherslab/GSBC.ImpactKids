@@ -6,15 +6,15 @@ using Microsoft.AspNetCore.Components;
 namespace GSBC.ImpactKids.WASM.Features.DataDisplay.Components;
 
 /// <summary>
-/// The analytics pages for the nav menus, rendered only once there are some. Put it inside an
+/// The Analytics menu for the nav menus, rendered only once it has something in it. Put it inside an
 /// enabled-only <c>AuthorizeView</c>: a signed-out read from the store sends the browser to sign in.
 /// </summary>
 public partial class MetabaseEmbedsLoader
 {
     [Parameter, EditorRequired]
-    public required RenderFragment<ImmutableList<MetabaseEmbed>> ChildContent { get; set; }
+    public required RenderFragment<ImmutableList<MetabaseMenuEntry>> ChildContent { get; set; }
 
-    private AsyncData<ImmutableList<MetabaseEmbed>> _embeds = AsyncData<ImmutableList<MetabaseEmbed>>.NotAsked();
+    private ImmutableList<MetabaseMenuEntry> _menu = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -28,7 +28,9 @@ public partial class MetabaseEmbedsLoader
 
     private void RetrieveEmbeds()
     {
-        _embeds = MetabaseEmbedsStore.GetState().Entities;
+        AsyncData<ImmutableList<MetabaseEmbed>> embeds = MetabaseEmbedsStore.GetState().Entities;
+
+        _menu = embeds.HasData ? MetabaseMenu.ForNav(embeds.Data!) : [];
         StateHasChanged();
     }
 }

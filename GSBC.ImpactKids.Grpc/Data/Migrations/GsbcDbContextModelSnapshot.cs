@@ -160,7 +160,13 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<int>("MetabaseId")
+                    b.Property<int?>("MetabaseId")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("SortOrder")
                         .HasColumnType("integer");
 
                     b.Property<string>("Type")
@@ -172,6 +178,8 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
 
                     b.HasIndex("Label")
                         .IsUnique();
+
+                    b.HasIndex("ParentId");
 
                     b.ToTable("MetabaseEmbeds");
                 });
@@ -1482,6 +1490,14 @@ namespace GSBC.ImpactKids.Grpc.Data.Migrations
                         .HasForeignKey("RotatedByUserId");
 
                     b.Navigation("RotatedByUser");
+                });
+
+            modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.DataDisplay.DbMetabaseEmbed", b =>
+                {
+                    b.HasOne("GSBC.ImpactKids.Grpc.Data.Models.DataDisplay.DbMetabaseEmbed", null)
+                        .WithMany()
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("GSBC.ImpactKids.Grpc.Data.Models.DbDollarStoreEntry", b =>

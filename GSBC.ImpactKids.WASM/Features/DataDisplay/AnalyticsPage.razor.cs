@@ -60,7 +60,7 @@ public partial class AnalyticsPage
         if (!embeds.HasData)
             return;
 
-        MetabaseEmbed? embed = embeds.Data!.FirstOrDefault(x => x.Label == DashboardLabel);
+        MetabaseEmbed? embed = embeds.Data!.FirstOrDefault(x => !x.IsFolder && x.Label == DashboardLabel);
 
         if (embed == null)
         {

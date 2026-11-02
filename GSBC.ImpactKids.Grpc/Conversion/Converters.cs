@@ -126,6 +126,8 @@ public partial class ServiceTypeConverter : IConverter<DbServiceType, ServiceTyp
 public partial class MetabaseEmbedConverter : IConverter<DbMetabaseEmbed, MetabaseEmbed>
 {
     [MapperIgnoreTarget(nameof(MetabaseEmbed.ResourceType))]
+    [MapperIgnoreTarget(nameof(MetabaseEmbed.IsFolder))]
+    [MapperIgnoreSource(nameof(DbMetabaseEmbed.IsFolder))]
     public partial MetabaseEmbed Convert(DbMetabaseEmbed input);
 }
 

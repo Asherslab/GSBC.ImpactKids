@@ -108,4 +108,6 @@ public static class ErrorConstants
     public const string MetabaseEmbedLabelTaken = "Another Analytics Page Already Has That Label";
     public const string MetabaseEmbedIdInvalid  = "Metabase Id Must Be A Positive Number";
     public const string MetabaseSecretNotSet    = "Metabase Is Not Configured On The Server";
+    public const string MetabaseFolderInFolder  = "A Folder Cannot Go Inside Another Folder";
+    public const string MetabaseFolderTypeFixed = "A Folder Cannot Be Changed Into A Dashboard Or Question, Or Back";
 }

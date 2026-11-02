@@ -1,4 +1,5 @@
 using GSBC.ImpactKids.Grpc.Data.Models.DataDisplay;
+using GSBC.ImpactKids.Shared.Contracts.Entities.Features.DataDisplay;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Requests.Features.DataDisplay.MetabaseEmbeds;
 using GSBC.ImpactKids.Shared.Contracts.Messages.Responses.Base;
 using Microsoft.EntityFrameworkCore;
@@ -30,16 +31,22 @@ public partial class MetabaseService
             embed.Label = label;
         }
 
-        if (request.MetabaseId.IsUpdated)
+        if (request.Type.IsUpdated && request.Type.Value != embed.Type)
+        {
+            if (embed.IsFolder || request.Type.Value == MetabaseEmbedType.Folder)
+                return BasicResponse.WithError(MetabaseFolderTypeFixed);
+
+            embed.Type = request.Type.Value;
+        }
+
+        // A folder has no Metabase id; it is only ever renamed.
+        if (request.MetabaseId.IsUpdated && !embed.IsFolder)
         {
             if (request.MetabaseId.Value <= 0)
                 return BasicResponse.WithError(MetabaseEmbedIdInvalid);
 
             embed.MetabaseId = request.MetabaseId.Value;
         }
-
-        if (request.Type.IsUpdated)
-            embed.Type = request.Type.Value;
 
         // Tracked, so only the columns assigned above are written.
         await db.SaveChangesAsync(token);

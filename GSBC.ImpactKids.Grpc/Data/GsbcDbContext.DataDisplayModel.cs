@@ -23,5 +23,15 @@ public partial class GsbcDbContext
             .Property(x => x.Type)
             .HasConversion<string>()
             .HasMaxLength(32);
+
+        modelBuilder.Entity<DbMetabaseEmbed>()
+            .Ignore(x => x.IsFolder);
+
+        // Restrict, not cascade: deleting a folder moves its entries up a level, in MetabaseService.
+        modelBuilder.Entity<DbMetabaseEmbed>()
+            .HasOne<DbMetabaseEmbed>()
+            .WithMany()
+            .HasForeignKey(x => x.ParentId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

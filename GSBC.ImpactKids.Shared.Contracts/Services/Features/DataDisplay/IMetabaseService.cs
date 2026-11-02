@@ -11,6 +11,11 @@ public interface IMetabaseService
         IUpdateService<UpdateMetabaseEmbedRequest>,
         IBasicDeleteService<MetabaseEmbed>
 {
+    Task<BasicResponse> Move(
+        MoveMetabaseEmbedRequest request,
+        CallContext              context = default
+    );
+
     /// <summary>An embed token for the stored embed with this id. The response's entity is the token.</summary>
     Task<BasicReadResponse<string?>> GetMetabaseJwt(
         BasicReadRequest request,

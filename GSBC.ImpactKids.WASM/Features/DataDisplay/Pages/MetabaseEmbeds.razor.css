@@ -1,0 +1,81 @@
+/* The rows read like the schedule editor's: a muted grip, the label as the only strong text, the
+   detail and controls muted beside it, and a hairline between rows. A folder's entries sit indented
+   under its header, in a list of their own. */
+
+.analytics-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px 16px;
+}
+
+.analytics-sheet {
+    padding: 8px 16px 12px;
+}
+
+/* Somewhere to drop into even when a list - an empty folder - has nothing in it. */
+.analytics-list {
+    min-height: 36px;
+    display: flex;
+    flex-direction: column;
+}
+
+.analytics-children {
+    margin-left: 28px;
+    border-left: 1px solid var(--mud-palette-lines-default);
+    padding-left: 8px;
+}
+
+.analytics-row {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    border-bottom: 1px solid var(--mud-palette-lines-default);
+}
+
+.analytics-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.analytics-folder-header .analytics-label {
+    font-weight: 500;
+}
+
+.analytics-detail {
+    opacity: 0.6;
+    font-size: 0.875rem;
+    white-space: nowrap;
+}
+
+.analytics-actions {
+    display: flex;
+}
+
+.analytics-drag-handle {
+    cursor: grab;
+    touch-action: none;
+    display: flex;
+    padding: 4px 0;
+    opacity: 0.3;
+}
+
+.analytics-row:hover .analytics-drag-handle {
+    opacity: 0.7;
+}
+
+.analytics-row.analytics-drag-ghost,
+.analytics-folder.analytics-drag-ghost {
+    opacity: 0.4;
+}
+
+/* On a phone the detail goes, so the label keeps its room. */
+@media (max-width: 600px) {
+    .analytics-detail {
+        display: none;
+    }
+}

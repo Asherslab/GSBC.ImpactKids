@@ -30,7 +30,7 @@ public partial class MetabaseService
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == request.Guid, token);
 
-        if (embed == null)
+        if (embed is not { MetabaseId: { } metabaseId } || embed.IsFolder)
             return BasicReadResponse<string?>.WithError(MetabaseEmbedNotFound);
 
         SymmetricSecurityKey securityKey = new(Encoding.UTF8.GetBytes(metabaseSecret));
@@ -38,7 +38,7 @@ public partial class MetabaseService
         JwtHeader            header      = new(credentials);
         Dictionary<string, int> resource = new()
         {
-            { embed.Type.ResourceType(), embed.MetabaseId }
+            { embed.Type.ResourceType(), metabaseId }
         };
 
         Dictionary<string, string> pars = new();

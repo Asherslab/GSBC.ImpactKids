@@ -22,7 +22,7 @@ public class UpdateMetabaseEmbedRequest : ReadRequestBase, IUpdateRequest<Metaba
         };
 
         request.Label.SetInitialValue(entity.Label);
-        request.MetabaseId.SetInitialValue(entity.MetabaseId);
+        request.MetabaseId.SetInitialValue(entity.MetabaseId ?? 0);
         request.Type.SetInitialValue(entity.Type);
         return request;
     }

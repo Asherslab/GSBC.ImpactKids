@@ -1,7 +1,7 @@
 @using GSBC.ImpactKids.WASM.Features.Scripture.Features.Memorisation.Pages
 @using GSBC.ImpactKids.WASM.Services
+@using GSBC.ImpactKids.WASM.Features.DataDisplay
 @using GSBC.ImpactKids.WASM.Features.DataDisplay.Components
-@using GSBC.ImpactKids.WASM.Features.DataDisplay.Pages
 @using GSBC.ImpactKids.Shared.Contracts.Entities.Features.DataDisplay
 @inject ElvantoReportsConfig ElvantoReportsConfig
 
@@ -64,15 +64,31 @@
         People
     </MudNavLink>
     <AuthorizeView Policy="@Policies.EnabledOnly">
-        <MetabaseEmbedsLoader Context="embeds">
+        <MetabaseEmbedsLoader Context="menu">
             <MudNavGroup Icon="@Icons.Material.Filled.BarChart"
                          Title="Analytics">
-                @foreach (MetabaseEmbed embed in embeds)
+                @foreach (MetabaseMenuEntry entry in menu)
                 {
-                    <MudNavLink Icon="@(embed.Type == MetabaseEmbedType.Question ? Icons.Material.Filled.TableChart : Icons.Material.Filled.AreaChart)"
-                                Href="@MetabaseEmbeds.AnalyticsHref(embed)">
-                        @embed.Label
-                    </MudNavLink>
+                    @if (entry.Embed.IsFolder)
+                    {
+                        <MudNavGroup Icon="@Icons.Material.Filled.Folder"
+                                     Title="@entry.Embed.Label">
+                            @foreach (MetabaseEmbed child in entry.Children)
+                            {
+                                <MudNavLink Icon="@MetabaseMenu.Icon(child)"
+                                            Href="@MetabaseMenu.Href(child)">
+                                    @child.Label
+                                </MudNavLink>
+                            }
+                        </MudNavGroup>
+                    }
+                    else
+                    {
+                        <MudNavLink Icon="@MetabaseMenu.Icon(entry.Embed)"
+                                    Href="@MetabaseMenu.Href(entry.Embed)">
+                            @entry.Embed.Label
+                        </MudNavLink>
+                    }
                 }
             </MudNavGroup>
         </MetabaseEmbedsLoader>

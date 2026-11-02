@@ -25,7 +25,7 @@ public partial class MetabaseService
             }
         }
 
-        query = query.OrderBy(x => x.Label);
+        query = query.OrderBy(x => x.SortOrder).ThenBy(x => x.Label);
 
         query = query.Paginate(request);
 

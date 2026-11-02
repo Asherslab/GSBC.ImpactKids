@@ -1,7 +1,7 @@
 ﻿@using GSBC.ImpactKids.WASM.Features.Scripture.Features.Memorisation.Pages
 @using GSBC.ImpactKids.WASM.Services
+@using GSBC.ImpactKids.WASM.Features.DataDisplay
 @using GSBC.ImpactKids.WASM.Features.DataDisplay.Components
-@using GSBC.ImpactKids.WASM.Features.DataDisplay.Pages
 @using GSBC.ImpactKids.Shared.Contracts.Entities.Features.DataDisplay
 @inject ElvantoReportsConfig ElvantoReportsConfig
 
@@ -56,14 +56,30 @@
         People
     </MudNavLink>
     <AuthorizeView Policy="@Policies.EnabledOnly">
-        <MetabaseEmbedsLoader Context="embeds">
+        <MetabaseEmbedsLoader Context="menu">
             <MudNavPopout Icon="@Icons.Material.Filled.BarChart"
                           Title="Analytics">
-                @foreach (MetabaseEmbed embed in embeds)
+                @foreach (MetabaseMenuEntry entry in menu)
                 {
-                    <MudMenuItem Icon="@(embed.Type == MetabaseEmbedType.Question ? Icons.Material.Filled.TableChart : Icons.Material.Filled.AreaChart)"
-                                 Label="@embed.Label"
-                                 Href="@MetabaseEmbeds.AnalyticsHref(embed)"/>
+                    @if (entry.Embed.IsFolder)
+                    {
+                        <MudMenu Label="@entry.Embed.Label"
+                                 StartIcon="@Icons.Material.Filled.Folder"
+                                 Dense>
+                            @foreach (MetabaseEmbed child in entry.Children)
+                            {
+                                <MudMenuItem Icon="@MetabaseMenu.Icon(child)"
+                                             Label="@child.Label"
+                                             Href="@MetabaseMenu.Href(child)"/>
+                            }
+                        </MudMenu>
+                    }
+                    else
+                    {
+                        <MudMenuItem Icon="@MetabaseMenu.Icon(entry.Embed)"
+                                     Label="@entry.Embed.Label"
+                                     Href="@MetabaseMenu.Href(entry.Embed)"/>
+                    }
                 }
             </MudNavPopout>
         </MetabaseEmbedsLoader>

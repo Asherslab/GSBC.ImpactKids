@@ -4,54 +4,112 @@
 @attribute [Authorize]
 @inject IRefreshableStore<MetabaseEmbed> MetabaseEmbedsStore
 @inject IMetabaseService                 MetabaseService
+@inject IJSRuntime                       Js
 
 <PageTitle>Analytics Pages</PageTitle>
 
+<div class="analytics-top mt-4">
+    <MudText Style="opacity: 0.7">Drag to reorder, or into a folder. The Analytics menu follows this order.</MudText>
+    <span>
+        <MudButton Variant="Variant.Text"
+                   StartIcon="@Icons.Material.Filled.CreateNewFolder"
+                   OnClick="@AddFolder">
+            Add folder
+        </MudButton>
+        <MudButton Variant="Variant.Text"
+                   StartIcon="@Icons.Material.Filled.PostAdd"
+                   OnClick="@CreateEmbed">
+            Add page
+        </MudButton>
+    </span>
+</div>
+
+@if (_embeds.HasError)
+{
+    <MudAlert Severity="Severity.Error" Class="mt-4">@(_embeds.Error ?? "An Unexpected error occured")</MudAlert>
+}
+
+@* Overlay on first load only: every drop refreshes the store, and a dark flash on each drag would hide
+   the drop that was just made. *@
 <MudPaper Elevation="6" Class="mt-4 relative" Style="min-height: 120px">
-    <MudOverlay Visible="@(_embeds.IsLoading)"
-                DarkBackground
-                Absolute>
+    <MudOverlay Visible="@(_embeds.IsLoading && !_embeds.HasData)" DarkBackground Absolute>
         <MudProgressCircular Indeterminate/>
     </MudOverlay>
-    @if (_embeds.HasError)
-    {
-        <MudAlert Severity="Severity.Error" Class="mb-4">@(_embeds.Error ?? "An Unexpected error occured")</MudAlert>
-    }
-    <MudTable
-        Items="_embeds.Data"
-        Hover="true" Breakpoint="Breakpoint.None">
-        <HeaderContent>
-            <MudTh>
-                <MudIconButton OnClick="@CreateEmbed"
-                               Icon="@Icons.Material.Filled.PostAdd"
-                               aria-label="Add analytics page"/>
-            </MudTh>
-            <MudTh>Label</MudTh>
-            <MudTh>Type</MudTh>
-            <MudTh>Metabase Id</MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd>
-                <MudButtonGroup Variant="Variant.Outlined">
-                    <MudIconButton OnClick="@(() => UpdateEmbed(context))"
-                                   Icon="@Icons.Material.Filled.Edit"
-                                   aria-label="Edit"/>
-                    <MudIconButton OnClick="@(() => DeleteEmbed(context))"
-                                   Icon="@Icons.Material.Filled.Delete"
-                                   aria-label="Delete"/>
-                </MudButtonGroup>
-            </MudTd>
-            <MudTd DataLabel="Label">
-                <MudLink Href="@AnalyticsHref(context)">@context.Label</MudLink>
-            </MudTd>
-            <MudTd DataLabel="Type">@context.Type</MudTd>
-            <MudTd DataLabel="Metabase Id">@context.MetabaseId</MudTd>
-        </RowTemplate>
-        <NoRecordsContent>
-            @if (_embeds.HasData)
+    <div class="analytics-sheet" @ref="_root">
+        <div class="analytics-list" data-parent-id="">
+            @foreach (MetabaseMenuEntry entry in _menu)
             {
-                <MudText Style="opacity: 0.7">No analytics pages yet. Add one with the button above.</MudText>
+                @if (entry.Embed.IsFolder)
+                {
+                    <div class="analytics-folder" data-embed-id="@entry.Embed.Id" data-folder="true" @key="entry.Embed.Id">
+                        <div class="analytics-row analytics-folder-header">
+                            @Handle()
+                            <MudIcon Icon="@Icons.Material.Filled.Folder" Size="Size.Small"/>
+                            <span class="analytics-label">@entry.Embed.Label</span>
+                            <span class="analytics-detail">
+                                @(entry.Children.IsEmpty ? "Empty, so hidden from the menu" : $"{entry.Children.Count} in folder")
+                            </span>
+                            <span class="analytics-actions">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                               Size="Size.Small"
+                                               aria-label="@($"Rename {entry.Embed.Label}")"
+                                               OnClick="@(() => RenameFolder(entry.Embed))"/>
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                               Size="Size.Small"
+                                               aria-label="@($"Delete {entry.Embed.Label}")"
+                                               OnClick="@(() => DeleteEmbed(entry.Embed))"/>
+                            </span>
+                        </div>
+                        <div class="analytics-list analytics-children" data-parent-id="@entry.Embed.Id">
+                            @foreach (MetabaseEmbed child in entry.Children)
+                            {
+                                @EmbedRow(child)
+                            }
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    @EmbedRow(entry.Embed)
+                }
             }
-        </NoRecordsContent>
-    </MudTable>
+        </div>
+        @if (_embeds.HasData && _menu.IsEmpty)
+        {
+            <MudText Class="pa-4" Style="opacity: 0.7">No analytics pages yet. Add one with the button above.</MudText>
+        }
+    </div>
 </MudPaper>
+
+@code {
+
+    private RenderFragment Handle() => __builder =>
+    {
+        <span class="analytics-drag-handle" aria-label="Drag to move">
+            <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small"/>
+        </span>
+    };
+
+    private RenderFragment EmbedRow(MetabaseEmbed embed) => __builder =>
+    {
+        <div class="analytics-row" data-embed-id="@embed.Id" @key="embed.Id">
+            @Handle()
+            <MudIcon Icon="@MetabaseMenu.Icon(embed)" Size="Size.Small"/>
+            <span class="analytics-label">
+                <MudLink Href="@MetabaseMenu.Href(embed)">@embed.Label</MudLink>
+            </span>
+            <span class="analytics-detail">@embed.Type @embed.MetabaseId</span>
+            <span class="analytics-actions">
+                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                               Size="Size.Small"
+                               aria-label="@($"Edit {embed.Label}")"
+                               OnClick="@(() => UpdateEmbed(embed))"/>
+                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                               Size="Size.Small"
+                               aria-label="@($"Delete {embed.Label}")"
+                               OnClick="@(() => DeleteEmbed(embed))"/>
+            </span>
+        </div>
+    };
+
+}
