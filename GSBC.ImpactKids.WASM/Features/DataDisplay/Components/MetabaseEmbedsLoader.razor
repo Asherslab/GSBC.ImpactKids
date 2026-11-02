@@ -1,0 +1,7 @@
+@inherits EntityUtilityComponent
+@inject IRefreshableStore<MetabaseEmbed> MetabaseEmbedsStore
+
+@if (!_menu.IsEmpty)
+{
+    @ChildContent(_menu)
+}

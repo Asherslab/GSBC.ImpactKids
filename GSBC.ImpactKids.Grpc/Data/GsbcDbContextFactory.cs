@@ -55,6 +55,8 @@ public class GsbcDbContextFactory : IDesignTimeDbContextFactory<GsbcDbContext>
 
             Songs = null!,
 
+            MetabaseEmbeds = null!,
+
             ScheduleItemTemplates   = null!,
             Schedules               = null!,
             ScheduleGroups          = null!,

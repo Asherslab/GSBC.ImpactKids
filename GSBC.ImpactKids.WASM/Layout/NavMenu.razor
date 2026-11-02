@@ -1,7 +1,9 @@
 ﻿@using GSBC.ImpactKids.WASM.Features.Scripture.Features.Memorisation.Pages
 @using GSBC.ImpactKids.WASM.Services
+@using GSBC.ImpactKids.WASM.Features.DataDisplay
+@using GSBC.ImpactKids.WASM.Features.DataDisplay.Components
+@using GSBC.ImpactKids.Shared.Contracts.Entities.Features.DataDisplay
 @inject ElvantoReportsConfig ElvantoReportsConfig
-@inject MetabaseConfig       MetabaseConfig
 
 <MudNavMenu>
     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
@@ -53,27 +55,35 @@
                 Href="/people">
         People
     </MudNavLink>
-    @if (MetabaseConfig.DashboardMappings.Any())
-    {
-        <MudNavPopout Icon="@Icons.Material.Filled.BarChart"
-                      Title="Analytics">
-            @foreach (DashboardMapping mapping in MetabaseConfig.DashboardMappings)
-            {
-                @if (mapping.Type == "question")
+    <AuthorizeView Policy="@Policies.EnabledOnly">
+        <MetabaseEmbedsLoader Context="menu">
+            <MudNavPopout Icon="@Icons.Material.Filled.BarChart"
+                          Title="Analytics">
+                @foreach (MetabaseMenuEntry entry in menu)
                 {
-                    <MudMenuItem Icon="@Icons.Material.Filled.TableChart"
-                                 Label="@mapping.Label"
-                                 Href="@($"/Analytics/{mapping.Label}")"/>
+                    @if (entry.Embed.IsFolder)
+                    {
+                        <MudMenu Label="@entry.Embed.Label"
+                                 StartIcon="@Icons.Material.Filled.Folder"
+                                 Dense>
+                            @foreach (MetabaseEmbed child in entry.Children)
+                            {
+                                <MudMenuItem Icon="@MetabaseMenu.Icon(child)"
+                                             Label="@child.Label"
+                                             Href="@MetabaseMenu.Href(child)"/>
+                            }
+                        </MudMenu>
+                    }
+                    else
+                    {
+                        <MudMenuItem Icon="@MetabaseMenu.Icon(entry.Embed)"
+                                     Label="@entry.Embed.Label"
+                                     Href="@MetabaseMenu.Href(entry.Embed)"/>
+                    }
                 }
-                else
-                {
-                    <MudMenuItem Icon="@Icons.Material.Filled.AreaChart"
-                                 Label="@mapping.Label"
-                                 Href="@($"/Analytics/{mapping.Label}")"/>
-                }
-            }
-        </MudNavPopout>
-    }
+            </MudNavPopout>
+        </MetabaseEmbedsLoader>
+    </AuthorizeView>
     @if (ElvantoReportsConfig.ReportLabels.Any())
     {
         <MudNavPopout Icon="@Icons.Material.Filled.ViewList"
@@ -100,6 +110,9 @@
         <MudMenuItem Icon="@Icons.Material.Filled.Slideshow"
                      Label="ProPresenter"
                      Href="/ProPresenter/Machines"/>
+        <MudMenuItem Icon="@Icons.Material.Filled.BarChart"
+                     Label="Analytics Pages"
+                     Href="/AnalyticsPages"/>
         <MudMenuItem Icon="@Icons.Material.Filled.ManageAccounts"
                      Label="Users"
                      Href="/users"/>

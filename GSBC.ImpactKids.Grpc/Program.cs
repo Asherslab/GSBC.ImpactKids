@@ -10,7 +10,7 @@ using GSBC.ImpactKids.Grpc.Features.Attendance.AttendanceRecordServices;
 using GSBC.ImpactKids.Grpc.Features.Authentication;
 using GSBC.ImpactKids.Grpc.Features.Authentication.DisplayAuth;
 using GSBC.ImpactKids.Grpc.Features.Authentication.UsersServices;
-using GSBC.ImpactKids.Grpc.Features.DataDisplay;
+using GSBC.ImpactKids.Grpc.Features.DataDisplay.MetabaseServices;
 using GSBC.ImpactKids.Grpc.Features.DollarStore.DollarStoreEntryServices;
 using GSBC.ImpactKids.Grpc.Features.Elvanto.ElvantoServices;
 using GSBC.ImpactKids.Grpc.Features.Elvanto.ElvantoServices.Models;

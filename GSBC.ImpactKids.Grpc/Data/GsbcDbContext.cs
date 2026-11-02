@@ -26,5 +26,6 @@ public partial class GsbcDbContext(
         BuildSyncModel(modelBuilder);
         BuildProPresenterModel(modelBuilder);
         BuildSongsModel(modelBuilder);
+        BuildDataDisplayModel(modelBuilder);
     }
 }

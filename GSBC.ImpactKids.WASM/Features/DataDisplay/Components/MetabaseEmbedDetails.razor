@@ -1,0 +1,52 @@
+@inherits DetailsComponent<MetabaseEmbed, CreateMetabaseEmbedRequest, UpdateMetabaseEmbedRequest>
+
+<MudPaper Elevation="0" Class="d-flex flex-column flex-grow-1">
+    <MudOverlay Visible="@(Entity.IsLoading)"
+                DarkBackground="true"
+                Absolute="true">
+        <MudProgressCircular Indeterminate/>
+    </MudOverlay>
+    @if (Entity.HasError)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">
+            @(Entity.Error ?? "An Unexpected error occured")
+        </MudAlert>
+    }
+    <MudTextFieldCreateOrUpdate
+        @bind-Create="@CreateRequest.Label"
+        Read="@UpdateRequest.Label.Value"
+        @bind-Update="@UpdateRequest.Label.Value"
+        State="State"
+
+        Class="mb-4"
+        Label="Label"
+        HelperText="The menu entry under Analytics, and the page's title"
+        Variant="Variant.Filled"
+        Immediate/>
+    <MudSelectCreateOrUpdate
+        T="MetabaseEmbedType"
+        @bind-Create="@CreateRequest.Type"
+        Read="@UpdateRequest.Type.Value"
+        @bind-Update="@UpdateRequest.Type.Value"
+        State="State"
+
+        Class="mb-4"
+        Label="Type"
+        Variant="Variant.Filled"
+        FullWidth>
+        <MudSelectItem T="MetabaseEmbedType" Value="MetabaseEmbedType.Dashboard">Dashboard</MudSelectItem>
+        <MudSelectItem T="MetabaseEmbedType" Value="MetabaseEmbedType.Question">Question</MudSelectItem>
+    </MudSelectCreateOrUpdate>
+    <MudNumericFieldCreateorUpdate
+        T="int"
+        @bind-Create="@CreateRequest.MetabaseId"
+        Read="@UpdateRequest.MetabaseId.Value"
+        @bind-Update="@UpdateRequest.MetabaseId.Value"
+        State="State"
+
+        Class="mb-4"
+        Label="Metabase Id"
+        HelperText="The number in the dashboard's or question's own Metabase URL. Embedding must be turned on for it in Metabase"
+        Min="1"
+        Variant="Variant.Filled"/>
+</MudPaper>
